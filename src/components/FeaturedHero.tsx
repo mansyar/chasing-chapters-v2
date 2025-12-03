@@ -64,7 +64,7 @@ export function FeaturedHero({ review }: FeaturedHeroProps) {
           </div>
 
           <div className="flex justify-center lg:justify-end order-1 lg:order-2">
-            <div className="relative w-[280px] md:w-[350px] aspect-[2/3] shadow-2xl rounded-lg rotate-3 hover:rotate-0 transition-transform duration-500">
+            <div className="relative w-[280px] md:w-[350px] aspect-2/3 shadow-2xl rounded-lg rotate-3 hover:rotate-0 transition-transform duration-500">
               {coverImage?.url && (
                 <Image
                   src={coverImage.url}

@@ -15,7 +15,7 @@ export default async function Homepage() {
       featured: {
         equals: true,
       },
-      status: {
+      _status: {
         equals: "published",
       },
     },
@@ -26,7 +26,7 @@ export default async function Homepage() {
   const { docs: latestReviews } = await payload.find({
     collection: "reviews",
     where: {
-      status: {
+      _status: {
         equals: "published",
       },
       ...(featuredReviews[0]?.id

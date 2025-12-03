@@ -177,7 +177,7 @@ export const Reviews: CollectionConfig = {
     beforeChange: [
       ({ data, operation }) => {
         if (operation === "create" || operation === "update") {
-          if (data.status === "published" && !data.publishDate) {
+          if (data._status === "published" && !data.publishDate) {
             data.publishDate = new Date();
           }
         }

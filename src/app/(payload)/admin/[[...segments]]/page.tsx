@@ -2,7 +2,7 @@
 import configPromise from "@payload-config";
 import { RootPage } from "@payloadcms/next/views";
 /* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
-import { importMap } from "./admin/importMap";
+import { importMap } from "../importMap";
 
 type Args = {
   params: Promise<{

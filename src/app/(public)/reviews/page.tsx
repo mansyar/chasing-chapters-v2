@@ -22,7 +22,7 @@ export default async function BrowsePage({ searchParams }: PageProps) {
   const payload = await getPayload({ config: configPromise });
 
   const where: any = {
-    status: {
+    _status: {
       equals: "published",
     },
   };

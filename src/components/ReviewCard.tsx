@@ -25,7 +25,7 @@ export function ReviewCard({ review, className }: ReviewCardProps) {
       className={cn("group block h-full", className)}
     >
       <Card className="h-full overflow-hidden border-none shadow-none bg-transparent hover:bg-muted/30 transition-colors">
-        <div className="aspect-[2/3] relative overflow-hidden rounded-md shadow-md group-hover:shadow-xl transition-all duration-300 group-hover:-translate-y-1">
+        <div className="aspect-2/3 relative overflow-hidden rounded-md shadow-md group-hover:shadow-xl transition-all duration-300 group-hover:-translate-y-1">
           {coverImage?.url && (
             <Image
               src={coverImage.url}

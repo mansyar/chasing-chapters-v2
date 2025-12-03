@@ -24,7 +24,7 @@ export default async function ReviewPage({ params }: PageProps) {
       slug: {
         equals: slug,
       },
-      status: {
+      _status: {
         equals: "published",
       },
     },
@@ -47,7 +47,7 @@ export default async function ReviewPage({ params }: PageProps) {
         <div className="container px-4 md:px-6">
           <div className="grid gap-8 lg:grid-cols-[300px_1fr] lg:gap-12 items-start">
             {/* Book Cover */}
-            <div className="mx-auto lg:mx-0 w-[240px] md:w-[300px] aspect-[2/3] relative shadow-2xl rounded-lg rotate-2 hover:rotate-0 transition-transform duration-500 bg-background">
+            <div className="mx-auto lg:mx-0 w-[240px] md:w-[300px] aspect-2/3 relative shadow-2xl rounded-lg rotate-2 hover:rotate-0 transition-transform duration-500 bg-background">
               {coverImage?.url && (
                 <Image
                   src={coverImage.url}
