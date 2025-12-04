@@ -15,7 +15,7 @@ export function FeaturedHero({ review }: FeaturedHeroProps) {
 
   return (
     <section className="relative overflow-hidden bg-muted/30 py-12 md:py-20">
-      <div className="container px-4 md:px-6">
+      <div className="container mx-auto px-6 md:px-12 lg:px-24 max-w-7xl">
         <div className="grid gap-8 lg:grid-cols-2 lg:gap-16 items-center">
           <div className="flex flex-col justify-center space-y-6 order-2 lg:order-1">
             <div className="space-y-2">

@@ -11,9 +11,11 @@
     "payload": "payload"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.943.0",
     "@payloadcms/db-postgres": "^3.65.0",
     "@payloadcms/next": "^3.65.0",
     "@payloadcms/richtext-lexical": "^3.65.0",
+    "@payloadcms/storage-s3": "^3.66.0",
     "@payloadcms/ui": "^3.65.0",
     "@radix-ui/react-aspect-ratio": "^1.1.8",
     "@radix-ui/react-avatar": "^1.1.11",

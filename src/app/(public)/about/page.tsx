@@ -61,11 +61,14 @@ export default function AboutPage() {
 
           {/* Image Placeholder - In a real app, this would be a real image */}
           <div className="relative aspect-square md:aspect-4/5 lg:aspect-square bg-muted rounded-2xl overflow-hidden order-1 lg:order-2 shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-500">
-            <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-              <span className="font-serif italic text-2xl">
-                Book Aesthetic Image
-              </span>
-            </div>
+            <Image
+              src="/images/about-book.png"
+              alt="A cozy reading corner with vintage books and tea"
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              priority
+            />
           </div>
         </div>
       </section>

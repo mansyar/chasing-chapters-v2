@@ -104,7 +104,7 @@ export default async function ReviewPage({ params }: PageProps) {
     <article className="min-h-screen pb-20">
       {/* Hero Header */}
       <div className="bg-muted/30 py-12 md:py-20">
-        <div className="container px-4 md:px-6">
+        <div className="container mx-auto px-6 md:px-12 lg:px-24 max-w-7xl">
           <div className="grid gap-8 lg:grid-cols-[300px_1fr] lg:gap-12 items-start">
             {/* Book Cover */}
             <div className="mx-auto lg:mx-0 w-[240px] md:w-[300px] aspect-2/3 relative shadow-2xl rounded-lg rotate-2 hover:rotate-0 transition-transform duration-500 bg-background">
@@ -182,10 +182,10 @@ export default async function ReviewPage({ params }: PageProps) {
       </div>
 
       {/* Main Content */}
-      <div className="container px-4 md:px-6 py-12 grid gap-12 lg:grid-cols-[1fr_300px]">
+      <div className="container mx-auto px-6 md:px-12 lg:px-24 py-12 grid gap-12 lg:grid-cols-[1fr_300px] max-w-7xl">
         <div className="space-y-12">
           {/* Review Content */}
-          <div className="prose prose-lg prose-gray dark:prose-invert max-w-none font-serif">
+          <div className="prose prose-lg prose-gray dark:prose-invert max-w-3xl font-serif">
             <RichText data={review.reviewContent} />
           </div>
 

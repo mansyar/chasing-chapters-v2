@@ -48,7 +48,7 @@ export default async function Homepage() {
     <div className="flex flex-col min-h-screen">
       {featuredReview && <FeaturedHero review={featuredReview} />}
 
-      <section className="py-16 container px-4 md:px-6">
+      <section className="py-16 container mx-auto px-6 md:px-12 lg:px-24 max-w-7xl">
         <div className="flex items-center justify-between mb-8">
           <h2 className="font-serif text-3xl font-bold tracking-tight">
             Latest Reviews

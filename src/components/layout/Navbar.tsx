@@ -27,7 +27,7 @@ export function Navbar() {
 
   return (
     <nav className="border-b bg-background/80 backdrop-blur-md sticky top-0 z-50 transition-all duration-300">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+      <div className="container mx-auto px-6 md:px-12 lg:px-24 h-16 flex items-center justify-between max-w-7xl">
         <Link href="/" className="font-serif text-2xl font-bold tracking-tight">
           Chasing Chapters
         </Link>

@@ -91,7 +91,7 @@ export default async function BrowsePage({ searchParams }: PageProps) {
   }
 
   return (
-    <div className="container px-4 md:px-6 py-12">
+    <div className="container mx-auto px-6 md:px-12 lg:px-24 py-12 max-w-7xl">
       <div className="flex flex-col md:flex-row gap-12">
         {/* Sidebar */}
         <aside className="w-full md:w-[240px] space-y-8 shrink-0">
