@@ -2,16 +2,76 @@ import { getPayload } from "payload";
 import configPromise from "@payload-config";
 import Image from "next/image";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Star, Calendar, User } from "lucide-react";
 import type { Media } from "@/payload-types";
 import { RichText } from "@payloadcms/richtext-lexical/react";
+import { ShareButton } from "@/components/ShareButton";
 
 interface PageProps {
   params: Promise<{
     slug: string;
   }>;
+}
+
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const payload = await getPayload({ config: configPromise });
+
+  const { docs: reviews } = await payload.find({
+    collection: "reviews",
+    where: {
+      slug: {
+        equals: slug,
+      },
+      _status: {
+        equals: "published",
+      },
+    },
+    limit: 1,
+    depth: 1,
+  });
+
+  const review = reviews[0];
+
+  if (!review) {
+    return {
+      title: "Review Not Found",
+    };
+  }
+
+  const coverImage = review.coverImage as any;
+  const description = `Read our review of ${review.title} by ${review.bookAuthor}. Rating: ${review.rating}/5 stars.`;
+
+  return {
+    title: review.title,
+    description,
+    openGraph: {
+      title: review.title,
+      description,
+      type: "article",
+      images: coverImage?.url
+        ? [
+            {
+              url: coverImage.url,
+              width: 800,
+              height: 1200,
+              alt: review.title,
+            },
+          ]
+        : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: review.title,
+      description,
+      images: coverImage?.url ? [coverImage.url] : [],
+    },
+  };
 }
 
 export default async function ReviewPage({ params }: PageProps) {
@@ -82,7 +142,6 @@ export default async function ReviewPage({ params }: PageProps) {
                   by {review.bookAuthor}
                 </p>
               </div>
-
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <User className="h-4 w-4" />
@@ -111,6 +170,11 @@ export default async function ReviewPage({ params }: PageProps) {
                       {genre.name}
                     </Badge>
                   ))}
+
+                <ShareButton
+                  title={`Read this review of ${review.title}`}
+                  className="ml-2"
+                />
               </div>
             </div>
           </div>

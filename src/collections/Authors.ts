@@ -6,6 +6,19 @@ export const Authors: CollectionConfig = {
     useAsTitle: "name",
   },
   auth: true,
+  access: {
+    read: () => true,
+    create: ({ req: { user } }) => {
+      return user?.role === "admin";
+    },
+    update: ({ req: { user }, id }) => {
+      if (user?.role === "admin") return true;
+      return user?.id === id;
+    },
+    delete: ({ req: { user } }) => {
+      return user?.role === "admin";
+    },
+  },
   fields: [
     {
       name: "name",

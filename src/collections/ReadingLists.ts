@@ -6,8 +6,32 @@ export const ReadingLists: CollectionConfig = {
   admin: {
     useAsTitle: "title",
   },
+  versions: {
+    drafts: true,
+  },
   access: {
     read: () => true,
+    create: ({ req: { user } }) => Boolean(user),
+    update: ({ req: { user } }) => {
+      if (!user) return false;
+      if (user.role === "admin") return true;
+      // Authors can update their own reading lists
+      return {
+        author: {
+          equals: user.id,
+        },
+      };
+    },
+    delete: ({ req: { user } }) => {
+      if (!user) return false;
+      if (user.role === "admin") return true;
+      // Authors can delete their own reading lists
+      return {
+        author: {
+          equals: user.id,
+        },
+      };
+    },
   },
   fields: [
     {
@@ -18,6 +42,15 @@ export const ReadingLists: CollectionConfig = {
     {
       name: "description",
       type: "textarea",
+    },
+    {
+      name: "author",
+      type: "relationship",
+      relationTo: "authors",
+      required: true,
+      admin: {
+        position: "sidebar",
+      },
     },
     {
       name: "coverImage",

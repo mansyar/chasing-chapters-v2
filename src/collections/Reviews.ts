@@ -19,6 +19,18 @@ export const Reviews: CollectionConfig = {
         },
       };
     },
+    create: ({ req: { user } }) => Boolean(user),
+    update: ({ req: { user } }) => {
+      if (!user) return false;
+      if (user.role === "admin") return true;
+      // Authors can update their own reviews
+      return {
+        author: {
+          equals: user.id,
+        },
+      };
+    },
+    delete: ({ req: { user } }) => user?.role === "admin",
   },
   fields: [
     {

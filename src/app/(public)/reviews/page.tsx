@@ -8,6 +8,13 @@ import { Separator } from "@/components/ui/separator";
 import { Search, X } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Browse Reviews",
+  description:
+    "Explore our collection of book reviews. Filter by genre, tag, or search for specific titles and authors.",
+};
 
 interface PageProps {
   searchParams: Promise<{

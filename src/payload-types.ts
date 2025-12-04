@@ -337,12 +337,14 @@ export interface ReadingList {
   id: number;
   title: string;
   description?: string | null;
+  author: number | Author;
   coverImage?: (number | null) | Media;
   reviews?: (number | Review)[] | null;
   featured?: boolean | null;
   slug?: string | null;
   updatedAt: string;
   createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -353,6 +355,7 @@ export interface Comment {
   authorName: string;
   content: string;
   relatedReview: number | Review;
+  author?: (number | null) | Author;
   approved?: boolean | null;
   updatedAt: string;
   createdAt: string;
@@ -608,12 +611,14 @@ export interface ReviewsSelect<T extends boolean = true> {
 export interface ReadingListsSelect<T extends boolean = true> {
   title?: T;
   description?: T;
+  author?: T;
   coverImage?: T;
   reviews?: T;
   featured?: T;
   slug?: T;
   updatedAt?: T;
   createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -623,6 +628,7 @@ export interface CommentsSelect<T extends boolean = true> {
   authorName?: T;
   content?: T;
   relatedReview?: T;
+  author?: T;
   approved?: T;
   updatedAt?: T;
   createdAt?: T;
