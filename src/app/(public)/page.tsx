@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
+// Render at request time since we need database access
+export const dynamic = "force-dynamic";
+
 export default async function Homepage() {
   const payload = await getPayload({ config: configPromise });
 

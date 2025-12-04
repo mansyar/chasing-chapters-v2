@@ -11,6 +11,9 @@ export const metadata: Metadata = {
   description: "Curated collections of books for every mood and occasion.",
 };
 
+// Render at request time since we need database access
+export const dynamic = "force-dynamic";
+
 export default async function ReadingListsPage() {
   const payload = await getPayload({ config: configPromise });
 

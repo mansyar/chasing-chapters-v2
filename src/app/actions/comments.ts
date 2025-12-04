@@ -173,8 +173,7 @@ export async function reportComment(
 
     // Check if already reported by this email
     const alreadyReported = comment.reportedBy?.some(
-      (r: { email?: string }) =>
-        r.email?.toLowerCase() === reporterEmail.toLowerCase()
+      (r) => r.email?.toLowerCase() === reporterEmail.toLowerCase()
     );
 
     if (alreadyReported) {

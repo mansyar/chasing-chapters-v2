@@ -16,6 +16,9 @@ export const metadata: Metadata = {
     "Explore our collection of book reviews. Filter by genre, tag, or search for specific titles and authors.",
 };
 
+// Render at request time since we need database access
+export const dynamic = "force-dynamic";
+
 interface PageProps {
   searchParams: Promise<{
     q?: string;
