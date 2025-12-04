@@ -75,6 +75,7 @@ export interface Config {
     reviews: Review;
     'reading-lists': ReadingList;
     comments: Comment;
+    commenters: Commenter;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -90,6 +91,7 @@ export interface Config {
     reviews: ReviewsSelect<false> | ReviewsSelect<true>;
     'reading-lists': ReadingListsSelect<false> | ReadingListsSelect<true>;
     comments: CommentsSelect<false> | CommentsSelect<true>;
+    commenters: CommentersSelect<false> | CommentersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -347,16 +349,60 @@ export interface ReadingList {
   _status?: ('draft' | 'published') | null;
 }
 /**
+ * Comments on book reviews
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "comments".
  */
 export interface Comment {
   id: number;
+  /**
+   * Display name of the commenter
+   */
   authorName: string;
+  /**
+   * Comment content (max 2000 characters)
+   */
   content: string;
   relatedReview: number | Review;
-  author?: (number | null) | Author;
-  approved?: boolean | null;
+  commenter: number | Commenter;
+  status: 'pending' | 'approved' | 'rejected' | 'reported';
+  /**
+   * Number of times this comment has been reported
+   */
+  reportCount?: number | null;
+  reportedBy?:
+    | {
+        email?: string | null;
+        reportedAt?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Guest commenters who leave comments on reviews
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "commenters".
+ */
+export interface Commenter {
+  id: number;
+  name: string;
+  email: string;
+  /**
+   * Number of approved comments from this user
+   */
+  approvedCommentCount?: number | null;
+  /**
+   * Trusted users have comments auto-approved
+   */
+  trusted?: boolean | null;
+  /**
+   * Banned users cannot submit comments
+   */
+  banned?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -415,6 +461,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'comments';
         value: number | Comment;
+      } | null)
+    | ({
+        relationTo: 'commenters';
+        value: number | Commenter;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -628,8 +678,29 @@ export interface CommentsSelect<T extends boolean = true> {
   authorName?: T;
   content?: T;
   relatedReview?: T;
-  author?: T;
-  approved?: T;
+  commenter?: T;
+  status?: T;
+  reportCount?: T;
+  reportedBy?:
+    | T
+    | {
+        email?: T;
+        reportedAt?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "commenters_select".
+ */
+export interface CommentersSelect<T extends boolean = true> {
+  name?: T;
+  email?: T;
+  approvedCommentCount?: T;
+  trusted?: T;
+  banned?: T;
   updatedAt?: T;
   createdAt?: T;
 }

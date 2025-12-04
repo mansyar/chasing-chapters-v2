@@ -9,6 +9,7 @@ import { Star, Calendar, User } from "lucide-react";
 import type { Media } from "@/payload-types";
 import { RichText } from "@payloadcms/richtext-lexical/react";
 import { ShareButton } from "@/components/ShareButton";
+import { CommentSection } from "@/components/comments/CommentSection";
 
 interface PageProps {
   params: Promise<{
@@ -283,6 +284,10 @@ export default async function ReviewPage({ params }: PageProps) {
             )}
         </div>
       </div>
+
+      {/* Comments Section */}
+      <Separator className="my-8" />
+      <CommentSection reviewId={review.id} />
     </article>
   );
 }

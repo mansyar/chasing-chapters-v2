@@ -14,6 +14,7 @@ import { MoodTags } from "./collections/MoodTags";
 import { Reviews } from "./collections/Reviews";
 import { ReadingLists } from "./collections/ReadingLists";
 import { Comments } from "./collections/Comments";
+import { Commenters } from "./collections/Commenters";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -34,6 +35,7 @@ export default buildConfig({
     Reviews,
     ReadingLists,
     Comments,
+    Commenters,
   ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || "",
