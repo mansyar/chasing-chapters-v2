@@ -19,10 +19,13 @@ RUN pnpm install --frozen-lockfile
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+# Copy package.json first (needed for corepack to read packageManager field)
+COPY package.json ./
+
 # Enable corepack for pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Copy dependencies from deps stage
+# Copy dependencies from deps stage and source code
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
