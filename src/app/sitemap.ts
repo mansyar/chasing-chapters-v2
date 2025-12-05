@@ -15,7 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const reviews = await payload.find({
     collection: "reviews",
     where: {
-      status: { equals: "published" },
+      _status: { equals: "published" },
     },
     limit: 1000,
     select: {
