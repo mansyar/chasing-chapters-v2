@@ -55,6 +55,8 @@ RUN pnpm build
 FROM node:20-alpine AS runner
 WORKDIR /app
 
+RUN apk update && apk add --no-cache curl
+
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
