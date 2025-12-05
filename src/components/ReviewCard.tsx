@@ -36,7 +36,7 @@ export function ReviewCard({ review, className }: ReviewCardProps) {
             />
           )}
         </div>
-        <CardHeader className="px-0 pt-4 pb-2">
+        <CardHeader className="px-4 pt-4 pb-2">
           <div className="flex items-center justify-between mb-1">
             <div className="flex gap-1">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -68,7 +68,7 @@ export function ReviewCard({ review, className }: ReviewCardProps) {
             {review.bookAuthor}
           </p>
         </CardHeader>
-        <CardFooter className="px-0 pt-0 gap-2 flex-wrap">
+        <CardFooter className="px-4 pt-0 gap-2 flex-wrap">
           {review.genres &&
             Array.isArray(review.genres) &&
             review.genres.slice(0, 2).map((genre: any) => (
