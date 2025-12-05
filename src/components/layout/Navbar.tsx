@@ -51,6 +51,12 @@ export function Navbar() {
           >
             About
           </Link>
+          <Link
+            href="/admin"
+            className="text-sm font-medium hover:text-primary transition-colors"
+          >
+            Write a Review
+          </Link>
         </div>
 
         <div className="flex items-center gap-4">
