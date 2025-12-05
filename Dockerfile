@@ -4,8 +4,8 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 
-# Enable corepack for pnpm (uses version from package.json packageManager field)
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Install pnpm globally
+RUN npm install -g pnpm@9
 
 # Copy package files
 COPY package.json pnpm-lock.yaml* ./
@@ -19,13 +19,10 @@ RUN pnpm install --frozen-lockfile
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy package.json first (needed for corepack to read packageManager field)
-COPY package.json ./
+# Install pnpm globally
+RUN npm install -g pnpm@9
 
-# Enable corepack for pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
-# Copy dependencies from deps stage and source code
+# Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
@@ -49,7 +46,7 @@ ENV R2_SECRET_ACCESS_KEY=$R2_SECRET_ACCESS_KEY
 ENV R2_PUBLIC_URL=$R2_PUBLIC_URL
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 
-# Build the application (uses --webpack flag for Payload CMS compatibility)
+# Build the application
 RUN pnpm build
 
 # -----------------------------------------------------------------------------
