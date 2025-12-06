@@ -175,8 +175,9 @@ export const Reviews: CollectionConfig = {
         position: "sidebar",
       },
       // Admins can select any author, writers can only select themselves
+      // For server-side operations (like updates with overrideAccess), allow all
       filterOptions: ({ user }) => {
-        if (!user) return false;
+        if (!user) return true; // Server-side operations without user context
         if (user.role === "admin") return true;
         // Writers can only select themselves
         return {

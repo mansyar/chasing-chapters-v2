@@ -11,10 +11,16 @@ export async function toggleLikeReview(
   try {
     const payload = await getPayload({ config: configPromise });
 
+    // Convert string ID to number (Payload CMS with PostgreSQL uses numeric IDs)
+    const numericId = parseInt(reviewId, 10);
+    if (isNaN(numericId)) {
+      return { success: false, error: "Invalid review ID" };
+    }
+
     // 1. Fetch current review data to get current likes
     const review = await payload.findByID({
       collection: "reviews",
-      id: reviewId,
+      id: numericId,
     });
 
     if (!review) {
@@ -35,10 +41,16 @@ export async function toggleLikeReview(
     // For this app, this read-modify-write pattern is likely sufficient.
     const updatedReview = await payload.update({
       collection: "reviews",
-      id: reviewId,
+      id: numericId,
       data: {
         likes: newLikes,
       },
+      // Override access control - likes can be updated by anyone viewing the page
+      overrideAccess: true,
+      // Don't create a new draft version - just update the current document
+      draft: false,
+      // Provide depth 0 to avoid populating relationships which can cause validation issues
+      depth: 0,
     });
 
     // 4. Revalidate the page so the static generation or cache is updated
