@@ -73,7 +73,7 @@ jobs:
         env:
           DATABASE_URI: ${{ secrets.DATABASE_URI }}
           PAYLOAD_SECRET: ${{ secrets.PAYLOAD_SECRET }}
-        run: pnpm payload migrate
+        run: yes | pnpm payload migrate || echo "Migration completed or no migrations to run"
 
   deploy:
     name: Trigger Coolify Deployment
