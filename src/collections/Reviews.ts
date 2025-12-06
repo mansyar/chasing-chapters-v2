@@ -122,6 +122,16 @@ export const Reviews: CollectionConfig = {
     {
       name: "readingFinishDate",
       type: "date",
+      validate: (value, { siblingData }) => {
+        const data = siblingData as { readingStartDate?: string };
+        if (!value || !data?.readingStartDate) return true;
+        const finish = new Date(value);
+        const start = new Date(data.readingStartDate);
+        if (finish < start) {
+          return "Finish date must be on or after start date";
+        }
+        return true;
+      },
       admin: {
         date: {
           pickerAppearance: "dayOnly",
@@ -200,6 +210,18 @@ export const Reviews: CollectionConfig = {
       type: "relationship",
       relationTo: "reviews",
       hasMany: true,
+      filterOptions: ({ id }) => {
+        // Exclude self and only show published reviews
+        if (id) {
+          return {
+            and: [
+              { id: { not_equals: id } },
+              { _status: { equals: "published" } },
+            ],
+          } as Where;
+        }
+        return { _status: { equals: "published" } };
+      },
       admin: {
         position: "sidebar",
       },

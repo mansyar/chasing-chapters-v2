@@ -36,7 +36,7 @@ export const AdminLogin: React.FC = () => {
       // Redirect to admin dashboard on success
       router.push("/admin");
       router.refresh();
-    } catch (err) {
+    } catch {
       setError("An error occurred. Please try again.");
       setLoading(false);
     }

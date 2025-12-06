@@ -31,6 +31,7 @@ export default async function BrowsePage({ searchParams }: PageProps) {
   const { q, genre, tag } = await searchParams;
   const payload = await getPayload({ config: configPromise });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const where: any = {
     _status: {
       equals: "published",
@@ -163,10 +164,10 @@ export default async function BrowsePage({ searchParams }: PageProps) {
               {q
                 ? `Search Results for "${q}"`
                 : genre
-                ? `Genre: ${genres.find((g) => g.slug === genre)?.name}`
-                : tag
-                ? `Tag: ${tags.find((t) => t.slug === tag)?.name}`
-                : "All Reviews"}
+                  ? `Genre: ${genres.find((g) => g.slug === genre)?.name}`
+                  : tag
+                    ? `Tag: ${tags.find((t) => t.slug === tag)?.name}`
+                    : "All Reviews"}
             </h1>
             {(q || genre || tag) && (
               <Button variant="ghost" size="sm" asChild>

@@ -12,7 +12,7 @@ export const Comments: CollectionConfig = {
   access: {
     // Public can only see approved comments
     // Writers can see all comments on their reviews (for moderation)
-    read: async ({ req: { user, payload }, id }) => {
+    read: async ({ req: { user } }) => {
       // Admins can see all comments
       if (user?.role === "admin") return true;
 
@@ -81,7 +81,7 @@ export const Comments: CollectionConfig = {
               } else {
                 data.status = "approved"; // Auto-approve clean content
               }
-            } catch (error) {
+            } catch {
               // If commenter not found, check spam and auto-approve if clean
               const contentIsSpam = isSpamContent(data.content || "");
               data.status = contentIsSpam ? "pending" : "approved";

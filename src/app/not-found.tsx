@@ -1,4 +1,6 @@
+/* eslint-disable react/no-unescaped-entities */
 import Link from "next/link";
+import { Suspense } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -6,7 +8,9 @@ import { Button } from "@/components/ui/button";
 export default function NotFound() {
   return (
     <div className="flex min-h-screen flex-col">
-      <Navbar />
+      <Suspense fallback={null}>
+        <Navbar />
+      </Suspense>
       <main className="flex flex-1 flex-col items-center justify-center text-center p-6">
         <h1 className="font-serif text-6xl md:text-8xl font-medium mb-4">
           404

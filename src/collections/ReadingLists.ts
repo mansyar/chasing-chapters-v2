@@ -73,6 +73,9 @@ export const ReadingLists: CollectionConfig = {
       type: "relationship",
       relationTo: "reviews",
       hasMany: true,
+      filterOptions: () => ({
+        _status: { equals: "published" },
+      }),
     },
     {
       name: "featured",

@@ -3,7 +3,7 @@
 import { getPayload } from "payload";
 import configPromise from "@payload-config";
 import { revalidatePath } from "next/cache";
-import { isSpamContent, getSpamReasons } from "@/lib/blocklist";
+import { isSpamContent } from "@/lib/blocklist";
 
 // Types for action responses
 type ActionResult<T = void> =

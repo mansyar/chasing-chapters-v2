@@ -45,4 +45,21 @@ export const Authors: CollectionConfig = {
       required: true,
     },
   ],
+  hooks: {
+    beforeDelete: [
+      async ({ id, req }) => {
+        const { payload } = req;
+        const reviews = await payload.find({
+          collection: "reviews",
+          where: { author: { equals: id } },
+          limit: 1,
+        });
+        if (reviews.docs.length > 0) {
+          throw new Error(
+            "Cannot delete author with existing reviews. Please reassign or delete the reviews first."
+          );
+        }
+      },
+    ],
+  },
 };

@@ -47,9 +47,9 @@ export default function AboutPage() {
                 go beyond simple summaries.
               </p>
               <p>
-                Whether you're looking for your next fantasy epic, a cozy
-                mystery to curl up with, or a literary fiction that challenges
-                your perspective, you'll find a home here.
+                Whether you&apos;re looking for your next fantasy epic, a cozy
+                mystery to curl up with, or literary fiction that challenges
+                your perspective, you&apos;ll find a home here.
               </p>
             </div>
             <div className="pt-4">
@@ -93,7 +93,7 @@ export default function AboutPage() {
               <h3 className="font-serif text-xl font-bold">Honesty</h3>
               <p className="text-muted-foreground">
                 Authentic opinions, always. We celebrate what we love and
-                constructively critique what we don't.
+                constructively critique what we don&apos;t.
               </p>
             </div>
             <div className="bg-background p-8 rounded-xl shadow-sm border text-center space-y-4">

@@ -45,4 +45,21 @@ export const MoodTags: CollectionConfig = {
       },
     },
   ],
+  hooks: {
+    beforeDelete: [
+      async ({ id, req }) => {
+        const { payload } = req;
+        const reviews = await payload.find({
+          collection: "reviews",
+          where: { moodTags: { contains: id } },
+          limit: 1,
+        });
+        if (reviews.docs.length > 0) {
+          throw new Error(
+            "Cannot delete mood tag that is used by existing reviews."
+          );
+        }
+      },
+    ],
+  },
 };

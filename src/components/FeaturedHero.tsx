@@ -23,13 +23,6 @@ interface FeaturedHeroProps {
 }
 
 export function FeaturedHero({ reviews }: FeaturedHeroProps) {
-  // Don't render if no reviews
-  if (reviews.length === 0) {
-    return null;
-  }
-
-  const showNavigation = reviews.length > 1;
-
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
@@ -46,6 +39,13 @@ export function FeaturedHero({ reviews }: FeaturedHeroProps) {
       setCurrent(api.selectedScrollSnap() + 1);
     });
   }, [api]);
+
+  // Return null after hooks if no reviews (hooks must be called unconditionally)
+  if (reviews.length === 0) {
+    return null;
+  }
+
+  const showNavigation = reviews.length > 1;
 
   return (
     <section className="relative overflow-hidden bg-muted/30 py-12 md:py-20 min-h-screen flex items-center">

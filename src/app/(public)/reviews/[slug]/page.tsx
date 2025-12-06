@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react/no-unescaped-entities */
 import { getPayload } from "payload";
 import configPromise from "@payload-config";
 import Image from "next/image";

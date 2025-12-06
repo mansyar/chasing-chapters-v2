@@ -41,7 +41,7 @@ export async function generateMetadata({
     };
   }
 
-  const coverImage = list.coverImage as any;
+  const coverImage = list.coverImage as Media | null | undefined;
   const description = list.description || `Curated reading list: ${list.title}`;
 
   return {

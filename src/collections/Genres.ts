@@ -29,4 +29,21 @@ export const Genres: CollectionConfig = {
       },
     },
   ],
+  hooks: {
+    beforeDelete: [
+      async ({ id, req }) => {
+        const { payload } = req;
+        const reviews = await payload.find({
+          collection: "reviews",
+          where: { genres: { contains: id } },
+          limit: 1,
+        });
+        if (reviews.docs.length > 0) {
+          throw new Error(
+            "Cannot delete genre that is used by existing reviews."
+          );
+        }
+      },
+    ],
+  },
 };
