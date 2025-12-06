@@ -1,9 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { Search, Menu } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "../ui/sheet";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 
@@ -11,6 +18,7 @@ export function Navbar() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     setQuery(searchParams.get("q") || "");
@@ -73,6 +81,53 @@ export function Navbar() {
           <Button variant="ghost" size="icon" className="sm:hidden">
             <Search className="h-5 w-5" />
           </Button>
+
+          {/* Mobile Menu */}
+          <Sheet open={isOpen} onOpenChange={setIsOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right">
+              <SheetHeader>
+                <SheetTitle className="font-serif text-left">
+                  Navigation
+                </SheetTitle>
+              </SheetHeader>
+              <div className="flex flex-col gap-4 mt-6 px-4">
+                <Link
+                  href="/reviews"
+                  className="text-lg font-medium hover:text-primary transition-colors"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Reviews
+                </Link>
+                <Link
+                  href="/reading-lists"
+                  className="text-lg font-medium hover:text-primary transition-colors"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Reading Lists
+                </Link>
+                <Link
+                  href="/about"
+                  className="text-lg font-medium hover:text-primary transition-colors"
+                  onClick={() => setIsOpen(false)}
+                >
+                  About
+                </Link>
+                <Link
+                  href="/admin"
+                  className="text-lg font-medium hover:text-primary transition-colors"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Write a Review
+                </Link>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </nav>

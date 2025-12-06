@@ -64,9 +64,9 @@ export function FeaturedHero({ reviews }: FeaturedHeroProps) {
               return (
                 <CarouselItem key={review.id}>
                   <div className="grid gap-8 lg:grid-cols-2 lg:gap-24 items-center">
-                    <div className="flex flex-col justify-center space-y-6 order-2 lg:order-1 pl-6 md:pl-12 lg:pl-16">
+                    <div className="flex flex-col justify-center space-y-6 order-2 lg:order-1 pl-6 md:pl-12 lg:pl-16 items-center text-center lg:items-start lg:text-left">
                       <div className="space-y-2">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 justify-center lg:justify-start">
                           <Badge
                             variant="default"
                             className="bg-primary text-primary-foreground"
@@ -99,7 +99,7 @@ export function FeaturedHero({ reviews }: FeaturedHeroProps) {
                         {extractTextFromRichText(review.reviewContent)}
                       </div>
 
-                      <div className="flex flex-col gap-2 min-[400px]:flex-row">
+                      <div className="flex flex-col gap-2 min-[400px]:flex-row w-full justify-center lg:justify-start">
                         <Button asChild size="lg" className="font-medium">
                           <Link href={`/reviews/${review.slug}`}>
                             Read Full Review{" "}
