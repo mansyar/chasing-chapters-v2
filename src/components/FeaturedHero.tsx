@@ -3,7 +3,7 @@ import Image from "next/image";
 import { Star, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { cn, extractTextFromRichText } from "@/lib/utils";
 import type { Review, Media } from "@/payload-types";
 
 interface FeaturedHeroProps {
@@ -49,9 +49,7 @@ export function FeaturedHero({ review }: FeaturedHeroProps) {
             </div>
 
             <div className="prose prose-gray dark:prose-invert max-w-none line-clamp-3 text-muted-foreground text-lg">
-              {/* Note: We'd typically extract a snippet from rich text here, 
-                   but for now we'll just show a placeholder or need a helper function */}
-              A captivating journey that explores the depths of human emotion...
+              {extractTextFromRichText(review.reviewContent)}
             </div>
 
             <div className="flex flex-col gap-2 min-[400px]:flex-row">

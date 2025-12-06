@@ -28,7 +28,7 @@ export default async function ReadingListsPage() {
   });
 
   return (
-    <div className="container px-4 md:px-6 py-12">
+    <div className="container mx-auto px-4 md:px-6 py-12">
       <div className="space-y-4 mb-12 text-center">
         <h1 className="font-serif text-4xl font-bold tracking-tight">
           Reading Lists

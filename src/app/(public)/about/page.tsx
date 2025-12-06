@@ -14,7 +14,7 @@ export default function AboutPage() {
     <div className="min-h-screen pb-20">
       {/* Hero Section */}
       <section className="relative py-20 md:py-32 bg-muted/30 overflow-hidden">
-        <div className="container px-4 md:px-6 relative z-10">
+        <div className="container mx-auto px-4 md:px-6 relative z-10">
           <div className="max-w-3xl mx-auto text-center space-y-6">
             <h1 className="font-serif text-4xl md:text-6xl font-bold tracking-tight">
               About Chasing Chapters
@@ -28,7 +28,7 @@ export default function AboutPage() {
       </section>
 
       {/* Content Section */}
-      <section className="container px-4 md:px-6 py-16 md:py-24">
+      <section className="container mx-auto px-4 md:px-6 py-16 md:py-24">
         <div className="grid gap-12 lg:grid-cols-2 items-center">
           <div className="space-y-6 order-2 lg:order-1">
             <h2 className="font-serif text-3xl font-bold">Our Story</h2>
@@ -75,7 +75,7 @@ export default function AboutPage() {
 
       {/* Values Section */}
       <section className="bg-primary/5 py-16 md:py-24">
-        <div className="container px-4 md:px-6">
+        <div className="container mx-auto px-4 md:px-6">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <h2 className="font-serif text-3xl font-bold mb-4">
               What We Value
