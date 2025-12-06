@@ -13,6 +13,7 @@ import { RichText } from "@payloadcms/richtext-lexical/react";
 import { ShareButton } from "@/components/ShareButton";
 import { CommentSection } from "@/components/comments/CommentSection";
 import { LikeButton } from "@/components/reviews/LikeButton";
+import { RelatedReviews } from "@/components/reviews/RelatedReviews";
 
 interface PageProps {
   params: Promise<{
@@ -291,6 +292,16 @@ export default async function ReviewPage({ params }: PageProps) {
               </div>
             )}
         </div>
+      </div>
+
+      {/* Related Reviews */}
+      <div className="container mx-auto px-6 md:px-12 lg:px-24 pb-12 max-w-7xl">
+        <RelatedReviews
+          currentReviewId={review.id}
+          genres={review.genres}
+          tags={review.tags}
+          moodTags={review.moodTags}
+        />
       </div>
 
       {/* Comments Section */}
