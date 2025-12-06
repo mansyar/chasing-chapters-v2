@@ -12,6 +12,7 @@ import type { Media } from "@/payload-types";
 import { RichText } from "@payloadcms/richtext-lexical/react";
 import { ShareButton } from "@/components/ShareButton";
 import { CommentSection } from "@/components/comments/CommentSection";
+import { LikeButton } from "@/components/reviews/LikeButton";
 
 interface PageProps {
   params: Promise<{
@@ -176,6 +177,11 @@ export default async function ReviewPage({ params }: PageProps) {
 
                 <ShareButton
                   title={`Read this review of ${review.title}`}
+                  className="ml-2"
+                />
+                <LikeButton
+                  reviewId={String(review.id)}
+                  initialLikes={review.likes || 0}
                   className="ml-2"
                 />
               </div>
