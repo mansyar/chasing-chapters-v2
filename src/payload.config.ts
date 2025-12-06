@@ -30,6 +30,9 @@ export default buildConfig({
         login: {
           Component: "@/components/AdminLogin#AdminLogin",
         },
+        Dashboard: {
+          Component: "@/components/admin/AnalyticsDashboard#AnalyticsDashboard",
+        },
       },
     },
   },

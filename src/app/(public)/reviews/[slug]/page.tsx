@@ -13,6 +13,7 @@ import { RichText } from "@payloadcms/richtext-lexical/react";
 import { ShareButton } from "@/components/ShareButton";
 import { CommentSection } from "@/components/comments/CommentSection";
 import { LikeButton } from "@/components/reviews/LikeButton";
+import { ViewTracker } from "@/components/analytics/ViewTracker";
 import { RelatedReviews } from "@/components/reviews/RelatedReviews";
 
 interface PageProps {
@@ -107,6 +108,7 @@ export default async function ReviewPage({ params }: PageProps) {
 
   return (
     <article className="min-h-screen pb-20">
+      <ViewTracker reviewId={String(review.id)} />
       {/* Hero Header */}
       <div className="bg-muted/30 py-12 md:py-20">
         <div className="container mx-auto px-6 md:px-12 lg:px-24 max-w-7xl">
