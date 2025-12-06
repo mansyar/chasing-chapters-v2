@@ -207,6 +207,7 @@ export const Reviews: CollectionConfig = {
     {
       name: "slug",
       type: "text",
+      unique: true,
       admin: {
         position: "sidebar",
       },

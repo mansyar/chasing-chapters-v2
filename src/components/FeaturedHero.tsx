@@ -23,6 +23,13 @@ interface FeaturedHeroProps {
 }
 
 export function FeaturedHero({ reviews }: FeaturedHeroProps) {
+  // Don't render if no reviews
+  if (reviews.length === 0) {
+    return null;
+  }
+
+  const showNavigation = reviews.length > 1;
+
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
@@ -129,29 +136,37 @@ export function FeaturedHero({ reviews }: FeaturedHeroProps) {
             })}
           </CarouselContent>
 
-          <CarouselPrevious className="hidden lg:flex" />
-          <CarouselNext className="hidden lg:flex" />
+          {showNavigation && (
+            <>
+              <CarouselPrevious className="hidden lg:flex" />
+              <CarouselNext className="hidden lg:flex" />
+            </>
+          )}
 
-          <div className="flex justify-center gap-2 mt-8">
-            {Array.from({ length: count }).map((_, index) => (
-              <button
-                key={index}
-                className={cn(
-                  "h-2 rounded-full transition-all duration-300",
-                  index + 1 === current
-                    ? "w-8 bg-primary"
-                    : "w-2 bg-muted-foreground/30"
-                )}
-                onClick={() => api?.scrollTo(index)}
-                aria-label={`Go to slide ${index + 1}`}
-              />
-            ))}
-          </div>
+          {showNavigation && (
+            <div className="flex justify-center gap-2 mt-8">
+              {Array.from({ length: count }).map((_, index) => (
+                <button
+                  key={index}
+                  className={cn(
+                    "h-2 rounded-full transition-all duration-300",
+                    index + 1 === current
+                      ? "w-8 bg-primary"
+                      : "w-2 bg-muted-foreground/30"
+                  )}
+                  onClick={() => api?.scrollTo(index)}
+                  aria-label={`Go to slide ${index + 1}`}
+                />
+              ))}
+            </div>
+          )}
 
-          <div className="flex lg:hidden justify-center gap-4 mt-4">
-            <CarouselPrevious className="relative left-0 translate-y-0" />
-            <CarouselNext className="relative right-0 translate-y-0" />
-          </div>
+          {showNavigation && (
+            <div className="flex lg:hidden justify-center gap-4 mt-4">
+              <CarouselPrevious className="relative left-0 translate-y-0" />
+              <CarouselNext className="relative right-0 translate-y-0" />
+            </div>
+          )}
         </Carousel>
       </div>
     </section>

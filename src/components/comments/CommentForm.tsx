@@ -27,10 +27,14 @@ export function CommentForm({
 
   // Load saved name/email from localStorage
   useEffect(() => {
-    const savedName = localStorage.getItem("commenter_name");
-    const savedEmail = localStorage.getItem("commenter_email");
-    if (savedName) setName(savedName);
-    if (savedEmail) setEmail(savedEmail);
+    try {
+      const savedName = localStorage.getItem("commenter_name");
+      const savedEmail = localStorage.getItem("commenter_email");
+      if (savedName) setName(savedName);
+      if (savedEmail) setEmail(savedEmail);
+    } catch {
+      // localStorage may be disabled or blocked
+    }
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,8 +53,12 @@ export function CommentForm({
 
     if (result.success) {
       // Save name/email to localStorage for convenience
-      localStorage.setItem("commenter_name", name);
-      localStorage.setItem("commenter_email", email);
+      try {
+        localStorage.setItem("commenter_name", name);
+        localStorage.setItem("commenter_email", email);
+      } catch {
+        // Ignore localStorage errors
+      }
 
       // Clear content field
       setContent("");
@@ -141,8 +149,8 @@ export function CommentForm({
             message.type === "success"
               ? "bg-green-50 text-green-800 dark:bg-green-950/30 dark:text-green-300"
               : message.type === "pending"
-              ? "bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-300"
-              : "bg-red-50 text-red-800 dark:bg-red-950/30 dark:text-red-300"
+                ? "bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-300"
+                : "bg-red-50 text-red-800 dark:bg-red-950/30 dark:text-red-300"
           }`}
         >
           {message.type === "success" ? (
