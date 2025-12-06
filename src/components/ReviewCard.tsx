@@ -10,9 +10,14 @@ import type { Review, Media } from "@/payload-types";
 interface ReviewCardProps {
   review: Review;
   className?: string;
+  priority?: boolean;
 }
 
-export function ReviewCard({ review, className }: ReviewCardProps) {
+export function ReviewCard({
+  review,
+  className,
+  priority = false,
+}: ReviewCardProps) {
   const coverImage = review.coverImage as Media;
 
   return (
@@ -29,6 +34,8 @@ export function ReviewCard({ review, className }: ReviewCardProps) {
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              priority={priority}
+              loading={priority ? "eager" : "lazy"}
             />
           )}
         </div>

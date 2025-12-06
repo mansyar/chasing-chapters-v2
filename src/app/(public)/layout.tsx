@@ -6,11 +6,13 @@ import { Footer } from "@/components/layout/Footer";
 const inter = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const playfair = Playfair_Display({
   variable: "--font-serif",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export default function PublicLayout({

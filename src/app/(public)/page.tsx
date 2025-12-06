@@ -56,8 +56,12 @@ export default async function Homepage() {
 
         {latestReviews.length > 0 ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {latestReviews.map((review) => (
-              <ReviewCard key={review.id} review={review} />
+            {latestReviews.map((review, index) => (
+              <ReviewCard
+                key={review.id}
+                review={review}
+                priority={index < 2}
+              />
             ))}
           </div>
         ) : (
