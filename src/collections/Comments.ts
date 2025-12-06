@@ -1,4 +1,4 @@
-import type { CollectionConfig } from "payload";
+import type { CollectionConfig, Where } from "payload";
 import { isSpamContent } from "@/lib/blocklist";
 
 export const Comments: CollectionConfig = {
@@ -11,8 +11,21 @@ export const Comments: CollectionConfig = {
   },
   access: {
     // Public can only see approved comments
-    read: ({ req: { user } }) => {
+    // Writers can see all comments on their reviews (for moderation)
+    read: async ({ req: { user, payload }, id }) => {
+      // Admins can see all comments
       if (user?.role === "admin") return true;
+
+      // Writers can see comments on their own reviews
+      if (user?.role === "writer") {
+        return {
+          "relatedReview.author": {
+            equals: user.id,
+          },
+        } as Where;
+      }
+
+      // Public can only see approved comments
       return {
         status: {
           equals: "approved",
@@ -21,8 +34,22 @@ export const Comments: CollectionConfig = {
     },
     // Anyone can create comments (guest commenting)
     create: () => true,
-    // Only admins can update comments (for moderation)
-    update: ({ req: { user } }) => user?.role === "admin",
+    // Admins and review authors can update comments (for moderation)
+    update: async ({ req: { user } }) => {
+      if (!user) return false;
+      if (user.role === "admin") return true;
+
+      // Writers can update comments on their own reviews
+      if (user.role === "writer") {
+        return {
+          "relatedReview.author": {
+            equals: user.id,
+          },
+        } as Where;
+      }
+
+      return false;
+    },
     // Only admins can delete comments
     delete: ({ req: { user } }) => user?.role === "admin",
   },
@@ -48,19 +75,21 @@ export const Comments: CollectionConfig = {
               // Check content for spam
               const contentIsSpam = isSpamContent(data.content || "");
 
-              // Auto-approve if trusted and content is clean
-              if (commenter?.trusted && !contentIsSpam) {
-                data.status = "approved";
+              // Auto-approve unless content is flagged as spam
+              if (contentIsSpam) {
+                data.status = "pending"; // Hold for review
               } else {
-                data.status = "pending";
+                data.status = "approved"; // Auto-approve clean content
               }
             } catch (error) {
-              // If commenter not found, set to pending
-              data.status = "pending";
+              // If commenter not found, check spam and auto-approve if clean
+              const contentIsSpam = isSpamContent(data.content || "");
+              data.status = contentIsSpam ? "pending" : "approved";
             }
           } else {
-            // No commenter linked, set to pending
-            data.status = "pending";
+            // No commenter linked, check spam and auto-approve if clean
+            const contentIsSpam = isSpamContent(data.content || "");
+            data.status = contentIsSpam ? "pending" : "approved";
           }
         }
 

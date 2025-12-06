@@ -92,13 +92,11 @@ export async function submitComment(
       });
     }
 
-    // Determine initial status
+    // Determine initial status - auto-approve unless flagged as spam
     const contentFlagged = isSpamContent(content);
-    let status: "pending" | "approved" = "pending";
-
-    if (commenter.trusted && !contentFlagged) {
-      status = "approved";
-    }
+    const status: "pending" | "approved" = contentFlagged
+      ? "pending"
+      : "approved";
 
     // Create the comment
     await payload.create({
