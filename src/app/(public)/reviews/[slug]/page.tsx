@@ -224,6 +224,17 @@ export default async function ReviewPage({ params }: PageProps) {
                 </div>
               </div>
             )}
+
+            {review.perfectFor && (
+              <div className="bg-blue-50 dark:bg-blue-950/20 p-6 rounded-xl border border-blue-100 dark:border-blue-900 md:col-span-2">
+                <h3 className="font-serif text-xl font-bold mb-4 flex items-center gap-2 text-blue-800 dark:text-blue-300">
+                  Perfect For
+                </h3>
+                <div className="prose prose-sm dark:prose-invert">
+                  <RichText data={review.perfectFor} />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Favorite Quotes */}
@@ -293,6 +304,45 @@ export default async function ReviewPage({ params }: PageProps) {
                 </div>
               </div>
             )}
+
+          {/* Reading Log */}
+          {(review.readingStartDate || review.readingFinishDate) && (
+            <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
+              <h3 className="font-semibold mb-4">Reading Log</h3>
+              <div className="space-y-3 text-sm">
+                {review.readingStartDate && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Started</span>
+                    <span className="font-medium">
+                      {new Date(review.readingStartDate).toLocaleDateString(
+                        undefined,
+                        {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        }
+                      )}
+                    </span>
+                  </div>
+                )}
+                {review.readingFinishDate && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Finished</span>
+                    <span className="font-medium">
+                      {new Date(review.readingFinishDate).toLocaleDateString(
+                        undefined,
+                        {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        }
+                      )}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
