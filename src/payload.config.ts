@@ -26,11 +26,12 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
     components: {
+      providers: ["@/components/AdminStyleProvider#AdminStyleProvider"],
       views: {
         login: {
           Component: "@/components/AdminLogin#AdminLogin",
         },
-        Dashboard: {
+        dashboard: {
           Component: "@/components/admin/AnalyticsDashboard#AnalyticsDashboard",
         },
       },

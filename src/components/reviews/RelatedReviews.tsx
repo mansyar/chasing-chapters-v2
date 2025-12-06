@@ -1,6 +1,6 @@
 import { getPayload } from "payload";
 import configPromise from "@payload-config";
-import { Review, Genre, Tag, MoodTag } from "@/payload-types";
+import { Genre, Tag, MoodTag } from "@/payload-types";
 import { ReviewCard } from "../ReviewCard";
 import { Where } from "payload";
 

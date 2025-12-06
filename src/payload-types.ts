@@ -319,6 +319,7 @@ export interface Review {
   readingStartDate?: string | null;
   readingFinishDate?: string | null;
   featured?: boolean | null;
+  views?: number | null;
   likes?: number | null;
   publishDate?: string | null;
   author: number | Author;
@@ -642,6 +643,7 @@ export interface ReviewsSelect<T extends boolean = true> {
   readingStartDate?: T;
   readingFinishDate?: T;
   featured?: T;
+  views?: T;
   likes?: T;
   publishDate?: T;
   author?: T;

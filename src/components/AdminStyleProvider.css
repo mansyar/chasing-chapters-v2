@@ -1,0 +1,23 @@
+/* Custom Payload Admin Styles */
+/* Make the list view table use full available width */
+
+/* Target the table container directly */
+.table {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.table table {
+  width: 100% !important;
+  table-layout: auto;
+}
+
+/* Expand the gutter/wrapper that constrains the list view */
+.gutter--left-right {
+  max-width: 100% !important;
+}
+
+/* Target list view wrapper */
+.list-controls {
+  max-width: 100% !important;
+}

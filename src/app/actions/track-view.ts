@@ -20,8 +20,8 @@ export async function incrementView(reviewId: string) {
     await payload.update({
       collection: "reviews",
       id: reviewId,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       data: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         views: ((review as any).views || 0) + 1,
       },
     });
