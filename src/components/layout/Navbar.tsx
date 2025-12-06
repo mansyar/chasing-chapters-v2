@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Search, Menu } from "lucide-react";
+import { Search, Menu, X } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import {
@@ -19,6 +19,7 @@ export function Navbar() {
   const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   useEffect(() => {
     setQuery(searchParams.get("q") || "");
@@ -31,6 +32,7 @@ export function Navbar() {
     } else {
       router.push("/reviews");
     }
+    setIsSearchOpen(false);
   };
 
   return (
@@ -78,8 +80,17 @@ export function Navbar() {
               onChange={(e) => setQuery(e.target.value)}
             />
           </form>
-          <Button variant="ghost" size="icon" className="sm:hidden">
-            <Search className="h-5 w-5" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="sm:hidden"
+            onClick={() => setIsSearchOpen(!isSearchOpen)}
+          >
+            {isSearchOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Search className="h-5 w-5" />
+            )}
           </Button>
 
           {/* Mobile Menu */}
@@ -130,6 +141,21 @@ export function Navbar() {
           </Sheet>
         </div>
       </div>
+      {isSearchOpen && (
+        <div className="container mx-auto px-6 pb-4 sm:hidden animate-in slide-in-from-top-2 fade-in duration-200">
+          <form onSubmit={handleSearch} className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search books..."
+              className="w-full pl-9"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              autoFocus
+            />
+          </form>
+        </div>
+      )}
     </nav>
   );
 }
