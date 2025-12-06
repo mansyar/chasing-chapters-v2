@@ -22,7 +22,7 @@ export default async function Homepage() {
         equals: "published",
       },
     },
-    limit: 1,
+    limit: 5,
     depth: 2,
   });
 
@@ -32,24 +32,15 @@ export default async function Homepage() {
       _status: {
         equals: "published",
       },
-      ...(featuredReviews[0]?.id
-        ? {
-            id: {
-              not_equals: featuredReviews[0].id,
-            },
-          }
-        : {}),
     },
     sort: "-publishDate",
     limit: 6,
     depth: 1,
   });
 
-  const featuredReview = featuredReviews[0];
-
   return (
     <div className="flex flex-col min-h-screen">
-      {featuredReview && <FeaturedHero review={featuredReview} />}
+      {featuredReviews.length > 0 && <FeaturedHero reviews={featuredReviews} />}
 
       <section className="py-16 container mx-auto px-6 md:px-12 lg:px-24 max-w-7xl">
         <div className="flex items-center justify-between mb-8">

@@ -1,4 +1,4 @@
-import type { CollectionConfig } from "payload";
+import type { CollectionConfig, Where } from "payload";
 import formatSlug from "../hooks/formatSlug";
 
 export const Reviews: CollectionConfig = {
@@ -12,7 +12,17 @@ export const Reviews: CollectionConfig = {
   },
   access: {
     read: ({ req: { user } }) => {
-      if (user) return true;
+      // Admins can see all reviews
+      if (user?.role === "admin") return true;
+      // Writers can only see their own reviews
+      if (user?.role === "writer") {
+        return {
+          author: {
+            equals: user.id,
+          },
+        } as Where;
+      }
+      // Public can only see published reviews
       return {
         _status: {
           equals: "published",
@@ -23,14 +33,23 @@ export const Reviews: CollectionConfig = {
     update: ({ req: { user } }) => {
       if (!user) return false;
       if (user.role === "admin") return true;
-      // Authors can update their own reviews
+      // Writers can update their own reviews
       return {
         author: {
           equals: user.id,
         },
-      };
+      } as Where;
     },
-    delete: ({ req: { user } }) => user?.role === "admin",
+    delete: ({ req: { user } }) => {
+      if (!user) return false;
+      if (user.role === "admin") return true;
+      // Writers can delete their own reviews
+      return {
+        author: {
+          equals: user.id,
+        },
+      } as Where;
+    },
   },
   fields: [
     {
@@ -136,6 +155,17 @@ export const Reviews: CollectionConfig = {
       required: true,
       admin: {
         position: "sidebar",
+      },
+      // Admins can select any author, writers can only select themselves
+      filterOptions: ({ user }) => {
+        if (!user) return false;
+        if (user.role === "admin") return true;
+        // Writers can only select themselves
+        return {
+          id: {
+            equals: user.id,
+          },
+        };
       },
     },
     {

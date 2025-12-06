@@ -51,6 +51,17 @@ export const ReadingLists: CollectionConfig = {
       admin: {
         position: "sidebar",
       },
+      // Admins can select any author, writers can only select themselves
+      filterOptions: ({ user }) => {
+        if (!user) return false;
+        if (user.role === "admin") return true;
+        // Writers can only select themselves
+        return {
+          id: {
+            equals: user.id,
+          },
+        };
+      },
     },
     {
       name: "coverImage",

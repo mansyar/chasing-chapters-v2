@@ -47,6 +47,22 @@ export async function submitComment(
       };
     }
 
+    // Verify review exists and is published
+    const targetReview = await payload.findByID({
+      collection: "reviews",
+      id: reviewId,
+      depth: 0,
+    });
+
+    if (!targetReview) {
+      return { success: false, error: "Review not found" };
+    }
+
+    // Check if review is published (handle both draft system and legacy)
+    if (targetReview._status && targetReview._status !== "published") {
+      return { success: false, error: "Review not found" };
+    }
+
     // Find or create commenter
     let commenter;
     const existingCommenters = await payload.find({
