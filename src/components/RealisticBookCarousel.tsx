@@ -149,6 +149,7 @@ export function RealisticBookCarousel({ reviews }: RealisticBookCarouselProps) {
 
       {/* @ts-expect-error - Library types might be slightly mismatched with React 19 */}
       <HTMLFlipBook
+        key={`flipbook-${isMobile ? "mobile" : "desktop"}`}
         width={bookWidth}
         height={bookHeight}
         size="stretch"
