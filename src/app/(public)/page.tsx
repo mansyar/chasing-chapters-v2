@@ -6,37 +6,34 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
-// Render at request time since we need database access
-export const dynamic = "force-dynamic";
+// Enable ISR with 60 second revalidation for better caching
+export const revalidate = 60;
 
 export default async function Homepage() {
   const payload = await getPayload({ config: configPromise });
 
-  const { docs: featuredReviews } = await payload.find({
-    collection: "reviews",
-    where: {
-      featured: {
-        equals: true,
-      },
-      _status: {
-        equals: "published",
-      },
-    },
-    limit: 5,
-    depth: 2,
-  });
-
-  const { docs: latestReviews } = await payload.find({
-    collection: "reviews",
-    where: {
-      _status: {
-        equals: "published",
-      },
-    },
-    sort: "-publishDate",
-    limit: 6,
-    depth: 1,
-  });
+  // Fetch data in parallel for better performance
+  const [{ docs: featuredReviews }, { docs: latestReviews }] =
+    await Promise.all([
+      payload.find({
+        collection: "reviews",
+        where: {
+          featured: { equals: true },
+          _status: { equals: "published" },
+        },
+        limit: 5,
+        depth: 2,
+      }),
+      payload.find({
+        collection: "reviews",
+        where: {
+          _status: { equals: "published" },
+        },
+        sort: "-publishDate",
+        limit: 6,
+        depth: 1,
+      }),
+    ]);
 
   return (
     <div className="flex flex-col min-h-screen">

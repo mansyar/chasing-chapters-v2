@@ -117,6 +117,7 @@ export function FeaturedHeroCarousel({ reviews }: FeaturedHeroCarouselProps) {
                         fill
                         className="object-cover rounded-lg"
                         priority={index === 0}
+                        fetchPriority={index === 0 ? "high" : "auto"}
                         sizes="(max-width: 768px) 280px, (max-width: 1024px) 350px, 400px"
                       />
                     )}

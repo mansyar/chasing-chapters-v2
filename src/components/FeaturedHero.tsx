@@ -83,6 +83,7 @@ function StaticFirstSlide({ review }: { review: Review }) {
               fill
               className="object-cover rounded-lg"
               priority
+              fetchPriority="high"
               sizes="(max-width: 768px) 280px, (max-width: 1024px) 350px, 400px"
             />
           )}
