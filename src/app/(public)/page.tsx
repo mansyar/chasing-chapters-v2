@@ -1,6 +1,7 @@
 import { getPayload } from "payload";
 import configPromise from "@payload-config";
 import { FeaturedHero } from "@/components/FeaturedHero";
+import { GenreMarquee } from "@/components/GenreMarquee";
 import { ReviewCard } from "@/components/ReviewCard";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -13,7 +14,7 @@ export default async function Homepage() {
   const payload = await getPayload({ config: configPromise });
 
   // Fetch data in parallel for better performance
-  const [{ docs: featuredReviews }, { docs: latestReviews }] =
+  const [{ docs: featuredReviews }, { docs: latestReviews }, { docs: genres }] =
     await Promise.all([
       payload.find({
         collection: "reviews",
@@ -33,12 +34,16 @@ export default async function Homepage() {
         limit: 6,
         depth: 1,
       }),
+      payload.find({
+        collection: "genres",
+        limit: 20,
+      }),
     ]);
 
   return (
     <div className="flex flex-col min-h-screen">
       {featuredReviews.length > 0 && <FeaturedHero reviews={featuredReviews} />}
-
+      <GenreMarquee genres={genres} />
       <section className="py-16 container mx-auto px-6 md:px-12 lg:px-24 max-w-7xl">
         <div className="flex items-center justify-between mb-8">
           <h2 className="font-serif text-3xl font-bold tracking-tight">

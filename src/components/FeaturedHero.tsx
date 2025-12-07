@@ -7,13 +7,15 @@ import Image from "next/image";
 import { Star, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { GradientBackground } from "@/components/ui/gradient-background";
+import { motion } from "motion/react";
 import { cn, extractTextFromRichText } from "@/lib/utils";
 import type { Review, Media } from "@/payload-types";
 
 // Lazy load the interactive carousel (reduces initial JS bundle by ~40KB)
-const FeaturedHeroCarousel = dynamic(
+const RealisticBookCarousel = dynamic(
   () =>
-    import("./FeaturedHeroCarousel").then((mod) => mod.FeaturedHeroCarousel),
+    import("./RealisticBookCarousel").then((mod) => mod.RealisticBookCarousel),
   {
     ssr: false,
     loading: () => null, // We show static content while loading
@@ -29,8 +31,18 @@ function StaticFirstSlide({ review }: { review: Review }) {
   const coverImage = review.coverImage as Media;
 
   return (
-    <div className="grid gap-8 lg:grid-cols-2 lg:gap-24 items-center w-full px-4 lg:px-16">
-      <div className="flex flex-col justify-center space-y-6 order-2 lg:order-1 pl-6 md:pl-12 lg:pl-16 items-center text-center lg:items-start lg:text-left">
+    <motion.div
+      className="grid gap-8 lg:grid-cols-2 lg:gap-24 items-center w-full px-4 lg:px-16"
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <motion.div
+        className="flex flex-col justify-center space-y-6 order-2 lg:order-1 pl-6 md:pl-12 lg:pl-16 items-center text-center lg:items-start lg:text-left"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+      >
         <div className="space-y-2">
           <div className="flex items-center gap-2 justify-center lg:justify-start">
             <Badge
@@ -72,10 +84,15 @@ function StaticFirstSlide({ review }: { review: Review }) {
             </Link>
           </Button>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="flex justify-center lg:justify-end order-1 lg:order-2 pr-6 md:pr-12 lg:pr-16">
-        <div className="relative w-[280px] md:w-[350px] lg:w-[400px] aspect-2/3 shadow-2xl rounded-lg rotate-3 hover:rotate-0 transition-transform duration-500">
+      <motion.div
+        className="flex justify-center lg:justify-end order-1 lg:order-2 pr-6 md:pr-12 lg:pr-16"
+        initial={{ opacity: 0, x: 20, rotate: 6 }}
+        animate={{ opacity: 1, x: 0, rotate: 3 }}
+        transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
+      >
+        <div className="relative w-[280px] md:w-[350px] lg:w-[400px] aspect-2/3 shadow-2xl rounded-lg hover:rotate-0 transition-transform duration-500">
           {coverImage?.url && (
             <Image
               src={coverImage.url}
@@ -88,8 +105,8 @@ function StaticFirstSlide({ review }: { review: Review }) {
             />
           )}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -110,11 +127,15 @@ export function FeaturedHero({ reviews }: FeaturedHeroProps) {
   const hasMultipleReviews = reviews.length > 1;
 
   return (
-    <section className="relative overflow-hidden bg-muted/30 py-12 md:py-20 min-h-screen flex items-center">
-      <div className="container mx-auto px-6 md:px-12 lg:px-32 max-w-[1600px]">
+    <section className="relative overflow-hidden h-[calc(100vh-4rem)] flex items-center justify-center py-12 md:py-0">
+      <GradientBackground
+        className="absolute inset-0 opacity-20 dark:opacity-10 from-primary/40 via-accent/30 to-primary/20"
+        transition={{ duration: 20, ease: "easeInOut", repeat: Infinity }}
+      />
+      <div className="container mx-auto px-6 md:px-12 lg:px-32 max-w-[1600px] relative z-10 w-full">
         {hasMultipleReviews && mounted ? (
-          // Lazy-loaded carousel for multiple reviews (only after mount)
-          <FeaturedHeroCarousel reviews={reviews} />
+          // Lazy-loaded realistic book carousel for multiple reviews
+          <RealisticBookCarousel reviews={reviews} />
         ) : (
           // Static content for single review or initial render
           <StaticFirstSlide review={firstReview} />
