@@ -15,6 +15,7 @@ import { CommentSection } from "@/components/comments/CommentSection";
 import { LikeButton } from "@/components/reviews/LikeButton";
 import { ViewTracker } from "@/components/analytics/ViewTracker";
 import { RelatedReviews } from "@/components/reviews/RelatedReviews";
+import { ReadingProgressBar } from "@/components/ReadingProgressBar";
 
 interface PageProps {
   params: Promise<{
@@ -108,6 +109,7 @@ export default async function ReviewPage({ params }: PageProps) {
 
   return (
     <article className="min-h-screen pb-20">
+      <ReadingProgressBar />
       <ViewTracker reviewId={String(review.id)} />
       {/* Hero Header */}
       <div className="bg-muted/30 py-12 md:py-20">
