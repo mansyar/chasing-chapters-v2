@@ -12,6 +12,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "../ui/sheet";
+import { ModeToggle } from "@/components/mode-toggle";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 
@@ -81,6 +82,7 @@ export function Navbar() {
               onChange={(e) => setQuery(e.target.value)}
             />
           </form>
+          <ModeToggle />
           <Button
             variant="ghost"
             size="icon"

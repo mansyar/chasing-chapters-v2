@@ -9,6 +9,15 @@ import { Search, X } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 export const metadata: Metadata = {
   title: "Browse Reviews",
@@ -24,11 +33,14 @@ interface PageProps {
     q?: string;
     genre?: string;
     tag?: string;
+    page?: string;
   }>;
 }
 
 export default async function BrowsePage({ searchParams }: PageProps) {
-  const { q, genre, tag } = await searchParams;
+  const { q, genre, tag, page } = await searchParams;
+  const currentPage = Number(page) || 1;
+  const limit = 9;
   const payload = await getPayload({ config: configPromise });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -65,11 +77,13 @@ export default async function BrowsePage({ searchParams }: PageProps) {
     };
   }
 
-  const { docs: reviews } = await payload.find({
+  const { docs: reviews, totalPages } = await payload.find({
     collection: "reviews",
     where,
     sort: "-publishDate",
     depth: 1,
+    limit,
+    page: currentPage,
   });
 
   const { docs: genres } = await payload.find({
@@ -198,6 +212,156 @@ export default async function BrowsePage({ searchParams }: PageProps) {
           )}
         </div>
       </div>
+
+      {totalPages > 1 && (
+        <div className="mt-12">
+          <Pagination>
+            <PaginationContent>
+              {currentPage > 1 && (
+                <PaginationItem>
+                  <PaginationPrevious
+                    href={`/reviews?${new URLSearchParams({
+                      ...(q && { q }),
+                      ...(genre && { genre }),
+                      ...(tag && { tag }),
+                      page: (currentPage - 1).toString(),
+                    }).toString()}`}
+                  />
+                </PaginationItem>
+              )}
+
+              {/* First Page */}
+              {currentPage > 3 && (
+                <>
+                  <PaginationItem>
+                    <PaginationLink
+                      href={`/reviews?${new URLSearchParams({
+                        ...(q && { q }),
+                        ...(genre && { genre }),
+                        ...(tag && { tag }),
+                        page: "1",
+                      }).toString()}`}
+                    >
+                      1
+                    </PaginationLink>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                </>
+              )}
+
+              {/* Page Numbers */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(
+                  (p) =>
+                    p === 1 ||
+                    p === totalPages ||
+                    (p >= currentPage - 1 && p <= currentPage + 1)
+                )
+                .map((p) => {
+                  // Skip if previously handled by first/last page logic to avoid duplicates
+                  // specifically if we are showing 1 ... [current] ... last
+                  // logic above handles the ellipsis, here we just want the range around current
+                  // but simplifying: just show range around current, and first/last if far away.
+
+                  // Let's refine the logic to be simpler standard pagination
+                  // Show: 1 ... prev current next ... last
+
+                  // If page is 1 or last, we handled/will handle it or it's in the loop?
+                  // Let's just do a simple logic:
+                  // if page is within distance 1 of current, show it.
+                  if (p < currentPage - 1 && p !== 1) return null;
+                  if (p > currentPage + 1 && p !== totalPages) return null;
+
+                  // If it's 1 and we are far, we showed it above with ellipsis? No let's do it all here.
+                  return null;
+                })}
+
+              {/* Re-implementing logic clearly */}
+              {(() => {
+                const pages = [];
+                const showFirst = currentPage > 2;
+                const showLast = currentPage < totalPages - 1;
+
+                if (showFirst) {
+                  pages.push(1);
+                  if (currentPage > 3) pages.push("...");
+                }
+
+                const start = Math.max(1, currentPage - 1);
+                const end = Math.min(totalPages, currentPage + 1);
+
+                for (let i = start; i <= end; i++) {
+                  if (showFirst && i === 1) continue; // already pushed
+                  if (showLast && i === totalPages) continue; // will push later
+                  pages.push(i);
+                }
+
+                if (showLast) {
+                  if (currentPage < totalPages - 2) pages.push("...");
+                  pages.push(totalPages);
+                }
+
+                // Simplified approach if total pages is small
+                if (totalPages <= 5) {
+                  return Array.from(
+                    { length: totalPages },
+                    (_, i) => i + 1
+                  ).map((p) => (
+                    <PaginationItem key={p}>
+                      <PaginationLink
+                        isActive={p === currentPage}
+                        href={`/reviews?${new URLSearchParams({
+                          ...(q && { q }),
+                          ...(genre && { genre }),
+                          ...(tag && { tag }),
+                          page: p.toString(),
+                        }).toString()}`}
+                      >
+                        {p}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ));
+                }
+
+                return pages.map((p, i) => (
+                  <PaginationItem key={i}>
+                    {p === "..." ? (
+                      <PaginationEllipsis />
+                    ) : (
+                      <PaginationLink
+                        isActive={p === currentPage}
+                        href={`/reviews?${new URLSearchParams({
+                          ...(q && { q }),
+                          ...(genre && { genre }),
+                          ...(tag && { tag }),
+                          page: p.toString(),
+                        }).toString()}`}
+                      >
+                        {p}
+                      </PaginationLink>
+                    )}
+                  </PaginationItem>
+                ));
+              })()}
+
+              {currentPage < totalPages && (
+                <PaginationItem>
+                  <PaginationNext
+                    href={`/reviews?${new URLSearchParams({
+                      ...(q && { q }),
+                      ...(genre && { genre }),
+                      ...(tag && { tag }),
+                      page: (currentPage + 1).toString(),
+                    }).toString()}`}
+                  />
+                </PaginationItem>
+              )}
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
     </div>
   );
 }
