@@ -18,6 +18,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { GenreSelect } from "@/components/GenreSelect";
 
 export const metadata: Metadata = {
   title: "Browse Reviews",
@@ -129,7 +130,12 @@ export default async function BrowsePage({ searchParams }: PageProps) {
 
           <div>
             <h3 className="font-serif text-lg font-bold mb-4">Genres</h3>
-            <div className="flex flex-col gap-2">
+            {/* Mobile Dropdown */}
+            <div className="md:hidden">
+              <GenreSelect genres={genres} currentGenre={genre} />
+            </div>
+            {/* Desktop List */}
+            <div className="hidden md:flex flex-col gap-2">
               <Link
                 href="/reviews"
                 className={`text-sm hover:text-primary transition-colors ${
