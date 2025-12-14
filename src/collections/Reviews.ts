@@ -1,5 +1,6 @@
 import type { CollectionConfig, Where } from "payload";
 import formatSlug from "../hooks/formatSlug";
+import { translateReview } from "../hooks/translateReview";
 
 export const Reviews: CollectionConfig = {
   slug: "reviews",
@@ -79,25 +80,30 @@ export const Reviews: CollectionConfig = {
       name: "reviewContent",
       type: "richText",
       required: true,
+      localized: true,
     },
     {
       name: "whatILoved",
       type: "richText",
       label: "What I Loved",
+      localized: true,
     },
     {
       name: "whatCouldBeBetter",
       type: "richText",
       label: "What Could Be Better",
+      localized: true,
     },
     {
       name: "perfectFor",
       type: "richText",
       label: "Perfect For",
+      localized: true,
     },
     {
       name: "favoriteQuotes",
       type: "array",
+      localized: true,
       fields: [
         {
           name: "quote",
@@ -258,5 +264,6 @@ export const Reviews: CollectionConfig = {
         return data;
       },
     ],
+    afterChange: [translateReview],
   },
 };

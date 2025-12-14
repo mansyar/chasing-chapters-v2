@@ -13,6 +13,7 @@ import { RichText } from "@payloadcms/richtext-lexical/react";
 import { ShareButton } from "@/components/ShareButton";
 import { CommentSection } from "@/components/comments/CommentSection";
 import { LikeButton } from "@/components/reviews/LikeButton";
+import { LanguageToggle } from "@/components/reviews/LanguageToggle";
 import { ViewTracker } from "@/components/analytics/ViewTracker";
 import { RelatedReviews } from "@/components/reviews/RelatedReviews";
 import { ReadingProgressBar } from "@/components/ReadingProgressBar";
@@ -21,6 +22,7 @@ interface PageProps {
   params: Promise<{
     slug: string;
   }>;
+  searchParams: Promise<{ locale?: string }>;
 }
 
 export async function generateMetadata({
@@ -81,12 +83,14 @@ export async function generateMetadata({
   };
 }
 
-export default async function ReviewPage({ params }: PageProps) {
+export default async function ReviewPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
+  const { locale = "en" } = await searchParams;
   const payload = await getPayload({ config: configPromise });
 
   const { docs: reviews } = await payload.find({
     collection: "reviews",
+    locale: locale as "en" | "id",
     where: {
       slug: {
         equals: slug,
@@ -180,6 +184,7 @@ export default async function ReviewPage({ params }: PageProps) {
                     </Badge>
                   ))}
 
+                <LanguageToggle />
                 <ShareButton
                   title={`Read this review of ${review.title}`}
                   className="ml-2"
