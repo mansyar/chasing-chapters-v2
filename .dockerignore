@@ -17,4 +17,3 @@ Dockerfile.dev
 docker-compose.yml
 docker-compose.test.yml
 docker-compose.prod.yml
-pnpm-workspace.yaml
