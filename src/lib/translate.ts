@@ -9,11 +9,40 @@ const getTranslateClient = () => {
   // Option 1: Inline JSON credentials (for Docker/production)
   if (process.env.GOOGLE_CLOUD_CREDENTIALS) {
     console.log("[Translation] Using inline credentials");
-    const credentials = JSON.parse(process.env.GOOGLE_CLOUD_CREDENTIALS);
-    return new v2.Translate({
-      credentials,
-      projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
-    });
+
+    let credentialsStr = process.env.GOOGLE_CLOUD_CREDENTIALS.trim();
+
+    // Remove surrounding quotes if present (common issue with env vars)
+    if (
+      (credentialsStr.startsWith("'") && credentialsStr.endsWith("'")) ||
+      (credentialsStr.startsWith('"') && credentialsStr.endsWith('"'))
+    ) {
+      credentialsStr = credentialsStr.slice(1, -1);
+    }
+
+    // Log first few characters for debugging (don't log the whole thing for security)
+    console.log(
+      `[Translation] Credentials start with: ${credentialsStr.substring(0, 20)}...`
+    );
+
+    try {
+      const credentials = JSON.parse(credentialsStr);
+      return new v2.Translate({
+        credentials,
+        projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
+      });
+    } catch (parseError) {
+      console.error(
+        "[Translation] Failed to parse GOOGLE_CLOUD_CREDENTIALS:",
+        parseError
+      );
+      console.error(
+        `[Translation] Credentials length: ${credentialsStr.length}, first char: '${credentialsStr[0]}', last char: '${credentialsStr[credentialsStr.length - 1]}'`
+      );
+      throw new Error(
+        "Invalid GOOGLE_CLOUD_CREDENTIALS JSON format. Ensure the JSON is properly escaped in your environment variable."
+      );
+    }
   }
 
   // Option 2: Credentials file path
