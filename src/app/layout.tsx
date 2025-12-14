@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL || "https://chasing-chapters.com"
+  ),
   title: {
     default: "Chasing Chapters",
     template: "%s | Chasing Chapters",
