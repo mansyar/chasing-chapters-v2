@@ -20,6 +20,15 @@ const getTranslateClient = () => {
       credentialsStr = credentialsStr.slice(1, -1);
     }
 
+    // Handle double-escaped JSON (common with Docker build args)
+    // If we see \" it means the JSON is escaped and needs to be unescaped
+    if (credentialsStr.includes('\\"')) {
+      console.log("[Translation] Detected double-escaped JSON, unescaping...");
+      credentialsStr = credentialsStr
+        .replace(/\\"/g, '"')
+        .replace(/\\\\/g, "\\");
+    }
+
     // Log first few characters for debugging (don't log the whole thing for security)
     console.log(
       `[Translation] Credentials start with: ${credentialsStr.substring(0, 20)}...`
