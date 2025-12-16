@@ -3,12 +3,26 @@
 import { getPayload } from "payload";
 import configPromise from "@payload-config";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
+import { rateLimit, getClientIP } from "@/lib/rate-limit";
 
 export async function toggleLikeReview(
   reviewId: string,
   shouldIncrement: boolean
 ): Promise<{ success: boolean; newLikes?: number; error?: string }> {
   try {
+    // Rate limit: 5 likes per minute per review per IP
+    const headersList = await headers();
+    const ip = getClientIP(headersList);
+    const rateLimitResult = await rateLimit(`like:${ip}:${reviewId}`, 5, 60);
+
+    if (!rateLimitResult.success) {
+      return {
+        success: false,
+        error: `Too many requests. Please wait ${rateLimitResult.resetInSeconds} seconds.`,
+      };
+    }
+
     const payload = await getPayload({ config: configPromise });
 
     // Convert string ID to number (Payload CMS with PostgreSQL uses numeric IDs)

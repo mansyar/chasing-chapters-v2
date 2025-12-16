@@ -4,6 +4,8 @@ import { getPayload } from "payload";
 import configPromise from "@payload-config";
 import { revalidatePath } from "next/cache";
 import { isSpamContent } from "@/lib/blocklist";
+import { headers } from "next/headers";
+import { rateLimit, getClientIP } from "@/lib/rate-limit";
 
 // Types for action responses
 type ActionResult<T = void> =
@@ -24,6 +26,18 @@ export async function submitComment(
   formData: CommentFormData
 ): Promise<ActionResult<{ status: string }>> {
   try {
+    // Rate limit: 3 comments per minute per IP
+    const headersList = await headers();
+    const ip = getClientIP(headersList);
+    const rateLimitResult = await rateLimit(`comment:${ip}`, 3, 60);
+
+    if (!rateLimitResult.success) {
+      return {
+        success: false,
+        error: `Too many comments. Please wait ${rateLimitResult.resetInSeconds} seconds.`,
+      };
+    }
+
     const payload = await getPayload({ config: configPromise });
     const { name, email, content, reviewId } = formData;
 
@@ -168,6 +182,18 @@ export async function reportComment(
   reporterEmail: string
 ): Promise<ActionResult> {
   try {
+    // Rate limit: 5 reports per 5 minutes per IP
+    const headersList = await headers();
+    const ip = getClientIP(headersList);
+    const rateLimitResult = await rateLimit(`report:${ip}`, 5, 300);
+
+    if (!rateLimitResult.success) {
+      return {
+        success: false,
+        error: `Too many reports. Please wait ${Math.ceil(rateLimitResult.resetInSeconds / 60)} minutes.`,
+      };
+    }
+
     const payload = await getPayload({ config: configPromise });
 
     // Validate email

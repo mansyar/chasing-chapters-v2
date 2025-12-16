@@ -2,9 +2,21 @@
 
 import { getPayload } from "payload";
 import configPromise from "@payload-config";
+import { headers } from "next/headers";
+import { rateLimit, getClientIP } from "@/lib/rate-limit";
 
 export async function incrementView(reviewId: string) {
   try {
+    // Rate limit: 1 view per minute per review per IP (prevents refresh spam)
+    const headersList = await headers();
+    const ip = getClientIP(headersList);
+    const rateLimitResult = await rateLimit(`view:${ip}:${reviewId}`, 1, 60);
+
+    // Silently ignore rate-limited view tracking
+    if (!rateLimitResult.success) {
+      return;
+    }
+
     const payload = await getPayload({ config: configPromise });
 
     // Fetch current to get value - in a high scale app we'd want atomic incr
