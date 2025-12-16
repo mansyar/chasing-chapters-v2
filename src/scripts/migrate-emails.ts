@@ -32,9 +32,11 @@ async function migrateEmails() {
 
   for (const commenter of commenters) {
     // Check if we have emailHash field (new schema) vs email field (old schema)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const currentValue =
-      (commenter as any).emailHash || (commenter as any).email;
+    // Cast to Record to handle schema transition
+    const commenterData = commenter as unknown as Record<string, unknown>;
+    const currentValue = (commenterData.emailHash || commenterData.email) as
+      | string
+      | undefined;
 
     if (!currentValue) {
       console.log(`⚠️  Skipping ${commenter.id} - no email found`);
@@ -59,11 +61,8 @@ async function migrateEmails() {
       await payload.update({
         collection: "commenters",
         id: commenter.id,
-        data: {
-          // Use type assertion since schema is changing
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          emailHash: hash,
-        } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        data: { emailHash: hash } as any,
       });
 
       console.log(
