@@ -1,9 +1,8 @@
 "use server";
 
-import { getPayload } from "payload";
-import configPromise from "@payload-config";
 import { headers } from "next/headers";
 import { rateLimit, getClientIP } from "@/lib/rate-limit";
+import { atomicIncrement } from "@/lib/db";
 
 export async function incrementView(reviewId: string) {
   try {
@@ -17,30 +16,14 @@ export async function incrementView(reviewId: string) {
       return;
     }
 
-    const payload = await getPayload({ config: configPromise });
+    // Parse and validate the review ID
+    const numericId = parseInt(reviewId, 10);
+    if (isNaN(numericId)) {
+      return;
+    }
 
-    // Fetch current to get value - in a high scale app we'd want atomic incr
-    // Payload doesn't expose raw atomic incr easily via local API yet without custom DB access
-    // so read-modify-write is acceptable for this scale.
-    const review = await payload.findByID({
-      collection: "reviews",
-      id: reviewId,
-    });
-
-    if (!review) return;
-
-    await payload.update({
-      collection: "reviews",
-      id: reviewId,
-      data: {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        views: ((review as any).views || 0) + 1,
-      },
-      // Override access control so anonymous visitors can increment views
-      overrideAccess: true,
-      draft: false,
-      depth: 0,
-    });
+    // Atomic increment - no race condition on concurrent requests
+    await atomicIncrement(numericId, "views");
   } catch (error) {
     console.error("Failed to track view:", error);
     // Be silent on errors to not disrupt user experience
