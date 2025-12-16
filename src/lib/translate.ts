@@ -1,6 +1,7 @@
 import { v2 } from "@google-cloud/translate";
 import path from "path";
 import fs from "fs";
+import { getCachedTranslation, setCachedTranslation } from "./redis";
 
 // Initialize client - handles both file-based and inline credentials
 const getTranslateClient = () => {
@@ -106,6 +107,12 @@ export async function translateText(
 ): Promise<string> {
   if (!text || text.trim() === "") return text;
 
+  // Check cache first
+  const cached = await getCachedTranslation(text, targetLanguage);
+  if (cached) {
+    return cached;
+  }
+
   console.log(
     `[Translation] Translating ${text.length} chars to ${targetLanguage}...`
   );
@@ -123,6 +130,10 @@ export async function translateText(
     console.log(
       `[Translation] Success! Translated to: ${translation.substring(0, 50)}...`
     );
+
+    // Cache the result
+    await setCachedTranslation(text, targetLanguage, translation);
+
     return translation;
   } catch (error) {
     console.error("[Translation] Failed:", error);

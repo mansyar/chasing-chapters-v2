@@ -147,15 +147,25 @@ export const translateReview: CollectionAfterChangeHook = async ({
 
   const wasPublished = previousDoc?._status === "published";
 
-  // Check for text changes (requires translation)
-  const textChanged =
-    extractPlainText(doc.reviewContent) !==
-    extractPlainText(previousDoc?.reviewContent);
+  // All localized rich text fields to check
+  const richTextFields = [
+    "reviewContent",
+    "whatILoved",
+    "whatCouldBeBetter",
+    "perfectFor",
+  ] as const;
 
-  // Check for any changes including format (JSON comparison)
-  const anyContentChanged =
-    JSON.stringify(doc.reviewContent) !==
-    JSON.stringify(previousDoc?.reviewContent);
+  // Check for text changes in any field (requires translation)
+  const textChanged = richTextFields.some(
+    (field) =>
+      extractPlainText(doc[field]) !== extractPlainText(previousDoc?.[field])
+  );
+
+  // Check for any changes including format in any field
+  const anyContentChanged = richTextFields.some(
+    (field) =>
+      JSON.stringify(doc[field]) !== JSON.stringify(previousDoc?.[field])
+  );
 
   if (!wasPublished || textChanged) {
     // First publish or text changed - full translation
