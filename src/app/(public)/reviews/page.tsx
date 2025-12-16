@@ -26,8 +26,8 @@ export const metadata: Metadata = {
     "Explore our collection of book reviews. Filter by genre, tag, or search for specific titles and authors.",
 };
 
-// Render at request time since we need database access
-export const dynamic = "force-dynamic";
+// Enable ISR with 60 second revalidation for better caching
+export const revalidate = 60;
 
 interface PageProps {
   searchParams: Promise<{

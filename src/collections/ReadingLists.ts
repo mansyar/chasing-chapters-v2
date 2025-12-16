@@ -1,5 +1,6 @@
 import type { CollectionConfig } from "payload";
 import formatSlug from "../hooks/formatSlug";
+import { revalidateReadingListPages } from "../hooks/revalidatePages";
 
 export const ReadingLists: CollectionConfig = {
   slug: "reading-lists",
@@ -93,4 +94,7 @@ export const ReadingLists: CollectionConfig = {
       },
     },
   ],
+  hooks: {
+    afterChange: [revalidateReadingListPages],
+  },
 };

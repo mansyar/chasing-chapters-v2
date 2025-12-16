@@ -7,6 +7,9 @@ import { ReviewCard } from "@/components/ReviewCard";
 import { ShareButton } from "@/components/ShareButton";
 import type { Media, Review } from "@/payload-types";
 
+// Enable ISR with 60 second revalidation for better caching
+export const revalidate = 60;
+
 interface PageProps {
   params: Promise<{
     slug: string;

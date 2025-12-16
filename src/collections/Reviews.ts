@@ -1,6 +1,7 @@
 import type { CollectionConfig, Where } from "payload";
 import formatSlug from "../hooks/formatSlug";
 import { translateReview } from "../hooks/translateReview";
+import { revalidateReviewPages } from "../hooks/revalidatePages";
 
 export const Reviews: CollectionConfig = {
   slug: "reviews",
@@ -264,6 +265,6 @@ export const Reviews: CollectionConfig = {
         return data;
       },
     ],
-    afterChange: [translateReview],
+    afterChange: [translateReview, revalidateReviewPages],
   },
 };
