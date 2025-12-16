@@ -12,7 +12,7 @@ const withBundleAnalyzer = bundleAnalyzer({
 // Protects against XSS and injection attacks
 const publicCspHeader = `
   default-src 'self';
-  script-src 'self';
+  script-src 'self' 'unsafe-inline';
   style-src 'self' 'unsafe-inline';
   img-src 'self' blob: data: https://*.r2.dev;
   font-src 'self';
