@@ -181,8 +181,8 @@ export function createRichTextFromPlain(text: string): object {
 }
 
 // Translate rich text while preserving the Lexical structure
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function translateRichText(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   richText: any,
   targetLanguage: string = "id"
 ): Promise<object> {
@@ -227,9 +227,10 @@ export async function translateRichText(
 
 // Sync rich text format from source to target while preserving target's text content
 // Used when only formatting changed (not text) - avoids re-translation
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function syncRichTextFormat(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sourceRichText: any, // New version (source of structure/format)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   targetRichText: any // Existing translated version (source of text)
 ): object {
   if (!sourceRichText?.root) return sourceRichText;
