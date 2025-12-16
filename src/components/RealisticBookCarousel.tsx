@@ -273,9 +273,8 @@ export function RealisticBookCarousel({ reviews }: RealisticBookCarouselProps) {
                     <div className="pt-2 flex justify-center">
                       <Button
                         asChild
-                        variant="outline"
                         size="sm"
-                        className="font-medium hover:bg-primary hover:text-white transition-colors border-primary/20"
+                        className="font-semibold bg-orange-500 hover:bg-orange-600 text-white shadow-sm hover:shadow-md transition-all"
                       >
                         <Link href={`/reviews/${review.slug}`}>
                           Read Review <ArrowRight className="ml-2 h-4 w-4" />
@@ -335,8 +334,7 @@ export function RealisticBookCarousel({ reviews }: RealisticBookCarouselProps) {
                 <div className="pt-4 flex justify-center md:justify-start">
                   <Button
                     asChild
-                    variant="outline"
-                    className="font-medium hover:bg-primary hover:text-white transition-colors border-primary/20"
+                    className="font-semibold bg-orange-500 hover:bg-orange-600 text-white shadow-sm hover:shadow-md transition-all"
                   >
                     <Link href={`/reviews/${review.slug}`}>
                       Read Review <ArrowRight className="ml-2 h-4 w-4" />
