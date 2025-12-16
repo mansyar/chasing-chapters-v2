@@ -3,11 +3,12 @@ import { getPayload } from "payload";
 import configPromise from "@payload-config";
 import {
   translateText,
+  translateRichText,
   extractPlainText,
-  createRichTextFromPlain,
+  syncRichTextFormat,
 } from "../lib/translate";
 
-// Run translation in background (don't block the publish)
+// Run full translation in background (when text changed)
 async function runTranslationInBackground(
   docId: number,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -18,24 +19,22 @@ async function runTranslationInBackground(
   );
 
   try {
-    // Translate rich text fields
-    const translatedReviewContent = await translateText(
-      extractPlainText(doc.reviewContent)
-    );
+    // Translate rich text fields while preserving structure
+    const translatedReviewContent = await translateRichText(doc.reviewContent);
 
     const translatedWhatILoved = doc.whatILoved
-      ? await translateText(extractPlainText(doc.whatILoved))
+      ? await translateRichText(doc.whatILoved)
       : null;
 
     const translatedWhatCouldBeBetter = doc.whatCouldBeBetter
-      ? await translateText(extractPlainText(doc.whatCouldBeBetter))
+      ? await translateRichText(doc.whatCouldBeBetter)
       : null;
 
     const translatedPerfectFor = doc.perfectFor
-      ? await translateText(extractPlainText(doc.perfectFor))
+      ? await translateRichText(doc.perfectFor)
       : null;
 
-    // Translate favorite quotes (don't include id - Payload will generate new ones)
+    // Translate favorite quotes (plain text array, not rich text)
     const translatedQuotes = doc.favoriteQuotes
       ? await Promise.all(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -48,25 +47,17 @@ async function runTranslationInBackground(
 
     console.log("[Translation] Saving Indonesian translations...");
 
-    // Get a fresh Payload instance for the background task
     const payload = await getPayload({ config: configPromise });
 
-    // Update the Indonesian locale version
     await payload.update({
       collection: "reviews",
       id: docId,
       locale: "id",
       data: {
-        reviewContent: createRichTextFromPlain(translatedReviewContent),
-        whatILoved: translatedWhatILoved
-          ? createRichTextFromPlain(translatedWhatILoved)
-          : null,
-        whatCouldBeBetter: translatedWhatCouldBeBetter
-          ? createRichTextFromPlain(translatedWhatCouldBeBetter)
-          : null,
-        perfectFor: translatedPerfectFor
-          ? createRichTextFromPlain(translatedPerfectFor)
-          : null,
+        reviewContent: translatedReviewContent,
+        whatILoved: translatedWhatILoved,
+        whatCouldBeBetter: translatedWhatCouldBeBetter,
+        perfectFor: translatedPerfectFor,
         favoriteQuotes: translatedQuotes,
       },
       context: {
@@ -77,6 +68,66 @@ async function runTranslationInBackground(
     console.log(`[Translation] Complete for: ${doc.title}`);
   } catch (error) {
     console.error("[Translation] Background translation failed:", error);
+  }
+}
+
+// Sync format only in background (when only formatting changed, not text)
+async function runFormatSyncInBackground(
+  docId: number,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  doc: any
+) {
+  console.log(`[Translation] Starting format sync for: ${doc.title}`);
+
+  try {
+    const payload = await getPayload({ config: configPromise });
+
+    // Get existing Indonesian version
+    const existingDoc = await payload.findByID({
+      collection: "reviews",
+      id: docId,
+      locale: "id",
+    });
+
+    // Sync format from new English version but keep translated text
+    const syncedReviewContent = syncRichTextFormat(
+      doc.reviewContent,
+      existingDoc.reviewContent
+    );
+
+    const syncedWhatILoved = doc.whatILoved
+      ? syncRichTextFormat(doc.whatILoved, existingDoc.whatILoved)
+      : null;
+
+    const syncedWhatCouldBeBetter = doc.whatCouldBeBetter
+      ? syncRichTextFormat(doc.whatCouldBeBetter, existingDoc.whatCouldBeBetter)
+      : null;
+
+    const syncedPerfectFor = doc.perfectFor
+      ? syncRichTextFormat(doc.perfectFor, existingDoc.perfectFor)
+      : null;
+
+    console.log("[Translation] Saving format sync...");
+
+    await payload.update({
+      collection: "reviews",
+      id: docId,
+      locale: "id",
+      data: {
+        reviewContent: syncedReviewContent,
+        whatILoved: syncedWhatILoved,
+        whatCouldBeBetter: syncedWhatCouldBeBetter,
+        perfectFor: syncedPerfectFor,
+        // favoriteQuotes unchanged - no format to sync
+      },
+      context: {
+        skipTranslation: true,
+      },
+    });
+
+    console.log(`[Translation] Format sync complete for: ${doc.title}`);
+  } catch (error) {
+    console.error("[Translation] Format sync failed:", error);
   }
 }
 
@@ -91,24 +142,32 @@ export const translateReview: CollectionAfterChangeHook = async ({
     return doc;
   }
 
-  // Only translate when published
+  // Only process when published
   if (doc._status !== "published") return doc;
 
-  // Check if we need to translate
   const wasPublished = previousDoc?._status === "published";
-  const contentChanged =
+
+  // Check for text changes (requires translation)
+  const textChanged =
     extractPlainText(doc.reviewContent) !==
     extractPlainText(previousDoc?.reviewContent);
 
-  if (wasPublished && !contentChanged) {
-    return doc;
-  }
+  // Check for any changes including format (JSON comparison)
+  const anyContentChanged =
+    JSON.stringify(doc.reviewContent) !==
+    JSON.stringify(previousDoc?.reviewContent);
 
-  // Run translation in background - don't await!
-  // This allows the publish to complete immediately
-  runTranslationInBackground(doc.id, doc).catch((err) => {
-    console.error("[Translation] Background task error:", err);
-  });
+  if (!wasPublished || textChanged) {
+    // First publish or text changed - full translation
+    runTranslationInBackground(doc.id, doc).catch((err) => {
+      console.error("[Translation] Background task error:", err);
+    });
+  } else if (anyContentChanged) {
+    // Format only changed - sync format without re-translating
+    runFormatSyncInBackground(doc.id, doc).catch((err) => {
+      console.error("[Translation] Format sync error:", err);
+    });
+  }
 
   return doc;
 };

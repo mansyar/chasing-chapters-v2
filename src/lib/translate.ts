@@ -168,3 +168,105 @@ export function createRichTextFromPlain(text: string): object {
     },
   };
 }
+
+// Translate rich text while preserving the Lexical structure
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function translateRichText(
+  richText: any,
+  targetLanguage: string = "id"
+): Promise<object> {
+  if (!richText?.root) return richText;
+
+  // Recursively translate text nodes while preserving structure
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const translateNode = async (node: any): Promise<any> => {
+    // Text node - translate the content
+    if (node.type === "text" && node.text) {
+      const translatedText = await translateText(node.text, targetLanguage);
+      return {
+        ...node,
+        text: translatedText,
+      };
+    }
+
+    // Container node with children - recurse
+    if (node.children && Array.isArray(node.children)) {
+      const translatedChildren = await Promise.all(
+        node.children.map(translateNode)
+      );
+      return {
+        ...node,
+        children: translatedChildren,
+      };
+    }
+
+    // Other nodes (e.g., linebreak) - return as-is
+    return node;
+  };
+
+  try {
+    const translatedRoot = await translateNode(richText.root);
+    return { root: translatedRoot };
+  } catch (error) {
+    console.error("[Translation] Failed to translate rich text:", error);
+    // Return original on failure
+    return richText;
+  }
+}
+
+// Sync rich text format from source to target while preserving target's text content
+// Used when only formatting changed (not text) - avoids re-translation
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function syncRichTextFormat(
+  sourceRichText: any, // New version (source of structure/format)
+  targetRichText: any // Existing translated version (source of text)
+): object {
+  if (!sourceRichText?.root) return sourceRichText;
+  if (!targetRichText?.root) return sourceRichText;
+
+  // Collect all text nodes from target in order
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const collectTextNodes = (node: any): string[] => {
+    if (node.type === "text" && node.text) {
+      return [node.text];
+    }
+    if (node.children && Array.isArray(node.children)) {
+      return node.children.flatMap(collectTextNodes);
+    }
+    return [];
+  };
+
+  const targetTexts = collectTextNodes(targetRichText.root);
+  let textIndex = 0;
+
+  // Apply source structure but use target's text content
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const syncNode = (node: any): any => {
+    if (node.type === "text" && node.text) {
+      // Use translated text from target if available
+      const translatedText = targetTexts[textIndex] ?? node.text;
+      textIndex++;
+      return {
+        ...node,
+        text: translatedText,
+      };
+    }
+
+    if (node.children && Array.isArray(node.children)) {
+      return {
+        ...node,
+        children: node.children.map(syncNode),
+      };
+    }
+
+    return node;
+  };
+
+  try {
+    const syncedRoot = syncNode(sourceRichText.root);
+    return { root: syncedRoot };
+  } catch (error) {
+    console.error("[Translation] Failed to sync rich text format:", error);
+    return sourceRichText;
+  }
+}
