@@ -2,15 +2,15 @@
 
 ### Project Name: Chasing Chapters
 
-A modern personal book-review platform for your wife.
+A modern personal book-review platform.
 
 ---
 
 # 1. Project Overview
 
-Chasing Chapters is a beautifully crafted personal book review platform - a digital space that feels like a boutique bookstore website meets a personal literary journal. It allows your wife to share her reading journey with thoughtful, detailed reviews in an elegant and intimate yet shareable space.
+Chasing Chapters is a beautifully crafted personal book review platform - a digital space that feels like a boutique bookstore website meets a personal literary journal. It allows sharing reading journeys with thoughtful, detailed reviews in an elegant and intimate yet shareable space.
 
-The solution uses Next.js 15 (frontend) and Payload CMS (backend) in a monorepo, self-hosted, with ISR/SSG for performance. Initially for one author but scalable for multiple authors.
+The solution uses Next.js 16 (frontend) and Payload CMS 3.0 (backend) in a unified application, self-hosted, with ISR/SSG for performance. Initially for one author but scalable for multiple authors.
 
 ## Core Value Proposition
 
@@ -19,6 +19,7 @@ The solution uses Next.js 15 (frontend) and Payload CMS (backend) in a monorepo,
 - **Beautiful Presentation**: Book covers and typography take center stage
 - **Easy Publishing**: Streamlined workflow from draft to published review
 - **Discovery Experience**: Beautiful layouts that inspire readers to explore more books
+- **Bilingual Support**: Automatic translation between English and Indonesian
 
 ---
 
@@ -26,15 +27,16 @@ The solution uses Next.js 15 (frontend) and Payload CMS (backend) in a monorepo,
 
 ## Primary Goals
 
-- Enable your wife to easily write and publish book reviews.
-- Provide an elegant, modern site for readers.
-- Ensure a smooth drafting and publishing workflow.
+- Enable easy writing and publishing of book reviews
+- Provide an elegant, modern site for readers
+- Ensure a smooth drafting and publishing workflow
 
 ## Secondary Goals
 
-- Build a scalable multi-author foundation.
-- Deliver fast performance with ISR/SSG.
-- Maintain a clean and premium user experience.
+- Build a scalable multi-author foundation
+- Deliver fast performance with ISR/SSG
+- Maintain a clean and premium user experience
+- Provide robust security and privacy protections
 
 ---
 
@@ -42,11 +44,12 @@ The solution uses Next.js 15 (frontend) and Payload CMS (backend) in a monorepo,
 
 ## Primary User
 
-**Author (your wife)**
+**Author**
 
 - Writes, edits, and publishes reviews
 - Uploads cover images
 - Organizes genres/tags
+- Moderates comments
 
 ## Secondary Users
 
@@ -55,6 +58,7 @@ The solution uses Next.js 15 (frontend) and Payload CMS (backend) in a monorepo,
 - Browse reviews
 - Search by title, genre, author
 - Like/react/comment
+- Switch between English and Indonesian
 
 ---
 
@@ -72,6 +76,7 @@ The solution uses Next.js 15 (frontend) and Payload CMS (backend) in a monorepo,
 - Highlight favorite quotes with special formatting
 - View personal reading stats (books per month, favorite genres, average rating)
 - Moderate and approve comments
+- See reviews automatically translated to Indonesian
 
 ## Reader
 
@@ -79,8 +84,10 @@ The solution uses Next.js 15 (frontend) and Payload CMS (backend) in a monorepo,
 - Search for books by title, author, or genre
 - Browse by genres, tags, and moods
 - Discover curated reading lists
-- React to reviews (likes, emojis)
+- React to reviews (likes)
 - Leave comments
+- Toggle between English and Indonesian translations
+- Share reviews on social media
 
 ---
 
@@ -95,7 +102,7 @@ Each review includes:
 - Rating (1–5 stars)
 - Genre(s)
 - Tags
-- Cover image upload
+- Cover image upload (stored on Cloudflare R2)
 - Review content with rich formatting:
   - "What I Loved" section
   - "What Could Be Better" section
@@ -104,45 +111,62 @@ Each review includes:
 - Reading dates (started/finished)
 - Mood tags (cozy, intense, thought-provoking, etc.)
 - Featured toggle (homepage)
-- Likes count
-- Reactions (heart, fire, thumbs up)
-- Comments with moderation
+- Likes count (with atomic database operations)
+- Views count (with atomic database operations)
+- Comments with moderation and spam detection
 - Draft/Published/Scheduled status
+- Automatic translation to Indonesian
 
 ## 5.2 Public Site Features
 
 - Homepage:
-  - Featured books
-  - Latest reviews
+  - Featured books carousel
+  - Latest reviews grid
   - Search bar
-- Review detail pages
+- Review detail pages with reading progress bar
 - Genre pages
 - Tag pages
+- Reading list pages
 - Search results
-- Comments (with moderation)
-- Reactions/likes (client-side)
+- Comments (with moderation and spam filtering)
+- Like system (rate-limited)
+- Language toggle (English/Indonesian)
+- Social share buttons
+- Related reviews recommendations
 - RSS feed for new reviews
-- Social share cards (auto-generated)
 
-## 5.3 Admin/CMS Features
+## 5.3 Admin/CMS Features (Payload CMS)
 
 - Author login with secure authentication
 - Dashboard to manage:
   - Reviews (drafts, published, scheduled)
   - Genres, tags, and mood tags
-  - Media uploads and organization
+  - Media uploads (stored on Cloudflare R2)
   - Curated reading lists
+  - Commenters (with ban capability)
 - Comment moderation panel
-- Personal reading stats and insights
-- Review templates for different genres
+- On-demand page revalidation when content is published
 
-## 5.4 Engagement Features
+## 5.4 Security Features
 
-- **Share Cards**: Auto-generated beautiful social media images for each review
-- **RSS Feed**: Allow readers to subscribe to new reviews
-- **Reading Challenge**: Annual reading goals tracker (e.g., "Read 24 books in 2025")
-- **Contextual Recommendations**: "If you liked this review, check out..." based on genres/tags
-- **Newsletter Integration**: Optional email updates for new reviews (future)
+- **Content Security Policy (CSP)**: Split strategy with restrictive CSP for public routes and relaxed CSP for admin
+- **Rate Limiting**: Redis-based rate limiting on:
+  - View tracking (1/min per IP per review)
+  - Like toggling (5/min per IP per review)
+  - Comment submission (3/min per IP)
+  - Comment reporting (2/min per IP)
+- **Spam Detection**: Blocklist-based spam filtering for comments
+- **Email Privacy**: Commenter emails hashed with SHA-256
+- **Atomic Operations**: Race-condition-free view/like tracking using PostgreSQL
+- **Security Headers**: HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy
+
+## 5.5 Monitoring & Observability
+
+- **Sentry Error Tracking**: Production error monitoring with:
+  - Automatic error capture
+  - Performance monitoring (10% sampling)
+  - Session replay on errors
+  - Source map uploads for readable stack traces
 
 ---
 
@@ -153,15 +177,17 @@ Each review includes:
 - Goodreads API integration
 - Multi-author system
 - User accounts for commenters
-- Analytics dashboard
+- Newsletter integration
+- Reading challenge tracker
 
 ---
 
 # 7. Content Model (Payload CMS Collections)
 
-## Authors
+## Users (Authors)
 
 - name
+- email
 - avatar
 - bio
 - role (admin/writer)
@@ -169,26 +195,26 @@ Each review includes:
 ## Reviews
 
 - title
+- slug (auto-generated)
 - bookAuthor
 - rating
 - genres (relation)
 - tags (relation)
 - moodTags (relation)
-- coverImage (upload)
-- reviewContent (rich text)
-- whatILoved (rich text)
-- whatCouldBeBetter (rich text)
-- perfectFor (rich text)
-- favoriteQuotes (array of rich text)
+- coverImage (upload to R2)
+- reviewContent (rich text, localized)
+- whatILoved (rich text, localized)
+- whatCouldBeBetter (rich text, localized)
+- perfectFor (rich text, localized)
+- favoriteQuotes (array, localized)
 - readingStartDate
 - readingFinishDate
 - featured (boolean)
-- likes (integer)
-- reactions (object: heart, fire, thumbsUp)
-- status (draft/published/scheduled)
+- likes (integer, atomic updates)
+- views (integer, atomic updates)
+- status (draft/published)
 - publishDate (datetime)
-- author (relation to Authors)
-- relatedReviews (relation to Reviews)
+- author (relation to Users)
 - createdAt
 - updatedAt
 
@@ -208,15 +234,15 @@ Each review includes:
 - name
 - slug
 - color (hex)
-- icon (optional)
+- icon (emoji)
 
 ## ReadingLists
 
 - title
+- slug
 - description
 - reviews (relation to Reviews)
 - coverImage (upload)
-- slug
 - featured (boolean)
 - createdAt
 
@@ -224,89 +250,109 @@ Each review includes:
 
 - authorName
 - content
-- relatedReview
+- relatedReview (relation)
+- commenter (relation)
+- status (pending/approved/rejected/reported)
+- reportCount
+- reportedBy (array)
 - createdAt
-- approved (boolean)
+
+## Commenters
+
+- emailHash (SHA-256 hashed email)
+- displayName
+- approvedCommentCount
+- trusted (boolean)
+- banned (boolean)
 
 ## Media
 
-- cover images and uploads
+- file (stored on Cloudflare R2)
+- alt text
+- createdAt
 
 ---
 
 # 8. Architecture Overview
 
-**Single Next.js 15 Application with Integrated Payload CMS**
+**Single Next.js 16 Application with Integrated Payload CMS**
 
-The platform is built as a unified Next.js application with Payload CMS integrated directly, eliminating the complexity of a monorepo while maintaining all functionality.
+The platform is built as a unified Next.js application with Payload CMS integrated directly.
 
 ## Project Structure:
 
 ```
 chasing-chapters/
-├── app/                    # Next.js 15 App Router
-│   ├── (payload)/         # Payload routes
-│   │   ├── admin/         # Admin panel (/admin)
-│   │   └── api/           # REST API (/api/*)
-│   ├── (public)/          # Public routes
-│   │   ├── reviews/       # Review pages
-│   │   ├── genres/        # Genre pages
-│   │   ├── tags/          # Tag pages
-│   │   └── search/        # Search
-│   ├── layout.tsx         # Root layout
-│   ├── page.tsx           # Homepage
-│   └── globals.css        # Global styles
-├── collections/           # Payload CMS collections
-│   ├── Authors.ts
-│   ├── Reviews.ts
-│   ├── Genres.ts
-│   ├── Tags.ts
-│   ├── MoodTags.ts
-│   ├── ReadingLists.ts
-│   ├── Comments.ts
-│   └── Media.ts
-├── actions/               # Next.js Server Actions
-│   ├── reactions.ts       # Like/reaction mutations
-│   └── comments.ts        # Comment submissions
-├── components/            # React components
-│   ├── ui/               # Base UI components
-│   ├── reviews/          # Review components
-│   └── layout/           # Header, Footer, Nav
-├── access/               # Payload access control
-├── hooks/                # Payload hooks
-├── lib/                  # Utilities
-├── public/               # Static assets
-├── payload.config.ts     # Payload configuration
-├── next.config.js        # Next.js configuration
-├── Dockerfile            # Docker image for VPS
-└── docker-compose.yml    # Development environment
+├── src/
+│   ├── app/                    # Next.js App Router
+│   │   ├── (payload)/          # Payload routes
+│   │   │   ├── admin/          # Admin panel (/admin)
+│   │   │   └── api/            # REST API (/api/*)
+│   │   ├── (public)/           # Public routes
+│   │   │   ├── reviews/        # Review pages
+│   │   │   ├── reading-lists/  # Reading list pages
+│   │   │   └── ...
+│   │   └── actions/            # Server Actions
+│   ├── collections/            # Payload CMS collections
+│   ├── components/             # React components
+│   ├── hooks/                  # Payload hooks (translation, revalidation)
+│   ├── lib/                    # Utilities
+│   │   ├── blocklist.ts        # Spam detection
+│   │   ├── db.ts               # Atomic database operations
+│   │   ├── env.ts              # Environment validation
+│   │   ├── rate-limit.ts       # Rate limiting
+│   │   ├── redis.ts            # Redis client
+│   │   └── translate.ts        # Translation utilities
+│   └── scripts/                # Seed and utility scripts
+├── sentry.*.config.ts          # Sentry configuration
+├── payload.config.ts           # Payload configuration
+├── next.config.ts              # Next.js configuration
+├── Dockerfile                  # Docker image for VPS
+└── docker-compose.yml          # Development environment
 ```
 
 ## Technology Stack:
 
 **Frontend + Backend (Unified):**
 
-- Next.js 15 with App Router
+- Next.js 16 with App Router
 - Payload CMS 3.0 (integrated via @payloadcms/next)
 - React 19 (Server & Client Components)
 
-**Database:**
+**Database & Caching:**
 
 - PostgreSQL 16 with @payloadcms/db-postgres adapter
+- Redis for translation caching and rate limiting
+
+**Media Storage:**
+
+- Cloudflare R2 via @payloadcms/storage-s3
+
+**Translation:**
+
+- Google Cloud Translation API with Redis caching
 
 **Styling:**
 
-- Tailwind CSS with custom design system
+- Tailwind CSS 4 with custom design system
 - Typography: Playfair Display (headings) + Inter (body)
+- Radix UI + shadcn/ui components
+- Motion (Framer Motion) for animations
 
 **Data Mutations:**
 
 - Next.js Server Actions for reactions and comments
+- Atomic PostgreSQL operations for view/like counters
 - Payload Local API for direct database access (no HTTP overhead)
+
+**Monitoring:**
+
+- Sentry for error tracking and performance monitoring
 
 **Deployment:**
 
-- Docker container on VPS
+- Docker container on VPS (via Coolify)
+- GitHub Actions for CI/CD
 - Standalone Next.js build for minimal image size
 
 ## How It Works:
@@ -314,8 +360,8 @@ chasing-chapters/
 **Admin Panel** (`/admin`):
 
 - Payload CMS admin interface served by Next.js
-- Your wife logs in and manages reviews, genres, tags, etc.
 - Full CMS control: create, edit, publish, moderate comments
+- Changes trigger automatic page revalidation
 
 **REST API** (`/api/*`):
 
@@ -328,6 +374,7 @@ chasing-chapters/
 - Next.js pages fetch data from Payload
 - ISR/SSG for fast page loads
 - Server Actions for interactions (likes, comments)
+- Automatic translation to Indonesian on publish
 
 **Revalidation Flow:**
 
@@ -344,13 +391,13 @@ Design Style:
 
 - **Visual Aesthetic**: Modern, classy, elegant with boutique bookstore feel
 - **Typography**:
-  - Headings: Elegant serif fonts (e.g., Playfair Display, Lora)
-  - Body: Clean sans-serif (e.g., Inter, Open Sans)
+  - Headings: Elegant serif fonts (Playfair Display)
+  - Body: Clean sans-serif (Inter)
   - Good line height and spacing for readability
 - **Color Palette**:
-  - Warm neutrals (cream #F5F5DC, beige #F5F5DC, soft white #FAFAFA)
+  - Warm neutrals (cream, beige, soft white)
   - Accent colors derived from book covers
-  - Dark mode option with deep navy/charcoal backgrounds
+  - Dark mode with deep navy/charcoal backgrounds
 - **Layout**:
   - Magazine-style with generous white space
   - Large, prominent book covers with subtle shadows
@@ -358,10 +405,10 @@ Design Style:
   - Smooth transitions and hover effects
 - **Responsive**: Fully responsive across desktop, tablet, and mobile
 - **Micro-interactions**:
-  - Animated bookmarks
   - Smooth page transitions
   - Hover effects on cards
-  - Loading states with book-themed animations
+  - Loading states
+  - Reading progress bar on review pages
 
 Design Inspiration:
 
@@ -374,22 +421,23 @@ Design Inspiration:
 
 **Homepage:**
 
-- Hero section with featured review
-- Grid of latest reviews (3-4 columns)
-- Curated reading lists section
+- Hero section with featured review carousel
+- Grid of latest reviews
 - Search bar prominently placed
 
 **Review Detail:**
 
-- Large book cover on left
-- Title, author, rating on right
-- Structured review sections below
+- Large book cover
+- Title, author, rating
+- Language toggle (EN/ID)
+- Structured review sections
 - Quote callouts with special styling
-- Related books at bottom
+- Like and share buttons
+- Related reviews at bottom
+- Comments section
 
 **Browse Pages:**
 
-- Filter sidebar (genres, moods, ratings)
 - Grid view with book covers
 - Sort options (recent, rating, title)
 
@@ -399,158 +447,150 @@ Design Inspiration:
 
 ## SEO Best Practices
 
-Automatically implement on every page:
+Automatically implemented on every page:
 
-- **Title Tags**: Descriptive, unique titles for each page (max 60 characters)
-- **Meta Descriptions**: Compelling summaries that accurately describe content (150-160 characters)
-- **Heading Structure**: Single `<h1>` per page with proper heading hierarchy (h1 → h2 → h3)
-- **Semantic HTML**: Use HTML5 semantic elements (`<article>`, `<section>`, `<nav>`, etc.)
-- **Unique IDs**: All interactive elements have unique, descriptive IDs
+- **Title Tags**: Descriptive, unique titles for each page
+- **Meta Descriptions**: Compelling summaries that accurately describe content
+- **Heading Structure**: Single `<h1>` per page with proper heading hierarchy
+- **Semantic HTML**: Use HTML5 semantic elements
 - **OpenGraph Tags**: Rich social media previews with images
-- **Structured Data**: Schema.org markup for book reviews (Review schema)
+- **Structured Data**: Schema.org markup for book reviews
 - **Alt Text**: Descriptive alt text for all images
 - **Sitemap**: Auto-generated XML sitemap
-- **Robots.txt**: Properly configured for search engines
+- **metadataBase**: Configured for proper OG/Twitter image resolution
 
 ## Performance Optimization
 
 - **Image Optimization**:
   - Next.js Image component with automatic optimization
-  - WebP format with fallbacks
-  - Blur placeholders for book covers
+  - WebP and AVIF formats
   - Lazy loading for below-fold images
+  - Images served from Cloudflare R2 CDN
 - **Code Splitting**: Automatic route-based code splitting
-- **ISR/SSG**: Static generation with revalidation for fast load times
+- **ISR/SSG**: Static generation with on-demand revalidation
 - **Caching Strategy**:
-  - Static pages cached at CDN edge
-  - API responses cached appropriately
-  - Service worker for offline support (future)
-- **Lighthouse Targets**:
-  - Performance: 95+
-  - Accessibility: 100
-  - Best Practices: 100
-  - SEO: 100
+  - Static pages cached
+  - Translation results cached in Redis (24h TTL)
+  - Rate limit counters in Redis
+- **Bundle Optimization**:
+  - Tree-shaking for unused code
+  - Optimized package imports (lucide-react, embla-carousel, date-fns)
 
 ---
 
-# 11. Success Metrics
+# 11. Security Implementation
+
+## Content Security Policy
+
+Split CSP strategy:
+
+- **Public routes**: Restrictive CSP blocking inline scripts
+- **Admin routes**: Relaxed CSP allowing Payload CMS functionality
+- **Sentry integration**: CSP allows reporting to sentry.io
+
+## Rate Limiting
+
+Redis-based rate limiting with configurable windows:
+
+- View tracking: 1 request/minute per IP per review
+- Like toggling: 5 requests/minute per IP per review
+- Comment submission: 3 requests/minute per IP
+- Comment reporting: 2 requests/minute per IP
+
+## Data Privacy
+
+- Commenter emails hashed with SHA-256 before storage
+- No plain-text email storage
+- Trusted commenter system based on approved comment count
+
+## Database Integrity
+
+- Atomic increment/decrement operations for view/like counts
+- Prevents race conditions under concurrent load
+
+---
+
+# 12. Monitoring & Observability
+
+## Sentry Integration
+
+- **Error Tracking**: Automatic capture of unhandled errors
+- **Performance Monitoring**: 10% sampling of transactions
+- **Session Replay**: 1% of sessions, 100% on errors
+- **Source Maps**: Uploaded during CI/CD build
+- **Production Only**: Disabled in development
+
+---
+
+# 13. Development & Deployment
+
+## Development Workflow
+
+```bash
+# Install dependencies
+pnpm install
+
+# Start database and Redis
+docker compose up -d
+
+# Run development server
+pnpm dev
+
+# Run tests
+pnpm test
+
+# Type check
+pnpm typecheck
+
+# Lint
+pnpm lint
+```
+
+## CI/CD Pipeline (GitHub Actions)
+
+1. **Build**: Docker image built with all environment variables
+2. **Push**: Image pushed to Docker Hub
+3. **Deploy**: Coolify webhook triggers deployment
+
+## Required Environment Variables
+
+| Variable            | Description                        |
+| ------------------- | ---------------------------------- |
+| `DATABASE_URI`      | PostgreSQL connection string       |
+| `PAYLOAD_SECRET`    | Payload CMS secret (min 32 chars)  |
+| `R2_*`              | Cloudflare R2 storage credentials  |
+| `GOOGLE_CLOUD_*`    | Google Translation API credentials |
+| `REDIS_URL`         | Redis connection string            |
+| `SENTRY_AUTH_TOKEN` | Sentry auth token for source maps  |
+
+---
+
+# 14. Success Metrics
 
 Primary KPIs:
 
 - Number of reviews published
 - Time required to publish a new review
-- Lighthouse performance scores
-- Engagement (likes, reactions)
+- Error rate in production (via Sentry)
+- Page load performance
 
 Secondary KPIs:
 
-- Returning visitors
-- Search usage
-- Time spent on pages
+- Engagement (likes, comments)
+- Translation accuracy
+- Cache hit rates
 
 ---
 
-# 12. Development Milestones
+# 15. Risks & Mitigations
 
-## Milestone 1 — Project Setup (1–2 days)
-
-- Initialize monorepo with pnpm/yarn workspaces
-- Set up Next.js 15 with App Router
-- Install and configure Payload CMS
-- Set up TypeScript and shared types package
-- Configure ESLint and Prettier
-- Set up deployment pipeline (Vercel/Railway)
-- Initialize Git repository and documentation
-
-## Milestone 2 — CMS Collections & Data Models (2–3 days)
-
-- Create core collections:
-  - Reviews with all fields
-  - Genres and Tags
-  - MoodTags with color/icon support
-  - ReadingLists
-  - Comments with moderation
-  - Authors
-- Configure media uploads with image optimization
-- Set up access control (admin only for writes)
-- Create collection hooks for:
-  - Auto-generating slugs
-  - Handling reactions/likes
-  - Comment approval workflow
-- Configure rich text editor with custom blocks
-
-## Milestone 3 — Public Frontend (5–7 days)
-
-- Build homepage:
-  - Featured review hero section
-  - Latest reviews grid
-  - Reading lists showcase
-  - Search bar integration
-- Create review detail page:
-  - Rich layout with structured sections
-  - Quote highlights
-  - Related reviews
-  - Reactions and comments UI
-- Build browse pages:
-  - Genre pages with filtering
-  - Tag and mood tag pages
-  - Reading lists pages
-- Implement search functionality
-- Add reaction/like system (client-side)
-- Implement comment submission and display
-- Set up ISR/SSG for all pages
-
-## Milestone 4 — Design Polish & Features (3–4 days)
-
-- Implement design system:
-  - Typography (Playfair Display + Inter)
-  - Color palette and theming
-  - Reusable UI components
-- Add micro-interactions and animations
-- Create share card generator (OG images)
-- Implement RSS feed
-- Add reading challenge tracker
-- Build contextual recommendations
-- Responsive design across all breakpoints
-- Dark mode implementation
-
-## Milestone 5 — SEO & Performance (1–2 days)
-
-- Implement SEO best practices:
-  - Meta tags and OpenGraph
-  - Structured data (Schema.org)
-  - Sitemap generation
-- Optimize images and assets
-- Configure caching strategies
-- Run Lighthouse audits and optimize
-- Set up analytics (Google Analytics/Plausible)
-
-## Milestone 6 — Launch Preparation (1 day)
-
-- Final testing across devices
-- Deploy to production (Vercel + managed DB)
-- Configure custom domain and SSL
-- Set up monitoring and error tracking
-- Create admin documentation
-- Populate initial content (5-10 reviews)
-- Launch! 🚀
-
-**Total Estimated Time**: 14-21 days
-
----
-
-# 13. Risks & Mitigations
-
-Risk: Payload admin UI complexity  
-Mitigation: Simplify fields, hide advanced config
-
-Risk: Reaction/comment scaling  
-Mitigation: Rate limit and throttle API
-
-Risk: Search performance  
-Mitigation: Use Payload queries + caching
-
-Risk: Design inconsistency  
-Mitigation: Use shadcn/ui + Tailwind components
+| Risk                        | Mitigation                                |
+| --------------------------- | ----------------------------------------- |
+| Payload admin UI complexity | Simplified fields, hidden advanced config |
+| Reaction/comment scaling    | Rate limiting and atomic operations       |
+| Translation API costs       | Redis caching with 24h TTL                |
+| Error visibility            | Sentry integration with alerting          |
+| Security vulnerabilities    | CSP, rate limiting, input validation      |
+| Race conditions             | Atomic PostgreSQL operations              |
 
 ---
