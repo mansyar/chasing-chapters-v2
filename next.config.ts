@@ -1,6 +1,12 @@
 import { withSentryConfig } from "@sentry/nextjs";
 import { withPayload } from "@payloadcms/next/withPayload";
+import bundleAnalyzer from "@next/bundle-analyzer";
 import type { NextConfig } from "next";
+
+// Bundle analyzer - run with ANALYZE=true pnpm build
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === "true",
+});
 
 // Content Security Policy for public routes (restrictive)
 // Protects against XSS and injection attacks
@@ -40,12 +46,7 @@ const nextConfig: NextConfig = {
   output: "standalone",
   // Optimize package imports for better tree-shaking (reduces bundle size)
   experimental: {
-    optimizePackageImports: [
-      "lucide-react",
-      "embla-carousel-react",
-      "embla-carousel-autoplay",
-      "date-fns",
-    ],
+    optimizePackageImports: ["lucide-react", "date-fns", "motion"],
   },
   images: {
     formats: ["image/webp", "image/avif"],
@@ -143,7 +144,8 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(withPayload(nextConfig), {
+// Wrap config with all HOCs: BundleAnalyzer -> Payload -> Sentry
+export default withSentryConfig(withBundleAnalyzer(withPayload(nextConfig)), {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 

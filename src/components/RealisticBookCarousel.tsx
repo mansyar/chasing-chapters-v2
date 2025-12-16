@@ -7,7 +7,7 @@ import React, {
   forwardRef,
   useCallback,
 } from "react";
-import HTMLFlipBook from "react-pageflip";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { Star, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
@@ -15,6 +15,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn, extractTextFromRichText } from "@/lib/utils";
 import type { Review, Media } from "@/payload-types";
+
+// Dynamic import for react-pageflip to reduce initial bundle size
+const HTMLFlipBook = dynamic(() => import("react-pageflip"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-[480px] h-[580px] bg-primary/10 animate-pulse rounded-lg flex items-center justify-center">
+      <span className="text-muted-foreground">Loading book...</span>
+    </div>
+  ),
+});
 
 // Define the interface for the FlipBook instance
 interface FlipBook {
