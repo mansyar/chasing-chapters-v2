@@ -2,16 +2,17 @@ import { v2 } from "@google-cloud/translate";
 import path from "path";
 import fs from "fs";
 import { getCachedTranslation, setCachedTranslation } from "./redis";
+import { env } from "./env";
 
 // Initialize client - handles both file-based and inline credentials
 const getTranslateClient = () => {
   console.log("[Translation] Initializing Google Cloud client...");
 
   // Option 1: Inline JSON credentials (for Docker/production)
-  if (process.env.GOOGLE_CLOUD_CREDENTIALS) {
+  if (env.GOOGLE_CLOUD_CREDENTIALS) {
     console.log("[Translation] Using inline credentials");
 
-    let credentialsStr = process.env.GOOGLE_CLOUD_CREDENTIALS.trim();
+    let credentialsStr = env.GOOGLE_CLOUD_CREDENTIALS.trim();
 
     // Remove surrounding quotes if present (common issue with env vars)
     if (
@@ -39,7 +40,7 @@ const getTranslateClient = () => {
       const credentials = JSON.parse(credentialsStr);
       return new v2.Translate({
         credentials,
-        projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
+        projectId: env.GOOGLE_CLOUD_PROJECT_ID,
       });
     } catch (parseError) {
       console.error(
@@ -56,8 +57,8 @@ const getTranslateClient = () => {
   }
 
   // Option 2: Credentials file path
-  if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-    let credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  if (env.GOOGLE_APPLICATION_CREDENTIALS) {
+    let credentialsPath = env.GOOGLE_APPLICATION_CREDENTIALS;
 
     // Resolve relative path to absolute
     if (!path.isAbsolute(credentialsPath)) {
@@ -79,13 +80,13 @@ const getTranslateClient = () => {
 
     return new v2.Translate({
       credentials,
-      projectId: process.env.GOOGLE_CLOUD_PROJECT_ID || credentials.project_id,
+      projectId: env.GOOGLE_CLOUD_PROJECT_ID || credentials.project_id,
     });
   }
 
   console.warn("[Translation] WARNING: No credentials configured!");
   return new v2.Translate({
-    projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
+    projectId: env.GOOGLE_CLOUD_PROJECT_ID,
   });
 };
 

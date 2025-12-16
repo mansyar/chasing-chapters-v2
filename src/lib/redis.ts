@@ -1,18 +1,19 @@
 import Redis from "ioredis";
 import crypto from "crypto";
+import { env } from "./env";
 
 // Redis client singleton
 let redis: Redis | null = null;
 
 export function getRedisClient(): Redis | null {
-  if (!process.env.REDIS_URL) {
+  if (!env.REDIS_URL) {
     console.log("[Redis] REDIS_URL not configured, caching disabled");
     return null;
   }
 
   if (!redis) {
     console.log("[Redis] Connecting to Redis...");
-    redis = new Redis(process.env.REDIS_URL);
+    redis = new Redis(env.REDIS_URL);
 
     redis.on("connect", () => {
       console.log("[Redis] Connected successfully");
