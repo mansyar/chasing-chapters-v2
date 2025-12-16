@@ -36,6 +36,10 @@ export async function incrementView(reviewId: string) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         views: ((review as any).views || 0) + 1,
       },
+      // Override access control so anonymous visitors can increment views
+      overrideAccess: true,
+      draft: false,
+      depth: 0,
     });
   } catch (error) {
     console.error("Failed to track view:", error);
