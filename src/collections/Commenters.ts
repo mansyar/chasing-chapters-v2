@@ -21,11 +21,15 @@ export const Commenters: CollectionConfig = {
       required: true,
     },
     {
-      name: "email",
-      type: "email",
+      name: "emailHash",
+      type: "text",
       required: true,
       unique: true,
       index: true,
+      admin: {
+        readOnly: true,
+        description: "SHA-256 hash of email (privacy-preserving)",
+      },
     },
     {
       name: "approvedCommentCount",

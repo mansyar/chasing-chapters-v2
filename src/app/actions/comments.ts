@@ -4,6 +4,7 @@ import { getPayload } from "payload";
 import configPromise from "@payload-config";
 import { revalidatePath } from "next/cache";
 import { isSpamContent } from "@/lib/blocklist";
+import { hashEmail } from "@/lib/utils";
 import { headers } from "next/headers";
 import { rateLimit, getClientIP } from "@/lib/rate-limit";
 
@@ -77,13 +78,14 @@ export async function submitComment(
       return { success: false, error: "Review not found" };
     }
 
-    // Find or create commenter
+    // Find or create commenter (using hashed email for privacy)
+    const hashedEmail = hashEmail(email);
     let commenter;
     const existingCommenters = await payload.find({
       collection: "commenters",
       where: {
-        email: {
-          equals: email.toLowerCase().trim(),
+        emailHash: {
+          equals: hashedEmail,
         },
       },
       limit: 1,
@@ -114,7 +116,7 @@ export async function submitComment(
         collection: "commenters",
         data: {
           name: name.trim(),
-          email: email.toLowerCase().trim(),
+          emailHash: hashedEmail,
           approvedCommentCount: 0,
           trusted: false,
           banned: false,

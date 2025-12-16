@@ -391,7 +391,10 @@ export interface Comment {
 export interface Commenter {
   id: number;
   name: string;
-  email: string;
+  /**
+   * SHA-256 hash of email (privacy-preserving)
+   */
+  emailHash: string;
   /**
    * Number of approved comments from this user
    */
@@ -699,7 +702,7 @@ export interface CommentsSelect<T extends boolean = true> {
  */
 export interface CommentersSelect<T extends boolean = true> {
   name?: T;
-  email?: T;
+  emailHash?: T;
   approvedCommentCount?: T;
   trusted?: T;
   banned?: T;
