@@ -7,26 +7,31 @@ import { isSpamContent } from "@/lib/blocklist";
 import { hashEmail } from "@/lib/utils";
 import { headers } from "next/headers";
 import { rateLimit, getClientIP } from "@/lib/rate-limit";
+import {
+  commentSchema,
+  reportCommentSchema,
+  formatZodError,
+} from "@/lib/schemas";
 
 // Types for action responses
 type ActionResult<T = void> =
   | { success: true; data?: T; message?: string }
   | { success: false; error: string };
 
-interface CommentFormData {
-  name: string;
-  email: string;
-  content: string;
-  reviewId: number;
-}
-
 /**
  * Submit a new comment on a review
  */
 export async function submitComment(
-  formData: CommentFormData
+  formData: unknown
 ): Promise<ActionResult<{ status: string }>> {
   try {
+    // Validate input with Zod
+    const parseResult = commentSchema.safeParse(formData);
+    if (!parseResult.success) {
+      return { success: false, error: formatZodError(parseResult.error) };
+    }
+    const { name, email, content, reviewId } = parseResult.data;
+
     // Rate limit: 3 comments per minute per IP
     const headersList = await headers();
     const ip = getClientIP(headersList);
@@ -40,27 +45,6 @@ export async function submitComment(
     }
 
     const payload = await getPayload({ config: configPromise });
-    const { name, email, content, reviewId } = formData;
-
-    // Validate input
-    if (!name || name.trim().length < 2) {
-      return { success: false, error: "Name must be at least 2 characters" };
-    }
-    if (!email || !email.includes("@")) {
-      return { success: false, error: "Please enter a valid email address" };
-    }
-    if (!content || content.trim().length < 3) {
-      return {
-        success: false,
-        error: "Comment must be at least 3 characters",
-      };
-    }
-    if (content.length > 2000) {
-      return {
-        success: false,
-        error: "Comment must be less than 2000 characters",
-      };
-    }
 
     // Verify review exists and is published
     const targetReview = await payload.findByID({
@@ -184,6 +168,15 @@ export async function reportComment(
   reporterEmail: string
 ): Promise<ActionResult> {
   try {
+    // Validate input with Zod
+    const parseResult = reportCommentSchema.safeParse({
+      commentId,
+      reporterEmail,
+    });
+    if (!parseResult.success) {
+      return { success: false, error: formatZodError(parseResult.error) };
+    }
+
     // Rate limit: 5 reports per 5 minutes per IP
     const headersList = await headers();
     const ip = getClientIP(headersList);
@@ -197,11 +190,6 @@ export async function reportComment(
     }
 
     const payload = await getPayload({ config: configPromise });
-
-    // Validate email
-    if (!reporterEmail || !reporterEmail.includes("@")) {
-      return { success: false, error: "Please enter a valid email address" };
-    }
 
     // Get the comment
     const comment = await payload.findByID({

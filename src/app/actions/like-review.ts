@@ -6,12 +6,22 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { rateLimit, getClientIP } from "@/lib/rate-limit";
 import { atomicIncrement, atomicDecrement } from "@/lib/db";
+import { likeReviewSchema, formatZodError } from "@/lib/schemas";
 
 export async function toggleLikeReview(
   reviewId: string,
   shouldIncrement: boolean
 ): Promise<{ success: boolean; newLikes?: number; error?: string }> {
   try {
+    // Validate input with Zod
+    const parseResult = likeReviewSchema.safeParse({
+      reviewId,
+      shouldIncrement,
+    });
+    if (!parseResult.success) {
+      return { success: false, error: formatZodError(parseResult.error) };
+    }
+
     // Rate limit: 5 likes per minute per review per IP
     const headersList = await headers();
     const ip = getClientIP(headersList);
@@ -26,9 +36,6 @@ export async function toggleLikeReview(
 
     // Convert string ID to number (Payload CMS with PostgreSQL uses numeric IDs)
     const numericId = parseInt(reviewId, 10);
-    if (isNaN(numericId)) {
-      return { success: false, error: "Invalid review ID" };
-    }
 
     // Atomic increment/decrement - no race condition on concurrent requests
     const newLikes = shouldIncrement
