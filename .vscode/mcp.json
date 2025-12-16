@@ -1,0 +1,9 @@
+{
+	"servers": {
+		"Sentry": {
+			"url": "https://mcp.sentry.dev/mcp/muhammad-ansyar-rafi-putra/javascript-nextjs",
+			"type": "http"
+		}
+	},
+	"inputs": []
+}
