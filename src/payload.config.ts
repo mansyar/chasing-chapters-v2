@@ -5,6 +5,7 @@ import { buildConfig } from "payload";
 import { fileURLToPath } from "url";
 import sharp from "sharp";
 import { s3Storage } from "@payloadcms/storage-s3";
+import { env } from "./lib/env";
 
 import { Authors } from "./collections/Authors";
 import { Media } from "./collections/Media";
@@ -57,13 +58,13 @@ export default buildConfig({
     Commenters,
   ],
   editor: lexicalEditor(),
-  secret: process.env.PAYLOAD_SECRET || "",
+  secret: env.PAYLOAD_SECRET,
   typescript: {
     outputFile: path.resolve(dirname, "payload-types.ts"),
   },
   db: postgresAdapter({
     pool: {
-      connectionString: process.env.DATABASE_URI || "",
+      connectionString: env.DATABASE_URI,
     },
   }),
   sharp,
@@ -72,13 +73,13 @@ export default buildConfig({
       collections: {
         media: true,
       },
-      bucket: process.env.R2_BUCKET || "",
+      bucket: env.R2_BUCKET,
       config: {
-        endpoint: process.env.R2_ENDPOINT || "",
+        endpoint: env.R2_ENDPOINT,
         region: "auto",
         credentials: {
-          accessKeyId: process.env.R2_ACCESS_KEY_ID || "",
-          secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || "",
+          accessKeyId: env.R2_ACCESS_KEY_ID,
+          secretAccessKey: env.R2_SECRET_ACCESS_KEY,
         },
       },
     }),
