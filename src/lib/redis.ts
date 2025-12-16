@@ -1,4 +1,5 @@
 import Redis from "ioredis";
+import crypto from "crypto";
 
 // Redis client singleton
 let redis: Redis | null = null;
@@ -29,6 +30,23 @@ export function getRedisClient(): Redis | null {
 const TRANSLATION_PREFIX = "translate:";
 const CACHE_TTL = 60 * 60 * 24 * 30; // 30 days in seconds
 
+/**
+ * Generate a consistent cache key using SHA-256 hash.
+ * This ensures constant key size (~30 chars) regardless of input text length.
+ * Exported for testing purposes.
+ */
+export function getTranslationCacheKey(
+  text: string,
+  targetLang: string
+): string {
+  const hash = crypto
+    .createHash("sha256")
+    .update(text)
+    .digest("hex")
+    .slice(0, 16);
+  return `${TRANSLATION_PREFIX}${targetLang}:${hash}`;
+}
+
 export async function getCachedTranslation(
   text: string,
   targetLang: string
@@ -37,7 +55,7 @@ export async function getCachedTranslation(
   if (!client) return null;
 
   try {
-    const key = `${TRANSLATION_PREFIX}${targetLang}:${text}`;
+    const key = getTranslationCacheKey(text, targetLang);
     const cached = await client.get(key);
     if (cached) {
       console.log(`[Redis] Cache hit for translation`);
@@ -58,7 +76,7 @@ export async function setCachedTranslation(
   if (!client) return;
 
   try {
-    const key = `${TRANSLATION_PREFIX}${targetLang}:${text}`;
+    const key = getTranslationCacheKey(text, targetLang);
     await client.setex(key, CACHE_TTL, translation);
   } catch (error) {
     console.error("[Redis] Cache set error:", error);
