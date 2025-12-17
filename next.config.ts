@@ -46,6 +46,8 @@ const adminCspHeader = `
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // Ensure jose is included in standalone output for Payload CMS JWT auth
+  serverExternalPackages: ["jose"],
   // Optimize package imports for better tree-shaking (reduces bundle size)
   experimental: {
     optimizePackageImports: ["lucide-react", "date-fns", "motion"],
