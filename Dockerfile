@@ -66,6 +66,9 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Manually copy jose because Next.js standalone tracing is failing to include it
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/jose ./node_modules/jose
+
 # Switch to non-root user
 USER nextjs
 
