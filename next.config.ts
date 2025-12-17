@@ -13,6 +13,7 @@ const withBundleAnalyzer = bundleAnalyzer({
 const publicCspHeader = `
   default-src 'self';
   script-src 'self' 'unsafe-inline';
+  worker-src 'self' blob:;
   style-src 'self' 'unsafe-inline';
   img-src 'self' blob: data: https://*.r2.dev https://www.gravatar.com;
   font-src 'self';
@@ -30,6 +31,7 @@ const publicCspHeader = `
 const adminCspHeader = `
   default-src 'self';
   script-src 'self' 'unsafe-inline' 'unsafe-eval';
+  worker-src 'self' blob:;
   style-src 'self' 'unsafe-inline';
   img-src 'self' blob: data: https://*.r2.dev https://www.gravatar.com;
   font-src 'self' data:;
