@@ -102,6 +102,8 @@ function StaticFirstSlide({ review }: { review: Review }) {
               priority
               fetchPriority="high"
               sizes="(max-width: 768px) 280px, (max-width: 1024px) 350px, 400px"
+              placeholder={coverImage.blurDataURL ? "blur" : "empty"}
+              blurDataURL={coverImage.blurDataURL || undefined}
             />
           )}
         </div>

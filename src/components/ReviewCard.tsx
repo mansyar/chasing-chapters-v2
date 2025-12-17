@@ -36,6 +36,8 @@ export function ReviewCard({
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               priority={priority}
               loading={priority ? "eager" : "lazy"}
+              placeholder={coverImage.blurDataURL ? "blur" : "empty"}
+              blurDataURL={coverImage.blurDataURL || undefined}
             />
           )}
         </div>

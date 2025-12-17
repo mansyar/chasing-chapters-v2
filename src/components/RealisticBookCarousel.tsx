@@ -224,6 +224,10 @@ export function RealisticBookCarousel({ reviews }: RealisticBookCarouselProps) {
                           fill
                           className="object-cover rounded-sm shadow-md"
                           sizes="200px"
+                          placeholder={
+                            coverImage.blurDataURL ? "blur" : "empty"
+                          }
+                          blurDataURL={coverImage.blurDataURL || undefined}
                         />
                       ) : (
                         <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400 rounded-sm">
@@ -363,6 +367,8 @@ export function RealisticBookCarousel({ reviews }: RealisticBookCarouselProps) {
                       fill
                       className="object-cover rounded-sm shadow-md"
                       sizes="(max-width: 768px) 300px, 400px"
+                      placeholder={coverImage.blurDataURL ? "blur" : "empty"}
+                      blurDataURL={coverImage.blurDataURL || undefined}
                     />
                   ) : (
                     <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400">

@@ -120,7 +120,14 @@ export default async function ReadingListDetailPage({ params }: PageProps) {
         {/* Background Blur Effect */}
         {coverImage?.url && (
           <div className="absolute inset-0 z-0 opacity-10 blur-3xl scale-110">
-            <Image src={coverImage.url} alt="" fill className="object-cover" />
+            <Image
+              src={coverImage.url}
+              alt=""
+              fill
+              className="object-cover"
+              placeholder={coverImage.blurDataURL ? "blur" : "empty"}
+              blurDataURL={coverImage.blurDataURL || undefined}
+            />
           </div>
         )}
       </div>

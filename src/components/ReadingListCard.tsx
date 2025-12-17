@@ -38,6 +38,8 @@ export function ReadingListCard({
               sizes="(max-width: 768px) 50vw, 25vw"
               priority={priority}
               loading={priority ? "eager" : "lazy"}
+              placeholder={coverImage.blurDataURL ? "blur" : "empty"}
+              blurDataURL={coverImage.blurDataURL || undefined}
             />
           ) : (
             <div className="w-full h-full bg-linear-to-br from-primary/20 to-accent/20 flex items-center justify-center">

@@ -129,6 +129,8 @@ export default async function ReviewPage({ params, searchParams }: PageProps) {
                   className="object-cover rounded-lg"
                   priority
                   sizes="(max-width: 768px) 100vw, 300px"
+                  placeholder={coverImage.blurDataURL ? "blur" : "empty"}
+                  blurDataURL={coverImage.blurDataURL || undefined}
                 />
               )}
             </div>
