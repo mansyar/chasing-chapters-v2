@@ -14,7 +14,7 @@ const publicCspHeader = `
   default-src 'self';
   script-src 'self' 'unsafe-inline';
   style-src 'self' 'unsafe-inline';
-  img-src 'self' blob: data: https://*.r2.dev;
+  img-src 'self' blob: data: https://*.r2.dev https://www.gravatar.com;
   font-src 'self';
   connect-src 'self' https://*.sentry.io https://*.ingest.de.sentry.io;
   media-src 'self' https://*.r2.dev;
@@ -31,7 +31,7 @@ const adminCspHeader = `
   default-src 'self';
   script-src 'self' 'unsafe-inline' 'unsafe-eval';
   style-src 'self' 'unsafe-inline';
-  img-src 'self' blob: data: https://*.r2.dev;
+  img-src 'self' blob: data: https://*.r2.dev https://www.gravatar.com;
   font-src 'self' data:;
   connect-src 'self' https://*.r2.dev https://*.sentry.io https://*.ingest.de.sentry.io;
   media-src 'self' https://*.r2.dev;
