@@ -43,7 +43,7 @@ ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 ENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN
 
 # Build the application
-RUN bun --bun next build
+RUN bun --bun next build --webpack
 
 # -----------------------------------------------------------------------------
 # Stage 3: Production Runner
@@ -65,9 +65,6 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# Manually copy jose because Next.js standalone tracing is failing to include it
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/jose ./node_modules/jose
 
 # Switch to non-root user
 USER nextjs
