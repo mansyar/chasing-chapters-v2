@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "bun --bun next dev",
     "build": "bun --bun next build --webpack",
-    "analyze": "cross-env ANALYZE=true bun --bun next build",
+    "analyze": "cross-env ANALYZE=true bun --bun next build --webpack",
     "start": "bun --bun next start",
     "lint": "eslint",
     "payload": "payload",
