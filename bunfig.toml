@@ -1,0 +1,3 @@
+[test]
+# Only look for tests in the src directory (excludes e2e folder)
+root = "./src"

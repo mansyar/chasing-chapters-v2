@@ -31,6 +31,7 @@ export default buildConfig({
   },
   admin: {
     user: Authors.slug,
+    dateFormat: "MMMM d, yyyy",
     importMap: {
       baseDir: path.resolve(dirname),
     },

@@ -2,4 +2,4 @@
 trigger: always_on
 ---
 
-Use PNPM as package manager
+Use bun as package manager

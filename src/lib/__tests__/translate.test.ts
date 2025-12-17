@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import {
   extractPlainText,
   createRichTextFromPlain,
@@ -210,7 +210,7 @@ describe("translate utilities", () => {
 
     it("should return source if source has no root", () => {
       const result = syncRichTextFormat(null, { root: {} });
-      expect(result).toBe(null);
+      expect(result).toBeNull();
     });
   });
 });

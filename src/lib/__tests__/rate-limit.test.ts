@@ -1,40 +1,44 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  mock,
+  beforeEach,
+  afterEach,
+  spyOn,
+} from "bun:test";
 import { rateLimit, getClientIP } from "../rate-limit";
 import * as redisModule from "../redis";
 
-// Mock the redis module
-vi.mock("../redis", () => ({
-  getRedisClient: vi.fn(),
-}));
-
 describe("rateLimit", () => {
   let mockRedisClient: {
-    incr: ReturnType<typeof vi.fn>;
-    expire: ReturnType<typeof vi.fn>;
-    ttl: ReturnType<typeof vi.fn>;
+    incr: ReturnType<typeof mock>;
+    expire: ReturnType<typeof mock>;
+    ttl: ReturnType<typeof mock>;
   };
+  let getRedisClientSpy: ReturnType<typeof spyOn>;
 
   beforeEach(() => {
     mockRedisClient = {
-      incr: vi.fn(),
-      expire: vi.fn(),
-      ttl: vi.fn(),
+      incr: mock(() => Promise.resolve(1)),
+      expire: mock(() => Promise.resolve(1)),
+      ttl: mock(() => Promise.resolve(60)),
     };
-    vi.clearAllMocks();
+    getRedisClientSpy = spyOn(redisModule, "getRedisClient");
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    getRedisClientSpy.mockRestore();
   });
 
   it("should allow request when under limit", async () => {
-    vi.mocked(redisModule.getRedisClient).mockReturnValue(
+    getRedisClientSpy.mockReturnValue(
       mockRedisClient as unknown as ReturnType<
         typeof redisModule.getRedisClient
       >
     );
-    mockRedisClient.incr.mockResolvedValue(1);
-    mockRedisClient.ttl.mockResolvedValue(60);
+    mockRedisClient.incr.mockReturnValue(Promise.resolve(1));
+    mockRedisClient.ttl.mockReturnValue(Promise.resolve(60));
 
     const result = await rateLimit("test:key", 5, 60);
 
@@ -49,13 +53,13 @@ describe("rateLimit", () => {
   });
 
   it("should set expire only on first request", async () => {
-    vi.mocked(redisModule.getRedisClient).mockReturnValue(
+    getRedisClientSpy.mockReturnValue(
       mockRedisClient as unknown as ReturnType<
         typeof redisModule.getRedisClient
       >
     );
-    mockRedisClient.incr.mockResolvedValue(3); // Not first request
-    mockRedisClient.ttl.mockResolvedValue(45);
+    mockRedisClient.incr.mockReturnValue(Promise.resolve(3)); // Not first request
+    mockRedisClient.ttl.mockReturnValue(Promise.resolve(45));
 
     await rateLimit("test:key", 5, 60);
 
@@ -63,13 +67,13 @@ describe("rateLimit", () => {
   });
 
   it("should block request when limit exceeded", async () => {
-    vi.mocked(redisModule.getRedisClient).mockReturnValue(
+    getRedisClientSpy.mockReturnValue(
       mockRedisClient as unknown as ReturnType<
         typeof redisModule.getRedisClient
       >
     );
-    mockRedisClient.incr.mockResolvedValue(6); // Over limit of 5
-    mockRedisClient.ttl.mockResolvedValue(30);
+    mockRedisClient.incr.mockReturnValue(Promise.resolve(6)); // Over limit of 5
+    mockRedisClient.ttl.mockReturnValue(Promise.resolve(30));
 
     const result = await rateLimit("test:key", 5, 60);
 
@@ -79,13 +83,13 @@ describe("rateLimit", () => {
   });
 
   it("should allow request at exact limit", async () => {
-    vi.mocked(redisModule.getRedisClient).mockReturnValue(
+    getRedisClientSpy.mockReturnValue(
       mockRedisClient as unknown as ReturnType<
         typeof redisModule.getRedisClient
       >
     );
-    mockRedisClient.incr.mockResolvedValue(5); // Exactly at limit
-    mockRedisClient.ttl.mockResolvedValue(10);
+    mockRedisClient.incr.mockReturnValue(Promise.resolve(5)); // Exactly at limit
+    mockRedisClient.ttl.mockReturnValue(Promise.resolve(10));
 
     const result = await rateLimit("test:key", 5, 60);
 
@@ -94,7 +98,7 @@ describe("rateLimit", () => {
   });
 
   it("should allow request when Redis is unavailable (graceful degradation)", async () => {
-    vi.mocked(redisModule.getRedisClient).mockReturnValue(null);
+    getRedisClientSpy.mockReturnValue(null);
 
     const result = await rateLimit("test:key", 5, 60);
 
@@ -104,13 +108,13 @@ describe("rateLimit", () => {
   });
 
   it("should allow request on Redis error (fail open)", async () => {
-    vi.mocked(redisModule.getRedisClient).mockReturnValue(
+    getRedisClientSpy.mockReturnValue(
       mockRedisClient as unknown as ReturnType<
         typeof redisModule.getRedisClient
       >
     );
-    mockRedisClient.incr.mockRejectedValue(
-      new Error("Redis connection failed")
+    mockRedisClient.incr.mockReturnValue(
+      Promise.reject(new Error("Redis connection failed"))
     );
 
     const result = await rateLimit("test:key", 5, 60);

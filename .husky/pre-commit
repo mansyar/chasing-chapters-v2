@@ -1,4 +1,4 @@
-pnpm typecheck
-pnpm lint
-pnpm test:run
-pnpm test:e2e
+bun run typecheck
+bun run lint
+bun test
+bun run test:e2e

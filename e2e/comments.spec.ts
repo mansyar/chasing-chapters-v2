@@ -64,13 +64,16 @@ test.describe("Comments", () => {
     const submitButton = page.getByRole("button", { name: /Submit Comment/i });
     await submitButton.click();
 
-    // Wait for either success message or form reset
-    await page.waitForTimeout(3000);
+    // Wait for submission to complete - button should re-enable when done
+    await expect(submitButton).toBeEnabled({ timeout: 15000 });
+
+    // Wait a bit for React state to update
+    await page.waitForTimeout(500);
 
     // Check for any success indicator (message appears or content field clears)
-    const successMessage = page
-      .getByText(/submitted|posted|success|pending|moderation/i)
-      .first();
+    const successMessage = page.getByText(
+      /posted|submitted|pending|moderation/i
+    );
     const successExists = await successMessage.isVisible().catch(() => false);
     const contentCleared = (await commentInput.inputValue()) === "";
 

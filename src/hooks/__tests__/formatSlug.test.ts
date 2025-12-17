@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import formatSlug from "../formatSlug";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
