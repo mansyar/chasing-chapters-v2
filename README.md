@@ -38,7 +38,7 @@ A beautifully crafted personal book review platform — a digital space that fee
 | **Translation**      | Google Cloud Translation API                      |
 | **Error Monitoring** | Sentry                                            |
 | **Language**         | TypeScript                                        |
-| **Package Manager**  | pnpm                                              |
+| **Package Manager**  | Bun                                               |
 
 ## 🔒 Security Features
 
@@ -53,8 +53,7 @@ A beautifully crafted personal book review platform — a digital space that fee
 
 ### Prerequisites
 
-- Node.js 20+
-- pnpm
+- Bun 1.3+
 - Docker (for local database and Redis)
 
 ### Development
@@ -69,7 +68,7 @@ A beautifully crafted personal book review platform — a digital space that fee
 2. **Install dependencies**
 
    ```bash
-   pnpm install
+   bun install
    ```
 
 3. **Set up environment variables**
@@ -88,7 +87,7 @@ A beautifully crafted personal book review platform — a digital space that fee
 5. **Run the development server**
 
    ```bash
-   pnpm dev
+   bun run dev
    ```
 
 6. **Open your browser**
@@ -98,14 +97,15 @@ A beautifully crafted personal book review platform — a digital space that fee
 ### Seeding Data
 
 ```bash
-pnpm seed
+bun run seed
 ```
 
 ### Running Tests
 
 ```bash
-pnpm test        # Watch mode
-pnpm test:run    # Single run
+bun run test:vitest   # Watch mode
+bun run test:vitest:run # Single run
+bun test              # Bun's native test runner
 ```
 
 ## 📁 Project Structure

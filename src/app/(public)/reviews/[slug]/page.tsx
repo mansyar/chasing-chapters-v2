@@ -18,6 +18,9 @@ import { ViewTracker } from "@/components/analytics/ViewTracker";
 import { RelatedReviews } from "@/components/reviews/RelatedReviews";
 import { ReadingProgressBar } from "@/components/ReadingProgressBar";
 
+// Enable ISR with 60 second revalidation for better caching
+export const revalidate = 60;
+
 interface PageProps {
   params: Promise<{
     slug: string;

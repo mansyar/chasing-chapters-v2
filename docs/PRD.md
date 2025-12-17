@@ -528,22 +528,22 @@ Redis-based rate limiting with configurable windows:
 
 ```bash
 # Install dependencies
-pnpm install
+bun install
 
 # Start database and Redis
 docker compose up -d
 
 # Run development server
-pnpm dev
+bun run dev
 
 # Run tests
-pnpm test
+bun run test:vitest
 
 # Type check
-pnpm typecheck
+bun run typecheck
 
 # Lint
-pnpm lint
+bun run lint
 ```
 
 ## CI/CD Pipeline (GitHub Actions)
