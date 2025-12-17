@@ -7,7 +7,7 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["**/*.{test,spec}.{js,ts,jsx,tsx}"],
-    exclude: ["node_modules", ".next", "dist"],
+    exclude: ["node_modules", ".next", "dist", "e2e"],
     globals: true,
     // Provide required env vars for tests (env.ts validation)
     env: {

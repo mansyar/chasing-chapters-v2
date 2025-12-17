@@ -1,3 +1,4 @@
 pnpm typecheck
 pnpm lint
 pnpm test:run
+pnpm test:e2e

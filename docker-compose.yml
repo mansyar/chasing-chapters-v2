@@ -13,22 +13,22 @@ services:
     volumes:
       - postgres_data_cc:/var/lib/postgresql/data
 
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    ports:
-      - "3000:3000"
-    volumes:
-      - .:/app
-      - /app/node_modules
-    environment:
-      - DATABASE_URI=postgresql://postgres:postgrespassword@postgres:5432/chasing-chapters
-      - PAYLOAD_SECRET=YOUR_SECRET_HERE
-      - REDIS_URL=redis://:redispassword@redis:6379
-    depends_on:
-      - postgres
-      - redis
+  # app:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.dev
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - .:/app
+  #     - /app/node_modules
+  #   environment:
+  #     - DATABASE_URI=postgresql://postgres:postgrespassword@postgres:5432/chasing-chapters
+  #     - PAYLOAD_SECRET=YOUR_SECRET_HERE
+  #     - REDIS_URL=redis://:redispassword@redis:6379
+  #   depends_on:
+  #     - postgres
+  #     - redis
 
   redis:
     image: redis:alpine
