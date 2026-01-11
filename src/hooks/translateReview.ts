@@ -7,6 +7,7 @@ import {
   extractPlainText,
   syncRichTextFormat,
 } from "../lib/translate";
+import { logger } from "../lib/logger";
 
 // Run full translation in background (when text changed)
 async function runTranslationInBackground(
@@ -14,7 +15,7 @@ async function runTranslationInBackground(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   doc: any
 ) {
-  console.log(
+  logger.debug(
     `[Translation] Starting background translation for: ${doc.title}`
   );
 
@@ -45,7 +46,7 @@ async function runTranslationInBackground(
         )
       : null;
 
-    console.log("[Translation] Saving Indonesian translations...");
+    logger.debug("[Translation] Saving Indonesian translations...");
 
     const payload = await getPayload({ config: configPromise });
 
@@ -65,7 +66,7 @@ async function runTranslationInBackground(
       },
     });
 
-    console.log(`[Translation] Complete for: ${doc.title}`);
+    logger.info(`[Translation] Complete for: ${doc.title}`);
   } catch (error) {
     console.error("[Translation] Background translation failed:", error);
   }
@@ -77,7 +78,7 @@ async function runFormatSyncInBackground(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   doc: any
 ) {
-  console.log(`[Translation] Starting format sync for: ${doc.title}`);
+  logger.debug(`[Translation] Starting format sync for: ${doc.title}`);
 
   try {
     const payload = await getPayload({ config: configPromise });
@@ -107,7 +108,7 @@ async function runFormatSyncInBackground(
       ? syncRichTextFormat(doc.perfectFor, existingDoc.perfectFor)
       : null;
 
-    console.log("[Translation] Saving format sync...");
+    logger.debug("[Translation] Saving format sync...");
 
     await payload.update({
       collection: "reviews",
@@ -125,7 +126,7 @@ async function runFormatSyncInBackground(
       },
     });
 
-    console.log(`[Translation] Format sync complete for: ${doc.title}`);
+    logger.info(`[Translation] Format sync complete for: ${doc.title}`);
   } catch (error) {
     console.error("[Translation] Format sync failed:", error);
   }
@@ -138,7 +139,7 @@ export const translateReview: CollectionAfterChangeHook = async ({
 }) => {
   // Prevent recursion
   if (context?.skipTranslation) {
-    console.log("[Translation] Skipping - context.skipTranslation is set");
+    logger.debug("[Translation] Skipping - context.skipTranslation is set");
     return doc;
   }
 

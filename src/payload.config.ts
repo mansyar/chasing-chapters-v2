@@ -66,6 +66,15 @@ export default buildConfig({
   db: postgresAdapter({
     pool: {
       connectionString: env.DATABASE_URI,
+      // Keep connections alive to prevent "Connection terminated unexpectedly"
+      keepAlive: true,
+      // Close idle connections after 20 seconds (helps with serverless DB idle timeouts)
+      idleTimeoutMillis: 20000,
+      // Timeout for acquiring new connections
+      connectionTimeoutMillis: 10000,
+      // Limit pool size for serverless environments
+      max: 10,
+      min: 2,
     },
   }),
   sharp,

@@ -1,22 +1,23 @@
 import Redis from "ioredis";
 import crypto from "crypto";
 import { env } from "./env";
+import { logger } from "./logger";
 
 // Redis client singleton
 let redis: Redis | null = null;
 
 export function getRedisClient(): Redis | null {
   if (!env.REDIS_URL) {
-    console.log("[Redis] REDIS_URL not configured, caching disabled");
+    logger.debug("[Redis] REDIS_URL not configured, caching disabled");
     return null;
   }
 
   if (!redis) {
-    console.log("[Redis] Connecting to Redis...");
+    logger.info("[Redis] Connecting to Redis...");
     redis = new Redis(env.REDIS_URL);
 
     redis.on("connect", () => {
-      console.log("[Redis] Connected successfully");
+      logger.info("[Redis] Connected successfully");
     });
 
     redis.on("error", (err) => {
@@ -59,7 +60,7 @@ export async function getCachedTranslation(
     const key = getTranslationCacheKey(text, targetLang);
     const cached = await client.get(key);
     if (cached) {
-      console.log(`[Redis] Cache hit for translation`);
+      logger.debug(`[Redis] Cache hit for translation`);
     }
     return cached;
   } catch (error) {

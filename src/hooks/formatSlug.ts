@@ -9,12 +9,6 @@ const format = (val: string): string =>
 const formatSlug =
   (fallback: string): FieldHook =>
   ({ value, originalDoc, data }) => {
-    console.log("formatSlug hook running", {
-      value,
-      fallback,
-      dataTitle: data?.[fallback],
-    });
-
     if (typeof value === "string" && value.length > 0) {
       return format(value);
     }

@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 import type { CollectionAfterChangeHook } from "payload";
+import { logger } from "../lib/logger";
 
 /**
  * Revalidates cached pages when a Review is published or updated.
@@ -25,7 +26,7 @@ export const revalidateReviewPages: CollectionAfterChangeHook = async ({
     contentChanged ||
     operation === "create"
   ) {
-    console.log(
+    logger.info(
       `[Revalidation] Review "${doc.title}" changed, revalidating pages...`
     );
 
@@ -67,7 +68,7 @@ export const revalidateReadingListPages: CollectionAfterChangeHook = async ({
     contentChanged ||
     operation === "create"
   ) {
-    console.log(
+    logger.info(
       `[Revalidation] Reading List "${doc.title}" changed, revalidating pages...`
     );
 
