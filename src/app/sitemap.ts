@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://chasing-chapters.com";
+    process.env.NEXT_PUBLIC_APP_URL || "https://chasing-chapters.com";
 
   const payload = await getPayload({ config: configPromise });
 
@@ -77,7 +77,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(list.updatedAt),
       changeFrequency: "weekly" as const,
       priority: 0.6,
-    })
+    }),
   );
 
   return [...staticPages, ...reviewPages, ...readingListPages];

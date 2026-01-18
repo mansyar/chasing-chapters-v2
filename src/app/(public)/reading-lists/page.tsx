@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import type { Media } from "@/payload-types";
 import type { Metadata } from "next";
+import { generateItemListSchema, SITE_URL } from "@/lib/seo/structured-data";
 
 export const metadata: Metadata = {
   title: "Reading Lists",
@@ -27,8 +28,21 @@ export default async function ReadingListsPage() {
     sort: "-createdAt",
   });
 
+  const itemListJsonLd = generateItemListSchema(
+    readingLists.map((list) => ({
+      name: list.title,
+      url: `${SITE_URL}/reading-lists/${list.slug}`,
+      image: (list.coverImage as Media)?.url || undefined,
+    })),
+    "Reading Lists",
+  );
+
   return (
     <div className="container mx-auto px-4 md:px-6 py-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+      />
       <div className="space-y-4 mb-12 text-center">
         <h1 className="font-serif text-4xl font-bold tracking-tight">
           Reading Lists

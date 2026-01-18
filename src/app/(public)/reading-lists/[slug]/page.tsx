@@ -6,6 +6,7 @@ import Image from "next/image";
 import { ReviewCard } from "@/components/ReviewCard";
 import { ShareButton } from "@/components/ShareButton";
 import type { Media, Review } from "@/payload-types";
+import { generateBreadcrumbSchema, SITE_URL } from "@/lib/seo/structured-data";
 
 // Enable ISR with 60 second revalidation for better caching
 export const revalidate = 60;
@@ -50,6 +51,9 @@ export async function generateMetadata({
   return {
     title: list.title,
     description,
+    alternates: {
+      canonical: `${SITE_URL}/reading-lists/${list.slug}`,
+    },
     openGraph: {
       title: list.title,
       description,
@@ -72,6 +76,26 @@ export async function generateMetadata({
       images: coverImage?.url ? [coverImage.url] : [],
     },
   };
+}
+
+export async function generateStaticParams() {
+  const payload = await getPayload({ config: configPromise });
+  const { docs } = await payload.find({
+    collection: "reading-lists",
+    where: {
+      _status: {
+        equals: "published",
+      },
+    },
+    limit: 20, // Pre-build top 20 lists
+    select: {
+      slug: true,
+    },
+  });
+
+  return docs.map((doc) => ({
+    slug: doc.slug,
+  }));
 }
 
 export default async function ReadingListDetailPage({ params }: PageProps) {
@@ -101,8 +125,18 @@ export default async function ReadingListDetailPage({ params }: PageProps) {
   const coverImage = list.coverImage as Media;
   const reviews = (list.reviews as Review[]) || [];
 
+  const breadcrumbJsonLd = generateBreadcrumbSchema([
+    { name: "Home", url: SITE_URL },
+    { name: "Reading Lists", url: `${SITE_URL}/reading-lists` },
+    { name: list.title, url: `${SITE_URL}/reading-lists/${list.slug}` },
+  ]);
+
   return (
     <div className="min-h-screen pb-20">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       {/* Hero Header */}
       <div className="relative bg-muted/30 py-20 md:py-32 overflow-hidden">
         <div className="container px-4 md:px-6 relative z-10 text-center max-w-3xl mx-auto">

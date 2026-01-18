@@ -19,6 +19,8 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { GenreSelect } from "@/components/GenreSelect";
+import type { Media } from "@/payload-types";
+import { generateItemListSchema, SITE_URL } from "@/lib/seo/structured-data";
 
 export const metadata: Metadata = {
   title: "Browse Reviews",
@@ -109,8 +111,21 @@ export default async function BrowsePage({ searchParams }: PageProps) {
     }
   }
 
+  const itemListJsonLd = generateItemListSchema(
+    reviews.map((review) => ({
+      name: review.title,
+      url: `${SITE_URL}/reviews/${review.slug}`,
+      image: (review.coverImage as Media)?.url || undefined,
+    })),
+    "Book Reviews",
+  );
+
   return (
     <div className="container mx-auto px-6 md:px-12 lg:px-24 py-12 max-w-7xl">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+      />
       <div className="flex flex-col md:flex-row gap-12">
         {/* Sidebar */}
         <aside className="w-full md:w-[240px] space-y-8 shrink-0">
@@ -263,7 +278,7 @@ export default async function BrowsePage({ searchParams }: PageProps) {
                   (p) =>
                     p === 1 ||
                     p === totalPages ||
-                    (p >= currentPage - 1 && p <= currentPage + 1)
+                    (p >= currentPage - 1 && p <= currentPage + 1),
                 )
                 .map((p) => {
                   // Skip if previously handled by first/last page logic to avoid duplicates
@@ -313,7 +328,7 @@ export default async function BrowsePage({ searchParams }: PageProps) {
                 if (totalPages <= 5) {
                   return Array.from(
                     { length: totalPages },
-                    (_, i) => i + 1
+                    (_, i) => i + 1,
                   ).map((p) => (
                     <PaginationItem key={p}>
                       <PaginationLink

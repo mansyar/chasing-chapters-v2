@@ -3,6 +3,7 @@ import { Inter, Playfair_Display } from "next/font/google";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ThemeProvider } from "@/components/theme-provider";
+import { generateWebSiteSchema } from "@/lib/seo/structured-data";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -21,8 +22,16 @@ export default function PublicLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const websiteJsonLd = generateWebSiteSchema();
+
   return (
     <html lang="en">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
+      </head>
       <body className={`${inter.variable} ${playfair.variable} antialiased`}>
         <ThemeProvider
           attribute="class"

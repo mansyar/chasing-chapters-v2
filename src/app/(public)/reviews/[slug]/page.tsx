@@ -17,6 +17,11 @@ import { LanguageToggle } from "@/components/reviews/LanguageToggle";
 import { ViewTracker } from "@/components/analytics/ViewTracker";
 import { RelatedReviews } from "@/components/reviews/RelatedReviews";
 import { ReadingProgressBar } from "@/components/ReadingProgressBar";
+import {
+  generateReviewSchema,
+  generateBreadcrumbSchema,
+  SITE_URL,
+} from "@/lib/seo/structured-data";
 
 // Enable ISR with 60 second revalidation for better caching
 export const revalidate = 60;
@@ -62,6 +67,13 @@ export async function generateMetadata({
   return {
     title: review.title,
     description,
+    alternates: {
+      canonical: `${SITE_URL}/reviews/${review.slug}`,
+      languages: {
+        en: `${SITE_URL}/reviews/${review.slug}`,
+        id: `${SITE_URL}/reviews/${review.slug}?locale=id`,
+      },
+    },
     openGraph: {
       title: review.title,
       description,
@@ -84,6 +96,26 @@ export async function generateMetadata({
       images: coverImage?.url ? [coverImage.url] : [],
     },
   };
+}
+
+export async function generateStaticParams() {
+  const payload = await getPayload({ config: configPromise });
+  const { docs } = await payload.find({
+    collection: "reviews",
+    where: {
+      _status: {
+        equals: "published",
+      },
+    },
+    limit: 50, // Pre-build top 50 reviews
+    select: {
+      slug: true,
+    },
+  });
+
+  return docs.map((doc) => ({
+    slug: doc.slug,
+  }));
 }
 
 export default async function ReviewPage({ params, searchParams }: PageProps) {
@@ -113,9 +145,23 @@ export default async function ReviewPage({ params, searchParams }: PageProps) {
   }
 
   const coverImage = review.coverImage as Media;
+  const jsonLd = generateReviewSchema(review, coverImage);
+  const breadcrumbJsonLd = generateBreadcrumbSchema([
+    { name: "Home", url: SITE_URL },
+    { name: "Reviews", url: `${SITE_URL}/reviews` },
+    { name: review.title, url: `${SITE_URL}/reviews/${review.slug}` },
+  ]);
 
   return (
     <article className="min-h-screen pb-20">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <ReadingProgressBar />
       <ViewTracker reviewId={String(review.id)} />
       {/* Hero Header */}
@@ -170,7 +216,7 @@ export default async function ReviewPage({ params, searchParams }: PageProps) {
                   <Calendar className="h-4 w-4" />
                   <span>
                     {new Date(
-                      review.publishDate || review.createdAt
+                      review.publishDate || review.createdAt,
                     ).toLocaleDateString(undefined, {
                       year: "numeric",
                       month: "long",
@@ -332,7 +378,7 @@ export default async function ReviewPage({ params, searchParams }: PageProps) {
                           year: "numeric",
                           month: "short",
                           day: "numeric",
-                        }
+                        },
                       )}
                     </span>
                   </div>
@@ -347,7 +393,7 @@ export default async function ReviewPage({ params, searchParams }: PageProps) {
                           year: "numeric",
                           month: "short",
                           day: "numeric",
-                        }
+                        },
                       )}
                     </span>
                   </div>
