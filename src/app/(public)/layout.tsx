@@ -4,6 +4,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ThemeProvider } from "@/components/theme-provider";
 import { generateWebSiteSchema } from "@/lib/seo/structured-data";
+import { UmamiScript } from "@/components/analytics/UmamiScript";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -49,6 +50,7 @@ export default function PublicLayout({
             <Footer />
           </div>
         </ThemeProvider>
+        <UmamiScript />
       </body>
     </html>
   );
