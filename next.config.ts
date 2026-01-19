@@ -12,12 +12,12 @@ const withBundleAnalyzer = bundleAnalyzer({
 // Protects against XSS and injection attacks
 const publicCspHeader = `
   default-src 'self';
-  script-src 'self' 'unsafe-inline';
+  script-src 'self' 'unsafe-inline' https://analytics.ansyar-world.top;
   worker-src 'self' blob:;
   style-src 'self' 'unsafe-inline';
   img-src 'self' blob: data: https://*.r2.dev https://www.gravatar.com;
   font-src 'self';
-  connect-src 'self' https://*.sentry.io https://*.ingest.de.sentry.io;
+  connect-src 'self' https://*.sentry.io https://*.ingest.de.sentry.io https://analytics.ansyar-world.top;
   media-src 'self' https://*.r2.dev;
   object-src 'none';
   base-uri 'self';
@@ -30,12 +30,12 @@ const publicCspHeader = `
 // Payload CMS requires inline scripts and eval for the admin panel
 const adminCspHeader = `
   default-src 'self';
-  script-src 'self' 'unsafe-inline' 'unsafe-eval';
+  script-src 'self' 'unsafe-inline' 'unsafe-eval' https://analytics.ansyar-world.top;
   worker-src 'self' blob:;
   style-src 'self' 'unsafe-inline';
   img-src 'self' blob: data: https://*.r2.dev https://www.gravatar.com;
   font-src 'self' data:;
-  connect-src 'self' https://*.r2.dev https://*.sentry.io https://*.ingest.de.sentry.io;
+  connect-src 'self' https://*.r2.dev https://*.sentry.io https://*.ingest.de.sentry.io https://analytics.ansyar-world.top;
   media-src 'self' https://*.r2.dev;
   object-src 'none';
   base-uri 'self';
