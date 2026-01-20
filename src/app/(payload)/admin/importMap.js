@@ -25,6 +25,7 @@ import { AdminStyleProvider as AdminStyleProvider_28a320d35397731301b152c32111b4
 import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
 import { AdminLogin as AdminLogin_fa00c180b3f657f6de380c1d2896c16a } from '@/components/AdminLogin'
 import { AnalyticsDashboard as AnalyticsDashboard_d8816c4bca290ed5b5596bb3533c3751 } from '@/components/admin/AnalyticsDashboard'
+import { CollectionCards as CollectionCards_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
 
 export const importMap = {
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
@@ -53,5 +54,6 @@ export const importMap = {
   "@/components/AdminStyleProvider#AdminStyleProvider": AdminStyleProvider_28a320d35397731301b152c32111b42a,
   "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,
   "@/components/AdminLogin#AdminLogin": AdminLogin_fa00c180b3f657f6de380c1d2896c16a,
-  "@/components/admin/AnalyticsDashboard#AnalyticsDashboard": AnalyticsDashboard_d8816c4bca290ed5b5596bb3533c3751
+  "@/components/admin/AnalyticsDashboard#AnalyticsDashboard": AnalyticsDashboard_d8816c4bca290ed5b5596bb3533c3751,
+  "@payloadcms/ui/rsc#CollectionCards": CollectionCards_ab83ff7e88da8d3530831f296ec4756a
 }

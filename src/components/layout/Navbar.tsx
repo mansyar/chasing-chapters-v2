@@ -5,16 +5,30 @@ import Link from "next/link";
 import { Search, Menu, X } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "../ui/sheet";
 import { ModeToggle } from "@/components/mode-toggle";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
+
+const Sheet = dynamic(() => import("../ui/sheet").then((m) => m.Sheet), {
+  ssr: false,
+});
+const SheetContent = dynamic(
+  () => import("../ui/sheet").then((m) => m.SheetContent),
+  { ssr: false },
+);
+const SheetHeader = dynamic(
+  () => import("../ui/sheet").then((m) => m.SheetHeader),
+  { ssr: false },
+);
+const SheetTitle = dynamic(
+  () => import("../ui/sheet").then((m) => m.SheetTitle),
+  { ssr: false },
+);
+const SheetTrigger = dynamic(
+  () => import("../ui/sheet").then((m) => m.SheetTrigger),
+  { ssr: false },
+);
 
 export function Navbar() {
   const router = useRouter();

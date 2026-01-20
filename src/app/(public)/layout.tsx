@@ -10,12 +10,14 @@ const inter = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
   display: "swap",
+  adjustFontFallback: true,
 });
 
 const playfair = Playfair_Display({
   variable: "--font-serif",
   subsets: ["latin"],
   display: "swap",
+  adjustFontFallback: true,
 });
 
 export default function PublicLayout({
@@ -26,7 +28,7 @@ export default function PublicLayout({
   const websiteJsonLd = generateWebSiteSchema();
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <script
           type="application/ld+json"
