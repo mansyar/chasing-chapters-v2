@@ -8,7 +8,7 @@
 | Runtime/Package Manager | Bun (runtime, package manager, test runner, type checking) |
 | Database | PostgreSQL 16 (drizzle-orm 0.45, schema managed via migrations) |
 | Cache | Redis (ioredis 6) — translation cache + rate limiting |
-| Styling | Tailwind CSS 4 (latest), shadcn/ui + Radix (latest), tw-animate-css |
+| Styling | Tailwind CSS 4 (latest), shadcn/ui + Radix (latest), tw-animate-css, sonner (toasts, added 2026-10-08) |
 | Media | Cloudflare R2 (S3 adapter, latest), sharp (blurDataURL, resized variants) |
 | Translation | Google Cloud Translation API v10 |
 | Monitoring | Sentry 11 (`withSentryConfig` from `@sentry/nextjs/config`, `dataCollection` replaces `sendDefaultPii`), Umami analytics |
