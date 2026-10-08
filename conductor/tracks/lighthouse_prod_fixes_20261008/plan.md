@@ -17,7 +17,7 @@
 - [x] Task: Implement smallest proven mitigation (candidate: post-deploy warm-up of key ISR pages wired into the deploy workflow or Coolify hook; if the script is logic-bearing → TDD with unit tests first) `[fea512d]`
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
-## Phase 3: Verification & Documentation
+## Phase 3: Verification & Documentation [checkpoint: b7a5842]
 
 - [x] Task: Full local gates (typecheck, lint, bun test, Playwright e2e) — typecheck 160 files clean, lint 67 pre-existing warnings, `bun test` 203 pass / 0 fail, Playwright 33/33 (serial; default parallel run flakes on this machine with `page.goto` 30s timeouts, pre-existing/environmental)
 - [x] Task: Record production Lighthouse re-run + TTFB comparison in `docs/pagespeed-optimization.md` Progress History — local pre/post-fix table recorded in `[b7a5842]`; canonical production re-run pending deploy of this branch
