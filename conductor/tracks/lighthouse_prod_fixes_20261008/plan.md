@@ -7,8 +7,8 @@
 ## Phase 1: Code Fixes (A11y, CSP, CLS)
 
 - [x] Task: Add accessible names to carousel prev/next buttons (`aria-label`s in `src/components/ModernBookCarousel.tsx`) — pure UI change, verified via lint/e2e + axe re-check `[808afd5]`
-- [ ] Task: Add `https://static.cloudflareinsights.com` to production `script-src` in `next.config.ts` (comment documenting why; dev/test CSP untouched)
-- [ ] Task: Diagnose and fix the hero-carousel CLS shift (inspect `FeaturedHero`/`ModernBookCarousel` swap path — reserve height / stable layout across skeleton→carousel→slide transitions); verify no layout shift in the hero container via Lighthouse or manual trace
+- [x] Task: Add `https://static.cloudflareinsights.com` to production `script-src` in `next.config.ts` (comment documenting why; dev/test CSP untouched) `[64e7ed9]`
+- [~] Task: Diagnose and fix the hero-carousel CLS shift (inspect `FeaturedHero`/`ModernBookCarousel` swap path — reserve height / stable layout across skeleton→carousel→slide transitions); verify no layout shift in the hero container via Lighthouse or manual trace
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 2: TTFB Investigation & Mitigation
