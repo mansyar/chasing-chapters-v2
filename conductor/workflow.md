@@ -257,7 +257,7 @@ bun run seed                # Seed initial data
 ```bash
 bun run dev                 # Start Next.js dev server (http://localhost:3000)
 bun run lint                # ESLint
-bun run typecheck           # tsc --noEmit
+bun run typecheck           # bun check
 bun run payload             # Payload CMS CLI
 ```
 
