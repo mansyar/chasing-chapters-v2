@@ -6,16 +6,16 @@
 
 ## Phase 1 — Translation Core: Batched, Non-Fallback, Retrying (`src/lib/translate.ts`)
 
-- [ ] Task: Write failing unit tests (Red) for the new translate core
-	- [ ] Batch collection: all text nodes extracted from richText fields + quotes into batched requests (mocked Google client)
-	- [ ] Batch retry: 3 attempts, exponential backoff (~2s/8s/30s), then throws
-	- [ ] No-fallback: API failure propagates as an error — original English text is never returned as a "translation"
-	- [ ] Structure preservation: batched results map back to correct Lexical nodes; existing `extractPlainText`/`syncRichTextFormat` regression tests still pass
-- [ ] Task: Implement batching + retry + error propagation (Green)
-	- [ ] `translateBatch(texts)` using Google v2 array requests, per-batch 30s timeout
-	- [ ] Rewrite `translateRichText` to collect → batch → map back; remove `catch → return original`
-	- [ ] Replace `console.*` with `logger`
-- [ ] Task: Refactor & verify coverage >80% on `src/lib/translate.ts`
+- [x] Task: Write failing unit tests (Red) for the new translate core
+	- [x] Batch collection: all text nodes extracted from richText fields + quotes into batched requests (mocked Google client)
+	- [x] Batch retry: 3 attempts, exponential backoff (~2s/8s/30s), then throws
+	- [x] No-fallback: API failure propagates as an error — original English text is never returned as a "translation"
+	- [x] Structure preservation: batched results map back to correct Lexical nodes; existing `extractPlainText`/`syncRichTextFormat` regression tests still pass
+- [x] Task: Implement batching + retry + error propagation (Green)
+	- [x] `translateBatch(texts)` using Google v2 array requests, per-batch 30s timeout
+	- [x] Rewrite `translateRichText` to collect → batch → map back; remove `catch → return original`
+	- [x] Replace `console.*` with `logger`
+- [x] Task: Refactor & verify coverage >80% on `src/lib/translate.ts` (96.15% fns / 100% branches)
 - [ ] Task: Commit (`fix(i18n): batch translation requests and remove silent English fallback`) + git note
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 

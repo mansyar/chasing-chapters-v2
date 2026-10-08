@@ -2,15 +2,18 @@ import { v2 } from "@google-cloud/translate";
 import fs from "fs";
 import path from "path";
 import { env } from "./env";
+import { logger } from "./logger";
 import { getCachedTranslation, setCachedTranslation } from "./redis";
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Initialize client - handles both file-based and inline credentials
 const getTranslateClient = () => {
-	console.log("[Translation] Initializing Google Cloud client...");
+	logger.info("[Translation] Initializing Google Cloud client...");
 
 	// Option 1: Inline JSON credentials (for Docker/production)
 	if (env.GOOGLE_CLOUD_CREDENTIALS) {
-		console.log("[Translation] Using inline credentials");
+		logger.info("[Translation] Using inline credentials");
 
 		let credentialsStr = env.GOOGLE_CLOUD_CREDENTIALS.trim();
 
@@ -25,16 +28,11 @@ const getTranslateClient = () => {
 		// Handle double-escaped JSON (common with Docker build args)
 		// If we see \" it means the JSON is escaped and needs to be unescaped
 		if (credentialsStr.includes('\\"')) {
-			console.log("[Translation] Detected double-escaped JSON, unescaping...");
+			logger.info("[Translation] Detected double-escaped JSON, unescaping...");
 			credentialsStr = credentialsStr
 				.replace(/\\"/g, '"')
 				.replace(/\\\\/g, "\\");
 		}
-
-		// Log first few characters for debugging (don't log the whole thing for security)
-		console.log(
-			`[Translation] Credentials start with: ${credentialsStr.substring(0, 20)}...`,
-		);
 
 		try {
 			const credentials = JSON.parse(credentialsStr);
@@ -43,12 +41,9 @@ const getTranslateClient = () => {
 				projectId: env.GOOGLE_CLOUD_PROJECT_ID,
 			});
 		} catch (parseError) {
-			console.error(
+			logger.error(
 				"[Translation] Failed to parse GOOGLE_CLOUD_CREDENTIALS:",
 				parseError,
-			);
-			console.error(
-				`[Translation] Credentials length: ${credentialsStr.length}, first char: '${credentialsStr[0]}', last char: '${credentialsStr[credentialsStr.length - 1]}'`,
 			);
 			throw new Error(
 				"Invalid GOOGLE_CLOUD_CREDENTIALS JSON format. Ensure the JSON is properly escaped in your environment variable.",
@@ -65,11 +60,11 @@ const getTranslateClient = () => {
 			credentialsPath = path.resolve(process.cwd(), credentialsPath);
 		}
 
-		console.log(`[Translation] Using credentials file: ${credentialsPath}`);
+		logger.info(`[Translation] Using credentials file: ${credentialsPath}`);
 
 		// Check if file exists
 		if (!fs.existsSync(credentialsPath)) {
-			console.error(
+			logger.error(
 				`[Translation] ERROR: Credentials file not found at ${credentialsPath}`,
 			);
 			throw new Error(`Credentials file not found: ${credentialsPath}`);
@@ -84,11 +79,47 @@ const getTranslateClient = () => {
 		});
 	}
 
-	console.warn("[Translation] WARNING: No credentials configured!");
+	logger.warn("[Translation] WARNING: No credentials configured!");
 	return new v2.Translate({
 		projectId: env.GOOGLE_CLOUD_PROJECT_ID,
 	});
 };
+
+// Error thrown when a translation batch exhausts all retry attempts.
+// Callers must treat this as a hard failure: the source text is NEVER a
+// valid translation result.
+export class TranslationError extends Error {
+	attempts: number;
+
+	constructor(
+		message: string,
+		options?: { attempts?: number; cause?: unknown },
+	) {
+		super(message, options ? { cause: options.cause } : undefined);
+		this.name = "TranslationError";
+		this.attempts = options?.attempts ?? 0;
+	}
+}
+
+// Maximum number of strings sent in a single Google Translate API request.
+export const TRANSLATION_BATCH_SIZE = 64;
+
+// Exponential backoff schedule between retry attempts (~2s -> ~8s -> ~30s).
+export const RETRY_DELAYS_MS = [2000, 8000, 30000];
+
+const MAX_ATTEMPTS = 3;
+
+type TranslateBatchOptions = {
+	/** Backoff delays (ms) between retry attempts. Defaults to RETRY_DELAYS_MS. */
+	delays?: number[];
+	/** Max strings per API request. Defaults to TRANSLATION_BATCH_SIZE. */
+	batchSize?: number;
+};
+
+function backoffDelay(delays: number[], attempt: number): number {
+	if (delays.length === 0) return 0;
+	return delays[Math.min(attempt, delays.length - 1)];
+}
 
 // Helper to add timeout to a promise
 function withTimeout<T>(
@@ -102,45 +133,123 @@ function withTimeout<T>(
 	return Promise.race([promise, timeout]);
 }
 
+// Translate one chunk of texts with retries and exponential backoff.
+// Throws TranslationError after MAX_ATTEMPTS failed attempts.
+async function translateChunkWithRetry(
+	texts: string[],
+	targetLanguage: string,
+	delays: number[],
+): Promise<string[]> {
+	const client = getTranslateClient();
+	let lastError: unknown;
+
+	for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+		try {
+			const [rawTranslations] = await withTimeout(
+				client.translate(texts, targetLanguage),
+				30000,
+				"Translation request timed out after 30 seconds",
+			);
+			const translations = rawTranslations as string[];
+			if (
+				!Array.isArray(translations) ||
+				translations.length !== texts.length
+			) {
+				throw new Error(
+					`Translation API returned ${translations?.length ?? 0} results for ${texts.length} inputs`,
+				);
+			}
+			return translations;
+		} catch (error) {
+			lastError = error;
+			logger.error(
+				`[Translation] Attempt ${attempt + 1}/${MAX_ATTEMPTS} failed for batch of ${texts.length}:`,
+				error,
+			);
+			if (attempt < MAX_ATTEMPTS - 1) {
+				await sleep(backoffDelay(delays, attempt));
+			}
+		}
+	}
+
+	throw new TranslationError(
+		`Translation failed after ${MAX_ATTEMPTS} attempts`,
+		{ attempts: MAX_ATTEMPTS, cause: lastError },
+	);
+}
+
+// Translate a list of texts using batched API calls, Redis caching, and
+// retry with exponential backoff. Blank texts pass through untouched and
+// are never sent to the API. On total failure this throws TranslationError -
+// it never returns the source text as a "translation".
+export async function translateBatch(
+	texts: string[],
+	targetLanguage: string = "id",
+	options?: TranslateBatchOptions,
+): Promise<string[]> {
+	if (texts.length === 0) return [];
+
+	const delays = options?.delays ?? RETRY_DELAYS_MS;
+	const batchSize = options?.batchSize ?? TRANSLATION_BATCH_SIZE;
+
+	// Group non-blank texts by uniqueness, remembering every original index.
+	const uniqueToIndices = new Map<string, number[]>();
+	for (let i = 0; i < texts.length; i++) {
+		const text = texts[i];
+		if (!text || text.trim() === "") continue;
+		const indices = uniqueToIndices.get(text);
+		if (indices) {
+			indices.push(i);
+		} else {
+			uniqueToIndices.set(text, [i]);
+		}
+	}
+
+	// Resolve from cache first; only cache misses hit the API.
+	const translatedFor = new Map<string, string>();
+	const misses: string[] = [];
+	for (const text of uniqueToIndices.keys()) {
+		const cached = await getCachedTranslation(text, targetLanguage);
+		if (cached) {
+			translatedFor.set(text, cached);
+		} else {
+			misses.push(text);
+		}
+	}
+
+	// Translate cache misses in chunks, retrying each chunk on failure.
+	for (let start = 0; start < misses.length; start += batchSize) {
+		const chunk = misses.slice(start, start + batchSize);
+		const chunkTranslations = await translateChunkWithRetry(
+			chunk,
+			targetLanguage,
+			delays,
+		);
+		for (let j = 0; j < chunk.length; j++) {
+			const source = chunk[j];
+			const translated = chunkTranslations[j];
+			translatedFor.set(source, translated);
+			await setCachedTranslation(source, targetLanguage, translated);
+		}
+	}
+
+	// Reassemble in the original order.
+	return texts.map((text) => {
+		if (!text || text.trim() === "") return text;
+		return translatedFor.get(text) as string;
+	});
+}
+
+// Translate a single string. Throws TranslationError on failure (no
+// English fallback). Blank input passes through unchanged.
 export async function translateText(
 	text: string,
 	targetLanguage: string = "id",
+	options?: TranslateBatchOptions,
 ): Promise<string> {
 	if (!text || text.trim() === "") return text;
-
-	// Check cache first
-	const cached = await getCachedTranslation(text, targetLanguage);
-	if (cached) {
-		return cached;
-	}
-
-	console.log(
-		`[Translation] Translating ${text.length} chars to ${targetLanguage}...`,
-	);
-
-	try {
-		const client = getTranslateClient();
-
-		// Add 30-second timeout
-		const [translation] = await withTimeout(
-			client.translate(text, targetLanguage),
-			30000,
-			"Translation request timed out after 30 seconds",
-		);
-
-		console.log(
-			`[Translation] Success! Translated to: ${translation.substring(0, 50)}...`,
-		);
-
-		// Cache the result
-		await setCachedTranslation(text, targetLanguage, translation);
-
-		return translation;
-	} catch (error) {
-		console.error("[Translation] Failed:", error);
-		// Return original text on failure so the publish still succeeds
-		return text;
-	}
+	const [translation] = await translateBatch([text], targetLanguage, options);
+	return translation;
 }
 
 // Extract plain text from Lexical editor JSON
@@ -181,49 +290,56 @@ export function createRichTextFromPlain(text: string): object {
 	};
 }
 
-// Translate rich text while preserving the Lexical structure
+// Translate rich text while preserving the Lexical structure.
+// Collects every text node, translates them in batched API calls, then maps
+// results back onto the structure. Throws TranslationError on failure -
+// it never returns the original English rich text as a "translation".
 export async function translateRichText(
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	richText: any,
 	targetLanguage: string = "id",
-): Promise<object> {
+	options?: TranslateBatchOptions,
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Promise<any> {
 	if (!richText?.root) return richText;
 
-	// Recursively translate text nodes while preserving structure
+	// Collect all text nodes in document order.
+	const texts: string[] = [];
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const translateNode = async (node: any): Promise<any> => {
-		// Text node - translate the content
+	const collect = (node: any): void => {
 		if (node.type === "text" && node.text) {
-			const translatedText = await translateText(node.text, targetLanguage);
-			return {
-				...node,
-				text: translatedText,
-			};
+			texts.push(node.text);
 		}
-
-		// Container node with children - recurse
 		if (node.children && Array.isArray(node.children)) {
-			const translatedChildren = await Promise.all(
-				node.children.map(translateNode),
-			);
+			node.children.forEach(collect);
+		}
+	};
+	collect(richText.root);
+
+	if (texts.length === 0) return richText;
+
+	const translations = await translateBatch(texts, targetLanguage, options);
+
+	// Map translations back onto the structure in the same order.
+	let textIndex = 0;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const apply = (node: any): any => {
+		if (node.type === "text" && node.text) {
 			return {
 				...node,
-				children: translatedChildren,
+				text: translations[textIndex++],
 			};
 		}
-
-		// Other nodes (e.g., linebreak) - return as-is
+		if (node.children && Array.isArray(node.children)) {
+			return {
+				...node,
+				children: node.children.map(apply),
+			};
+		}
 		return node;
 	};
 
-	try {
-		const translatedRoot = await translateNode(richText.root);
-		return { root: translatedRoot };
-	} catch (error) {
-		console.error("[Translation] Failed to translate rich text:", error);
-		// Return original on failure
-		return richText;
-	}
+	return { root: apply(richText.root) };
 }
 
 // Sync rich text format from source to target while preserving target's text content
@@ -279,7 +395,7 @@ export function syncRichTextFormat(
 		const syncedRoot = syncNode(sourceRichText.root);
 		return { root: syncedRoot };
 	} catch (error) {
-		console.error("[Translation] Failed to sync rich text format:", error);
+		logger.error("[Translation] Failed to sync rich text format:", error);
 		return sourceRichText;
 	}
 }
