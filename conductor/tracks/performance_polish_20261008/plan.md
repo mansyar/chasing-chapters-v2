@@ -52,12 +52,12 @@
 
 ## Phase 6: Empty States & Locale-Aware Dates
 
-- [ ] Task: Write failing tests (Red)
-  - [ ] `src/lib/__tests__/date-format.test.ts` — locale-aware formatting util (en/id, invalid dates, date vs datetime)
-- [ ] Task: Implement (Green)
-  - [ ] `src/lib/date-format.ts` formatting util
-  - [ ] Apply to reading dates, publish dates, comment timestamps (respecting `?locale=id`)
-- [ ] Task: Reusable `EmptyState` component; apply to `/reviews` no-results, `/reading-lists`, homepage fallbacks
+- [x] Task: Write failing tests (Red)
+  - [x] `src/lib/__tests__/date-format.test.ts` — locale-aware formatting util (en/id, invalid dates, date vs datetime)
+- [x] Task: Implement (Green)
+  - [x] `src/lib/date-format.ts` formatting util
+  - [x] Apply to reading dates, publish dates, comment timestamps (respecting `?locale=id`)
+- [x] Task: Reusable `EmptyState` component; apply to `/reviews` no-results, `/reading-lists`, homepage fallbacks
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 7: Final Verification & Documentation

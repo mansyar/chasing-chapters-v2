@@ -4,6 +4,7 @@
 import { MessageCircle } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { getApprovedComments } from "@/app/actions/comments";
+import type { AppLocale } from "@/lib/date-format";
 import { CommentForm } from "./CommentForm";
 import { CommentList } from "./CommentList";
 
@@ -16,9 +17,14 @@ interface Comment {
 
 interface CommentSectionProps {
 	reviewId: number;
+	/** UI language for relative timestamps; defaults to English. */
+	locale?: AppLocale;
 }
 
-export function CommentSection({ reviewId }: CommentSectionProps) {
+export function CommentSection({
+	reviewId,
+	locale = "en",
+}: CommentSectionProps) {
 	const [comments, setComments] = useState<Comment[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 
@@ -63,7 +69,7 @@ export function CommentSection({ reviewId }: CommentSectionProps) {
 						Loading comments...
 					</div>
 				) : (
-					<CommentList comments={comments} />
+					<CommentList comments={comments} locale={locale} />
 				)}
 			</div>
 		</section>

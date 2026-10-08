@@ -1,12 +1,13 @@
 "use client";
 
-import { formatDistanceToNow } from "date-fns";
 import { Flag } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { reportComment } from "@/app/actions/comments";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { AppLocale } from "@/lib/date-format";
+import { formatRelativeTime } from "@/lib/date-format";
 
 interface Comment {
 	id: number;
@@ -17,9 +18,11 @@ interface Comment {
 
 interface CommentListProps {
 	comments: Comment[];
+	/** UI language for relative timestamps; defaults to English. */
+	locale?: AppLocale;
 }
 
-export function CommentList({ comments }: CommentListProps) {
+export function CommentList({ comments, locale = "en" }: CommentListProps) {
 	const [reportingId, setReportingId] = useState<number | null>(null);
 	const [reportEmail, setReportEmail] = useState("");
 
@@ -67,9 +70,7 @@ export function CommentList({ comments }: CommentListProps) {
 								<div className="flex items-center gap-2 flex-wrap">
 									<span className="font-medium">{comment.authorName}</span>
 									<span className="text-xs text-muted-foreground">
-										{formatDistanceToNow(new Date(comment.createdAt), {
-											addSuffix: true,
-										})}
+										{formatRelativeTime(comment.createdAt, locale)}
 									</span>
 								</div>
 

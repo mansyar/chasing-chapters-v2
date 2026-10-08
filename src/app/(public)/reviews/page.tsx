@@ -1,5 +1,5 @@
 import configPromise from "@payload-config";
-import { Search, X } from "lucide-react";
+import { BookOpen, Search, X } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -9,6 +9,7 @@ import { ReviewCard } from "@/components/ReviewCard";
 import { SortSelect } from "@/components/SortSelect";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import {
 	Pagination,
@@ -228,14 +229,16 @@ export default async function BrowsePage({ searchParams }: PageProps) {
 							))}
 						</div>
 					) : (
-						<div className="text-center py-12">
-							<p className="text-muted-foreground text-lg">
-								No reviews found matching your criteria.
-							</p>
-							<Button variant="link" asChild className="mt-2">
-								<Link href="/reviews">Clear all filters</Link>
-							</Button>
-						</div>
+						<EmptyState
+							icon={BookOpen}
+							title="No reviews found"
+							description="Try a different search term, or clear the filters to browse everything."
+							action={
+								<Button variant="outline" asChild>
+									<Link href="/reviews">Clear all filters</Link>
+								</Button>
+							}
+						/>
 					)}
 				</div>
 			</div>
