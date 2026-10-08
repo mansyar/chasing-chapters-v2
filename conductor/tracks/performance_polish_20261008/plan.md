@@ -4,7 +4,7 @@
 > (`[ ]` pending, `[~]` in progress, `[x]` complete), phase checkpoints with
 > verification protocol.
 
-## Phase 1: Carousel Finalization (Phase 3 Completion)
+## Phase 1: Carousel Finalization (Phase 3 Completion) [checkpoint: ae209aa]
 
 - [x] Task: Record bundle baseline
   - [ ] Run `bun run build` and record first-load JS for `/` (and `bun run analyze` route breakdown) as the before-metric in `docs/pagespeed-optimization.md`
