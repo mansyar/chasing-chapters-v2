@@ -25,26 +25,16 @@
   - Remove ESLint, plugins, `eslint-config-next`, and Prettier packages + config files
   - Dedicated full-repo reformat commit (`style: adopt Biome and reformat codebase`)
   - Verify: `biome check .` passes; `bun run lint` uses Biome; no ESLint/Prettier remnants in package.json or configs
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) — checkpoint 42df1d1, user approved
 
-## Phase 2: Dependency Upgrades
+## Phase 2: Dependency Upgrades [checkpoint: 086319a]
 
-- [ ] Task: Audit and plan upgrades (FR0c)
-  - Run `bun outdated` (or equivalent); group dependencies: runtime framework (Next/React/Payload), data (drizzle/redis/zod), tooling
-  - Note breaking-change risks per group (Next canary → stable 16.x is highest risk)
-- [ ] Task: Upgrade data & tooling dependency group
-  - Bump drizzle, zod, redis/ioredis, dev tooling to latest compatible
-  - Fix breakages; verify `bun check`, `biome check`, `bun test` green; commit per group
-- [ ] Task: Upgrade Payload + database stack
-  - Bump Payload to latest 3.x; run any required migrations
-  - Verify admin panel loads; `bun test` green; commit
-- [ ] Task: Upgrade Next.js + React stack (canary → latest stable 16.x)
-  - Bump Next.js and React; resolve breaking changes (config, APIs, caching semantics)
-  - Verify: `bun run build` succeeds; dev server boots; commit
-- [ ] Task: Full verification gate
-  - `bun check`, `biome check`, `CI=true bun test`, `bun run build`, `CI=true bun run test:e2e` all green
-  - Update `conductor/tech-stack.md` with final versions (dated note per workflow Principle 2)
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Audit and plan upgrades (FR0c) — `bun outdated` grouped into A (data+tooling), B (Payload), C (Next/React), D (TypeScript); risk notes recorded in commit notes
+- [x] Task: Upgrade data & tooling dependency group — commit 42da1b2 (incl. Sentry v11 migration)
+- [x] Task: Upgrade Payload + database stack — commit 2bbf84d (3.90.2 + drizzle aligned 0.45.2)
+- [x] Task: Upgrade Next.js + React stack (canary → latest stable 16.x) — commits d6de16b (Next 16.4.0, React 19.3.0, schema-delta + email_hash drift-fix migrations), 9f8bdb4 (TypeScript 7.0.2)
+- [x] Task: Full verification gate — all gates green: bun check (131 files), biome (0 errors), bun test (91 pass), build (7 static pages), e2e 25/25; tech-stack.md updated; hydration warning fixed via non-modal theme dropdown (086319a)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) — checkpoint 086319a, e2e verified 25/25 with hydration warning eliminated
 
 ## Phase 3: RSS Feed
 
