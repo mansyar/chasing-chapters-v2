@@ -1,0 +1,58 @@
+# Implementation Plan: Bilingual Translation Reliability
+
+**Track ID:** translation_reliability_20261008
+**Branch:** `track/translation-reliability`
+**Workflow:** TDD per `conductor/workflow.md` (Red → Green → Refactor → Commit → Git Note → Plan Update). Each phase closes with a Verification & Checkpoint.
+
+## Phase 1 — Translation Core: Batched, Non-Fallback, Retrying (`src/lib/translate.ts`)
+
+- [ ] Task: Write failing unit tests (Red) for the new translate core
+	- [ ] Batch collection: all text nodes extracted from richText fields + quotes into batched requests (mocked Google client)
+	- [ ] Batch retry: 3 attempts, exponential backoff (~2s/8s/30s), then throws
+	- [ ] No-fallback: API failure propagates as an error — original English text is never returned as a "translation"
+	- [ ] Structure preservation: batched results map back to correct Lexical nodes; existing `extractPlainText`/`syncRichTextFormat` regression tests still pass
+- [ ] Task: Implement batching + retry + error propagation (Green)
+	- [ ] `translateBatch(texts)` using Google v2 array requests, per-batch 30s timeout
+	- [ ] Rewrite `translateRichText` to collect → batch → map back; remove `catch → return original`
+	- [ ] Replace `console.*` with `logger`
+- [ ] Task: Refactor & verify coverage >80% on `src/lib/translate.ts`
+- [ ] Task: Commit (`fix(i18n): batch translation requests and remove silent English fallback`) + git note
+- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+
+## Phase 2 — Status Tracking & Data Model (`src/collections/Reviews.ts`)
+
+- [ ] Task: Write failing tests (Red) for status-transition logic (`src/lib/translation-status.ts`: valid transitions, stale detection, failed-with-attempts)
+- [ ] Task: Implement status module (Green)
+- [ ] Task: Add collection fields
+	- [ ] `autoTranslate` (checkbox, default `true`)
+	- [ ] `translationStatus` (select: untranslated/pending/translated/failed/stale, read-only) + `translationError` (textarea, read-only) + `translationUpdatedAt` (date, read-only)
+	- [ ] Admin: status column in list view, read-only sidebar card in edit view
+- [ ] Task: DB migration + backfill (existing reviews → `translated` or `untranslated`)
+- [ ] Task: Commit + git note
+- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+
+## Phase 3 — Hook Orchestration (`src/hooks/translateReview.ts`)
+
+- [ ] Task: Write failing tests (Red) for hook decisions (mocked payload + translate lib)
+	- [ ] Publish with toggle ON + text change → full translation; status `pending` → `translated`
+	- [ ] Any failure → ID locale not updated; status `failed` with error + attempts
+	- [ ] Toggle OFF + EN text change → no translation, status `stale`
+	- [ ] Draft save → no auto-translation; format-only change → format sync preserved
+- [ ] Task: Implement hook orchestration (Green)
+- [ ] Task: Commit + git note
+- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+
+## Phase 4 — Admin "Re-translate now" Action
+
+- [ ] Task: Implement translation endpoint/route (auth: admin/writer; runs pipeline for any review regardless of draft/published; overrides toggle; updates status)
+- [ ] Task: Add "Re-translate now" button in review edit view with pending/success/failure feedback
+- [ ] Task: Unit tests for endpoint logic (auth, toggle override, status updates)
+- [ ] Task: Commit + git note
+- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+
+## Phase 5 — Full Verification & Documentation
+
+- [ ] Task: Full gate: `bun run typecheck && bun run lint && bun test` + production build + e2e suite
+- [ ] Task: Update docs — ADMIN_GUIDE (translation behavior, toggle, re-translate), PRD §5 alignment
+- [ ] Task: Commit + git note
+- [ ] Task: Final Phase Verification & Checkpoint (Refer to workflow.md)
