@@ -10,9 +10,15 @@ const withBundleAnalyzer = bundleAnalyzer({
 
 // Content Security Policy for public routes (restrictive)
 // Protects against XSS and injection attacks
+// Note: https://static.cloudflareinsights.com is allowed in script-src because
+// Cloudflare auto-injects its RUM beacon (<script src=".../beacon.min.js">) on
+// production pages; blocking it produced CSP console errors and an
+// inspector-issues ding in the 2026-10-08 production Lighthouse run.
+// The beacon is only injected when served through Cloudflare, so dev/test are
+// unaffected in practice.
 const publicCspHeader = `
   default-src 'self';
-  script-src 'self' 'unsafe-inline' https://analytics.ansyar-world.top;
+  script-src 'self' 'unsafe-inline' https://analytics.ansyar-world.top https://static.cloudflareinsights.com;
   worker-src 'self' blob:;
   style-src 'self' 'unsafe-inline';
   img-src 'self' blob: data: https://*.r2.dev https://www.gravatar.com;
