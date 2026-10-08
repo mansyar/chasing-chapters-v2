@@ -42,20 +42,21 @@
   - New `src/lib/__tests__/` test file for feed generation logic (follow existing test naming/style)
   - Cover: item mapping (title/link/pubDate RFC 822/description escaping/cover img), latest-20 published-only selection, drafts excluded, channel metadata, XML entity escaping, invalid-character handling
   - Run tests; confirm they fail
-- [ ] Task: Implement feed builder module (Green phase) (FR1)
+- [x] Task: Implement feed builder module (Green phase) (FR1) — commit 79ca7c5
   - Create `src/lib/` feed builder (pure functions; testable without a running server)
   - Reuse canonical site URL pattern from existing env convention; no new env vars
   - Refactor if needed; confirm >80% coverage on the new module
-- [ ] Task: Implement `/feed.xml` route (FR1)
+- [x] Task: Write failing tests for the feed builder (Red phase) (FR1) — 17 tests written, confirmed failing, then green
+- [x] Task: Implement `/feed.xml` route (FR1) — commit 79ca7c5
   - Route handler returning RSS 2.0 XML with `Content-Type: application/rss+xml; charset=utf-8`
-  - ISR caching consistent with review pages; published-only query
-- [ ] Task: Wire feed discovery (FR1)
-  - `<link rel="alternate" type="application/rss+xml">` in root layout head
-  - RSS link in site footer
-  - Reference in `robots.txt`
-- [ ] Task: Add e2e coverage for the feed
-  - Playwright spec: `/feed.xml` returns valid XML, correct content type, contains latest review, excludes drafts
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+  - ISR (revalidate 3600) + revalidated via revalidatePages hook; published-only query (sort -publishDate, limit 20, depth 1)
+- [x] Task: Wire feed discovery (FR1) — commit 79ca7c5
+  - `<link rel="alternate" type="application/rss+xml">` in root layout head (metadata.alternates.types)
+  - RSS link in site footer (lucide Rss icon)
+  - robots.txt reference SKIPPED — MetadataRoute.Robots has no feed field; robots.txt is not a feed-discovery mechanism (documented deviation, see git note on 79ca7c5)
+- [x] Task: Add e2e coverage for the feed — commit 79ca7c5
+  - Playwright spec e2e/feed.spec.ts: valid XML + content type, item content, head discovery link, footer link (4 passing)
+- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md) — pending user verification
 
 ## Phase 4: Sort Options on /reviews
 
