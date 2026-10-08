@@ -2,6 +2,7 @@
 
 import { Check, Share2 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -32,9 +33,11 @@ export function ShareButton({ title, url, className }: ShareButtonProps) {
 		try {
 			await navigator.clipboard.writeText(shareUrl);
 			setCopied(true);
+			toast.success("Link copied to clipboard");
 			setTimeout(() => setCopied(false), 2000);
 		} catch (err) {
 			console.error("Failed to copy:", err);
+			toast.error("Failed to copy link");
 		}
 	};
 

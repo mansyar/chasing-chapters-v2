@@ -45,9 +45,9 @@
 
 ## Phase 5: Toast System
 
-- [ ] Task: Install & wire toast library (sonner, theme-aware `<Toaster />` in public layout)
-- [ ] Task: Replace `setTimeout` inline messages in `CommentForm.tsx`, `CommentList.tsx`, `ShareButton.tsx` with toasts (keep copy/behavior)
-- [ ] Task: Remove dead inline-message state/rendering
+- [x] Task: Install & wire toast library (sonner, theme-aware `<Toaster />` in public layout)
+- [x] Task: Replace `setTimeout` inline messages in `CommentForm.tsx`, `CommentList.tsx`, `ShareButton.tsx` with toasts (keep copy/behavior)
+- [x] Task: Remove dead inline-message state/rendering
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 6: Empty States & Locale-Aware Dates

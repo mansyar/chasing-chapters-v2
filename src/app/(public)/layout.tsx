@@ -4,6 +4,7 @@ import { UmamiScript } from "@/components/analytics/UmamiScript";
 import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/toaster";
 import { generateWebSiteSchema } from "@/lib/seo/structured-data";
 
 const inter = Inter({
@@ -71,6 +72,7 @@ export default function PublicLayout({
 					</div>
 				</ThemeProvider>
 				<UmamiScript />
+				<Toaster />
 			</body>
 		</html>
 	);

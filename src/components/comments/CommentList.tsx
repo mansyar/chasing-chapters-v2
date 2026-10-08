@@ -3,6 +3,7 @@
 import { formatDistanceToNow } from "date-fns";
 import { Flag } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { reportComment } from "@/app/actions/comments";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,40 +22,21 @@ interface CommentListProps {
 export function CommentList({ comments }: CommentListProps) {
 	const [reportingId, setReportingId] = useState<number | null>(null);
 	const [reportEmail, setReportEmail] = useState("");
-	const [reportMessage, setReportMessage] = useState<{
-		id: number;
-		type: "success" | "error";
-		text: string;
-	} | null>(null);
 
 	const handleReport = async (commentId: number) => {
 		if (!reportEmail || !reportEmail.includes("@")) {
-			setReportMessage({
-				id: commentId,
-				type: "error",
-				text: "Please enter a valid email",
-			});
+			toast.error("Please enter a valid email");
 			return;
 		}
 
 		const result = await reportComment(commentId, reportEmail);
 
 		if (result.success) {
-			setReportMessage({
-				id: commentId,
-				type: "success",
-				text: result.message || "Report submitted",
-			});
+			toast.success(result.message || "Report submitted");
 			setReportingId(null);
 			setReportEmail("");
-			// Clear message after 3 seconds
-			setTimeout(() => setReportMessage(null), 3000);
 		} else {
-			setReportMessage({
-				id: commentId,
-				type: "error",
-				text: result.error,
-			});
+			toast.error(result.error);
 		}
 	};
 
@@ -104,6 +86,7 @@ export function CommentList({ comments }: CommentListProps) {
 									title="Report comment"
 								>
 									<Flag className="h-4 w-4" />
+									<span className="sr-only">Report comment</span>
 								</Button>
 							</div>
 
@@ -121,6 +104,7 @@ export function CommentList({ comments }: CommentListProps) {
 										<Input
 											type="email"
 											placeholder="Your email (for verification)"
+											aria-label="Your email (for verification)"
 											value={reportEmail}
 											onChange={(e) => setReportEmail(e.target.value)}
 											className="text-sm h-8"
@@ -146,21 +130,6 @@ export function CommentList({ comments }: CommentListProps) {
 										</Button>
 									</div>
 								</div>
-							)}
-
-							{/* Report message */}
-							{reportMessage && reportMessage.id === comment.id && (
-								<p
-									aria-live="polite"
-									role={reportMessage.type === "error" ? "alert" : "status"}
-									className={`mt-2 text-xs ${
-										reportMessage.type === "success"
-											? "text-green-600"
-											: "text-red-600"
-									}`}
-								>
-									{reportMessage.text}
-								</p>
 							)}
 						</div>
 					</div>
