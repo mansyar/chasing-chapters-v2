@@ -1,178 +1,178 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
+import { Menu, Search, X } from "lucide-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
-import { Search, Menu, X } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { ModeToggle } from "@/components/mode-toggle";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { ModeToggle } from "@/components/mode-toggle";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
-import dynamic from "next/dynamic";
 
 const Sheet = dynamic(() => import("../ui/sheet").then((m) => m.Sheet), {
-  ssr: false,
+	ssr: false,
 });
 const SheetContent = dynamic(
-  () => import("../ui/sheet").then((m) => m.SheetContent),
-  { ssr: false },
+	() => import("../ui/sheet").then((m) => m.SheetContent),
+	{ ssr: false },
 );
 const SheetHeader = dynamic(
-  () => import("../ui/sheet").then((m) => m.SheetHeader),
-  { ssr: false },
+	() => import("../ui/sheet").then((m) => m.SheetHeader),
+	{ ssr: false },
 );
 const SheetTitle = dynamic(
-  () => import("../ui/sheet").then((m) => m.SheetTitle),
-  { ssr: false },
+	() => import("../ui/sheet").then((m) => m.SheetTitle),
+	{ ssr: false },
 );
 const SheetTrigger = dynamic(
-  () => import("../ui/sheet").then((m) => m.SheetTrigger),
-  { ssr: false },
+	() => import("../ui/sheet").then((m) => m.SheetTrigger),
+	{ ssr: false },
 );
 
 export function Navbar() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [query, setQuery] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+	const router = useRouter();
+	const searchParams = useSearchParams();
+	const [query, setQuery] = useState("");
+	const [isOpen, setIsOpen] = useState(false);
+	const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  useEffect(() => {
-    setQuery(searchParams.get("q") || "");
-  }, [searchParams]);
+	useEffect(() => {
+		setQuery(searchParams.get("q") || "");
+	}, [searchParams]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (query.trim()) {
-      router.push(`/reviews?q=${encodeURIComponent(query)}`);
-    } else {
-      router.push("/reviews");
-    }
-    setIsSearchOpen(false);
-  };
+	const handleSearch = (e: React.FormEvent) => {
+		e.preventDefault();
+		if (query.trim()) {
+			router.push(`/reviews?q=${encodeURIComponent(query)}`);
+		} else {
+			router.push("/reviews");
+		}
+		setIsSearchOpen(false);
+	};
 
-  return (
-    <nav className="border-b bg-background/80 backdrop-blur-md sticky top-0 z-50 transition-all duration-300">
-      <div className="container mx-auto px-6 md:px-12 lg:px-24 h-16 flex items-center justify-between max-w-7xl">
-        <Link href="/" className="font-serif text-2xl font-bold tracking-tight">
-          Chasing Chapters
-        </Link>
+	return (
+		<nav className="border-b bg-background/80 backdrop-blur-md sticky top-0 z-50 transition-all duration-300">
+			<div className="container mx-auto px-6 md:px-12 lg:px-24 h-16 flex items-center justify-between max-w-7xl">
+				<Link href="/" className="font-serif text-2xl font-bold tracking-tight">
+					Chasing Chapters
+				</Link>
 
-        <div className="hidden md:flex items-center gap-6">
-          <Link
-            href="/reviews"
-            className="text-sm font-medium hover:text-primary transition-colors"
-          >
-            Reviews
-          </Link>
-          <Link
-            href="/reading-lists"
-            className="text-sm font-medium hover:text-primary transition-colors"
-          >
-            Reading Lists
-          </Link>
-          <Link
-            href="/about"
-            className="text-sm font-medium hover:text-primary transition-colors"
-          >
-            About
-          </Link>
-          <Link
-            href="/admin"
-            className="text-sm font-medium hover:text-primary transition-colors"
-          >
-            Write a Review
-          </Link>
-        </div>
+				<div className="hidden md:flex items-center gap-6">
+					<Link
+						href="/reviews"
+						className="text-sm font-medium hover:text-primary transition-colors"
+					>
+						Reviews
+					</Link>
+					<Link
+						href="/reading-lists"
+						className="text-sm font-medium hover:text-primary transition-colors"
+					>
+						Reading Lists
+					</Link>
+					<Link
+						href="/about"
+						className="text-sm font-medium hover:text-primary transition-colors"
+					>
+						About
+					</Link>
+					<Link
+						href="/admin"
+						className="text-sm font-medium hover:text-primary transition-colors"
+					>
+						Write a Review
+					</Link>
+				</div>
 
-        <div className="flex items-center gap-4">
-          <form onSubmit={handleSearch} className="relative hidden sm:block">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search books..."
-              className="w-[200px] pl-9"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          </form>
-          <ModeToggle />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="sm:hidden"
-            onClick={() => setIsSearchOpen(!isSearchOpen)}
-          >
-            {isSearchOpen ? (
-              <X className="h-5 w-5" />
-            ) : (
-              <Search className="h-5 w-5" />
-            )}
-          </Button>
+				<div className="flex items-center gap-4">
+					<form onSubmit={handleSearch} className="relative hidden sm:block">
+						<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+						<Input
+							type="search"
+							placeholder="Search books..."
+							className="w-[200px] pl-9"
+							value={query}
+							onChange={(e) => setQuery(e.target.value)}
+						/>
+					</form>
+					<ModeToggle />
+					<Button
+						variant="ghost"
+						size="icon"
+						className="sm:hidden"
+						onClick={() => setIsSearchOpen(!isSearchOpen)}
+					>
+						{isSearchOpen ? (
+							<X className="h-5 w-5" />
+						) : (
+							<Search className="h-5 w-5" />
+						)}
+					</Button>
 
-          {/* Mobile Menu */}
-          <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right">
-              <SheetHeader>
-                <SheetTitle className="font-serif text-left">
-                  Navigation
-                </SheetTitle>
-              </SheetHeader>
-              <div className="flex flex-col gap-4 mt-6 px-4">
-                <Link
-                  href="/reviews"
-                  className="text-lg font-medium hover:text-primary transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Reviews
-                </Link>
-                <Link
-                  href="/reading-lists"
-                  className="text-lg font-medium hover:text-primary transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Reading Lists
-                </Link>
-                <Link
-                  href="/about"
-                  className="text-lg font-medium hover:text-primary transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  About
-                </Link>
-                <Link
-                  href="/admin"
-                  className="text-lg font-medium hover:text-primary transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Write a Review
-                </Link>
-              </div>
-            </SheetContent>
-          </Sheet>
-        </div>
-      </div>
-      {isSearchOpen && (
-        <div className="container mx-auto px-6 pb-4 sm:hidden animate-in slide-in-from-top-2 fade-in duration-200">
-          <form onSubmit={handleSearch} className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search books..."
-              className="w-full pl-9"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              autoFocus
-            />
-          </form>
-        </div>
-      )}
-    </nav>
-  );
+					{/* Mobile Menu */}
+					<Sheet open={isOpen} onOpenChange={setIsOpen}>
+						<SheetTrigger asChild>
+							<Button variant="ghost" size="icon" className="md:hidden">
+								<Menu className="h-5 w-5" />
+								<span className="sr-only">Toggle menu</span>
+							</Button>
+						</SheetTrigger>
+						<SheetContent side="right">
+							<SheetHeader>
+								<SheetTitle className="font-serif text-left">
+									Navigation
+								</SheetTitle>
+							</SheetHeader>
+							<div className="flex flex-col gap-4 mt-6 px-4">
+								<Link
+									href="/reviews"
+									className="text-lg font-medium hover:text-primary transition-colors"
+									onClick={() => setIsOpen(false)}
+								>
+									Reviews
+								</Link>
+								<Link
+									href="/reading-lists"
+									className="text-lg font-medium hover:text-primary transition-colors"
+									onClick={() => setIsOpen(false)}
+								>
+									Reading Lists
+								</Link>
+								<Link
+									href="/about"
+									className="text-lg font-medium hover:text-primary transition-colors"
+									onClick={() => setIsOpen(false)}
+								>
+									About
+								</Link>
+								<Link
+									href="/admin"
+									className="text-lg font-medium hover:text-primary transition-colors"
+									onClick={() => setIsOpen(false)}
+								>
+									Write a Review
+								</Link>
+							</div>
+						</SheetContent>
+					</Sheet>
+				</div>
+			</div>
+			{isSearchOpen && (
+				<div className="container mx-auto px-6 pb-4 sm:hidden animate-in slide-in-from-top-2 fade-in duration-200">
+					<form onSubmit={handleSearch} className="relative">
+						<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+						<Input
+							type="search"
+							placeholder="Search books..."
+							className="w-full pl-9"
+							value={query}
+							onChange={(e) => setQuery(e.target.value)}
+							autoFocus
+						/>
+					</form>
+				</div>
+			)}
+		</nav>
+	);
 }

@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { type ClassValue, clsx } from "clsx";
 import crypto from "crypto";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+	return twMerge(clsx(inputs));
 }
 
 /**
@@ -12,22 +12,22 @@ export function cn(...inputs: ClassValue[]) {
  * Used to identify returning commenters without storing plain-text emails.
  */
 export function hashEmail(email: string): string {
-  return crypto
-    .createHash("sha256")
-    .update(email.toLowerCase().trim())
-    .digest("hex");
+	return crypto
+		.createHash("sha256")
+		.update(email.toLowerCase().trim())
+		.digest("hex");
 }
 
 export function extractTextFromRichText(content: any): string {
-  if (!content?.root?.children) return "";
+	if (!content?.root?.children) return "";
 
-  const extractText = (node: any): string => {
-    if (node.text) return node.text;
-    if (node.children) {
-      return node.children.map(extractText).join("");
-    }
-    return "";
-  };
+	const extractText = (node: any): string => {
+		if (node.text) return node.text;
+		if (node.children) {
+			return node.children.map(extractText).join("");
+		}
+		return "";
+	};
 
-  return content.root.children.map(extractText).join(" ");
+	return content.root.children.map(extractText).join(" ");
 }

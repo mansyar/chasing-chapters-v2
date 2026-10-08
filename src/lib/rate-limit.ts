@@ -3,12 +3,12 @@ import { getRedisClient } from "./redis";
 const RATE_LIMIT_PREFIX = "ratelimit:";
 
 export interface RateLimitResult {
-  /** Whether the request is allowed */
-  success: boolean;
-  /** Remaining requests in current window */
-  remaining: number;
-  /** Seconds until the rate limit resets */
-  resetInSeconds: number;
+	/** Whether the request is allowed */
+	success: boolean;
+	/** Remaining requests in current window */
+	remaining: number;
+	/** Seconds until the rate limit resets */
+	resetInSeconds: number;
 }
 
 /**
@@ -26,47 +26,47 @@ export interface RateLimitResult {
  * }
  */
 export async function rateLimit(
-  key: string,
-  limit: number,
-  windowSeconds: number
+	key: string,
+	limit: number,
+	windowSeconds: number,
 ): Promise<RateLimitResult> {
-  const client = getRedisClient();
+	const client = getRedisClient();
 
-  // Graceful degradation: if Redis is unavailable, allow the request
-  if (!client) {
-    return { success: true, remaining: limit, resetInSeconds: 0 };
-  }
+	// Graceful degradation: if Redis is unavailable, allow the request
+	if (!client) {
+		return { success: true, remaining: limit, resetInSeconds: 0 };
+	}
 
-  const fullKey = `${RATE_LIMIT_PREFIX}${key}`;
+	const fullKey = `${RATE_LIMIT_PREFIX}${key}`;
 
-  try {
-    // Atomic increment
-    const current = await client.incr(fullKey);
+	try {
+		// Atomic increment
+		const current = await client.incr(fullKey);
 
-    // Set expiry only on first request in window
-    if (current === 1) {
-      await client.expire(fullKey, windowSeconds);
-    }
+		// Set expiry only on first request in window
+		if (current === 1) {
+			await client.expire(fullKey, windowSeconds);
+		}
 
-    // Get TTL for reset time
-    const ttl = await client.ttl(fullKey);
-    const resetInSeconds = ttl > 0 ? ttl : windowSeconds;
+		// Get TTL for reset time
+		const ttl = await client.ttl(fullKey);
+		const resetInSeconds = ttl > 0 ? ttl : windowSeconds;
 
-    const remaining = Math.max(0, limit - current);
-    const success = current <= limit;
+		const remaining = Math.max(0, limit - current);
+		const success = current <= limit;
 
-    if (!success) {
-      console.log(
-        `[RateLimit] Blocked: key=${key}, current=${current}, limit=${limit}`
-      );
-    }
+		if (!success) {
+			console.log(
+				`[RateLimit] Blocked: key=${key}, current=${current}, limit=${limit}`,
+			);
+		}
 
-    return { success, remaining, resetInSeconds };
-  } catch (error) {
-    console.error("[RateLimit] Redis error, allowing request:", error);
-    // Fail open: allow request if Redis errors
-    return { success: true, remaining: limit, resetInSeconds: 0 };
-  }
+		return { success, remaining, resetInSeconds };
+	} catch (error) {
+		console.error("[RateLimit] Redis error, allowing request:", error);
+		// Fail open: allow request if Redis errors
+		return { success: true, remaining: limit, resetInSeconds: 0 };
+	}
 }
 
 /**
@@ -74,17 +74,17 @@ export async function rateLimit(
  * Falls back to "unknown" if IP cannot be determined.
  */
 export function getClientIP(headersList: Headers): string {
-  // x-forwarded-for can contain multiple IPs, take the first one
-  const forwarded = headersList.get("x-forwarded-for");
-  if (forwarded) {
-    return forwarded.split(",")[0].trim();
-  }
+	// x-forwarded-for can contain multiple IPs, take the first one
+	const forwarded = headersList.get("x-forwarded-for");
+	if (forwarded) {
+		return forwarded.split(",")[0].trim();
+	}
 
-  // Fallback headers
-  const realIP = headersList.get("x-real-ip");
-  if (realIP) {
-    return realIP;
-  }
+	// Fallback headers
+	const realIP = headersList.get("x-real-ip");
+	if (realIP) {
+		return realIP;
+	}
 
-  return "unknown";
+	return "unknown";
 }

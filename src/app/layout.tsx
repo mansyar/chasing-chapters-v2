@@ -2,40 +2,40 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL || "https://chasing-chapters.com"
-  ),
-  title: {
-    default: "Chasing Chapters",
-    template: "%s | Chasing Chapters",
-  },
-  description:
-    "A digital sanctuary for book lovers, dedicated to the art of storytelling and the joy of getting lost in a good book.",
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    url: "https://chasing-chapters.com",
-    siteName: "Chasing Chapters",
-    images: [
-      {
-        url: "/og-image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Chasing Chapters - Book Reviews",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    site: "@chasingchapters",
-    creator: "@chasingchapters",
-  },
+	metadataBase: new URL(
+		process.env.NEXT_PUBLIC_APP_URL || "https://chasing-chapters.com",
+	),
+	title: {
+		default: "Chasing Chapters",
+		template: "%s | Chasing Chapters",
+	},
+	description:
+		"A digital sanctuary for book lovers, dedicated to the art of storytelling and the joy of getting lost in a good book.",
+	openGraph: {
+		type: "website",
+		locale: "en_US",
+		url: "https://chasing-chapters.com",
+		siteName: "Chasing Chapters",
+		images: [
+			{
+				url: "/og-image.jpg",
+				width: 1200,
+				height: 630,
+				alt: "Chasing Chapters - Book Reviews",
+			},
+		],
+	},
+	twitter: {
+		card: "summary_large_image",
+		site: "@chasingchapters",
+		creator: "@chasingchapters",
+	},
 };
 
 export default function RootLayout({
-  children,
+	children,
 }: Readonly<{
-  children: React.ReactNode;
+	children: React.ReactNode;
 }>) {
-  return children;
+	return children;
 }

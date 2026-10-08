@@ -13,345 +13,356 @@
  * via the `definition` "supportedTimezones".
  */
 export type SupportedTimezones =
-  | 'Pacific/Midway'
-  | 'Pacific/Niue'
-  | 'Pacific/Honolulu'
-  | 'Pacific/Rarotonga'
-  | 'America/Anchorage'
-  | 'Pacific/Gambier'
-  | 'America/Los_Angeles'
-  | 'America/Tijuana'
-  | 'America/Denver'
-  | 'America/Phoenix'
-  | 'America/Chicago'
-  | 'America/Guatemala'
-  | 'America/New_York'
-  | 'America/Bogota'
-  | 'America/Caracas'
-  | 'America/Santiago'
-  | 'America/Buenos_Aires'
-  | 'America/Sao_Paulo'
-  | 'Atlantic/South_Georgia'
-  | 'Atlantic/Azores'
-  | 'Atlantic/Cape_Verde'
-  | 'Europe/London'
-  | 'Europe/Berlin'
-  | 'Africa/Lagos'
-  | 'Europe/Athens'
-  | 'Africa/Cairo'
-  | 'Europe/Moscow'
-  | 'Asia/Riyadh'
-  | 'Asia/Dubai'
-  | 'Asia/Baku'
-  | 'Asia/Karachi'
-  | 'Asia/Tashkent'
-  | 'Asia/Calcutta'
-  | 'Asia/Dhaka'
-  | 'Asia/Almaty'
-  | 'Asia/Jakarta'
-  | 'Asia/Bangkok'
-  | 'Asia/Shanghai'
-  | 'Asia/Singapore'
-  | 'Asia/Tokyo'
-  | 'Asia/Seoul'
-  | 'Australia/Brisbane'
-  | 'Australia/Sydney'
-  | 'Pacific/Guam'
-  | 'Pacific/Noumea'
-  | 'Pacific/Auckland'
-  | 'Pacific/Fiji';
+	| "Pacific/Midway"
+	| "Pacific/Niue"
+	| "Pacific/Honolulu"
+	| "Pacific/Rarotonga"
+	| "America/Anchorage"
+	| "Pacific/Gambier"
+	| "America/Los_Angeles"
+	| "America/Tijuana"
+	| "America/Denver"
+	| "America/Phoenix"
+	| "America/Chicago"
+	| "America/Guatemala"
+	| "America/New_York"
+	| "America/Bogota"
+	| "America/Caracas"
+	| "America/Santiago"
+	| "America/Buenos_Aires"
+	| "America/Sao_Paulo"
+	| "Atlantic/South_Georgia"
+	| "Atlantic/Azores"
+	| "Atlantic/Cape_Verde"
+	| "Europe/London"
+	| "Europe/Berlin"
+	| "Africa/Lagos"
+	| "Europe/Athens"
+	| "Africa/Cairo"
+	| "Europe/Moscow"
+	| "Asia/Riyadh"
+	| "Asia/Dubai"
+	| "Asia/Baku"
+	| "Asia/Karachi"
+	| "Asia/Tashkent"
+	| "Asia/Calcutta"
+	| "Asia/Dhaka"
+	| "Asia/Almaty"
+	| "Asia/Jakarta"
+	| "Asia/Bangkok"
+	| "Asia/Shanghai"
+	| "Asia/Singapore"
+	| "Asia/Tokyo"
+	| "Asia/Seoul"
+	| "Australia/Brisbane"
+	| "Australia/Sydney"
+	| "Pacific/Guam"
+	| "Pacific/Noumea"
+	| "Pacific/Auckland"
+	| "Pacific/Fiji";
 
 export interface Config {
-  auth: {
-    authors: AuthorAuthOperations;
-  };
-  blocks: {};
-  collections: {
-    authors: Author;
-    media: Media;
-    genres: Genre;
-    tags: Tag;
-    'mood-tags': MoodTag;
-    reviews: Review;
-    'reading-lists': ReadingList;
-    comments: Comment;
-    commenters: Commenter;
-    'payload-kv': PayloadKv;
-    'payload-locked-documents': PayloadLockedDocument;
-    'payload-preferences': PayloadPreference;
-    'payload-migrations': PayloadMigration;
-  };
-  collectionsJoins: {};
-  collectionsSelect: {
-    authors: AuthorsSelect<false> | AuthorsSelect<true>;
-    media: MediaSelect<false> | MediaSelect<true>;
-    genres: GenresSelect<false> | GenresSelect<true>;
-    tags: TagsSelect<false> | TagsSelect<true>;
-    'mood-tags': MoodTagsSelect<false> | MoodTagsSelect<true>;
-    reviews: ReviewsSelect<false> | ReviewsSelect<true>;
-    'reading-lists': ReadingListsSelect<false> | ReadingListsSelect<true>;
-    comments: CommentsSelect<false> | CommentsSelect<true>;
-    commenters: CommentersSelect<false> | CommentersSelect<true>;
-    'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
-    'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
-    'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
-    'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
-  };
-  db: {
-    defaultIDType: number;
-  };
-  fallbackLocale: ('false' | 'none' | 'null') | false | null | ('en' | 'id') | ('en' | 'id')[];
-  globals: {};
-  globalsSelect: {};
-  locale: 'en' | 'id';
-  user: Author & {
-    collection: 'authors';
-  };
-  jobs: {
-    tasks: unknown;
-    workflows: unknown;
-  };
+	auth: {
+		authors: AuthorAuthOperations;
+	};
+	blocks: {};
+	collections: {
+		authors: Author;
+		media: Media;
+		genres: Genre;
+		tags: Tag;
+		"mood-tags": MoodTag;
+		reviews: Review;
+		"reading-lists": ReadingList;
+		comments: Comment;
+		commenters: Commenter;
+		"payload-kv": PayloadKv;
+		"payload-locked-documents": PayloadLockedDocument;
+		"payload-preferences": PayloadPreference;
+		"payload-migrations": PayloadMigration;
+	};
+	collectionsJoins: {};
+	collectionsSelect: {
+		authors: AuthorsSelect<false> | AuthorsSelect<true>;
+		media: MediaSelect<false> | MediaSelect<true>;
+		genres: GenresSelect<false> | GenresSelect<true>;
+		tags: TagsSelect<false> | TagsSelect<true>;
+		"mood-tags": MoodTagsSelect<false> | MoodTagsSelect<true>;
+		reviews: ReviewsSelect<false> | ReviewsSelect<true>;
+		"reading-lists": ReadingListsSelect<false> | ReadingListsSelect<true>;
+		comments: CommentsSelect<false> | CommentsSelect<true>;
+		commenters: CommentersSelect<false> | CommentersSelect<true>;
+		"payload-kv": PayloadKvSelect<false> | PayloadKvSelect<true>;
+		"payload-locked-documents":
+			| PayloadLockedDocumentsSelect<false>
+			| PayloadLockedDocumentsSelect<true>;
+		"payload-preferences":
+			| PayloadPreferencesSelect<false>
+			| PayloadPreferencesSelect<true>;
+		"payload-migrations":
+			| PayloadMigrationsSelect<false>
+			| PayloadMigrationsSelect<true>;
+	};
+	db: {
+		defaultIDType: number;
+	};
+	fallbackLocale:
+		| ("false" | "none" | "null")
+		| false
+		| null
+		| ("en" | "id")
+		| ("en" | "id")[];
+	globals: {};
+	globalsSelect: {};
+	locale: "en" | "id";
+	user: Author & {
+		collection: "authors";
+	};
+	jobs: {
+		tasks: unknown;
+		workflows: unknown;
+	};
 }
 export interface AuthorAuthOperations {
-  forgotPassword: {
-    email: string;
-    password: string;
-  };
-  login: {
-    email: string;
-    password: string;
-  };
-  registerFirstUser: {
-    email: string;
-    password: string;
-  };
-  unlock: {
-    email: string;
-    password: string;
-  };
+	forgotPassword: {
+		email: string;
+		password: string;
+	};
+	login: {
+		email: string;
+		password: string;
+	};
+	registerFirstUser: {
+		email: string;
+		password: string;
+	};
+	unlock: {
+		email: string;
+		password: string;
+	};
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "authors".
  */
 export interface Author {
-  id: number;
-  name: string;
-  avatar?: (number | null) | Media;
-  bio?: string | null;
-  role: 'admin' | 'writer';
-  updatedAt: string;
-  createdAt: string;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  sessions?:
-    | {
-        id: string;
-        createdAt?: string | null;
-        expiresAt: string;
-      }[]
-    | null;
-  password?: string | null;
+	id: number;
+	name: string;
+	avatar?: (number | null) | Media;
+	bio?: string | null;
+	role: "admin" | "writer";
+	updatedAt: string;
+	createdAt: string;
+	email: string;
+	resetPasswordToken?: string | null;
+	resetPasswordExpiration?: string | null;
+	salt?: string | null;
+	hash?: string | null;
+	loginAttempts?: number | null;
+	lockUntil?: string | null;
+	sessions?:
+		| {
+				id: string;
+				createdAt?: string | null;
+				expiresAt: string;
+		  }[]
+		| null;
+	password?: string | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
 export interface Media {
-  id: number;
-  alt: string;
-  /**
-   * Auto-generated blur placeholder for image loading
-   */
-  blurDataURL?: string | null;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
-  sizes?: {
-    thumbnail?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    card?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    feature?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-  };
+	id: number;
+	alt: string;
+	/**
+	 * Auto-generated blur placeholder for image loading
+	 */
+	blurDataURL?: string | null;
+	updatedAt: string;
+	createdAt: string;
+	url?: string | null;
+	thumbnailURL?: string | null;
+	filename?: string | null;
+	mimeType?: string | null;
+	filesize?: number | null;
+	width?: number | null;
+	height?: number | null;
+	focalX?: number | null;
+	focalY?: number | null;
+	sizes?: {
+		thumbnail?: {
+			url?: string | null;
+			width?: number | null;
+			height?: number | null;
+			mimeType?: string | null;
+			filesize?: number | null;
+			filename?: string | null;
+		};
+		card?: {
+			url?: string | null;
+			width?: number | null;
+			height?: number | null;
+			mimeType?: string | null;
+			filesize?: number | null;
+			filename?: string | null;
+		};
+		feature?: {
+			url?: string | null;
+			width?: number | null;
+			height?: number | null;
+			mimeType?: string | null;
+			filesize?: number | null;
+			filename?: string | null;
+		};
+	};
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "genres".
  */
 export interface Genre {
-  id: number;
-  name: string;
-  slug?: string | null;
-  updatedAt: string;
-  createdAt: string;
+	id: number;
+	name: string;
+	slug?: string | null;
+	updatedAt: string;
+	createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "tags".
  */
 export interface Tag {
-  id: number;
-  name: string;
-  description?: string | null;
-  slug?: string | null;
-  updatedAt: string;
-  createdAt: string;
+	id: number;
+	name: string;
+	description?: string | null;
+	slug?: string | null;
+	updatedAt: string;
+	createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "mood-tags".
  */
 export interface MoodTag {
-  id: number;
-  name: string;
-  color: string;
-  icon?: string | null;
-  slug?: string | null;
-  updatedAt: string;
-  createdAt: string;
+	id: number;
+	name: string;
+	color: string;
+	icon?: string | null;
+	slug?: string | null;
+	updatedAt: string;
+	createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "reviews".
  */
 export interface Review {
-  id: number;
-  title: string;
-  bookAuthor: string;
-  rating: number;
-  coverImage: number | Media;
-  reviewContent: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  };
-  whatILoved?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  whatCouldBeBetter?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  perfectFor?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  favoriteQuotes?:
-    | {
-        quote: string;
-        page?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  readingStartDate?: string | null;
-  readingFinishDate?: string | null;
-  featured?: boolean | null;
-  views?: number | null;
-  likes?: number | null;
-  publishDate?: string | null;
-  author: number | Author;
-  genres?: (number | Genre)[] | null;
-  tags?: (number | Tag)[] | null;
-  moodTags?: (number | MoodTag)[] | null;
-  relatedReviews?: (number | Review)[] | null;
-  slug?: string | null;
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
+	id: number;
+	title: string;
+	bookAuthor: string;
+	rating: number;
+	coverImage: number | Media;
+	reviewContent: {
+		root: {
+			type: string;
+			children: {
+				type: any;
+				version: number;
+				[k: string]: unknown;
+			}[];
+			direction: ("ltr" | "rtl") | null;
+			format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+			indent: number;
+			version: number;
+		};
+		[k: string]: unknown;
+	};
+	whatILoved?: {
+		root: {
+			type: string;
+			children: {
+				type: any;
+				version: number;
+				[k: string]: unknown;
+			}[];
+			direction: ("ltr" | "rtl") | null;
+			format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+			indent: number;
+			version: number;
+		};
+		[k: string]: unknown;
+	} | null;
+	whatCouldBeBetter?: {
+		root: {
+			type: string;
+			children: {
+				type: any;
+				version: number;
+				[k: string]: unknown;
+			}[];
+			direction: ("ltr" | "rtl") | null;
+			format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+			indent: number;
+			version: number;
+		};
+		[k: string]: unknown;
+	} | null;
+	perfectFor?: {
+		root: {
+			type: string;
+			children: {
+				type: any;
+				version: number;
+				[k: string]: unknown;
+			}[];
+			direction: ("ltr" | "rtl") | null;
+			format: "left" | "start" | "center" | "right" | "end" | "justify" | "";
+			indent: number;
+			version: number;
+		};
+		[k: string]: unknown;
+	} | null;
+	favoriteQuotes?:
+		| {
+				quote: string;
+				page?: string | null;
+				id?: string | null;
+		  }[]
+		| null;
+	readingStartDate?: string | null;
+	readingFinishDate?: string | null;
+	featured?: boolean | null;
+	views?: number | null;
+	likes?: number | null;
+	publishDate?: string | null;
+	author: number | Author;
+	genres?: (number | Genre)[] | null;
+	tags?: (number | Tag)[] | null;
+	moodTags?: (number | MoodTag)[] | null;
+	relatedReviews?: (number | Review)[] | null;
+	slug?: string | null;
+	updatedAt: string;
+	createdAt: string;
+	_status?: ("draft" | "published") | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "reading-lists".
  */
 export interface ReadingList {
-  id: number;
-  title: string;
-  description?: string | null;
-  author: number | Author;
-  coverImage?: (number | null) | Media;
-  reviews?: (number | Review)[] | null;
-  featured?: boolean | null;
-  slug?: string | null;
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
+	id: number;
+	title: string;
+	description?: string | null;
+	author: number | Author;
+	coverImage?: (number | null) | Media;
+	reviews?: (number | Review)[] | null;
+	featured?: boolean | null;
+	slug?: string | null;
+	updatedAt: string;
+	createdAt: string;
+	_status?: ("draft" | "published") | null;
 }
 /**
  * Comments on book reviews
@@ -360,31 +371,31 @@ export interface ReadingList {
  * via the `definition` "comments".
  */
 export interface Comment {
-  id: number;
-  /**
-   * Display name of the commenter
-   */
-  authorName: string;
-  /**
-   * Comment content (max 2000 characters)
-   */
-  content: string;
-  relatedReview: number | Review;
-  commenter: number | Commenter;
-  status: 'pending' | 'approved' | 'rejected' | 'reported';
-  /**
-   * Number of times this comment has been reported
-   */
-  reportCount?: number | null;
-  reportedBy?:
-    | {
-        email?: string | null;
-        reportedAt?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  updatedAt: string;
-  createdAt: string;
+	id: number;
+	/**
+	 * Display name of the commenter
+	 */
+	authorName: string;
+	/**
+	 * Comment content (max 2000 characters)
+	 */
+	content: string;
+	relatedReview: number | Review;
+	commenter: number | Commenter;
+	status: "pending" | "approved" | "rejected" | "reported";
+	/**
+	 * Number of times this comment has been reported
+	 */
+	reportCount?: number | null;
+	reportedBy?:
+		| {
+				email?: string | null;
+				reportedAt?: string | null;
+				id?: string | null;
+		  }[]
+		| null;
+	updatedAt: string;
+	createdAt: string;
 }
 /**
  * Guest commenters who leave comments on reviews
@@ -393,376 +404,375 @@ export interface Comment {
  * via the `definition` "commenters".
  */
 export interface Commenter {
-  id: number;
-  name: string;
-  /**
-   * SHA-256 hash of email (privacy-preserving)
-   */
-  emailHash: string;
-  /**
-   * Number of approved comments from this user
-   */
-  approvedCommentCount?: number | null;
-  /**
-   * Trusted users have comments auto-approved
-   */
-  trusted?: boolean | null;
-  /**
-   * Banned users cannot submit comments
-   */
-  banned?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
+	id: number;
+	name: string;
+	/**
+	 * SHA-256 hash of email (privacy-preserving)
+	 */
+	emailHash: string;
+	/**
+	 * Number of approved comments from this user
+	 */
+	approvedCommentCount?: number | null;
+	/**
+	 * Trusted users have comments auto-approved
+	 */
+	trusted?: boolean | null;
+	/**
+	 * Banned users cannot submit comments
+	 */
+	banned?: boolean | null;
+	updatedAt: string;
+	createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
-  id: number;
-  key: string;
-  data:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
+	id: number;
+	key: string;
+	data:
+		| {
+				[k: string]: unknown;
+		  }
+		| unknown[]
+		| string
+		| number
+		| boolean
+		| null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
-  id: number;
-  document?:
-    | ({
-        relationTo: 'authors';
-        value: number | Author;
-      } | null)
-    | ({
-        relationTo: 'media';
-        value: number | Media;
-      } | null)
-    | ({
-        relationTo: 'genres';
-        value: number | Genre;
-      } | null)
-    | ({
-        relationTo: 'tags';
-        value: number | Tag;
-      } | null)
-    | ({
-        relationTo: 'mood-tags';
-        value: number | MoodTag;
-      } | null)
-    | ({
-        relationTo: 'reviews';
-        value: number | Review;
-      } | null)
-    | ({
-        relationTo: 'reading-lists';
-        value: number | ReadingList;
-      } | null)
-    | ({
-        relationTo: 'comments';
-        value: number | Comment;
-      } | null)
-    | ({
-        relationTo: 'commenters';
-        value: number | Commenter;
-      } | null);
-  globalSlug?: string | null;
-  user: {
-    relationTo: 'authors';
-    value: number | Author;
-  };
-  updatedAt: string;
-  createdAt: string;
+	id: number;
+	document?:
+		| ({
+				relationTo: "authors";
+				value: number | Author;
+		  } | null)
+		| ({
+				relationTo: "media";
+				value: number | Media;
+		  } | null)
+		| ({
+				relationTo: "genres";
+				value: number | Genre;
+		  } | null)
+		| ({
+				relationTo: "tags";
+				value: number | Tag;
+		  } | null)
+		| ({
+				relationTo: "mood-tags";
+				value: number | MoodTag;
+		  } | null)
+		| ({
+				relationTo: "reviews";
+				value: number | Review;
+		  } | null)
+		| ({
+				relationTo: "reading-lists";
+				value: number | ReadingList;
+		  } | null)
+		| ({
+				relationTo: "comments";
+				value: number | Comment;
+		  } | null)
+		| ({
+				relationTo: "commenters";
+				value: number | Commenter;
+		  } | null);
+	globalSlug?: string | null;
+	user: {
+		relationTo: "authors";
+		value: number | Author;
+	};
+	updatedAt: string;
+	createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-preferences".
  */
 export interface PayloadPreference {
-  id: number;
-  user: {
-    relationTo: 'authors';
-    value: number | Author;
-  };
-  key?: string | null;
-  value?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  updatedAt: string;
-  createdAt: string;
+	id: number;
+	user: {
+		relationTo: "authors";
+		value: number | Author;
+	};
+	key?: string | null;
+	value?:
+		| {
+				[k: string]: unknown;
+		  }
+		| unknown[]
+		| string
+		| number
+		| boolean
+		| null;
+	updatedAt: string;
+	createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-migrations".
  */
 export interface PayloadMigration {
-  id: number;
-  name?: string | null;
-  batch?: number | null;
-  updatedAt: string;
-  createdAt: string;
+	id: number;
+	name?: string | null;
+	batch?: number | null;
+	updatedAt: string;
+	createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "authors_select".
  */
 export interface AuthorsSelect<T extends boolean = true> {
-  name?: T;
-  avatar?: T;
-  bio?: T;
-  role?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  email?: T;
-  resetPasswordToken?: T;
-  resetPasswordExpiration?: T;
-  salt?: T;
-  hash?: T;
-  loginAttempts?: T;
-  lockUntil?: T;
-  sessions?:
-    | T
-    | {
-        id?: T;
-        createdAt?: T;
-        expiresAt?: T;
-      };
+	name?: T;
+	avatar?: T;
+	bio?: T;
+	role?: T;
+	updatedAt?: T;
+	createdAt?: T;
+	email?: T;
+	resetPasswordToken?: T;
+	resetPasswordExpiration?: T;
+	salt?: T;
+	hash?: T;
+	loginAttempts?: T;
+	lockUntil?: T;
+	sessions?:
+		| T
+		| {
+				id?: T;
+				createdAt?: T;
+				expiresAt?: T;
+		  };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media_select".
  */
 export interface MediaSelect<T extends boolean = true> {
-  alt?: T;
-  blurDataURL?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  url?: T;
-  thumbnailURL?: T;
-  filename?: T;
-  mimeType?: T;
-  filesize?: T;
-  width?: T;
-  height?: T;
-  focalX?: T;
-  focalY?: T;
-  sizes?:
-    | T
-    | {
-        thumbnail?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        card?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        feature?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-      };
+	alt?: T;
+	blurDataURL?: T;
+	updatedAt?: T;
+	createdAt?: T;
+	url?: T;
+	thumbnailURL?: T;
+	filename?: T;
+	mimeType?: T;
+	filesize?: T;
+	width?: T;
+	height?: T;
+	focalX?: T;
+	focalY?: T;
+	sizes?:
+		| T
+		| {
+				thumbnail?:
+					| T
+					| {
+							url?: T;
+							width?: T;
+							height?: T;
+							mimeType?: T;
+							filesize?: T;
+							filename?: T;
+					  };
+				card?:
+					| T
+					| {
+							url?: T;
+							width?: T;
+							height?: T;
+							mimeType?: T;
+							filesize?: T;
+							filename?: T;
+					  };
+				feature?:
+					| T
+					| {
+							url?: T;
+							width?: T;
+							height?: T;
+							mimeType?: T;
+							filesize?: T;
+							filename?: T;
+					  };
+		  };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "genres_select".
  */
 export interface GenresSelect<T extends boolean = true> {
-  name?: T;
-  slug?: T;
-  updatedAt?: T;
-  createdAt?: T;
+	name?: T;
+	slug?: T;
+	updatedAt?: T;
+	createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "tags_select".
  */
 export interface TagsSelect<T extends boolean = true> {
-  name?: T;
-  description?: T;
-  slug?: T;
-  updatedAt?: T;
-  createdAt?: T;
+	name?: T;
+	description?: T;
+	slug?: T;
+	updatedAt?: T;
+	createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "mood-tags_select".
  */
 export interface MoodTagsSelect<T extends boolean = true> {
-  name?: T;
-  color?: T;
-  icon?: T;
-  slug?: T;
-  updatedAt?: T;
-  createdAt?: T;
+	name?: T;
+	color?: T;
+	icon?: T;
+	slug?: T;
+	updatedAt?: T;
+	createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "reviews_select".
  */
 export interface ReviewsSelect<T extends boolean = true> {
-  title?: T;
-  bookAuthor?: T;
-  rating?: T;
-  coverImage?: T;
-  reviewContent?: T;
-  whatILoved?: T;
-  whatCouldBeBetter?: T;
-  perfectFor?: T;
-  favoriteQuotes?:
-    | T
-    | {
-        quote?: T;
-        page?: T;
-        id?: T;
-      };
-  readingStartDate?: T;
-  readingFinishDate?: T;
-  featured?: T;
-  views?: T;
-  likes?: T;
-  publishDate?: T;
-  author?: T;
-  genres?: T;
-  tags?: T;
-  moodTags?: T;
-  relatedReviews?: T;
-  slug?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  _status?: T;
+	title?: T;
+	bookAuthor?: T;
+	rating?: T;
+	coverImage?: T;
+	reviewContent?: T;
+	whatILoved?: T;
+	whatCouldBeBetter?: T;
+	perfectFor?: T;
+	favoriteQuotes?:
+		| T
+		| {
+				quote?: T;
+				page?: T;
+				id?: T;
+		  };
+	readingStartDate?: T;
+	readingFinishDate?: T;
+	featured?: T;
+	views?: T;
+	likes?: T;
+	publishDate?: T;
+	author?: T;
+	genres?: T;
+	tags?: T;
+	moodTags?: T;
+	relatedReviews?: T;
+	slug?: T;
+	updatedAt?: T;
+	createdAt?: T;
+	_status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "reading-lists_select".
  */
 export interface ReadingListsSelect<T extends boolean = true> {
-  title?: T;
-  description?: T;
-  author?: T;
-  coverImage?: T;
-  reviews?: T;
-  featured?: T;
-  slug?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  _status?: T;
+	title?: T;
+	description?: T;
+	author?: T;
+	coverImage?: T;
+	reviews?: T;
+	featured?: T;
+	slug?: T;
+	updatedAt?: T;
+	createdAt?: T;
+	_status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "comments_select".
  */
 export interface CommentsSelect<T extends boolean = true> {
-  authorName?: T;
-  content?: T;
-  relatedReview?: T;
-  commenter?: T;
-  status?: T;
-  reportCount?: T;
-  reportedBy?:
-    | T
-    | {
-        email?: T;
-        reportedAt?: T;
-        id?: T;
-      };
-  updatedAt?: T;
-  createdAt?: T;
+	authorName?: T;
+	content?: T;
+	relatedReview?: T;
+	commenter?: T;
+	status?: T;
+	reportCount?: T;
+	reportedBy?:
+		| T
+		| {
+				email?: T;
+				reportedAt?: T;
+				id?: T;
+		  };
+	updatedAt?: T;
+	createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "commenters_select".
  */
 export interface CommentersSelect<T extends boolean = true> {
-  name?: T;
-  emailHash?: T;
-  approvedCommentCount?: T;
-  trusted?: T;
-  banned?: T;
-  updatedAt?: T;
-  createdAt?: T;
+	name?: T;
+	emailHash?: T;
+	approvedCommentCount?: T;
+	trusted?: T;
+	banned?: T;
+	updatedAt?: T;
+	createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
-  key?: T;
-  data?: T;
+	key?: T;
+	data?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents_select".
  */
 export interface PayloadLockedDocumentsSelect<T extends boolean = true> {
-  document?: T;
-  globalSlug?: T;
-  user?: T;
-  updatedAt?: T;
-  createdAt?: T;
+	document?: T;
+	globalSlug?: T;
+	user?: T;
+	updatedAt?: T;
+	createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-preferences_select".
  */
 export interface PayloadPreferencesSelect<T extends boolean = true> {
-  user?: T;
-  key?: T;
-  value?: T;
-  updatedAt?: T;
-  createdAt?: T;
+	user?: T;
+	key?: T;
+	value?: T;
+	updatedAt?: T;
+	createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-migrations_select".
  */
 export interface PayloadMigrationsSelect<T extends boolean = true> {
-  name?: T;
-  batch?: T;
-  updatedAt?: T;
-  createdAt?: T;
+	name?: T;
+	batch?: T;
+	updatedAt?: T;
+	createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "auth".
  */
 export interface Auth {
-  [k: string]: unknown;
+	[k: string]: unknown;
 }
 
-
-declare module 'payload' {
-  export interface GeneratedTypes extends Config {}
+declare module "payload" {
+	export interface GeneratedTypes extends Config {}
 }

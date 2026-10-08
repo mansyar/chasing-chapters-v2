@@ -1,6 +1,6 @@
-import { getPayload } from "payload";
 import configPromise from "@payload-config";
 import { sql } from "drizzle-orm";
+import { getPayload } from "payload";
 
 type CounterField = "views" | "likes";
 
@@ -14,33 +14,33 @@ type CounterField = "views" | "likes";
  * @returns The new value after increment, or null if review not found
  */
 export async function atomicIncrement(
-  reviewId: number,
-  field: CounterField,
-  delta: number = 1
+	reviewId: number,
+	field: CounterField,
+	delta: number = 1,
 ): Promise<number | null> {
-  try {
-    const payload = await getPayload({ config: configPromise });
-    const drizzle = payload.db.drizzle;
+	try {
+		const payload = await getPayload({ config: configPromise });
+		const drizzle = payload.db.drizzle;
 
-    // Use raw SQL for atomic increment
-    // The RETURNING clause gives us the new value after update
-    const result = await drizzle.execute(
-      sql`UPDATE reviews 
+		// Use raw SQL for atomic increment
+		// The RETURNING clause gives us the new value after update
+		const result = await drizzle.execute(
+			sql`UPDATE reviews 
           SET ${sql.identifier(field)} = COALESCE(${sql.identifier(field)}, 0) + ${delta}
           WHERE id = ${reviewId}
-          RETURNING ${sql.identifier(field)}`
-    );
+          RETURNING ${sql.identifier(field)}`,
+		);
 
-    // Check if any row was updated
-    if (!result.rows || result.rows.length === 0) {
-      return null;
-    }
+		// Check if any row was updated
+		if (!result.rows || result.rows.length === 0) {
+			return null;
+		}
 
-    return result.rows[0][field] as number;
-  } catch (error) {
-    console.error(`[DB] Failed to increment ${field}:`, error);
-    return null;
-  }
+		return result.rows[0][field] as number;
+	} catch (error) {
+		console.error(`[DB] Failed to increment ${field}:`, error);
+		return null;
+	}
 }
 
 /**
@@ -53,30 +53,30 @@ export async function atomicIncrement(
  * @returns The new value after decrement, or null if review not found
  */
 export async function atomicDecrement(
-  reviewId: number,
-  field: CounterField,
-  delta: number = 1
+	reviewId: number,
+	field: CounterField,
+	delta: number = 1,
 ): Promise<number | null> {
-  try {
-    const payload = await getPayload({ config: configPromise });
-    const drizzle = payload.db.drizzle;
+	try {
+		const payload = await getPayload({ config: configPromise });
+		const drizzle = payload.db.drizzle;
 
-    // Use GREATEST to ensure we don't go below 0
-    const result = await drizzle.execute(
-      sql`UPDATE reviews 
+		// Use GREATEST to ensure we don't go below 0
+		const result = await drizzle.execute(
+			sql`UPDATE reviews 
           SET ${sql.identifier(field)} = GREATEST(0, COALESCE(${sql.identifier(field)}, 0) - ${delta})
           WHERE id = ${reviewId}
-          RETURNING ${sql.identifier(field)}`
-    );
+          RETURNING ${sql.identifier(field)}`,
+		);
 
-    // Check if any row was updated
-    if (!result.rows || result.rows.length === 0) {
-      return null;
-    }
+		// Check if any row was updated
+		if (!result.rows || result.rows.length === 0) {
+			return null;
+		}
 
-    return result.rows[0][field] as number;
-  } catch (error) {
-    console.error(`[DB] Failed to decrement ${field}:`, error);
-    return null;
-  }
+		return result.rows[0][field] as number;
+	} catch (error) {
+		console.error(`[DB] Failed to decrement ${field}:`, error);
+		return null;
+	}
 }

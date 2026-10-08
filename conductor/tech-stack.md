@@ -14,5 +14,5 @@
 | Monitoring | Sentry, Umami analytics |
 | Validation | Zod (env + server action inputs) |
 | Testing | Bun test (unit), Playwright (e2e, chromium) |
-| Lint/Format | ESLint 9 (eslint-config-next), husky pre-commit (typecheck+lint+test) |
+| Lint/Format | Biome 2.5 (migrated from ESLint), husky pre-commit (typecheck+lint+test) |
 | Deploy | Docker (bun alpine, standalone, non-root) → Docker Hub → Coolify (GitHub Actions) |

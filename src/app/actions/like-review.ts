@@ -1,66 +1,66 @@
 "use server";
 
-import { getPayload } from "payload";
 import configPromise from "@payload-config";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
-import { rateLimit, getClientIP } from "@/lib/rate-limit";
-import { atomicIncrement, atomicDecrement } from "@/lib/db";
-import { likeReviewSchema, formatZodError } from "@/lib/schemas";
+import { getPayload } from "payload";
+import { atomicDecrement, atomicIncrement } from "@/lib/db";
+import { getClientIP, rateLimit } from "@/lib/rate-limit";
+import { formatZodError, likeReviewSchema } from "@/lib/schemas";
 
 export async function toggleLikeReview(
-  reviewId: string,
-  shouldIncrement: boolean
+	reviewId: string,
+	shouldIncrement: boolean,
 ): Promise<{ success: boolean; newLikes?: number; error?: string }> {
-  try {
-    // Validate input with Zod
-    const parseResult = likeReviewSchema.safeParse({
-      reviewId,
-      shouldIncrement,
-    });
-    if (!parseResult.success) {
-      return { success: false, error: formatZodError(parseResult.error) };
-    }
+	try {
+		// Validate input with Zod
+		const parseResult = likeReviewSchema.safeParse({
+			reviewId,
+			shouldIncrement,
+		});
+		if (!parseResult.success) {
+			return { success: false, error: formatZodError(parseResult.error) };
+		}
 
-    // Rate limit: 5 likes per minute per review per IP
-    const headersList = await headers();
-    const ip = getClientIP(headersList);
-    const rateLimitResult = await rateLimit(`like:${ip}:${reviewId}`, 5, 60);
+		// Rate limit: 5 likes per minute per review per IP
+		const headersList = await headers();
+		const ip = getClientIP(headersList);
+		const rateLimitResult = await rateLimit(`like:${ip}:${reviewId}`, 5, 60);
 
-    if (!rateLimitResult.success) {
-      return {
-        success: false,
-        error: `Too many requests. Please wait ${rateLimitResult.resetInSeconds} seconds.`,
-      };
-    }
+		if (!rateLimitResult.success) {
+			return {
+				success: false,
+				error: `Too many requests. Please wait ${rateLimitResult.resetInSeconds} seconds.`,
+			};
+		}
 
-    // Convert string ID to number (Payload CMS with PostgreSQL uses numeric IDs)
-    const numericId = parseInt(reviewId, 10);
+		// Convert string ID to number (Payload CMS with PostgreSQL uses numeric IDs)
+		const numericId = parseInt(reviewId, 10);
 
-    // Atomic increment/decrement - no race condition on concurrent requests
-    const newLikes = shouldIncrement
-      ? await atomicIncrement(numericId, "likes")
-      : await atomicDecrement(numericId, "likes");
+		// Atomic increment/decrement - no race condition on concurrent requests
+		const newLikes = shouldIncrement
+			? await atomicIncrement(numericId, "likes")
+			: await atomicDecrement(numericId, "likes");
 
-    if (newLikes === null) {
-      return { success: false, error: "Review not found" };
-    }
+		if (newLikes === null) {
+			return { success: false, error: "Review not found" };
+		}
 
-    // Revalidate the page so the static generation or cache is updated
-    const payload = await getPayload({ config: configPromise });
-    const review = await payload.findByID({
-      collection: "reviews",
-      id: numericId,
-      depth: 0,
-    });
+		// Revalidate the page so the static generation or cache is updated
+		const payload = await getPayload({ config: configPromise });
+		const review = await payload.findByID({
+			collection: "reviews",
+			id: numericId,
+			depth: 0,
+		});
 
-    if (review?.slug) {
-      revalidatePath(`/reviews/${review.slug}`);
-    }
+		if (review?.slug) {
+			revalidatePath(`/reviews/${review.slug}`);
+		}
 
-    return { success: true, newLikes };
-  } catch (error) {
-    console.error("Error toggling like:", error);
-    return { success: false, error: "Failed to update likes" };
-  }
+		return { success: true, newLikes };
+	} catch (error) {
+		console.error("Error toggling like:", error);
+		return { success: false, error: "Failed to update likes" };
+	}
 }
