@@ -173,6 +173,7 @@ export default function ModernBookCarousel({
 					variant="outline"
 					size="icon"
 					onClick={prev}
+					aria-label="Previous review"
 					className="rounded-full bg-background/80 backdrop-blur-sm pointer-events-auto h-12 w-12 border-none shadow-xl hover:bg-primary hover:text-white transition-all transform -translate-x-4 group-hover:translate-x-0"
 				>
 					<ChevronLeft className="h-6 w-6" />
@@ -181,6 +182,7 @@ export default function ModernBookCarousel({
 					variant="outline"
 					size="icon"
 					onClick={next}
+					aria-label="Next review"
 					className="rounded-full bg-background/80 backdrop-blur-sm pointer-events-auto h-12 w-12 border-none shadow-xl hover:bg-primary hover:text-white transition-all transform translate-x-4 group-hover:translate-x-0"
 				>
 					<ChevronRight className="h-6 w-6" />
