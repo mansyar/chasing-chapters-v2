@@ -1,11 +1,11 @@
 # -----------------------------------------------------------------------------
 # Stage 1: Dependencies
 # -----------------------------------------------------------------------------
-FROM oven/bun:1.3.4-alpine AS deps
+FROM oven/bun:1.4.2-alpine AS deps
 WORKDIR /app
 
 # Copy package files
-COPY package.json bun.lockb* ./
+COPY package.json bun.lock bun.lockb* ./
 
 # Install dependencies
 RUN bun install --frozen-lockfile || bun install
@@ -13,7 +13,7 @@ RUN bun install --frozen-lockfile || bun install
 # -----------------------------------------------------------------------------
 # Stage 2: Builder
 # -----------------------------------------------------------------------------
-FROM oven/bun:1.3.4-alpine AS builder
+FROM oven/bun:1.4.2-alpine AS builder
 WORKDIR /app
 
 # Copy dependencies from deps stage
@@ -48,7 +48,7 @@ RUN bun --bun next build --webpack
 # -----------------------------------------------------------------------------
 # Stage 3: Production Runner
 # -----------------------------------------------------------------------------
-FROM oven/bun:1.3.4-alpine AS runner
+FROM oven/bun:1.4.2-alpine AS runner
 WORKDIR /app
 
 RUN apk update && apk add --no-cache curl
@@ -76,5 +76,9 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
 
-# Start the server with Bun
+# Start the server with Bun.
+# DB migrations are NOT run here — they run in the GitHub Actions deploy
+# pipeline (see .github/workflows/deploy.yml) before the Coolify webhook
+# fires, so a failed migration stops the deploy instead of crash-looping
+# the container.
 CMD ["bun", "run", "server.js"]

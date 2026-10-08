@@ -1,5 +1,5 @@
-import Redis from "ioredis";
 import crypto from "crypto";
+import Redis from "ioredis";
 import { env } from "./env";
 import { logger } from "./logger";
 
@@ -7,25 +7,25 @@ import { logger } from "./logger";
 let redis: Redis | null = null;
 
 export function getRedisClient(): Redis | null {
-  if (!env.REDIS_URL) {
-    logger.debug("[Redis] REDIS_URL not configured, caching disabled");
-    return null;
-  }
+	if (!env.REDIS_URL) {
+		logger.debug("[Redis] REDIS_URL not configured, caching disabled");
+		return null;
+	}
 
-  if (!redis) {
-    logger.info("[Redis] Connecting to Redis...");
-    redis = new Redis(env.REDIS_URL);
+	if (!redis) {
+		logger.info("[Redis] Connecting to Redis...");
+		redis = new Redis(env.REDIS_URL);
 
-    redis.on("connect", () => {
-      logger.info("[Redis] Connected successfully");
-    });
+		redis.on("connect", () => {
+			logger.info("[Redis] Connected successfully");
+		});
 
-    redis.on("error", (err) => {
-      console.error("[Redis] Connection error:", err);
-    });
-  }
+		redis.on("error", (err) => {
+			console.error("[Redis] Connection error:", err);
+		});
+	}
 
-  return redis;
+	return redis;
 }
 
 // Translation cache helpers
@@ -38,49 +38,49 @@ const CACHE_TTL = 60 * 60 * 24 * 30; // 30 days in seconds
  * Exported for testing purposes.
  */
 export function getTranslationCacheKey(
-  text: string,
-  targetLang: string
+	text: string,
+	targetLang: string,
 ): string {
-  const hash = crypto
-    .createHash("sha256")
-    .update(text)
-    .digest("hex")
-    .slice(0, 16);
-  return `${TRANSLATION_PREFIX}${targetLang}:${hash}`;
+	const hash = crypto
+		.createHash("sha256")
+		.update(text)
+		.digest("hex")
+		.slice(0, 16);
+	return `${TRANSLATION_PREFIX}${targetLang}:${hash}`;
 }
 
 export async function getCachedTranslation(
-  text: string,
-  targetLang: string
+	text: string,
+	targetLang: string,
 ): Promise<string | null> {
-  const client = getRedisClient();
-  if (!client) return null;
+	const client = getRedisClient();
+	if (!client) return null;
 
-  try {
-    const key = getTranslationCacheKey(text, targetLang);
-    const cached = await client.get(key);
-    if (cached) {
-      logger.debug(`[Redis] Cache hit for translation`);
-    }
-    return cached;
-  } catch (error) {
-    console.error("[Redis] Cache get error:", error);
-    return null;
-  }
+	try {
+		const key = getTranslationCacheKey(text, targetLang);
+		const cached = await client.get(key);
+		if (cached) {
+			logger.debug(`[Redis] Cache hit for translation`);
+		}
+		return cached;
+	} catch (error) {
+		console.error("[Redis] Cache get error:", error);
+		return null;
+	}
 }
 
 export async function setCachedTranslation(
-  text: string,
-  targetLang: string,
-  translation: string
+	text: string,
+	targetLang: string,
+	translation: string,
 ): Promise<void> {
-  const client = getRedisClient();
-  if (!client) return;
+	const client = getRedisClient();
+	if (!client) return;
 
-  try {
-    const key = getTranslationCacheKey(text, targetLang);
-    await client.setex(key, CACHE_TTL, translation);
-  } catch (error) {
-    console.error("[Redis] Cache set error:", error);
-  }
+	try {
+		const key = getTranslationCacheKey(text, targetLang);
+		await client.setex(key, CACHE_TTL, translation);
+	} catch (error) {
+		console.error("[Redis] Cache set error:", error);
+	}
 }

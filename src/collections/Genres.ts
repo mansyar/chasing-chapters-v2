@@ -2,48 +2,48 @@ import type { CollectionConfig } from "payload";
 import formatSlug from "../hooks/formatSlug";
 
 export const Genres: CollectionConfig = {
-  slug: "genres",
-  admin: {
-    useAsTitle: "name",
-  },
-  access: {
-    read: () => true,
-    create: ({ req: { user } }) => user?.role === "admin",
-    update: ({ req: { user } }) => user?.role === "admin",
-    delete: ({ req: { user } }) => user?.role === "admin",
-  },
-  fields: [
-    {
-      name: "name",
-      type: "text",
-      required: true,
-    },
-    {
-      name: "slug",
-      type: "text",
-      admin: {
-        position: "sidebar",
-      },
-      hooks: {
-        beforeValidate: [formatSlug("name")],
-      },
-    },
-  ],
-  hooks: {
-    beforeDelete: [
-      async ({ id, req }) => {
-        const { payload } = req;
-        const reviews = await payload.find({
-          collection: "reviews",
-          where: { genres: { contains: id } },
-          limit: 1,
-        });
-        if (reviews.docs.length > 0) {
-          throw new Error(
-            "Cannot delete genre that is used by existing reviews."
-          );
-        }
-      },
-    ],
-  },
+	slug: "genres",
+	admin: {
+		useAsTitle: "name",
+	},
+	access: {
+		read: () => true,
+		create: ({ req: { user } }) => user?.role === "admin",
+		update: ({ req: { user } }) => user?.role === "admin",
+		delete: ({ req: { user } }) => user?.role === "admin",
+	},
+	fields: [
+		{
+			name: "name",
+			type: "text",
+			required: true,
+		},
+		{
+			name: "slug",
+			type: "text",
+			admin: {
+				position: "sidebar",
+			},
+			hooks: {
+				beforeValidate: [formatSlug("name")],
+			},
+		},
+	],
+	hooks: {
+		beforeDelete: [
+			async ({ id, req }) => {
+				const { payload } = req;
+				const reviews = await payload.find({
+					collection: "reviews",
+					where: { genres: { contains: id } },
+					limit: 1,
+				});
+				if (reviews.docs.length > 0) {
+					throw new Error(
+						"Cannot delete genre that is used by existing reviews.",
+					);
+				}
+			},
+		],
+	},
 };

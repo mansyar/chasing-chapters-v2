@@ -68,7 +68,7 @@ The solution uses Next.js 16 (frontend) and Payload CMS 3.0 (backend) in a unifi
 
 - Log in and access a private CMS
 - Create a new review using intuitive templates
-- Save drafts and schedule publication
+- Save drafts and publish when ready (scheduled publication is planned but not yet implemented)
 - Publish a completed review instantly
 - Add genres, mood tags, and cover images
 - Feature selected books on the homepage
@@ -114,7 +114,7 @@ Each review includes:
 - Likes count (with atomic database operations)
 - Views count (with atomic database operations)
 - Comments with moderation and spam detection
-- Draft/Published/Scheduled status
+- Draft/Published status (Scheduled is planned but not yet implemented)
 - Automatic translation to Indonesian
 
 ## 5.2 Public Site Features
@@ -139,7 +139,7 @@ Each review includes:
 
 - Author login with secure authentication
 - Dashboard to manage:
-  - Reviews (drafts, published, scheduled)
+  - Reviews (drafts, published)
   - Genres, tags, and mood tags
   - Media uploads (stored on Cloudflare R2)
   - Curated reading lists

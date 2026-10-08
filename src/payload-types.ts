@@ -104,9 +104,10 @@ export interface Config {
   globals: {};
   globalsSelect: {};
   locale: 'en' | 'id';
-  user: Author & {
-    collection: 'authors';
+  widgets: {
+    collections: CollectionsWidget;
   };
+  user: Author;
   jobs: {
     tasks: unknown;
     workflows: unknown;
@@ -147,6 +148,7 @@ export interface Author {
   resetPasswordExpiration?: string | null;
   salt?: string | null;
   hash?: string | null;
+  resetPasswordRequestedAt?: string | null;
   loginAttempts?: number | null;
   lockUntil?: string | null;
   sessions?:
@@ -157,6 +159,7 @@ export interface Author {
       }[]
     | null;
   password?: string | null;
+  collection: 'authors';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -169,6 +172,7 @@ export interface Media {
    * Auto-generated blur placeholder for image loading
    */
   blurDataURL?: string | null;
+  _objectKey?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -532,6 +536,7 @@ export interface AuthorsSelect<T extends boolean = true> {
   resetPasswordExpiration?: T;
   salt?: T;
   hash?: T;
+  resetPasswordRequestedAt?: T;
   loginAttempts?: T;
   lockUntil?: T;
   sessions?:
@@ -549,6 +554,7 @@ export interface AuthorsSelect<T extends boolean = true> {
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
   blurDataURL?: T;
+  _objectKey?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -753,6 +759,16 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "collections_widget".
+ */
+export interface CollectionsWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

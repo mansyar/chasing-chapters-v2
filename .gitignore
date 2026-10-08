@@ -52,3 +52,5 @@ google-cloud-credentials.json
 data
 # Sentry Config File
 .env.sentry-build-plugin
+
+fixture*.local.ts

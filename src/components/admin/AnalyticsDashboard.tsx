@@ -1,168 +1,168 @@
-import type { AdminViewServerProps } from "payload";
-import { Gutter } from "@payloadcms/ui";
-import React from "react";
-import { getPayload } from "payload";
 import configPromise from "@payload-config";
+import { Gutter } from "@payloadcms/ui";
+import { BookOpen, Eye, Heart, Star } from "lucide-react";
+import type { AdminViewServerProps } from "payload";
+import { getPayload } from "payload";
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Eye, Heart, Star, BookOpen } from "lucide-react";
 
 export const AnalyticsDashboard = async ({
-  initPageResult,
+	initPageResult,
 }: AdminViewServerProps) => {
-  const payload = await getPayload({ config: configPromise });
-  const user = initPageResult?.req?.user;
+	const payload = await getPayload({ config: configPromise });
+	const user = initPageResult?.req?.user;
 
-  // 1. Fetch Reviews
-  // If admin, fetch all. If writer, fetch only theirs.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const where: any = {};
-  if (user?.role === "writer") {
-    where.author = {
-      equals: user?.id,
-    };
-  }
+	// 1. Fetch Reviews
+	// If admin, fetch all. If writer, fetch only theirs.
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const where: any = {};
+	if (user?.role === "writer") {
+		where.author = {
+			equals: user?.id,
+		};
+	}
 
-  const { docs: reviews } = await payload.find({
-    collection: "reviews",
-    where,
-    limit: 1000,
-    sort: "-views", // sort by views mostly
-  });
+	const { docs: reviews } = await payload.find({
+		collection: "reviews",
+		where,
+		limit: 1000,
+		sort: "-views", // sort by views mostly
+	});
 
-  // 2. Calculate Stats
-  const totalViews = reviews.reduce(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (acc, r) => acc + ((r as any).views || 0),
-    0
-  );
-  const totalLikes = reviews.reduce((acc, r) => acc + (r.likes || 0), 0);
-  const totalReviews = reviews.length;
-  const avgRating =
-    totalReviews > 0
-      ? (reviews.reduce((acc, r) => acc + r.rating, 0) / totalReviews).toFixed(
-          1
-        )
-      : "N/A";
+	// 2. Calculate Stats
+	const totalViews = reviews.reduce(
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		(acc, r) => acc + ((r as any).views || 0),
+		0,
+	);
+	const totalLikes = reviews.reduce((acc, r) => acc + (r.likes || 0), 0);
+	const totalReviews = reviews.length;
+	const avgRating =
+		totalReviews > 0
+			? (reviews.reduce((acc, r) => acc + r.rating, 0) / totalReviews).toFixed(
+					1,
+				)
+			: "N/A";
 
-  // 3. Top Reviews
-  const topReviews = reviews.slice(0, 5);
+	// 3. Top Reviews
+	const topReviews = reviews.slice(0, 5);
 
-  return (
-    <Gutter>
-      <div className="py-12 space-y-12">
-        <div>
-          <h1 className="text-4xl font-bold tracking-tight mb-2">
-            Author Analytics 📊
-          </h1>
-          <p className="text-muted-foreground">
-            Overview of your content performance.
-          </p>
-        </div>
+	return (
+		<Gutter>
+			<div className="py-12 space-y-12">
+				<div>
+					<h1 className="text-4xl font-bold tracking-tight mb-2">
+						Author Analytics 📊
+					</h1>
+					<p className="text-muted-foreground">
+						Overview of your content performance.
+					</p>
+				</div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <StatsCard
-            title="Total Views"
-            value={totalViews}
-            icon={<Eye className="h-4 w-4 text-muted-foreground" />}
-          />
-          <StatsCard
-            title="Total Likes"
-            value={totalLikes}
-            icon={<Heart className="h-4 w-4 text-muted-foreground" />}
-          />
-          <StatsCard
-            title="Published Reviews"
-            value={totalReviews}
-            icon={<BookOpen className="h-4 w-4 text-muted-foreground" />}
-          />
-          <StatsCard
-            title="Avg Rating"
-            value={avgRating}
-            icon={<Star className="h-4 w-4 text-muted-foreground" />}
-          />
-        </div>
+				<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+					<StatsCard
+						title="Total Views"
+						value={totalViews}
+						icon={<Eye className="h-4 w-4 text-muted-foreground" />}
+					/>
+					<StatsCard
+						title="Total Likes"
+						value={totalLikes}
+						icon={<Heart className="h-4 w-4 text-muted-foreground" />}
+					/>
+					<StatsCard
+						title="Published Reviews"
+						value={totalReviews}
+						icon={<BookOpen className="h-4 w-4 text-muted-foreground" />}
+					/>
+					<StatsCard
+						title="Avg Rating"
+						value={avgRating}
+						icon={<Star className="h-4 w-4 text-muted-foreground" />}
+					/>
+				</div>
 
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold">Top Performing Reviews</h2>
-          <div className="rounded-md border">
-            <div className="relative w-full overflow-auto">
-              <table className="w-full caption-bottom text-sm text-left">
-                <thead className="[&_tr]:border-b">
-                  <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-                    <th className="h-12 px-4 align-middle font-medium text-muted-foreground">
-                      Title
-                    </th>
-                    <th className="h-12 px-4 align-middle font-medium text-muted-foreground">
-                      Views
-                    </th>
-                    <th className="h-12 px-4 align-middle font-medium text-muted-foreground">
-                      Likes
-                    </th>
-                    <th className="h-12 px-4 align-middle font-medium text-muted-foreground">
-                      Rating
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="[&_tr:last-child]:border-0">
-                  {topReviews.map((review) => (
-                    <tr
-                      key={review.id}
-                      className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
-                    >
-                      <td className="p-4 align-middle font-medium">
-                        <a
-                          href={`/admin/collections/reviews/${review.id}`}
-                          className="text-blue-500 hover:text-blue-700 hover:underline"
-                        >
-                          {review.title}
-                        </a>
-                      </td>
-                      <td className="p-4 align-middle">
-                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                        {(review as any).views || 0}
-                      </td>
-                      <td className="p-4 align-middle">{review.likes || 0}</td>
-                      <td className="p-4 align-middle">{review.rating}/5</td>
-                    </tr>
-                  ))}
-                  {topReviews.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan={4}
-                        className="p-4 text-center text-muted-foreground"
-                      >
-                        No reviews found.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Gutter>
-  );
+				<div className="space-y-6">
+					<h2 className="text-2xl font-bold">Top Performing Reviews</h2>
+					<div className="rounded-md border">
+						<div className="relative w-full overflow-auto">
+							<table className="w-full caption-bottom text-sm text-left">
+								<thead className="[&_tr]:border-b">
+									<tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+										<th className="h-12 px-4 align-middle font-medium text-muted-foreground">
+											Title
+										</th>
+										<th className="h-12 px-4 align-middle font-medium text-muted-foreground">
+											Views
+										</th>
+										<th className="h-12 px-4 align-middle font-medium text-muted-foreground">
+											Likes
+										</th>
+										<th className="h-12 px-4 align-middle font-medium text-muted-foreground">
+											Rating
+										</th>
+									</tr>
+								</thead>
+								<tbody className="[&_tr:last-child]:border-0">
+									{topReviews.map((review) => (
+										<tr
+											key={review.id}
+											className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+										>
+											<td className="p-4 align-middle font-medium">
+												<a
+													href={`/admin/collections/reviews/${review.id}`}
+													className="text-blue-500 hover:text-blue-700 hover:underline"
+												>
+													{review.title}
+												</a>
+											</td>
+											<td className="p-4 align-middle">
+												{/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+												{(review as any).views || 0}
+											</td>
+											<td className="p-4 align-middle">{review.likes || 0}</td>
+											<td className="p-4 align-middle">{review.rating}/5</td>
+										</tr>
+									))}
+									{topReviews.length === 0 && (
+										<tr>
+											<td
+												colSpan={4}
+												className="p-4 text-center text-muted-foreground"
+											>
+												No reviews found.
+											</td>
+										</tr>
+									)}
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</Gutter>
+	);
 };
 
 function StatsCard({
-  title,
-  value,
-  icon,
+	title,
+	value,
+	icon,
 }: {
-  title: string;
-  value: string | number;
-  icon: React.ReactNode;
+	title: string;
+	value: string | number;
+	icon: React.ReactNode;
 }) {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        {icon}
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-      </CardContent>
-    </Card>
-  );
+	return (
+		<Card>
+			<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+				<CardTitle className="text-sm font-medium">{title}</CardTitle>
+				{icon}
+			</CardHeader>
+			<CardContent>
+				<div className="text-2xl font-bold">{value}</div>
+			</CardContent>
+		</Card>
+	);
 }
