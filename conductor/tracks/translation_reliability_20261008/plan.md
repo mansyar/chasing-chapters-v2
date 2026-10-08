@@ -16,8 +16,13 @@
 	- [x] Rewrite `translateRichText` to collect → batch → map back; remove `catch → return original`
 	- [x] Replace `console.*` with `logger`
 - [x] Task: Refactor & verify coverage >80% on `src/lib/translate.ts` (96.15% fns / 100% branches)
-- [ ] Task: Commit (`fix(i18n): batch translation requests and remove silent English fallback`) + git note
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Commit (`fix(i18n): batch translation requests and remove silent English fallback`) + git note
+- [~] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+	- [x] Verify: `CI=true bun test` → 129 pass / 0 fail
+	- [x] Verify: `bun run typecheck` clean; `bun run lint` no new errors
+	- [x] Verify: coverage gate >80% on translate.ts (96.15% fns / 100% branches)
+	- [x] Manual verification deferred to Phase 4 checkpoint (user-approved)
+	- [x] Attach verification report via git notes → `[checkpoint: 24cc14a]`
 
 ## Phase 2 — Status Tracking & Data Model (`src/collections/Reviews.ts`)
 
