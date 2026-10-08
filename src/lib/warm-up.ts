@@ -39,10 +39,15 @@ export async function waitForServer(
 
 	while (Date.now() < deadline) {
 		try {
-			const res = await fetchImpl(url);
+			// Deadline-scoped signal: the first response after a cold boot can take
+			// seconds, but a listener that accepts and never answers must not be able
+			// to park this loop past its own timeout.
+			const res = await fetchImpl(url, {
+				signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())),
+			});
 			if (res.ok) return true;
 		} catch {
-			// server not listening yet — retry
+			// server not listening yet (or stalled) — retry
 		}
 		await new Promise((r) => setTimeout(r, intervalMs));
 	}

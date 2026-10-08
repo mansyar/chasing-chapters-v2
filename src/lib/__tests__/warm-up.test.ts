@@ -24,6 +24,10 @@ describe("shouldWarmUp", () => {
 			false,
 		);
 	});
+
+	it("returns false when the env keys are absent (build-inlined values)", () => {
+		expect(shouldWarmUp({})).toBe(false);
+	});
 });
 
 describe("waitForServer", () => {
@@ -67,6 +71,22 @@ describe("waitForServer", () => {
 		});
 		expect(ready).toBe(true);
 		expect(calls).toBe(3);
+	});
+
+	it("aborts each poll with a signal so a stalled response cannot outlive the deadline", async () => {
+		const signals: Array<AbortSignal | undefined> = [];
+		const fetchImpl: FetchLike = (_url, init) => {
+			signals.push(init?.signal ?? undefined);
+			return Promise.resolve({ ok: false, status: 503 });
+		};
+		await waitForServer(fetchImpl, "http://x/", {
+			timeoutMs: 30,
+			intervalMs: 5,
+		});
+		expect(signals.length).toBeGreaterThan(0);
+		for (const signal of signals) {
+			expect(signal).toBeDefined();
+		}
 	});
 });
 
