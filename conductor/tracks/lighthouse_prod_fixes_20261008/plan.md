@@ -13,7 +13,7 @@
 
 ## Phase 2: TTFB Investigation & Mitigation
 
-- [ ] Task: Investigate cold root-document TTFB — isolate ISR cache miss vs. container cold start vs. DB/edge latency (curl timing on production + staged local checks); document findings with evidence in the tracker
+- [x] Task: Investigate cold root-document TTFB — isolate ISR cache miss vs. container cold start vs. DB/edge latency (curl timing on production + staged local checks); document findings with evidence in the tracker `[5947ead]`
 - [ ] Task: Implement smallest proven mitigation (candidate: post-deploy warm-up of key ISR pages wired into the deploy workflow or Coolify hook; if the script is logic-bearing → TDD with unit tests first)
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
