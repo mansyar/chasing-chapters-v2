@@ -229,6 +229,40 @@ After each phase, verify:
 | 2026-10-08 | -     | -    | -    | -    | -     | -           | Phase 3 finalized: removed `RealisticBookCarousel` + `react-pageflip` dep + `NEXT_PUBLIC_MODERN_CAROUSEL` flag; only `ModernBookCarousel` (CSS Scroll Snap) remains. Client JS: 110 → 108 chunks, 1,504KB → 1,490KB gzip (−14KB gz / −54KB raw; pageflip was already lazy-loaded, so removal mainly eliminates the dead code path and dependency) |
 | 2026-10-08 | 98    | 0.7s | 0.9s | 10ms | 0     | 1.3s        | Performance & Polish track complete (Lighthouse 13.4.1, desktop, local production standalone after the standalone asset-copy fix). Performance 61 → 98, CLS 1.862 → 0, Speed Index 5.3s → 1.3s, LCP 1.3s → 0.9s, TBT 90ms → 10ms. Accessibility 100, Best Practices 96, SEO 100. Caveat: measured on localhost with browser extensions injecting JS — re-run against the production URL for the canonical number. |
 | 2026-10-08 | -     | -    | -    | -    | -     | -           | Performance & Polish track complete. Phase 4 done: `content-visibility:auto` on below-fold Related Reviews/Comments, Umami preconnect/dns-prefetch, `will-change:transform` on marquee. Final client JS: 111 chunks / 4,694KB raw / 1,503KB gzip — net flat vs 1,504KB baseline despite adding `sonner` (toast system) + date-fns `id` locale, because the removed pageflip/flag dead code offset them. Remaining wins are render-level (content-visibility, fewer reflows) and Lighthouse/PageSpeed numbers should be captured manually per the Verification Checklist. |
+| 2026-10-08 | 71    | -    | -    | -    | 0.116 | -           | **Production Lighthouse 13.4.1 (desktop)**: Performance 71 / Best Practices 92 / Accessibility 94 / SEO 100. Defects: carousel prev/next buttons had no accessible names (axe `button-name`, critical); `static.cloudflareinsights.com` RUM beacon blocked by CSP (console error + inspector-issues ding); 0.116 CLS from the `ssr:false` hero-carousel skeleton→carousel swap; 3.5s cold root-document TTFB. (Run hit `PROTOCOL_TIMEOUT` for some audits; scores above are from the completed pass.) |
+
+### TTFB investigation (2026-10-08, track `lighthouse_prod_fixes_20261008`)
+
+Question: what caused the 3.5s cold root-document TTFB in the production Lighthouse run — ISR cache miss, container cold start, or DB/edge latency?
+
+Evidence (production `https://chasing-chapters.com`, curl timing):
+
+| Probe | TTFB | Notes |
+| ----- | ---- | ----- |
+| Homepage, 10 requests @6s spacing | 0.26–1.15s (warm ≈0.27s) | All `x-nextjs-cache: HIT`; first request 1.15s includes fresh TLS handshake |
+| `/about` (static baseline) | 0.29s | Network + Cloudflare + proxy floor |
+| `/reviews` (dynamic, full SSR + DB per request) | 0.31s / 0.49s / 0.87s | Full server render + DB queries is sub-second → **DB latency ruled out** |
+| Homepage after 75s idle (> 60s revalidate window) | 0.30s | Still `HIT`; `Cache-Control: s-maxage=60, stale-while-revalidate=…` → **ISR expiry does not block** (stale-while-revalidate serves instantly) |
+| Local standalone server cold boot | First 200 at **26.2s** after process start; first request TTFB **20.5s**; second request still **6.9s** | The Next.js + Payload boot happens on the first request, not before the listener binds |
+
+Conclusion: the 3.5s cold TTFB matches Lighthouse landing in the window right after a container (re)start (deploy), where the first request absorbs the Next.js + Payload boot. It is not an ISR miss (SWR serves stale immediately, and the prerendered page ships with the build) and not DB latency (dynamic full render ≤0.9s TTFB).
+
+Mitigation: self-warming at boot via `src/instrumentation.ts` → `src/lib/warm-up.ts` — once per server start (production, nodejs runtime), poll until the HTTP listener answers (that first poll absorbs the boot cost), then GET `/`, `/reviews`, `/reading-lists`, `/about` to warm ISR caches. Verified locally: after restart, warm-up logs show all four routes ok, and external TTFB is ~0.22s immediately afterwards.
+
+| 2026-10-08 | -     | -    | -    | -    | 0     | -           | **Lighthouse Production Fixes — local, pre-deploy** (track `lighthouse_prod_fixes_20261008`, branch `fix/lighthouse-prod-scores`): carousel prev/next accessible names (`aria-label`), `https://static.cloudflareinsights.com` added to the production `script-src`, and a reserved hero container height that removes the skeleton→carousel layout shift. CLS A/B on a production build (desktop 1350×940, 2 featured reviews, Playwright `layout-shift` observer): **0.0376 pre-fix → 0.0000 post-fix (0 entries)**. Gates: typecheck 160 files clean, lint 67 pre-existing warnings only, `bun test` 203 pass / 0 fail, Playwright 33/33. Production re-run pending deploy. |
+
+### Post-fix verification & pending production re-run (2026-10-08)
+
+Local verification of the three code fixes and the TTFB mitigation (all pre-deploy, branch `fix/lighthouse-prod-scores`):
+
+| Item | Before | After | How measured |
+| ---- | ------ | ----- | ------------ |
+| Carousel CLS | 0.0376 (1 shift @ t≈3486ms, source = hero container div) | **0.0000** (0 entries) | Playwright `PerformanceObserver('layout-shift')`, production build, 1350×940, carousel mounted with 2 slides |
+| Cold TTFB (local boot) | first 200 at 26.2s; first-request TTFB **20.5s** | external TTFB **0.22s** right after boot | standalone restart; warm-up logs `[Warmup] / 36ms, /reviews 1602ms, /reading-lists 867ms, /about 846ms` |
+| Typecheck / lint / unit | 158 files / 67 warnings / 194 pass | 160 files / 67 warnings / **203 pass** | `bun run typecheck`, `bun run lint`, `bun test` |
+| Playwright e2e | — | **33/33 passed** | `bunx playwright test --workers=1`. Caveat: the default parallel run flakes **on this machine** — failures are all `page.goto` 30s timeouts (never assertion failures) with a different failing set each run, and only against the locally booted server; serial is green. Not introduced by this track. |
+
+**Pending (requires the deploy of this branch):** production Lighthouse 13.4.1 re-run and the post-deploy TTFB comparison. Targets: Accessibility ≥ 95 (no `button-name` failures), Best Practices ≥ 95 (no CSP console errors for the RUM beacon), CLS < 0.1, and a cold TTFB absorbed by the boot warm-up. To complete: re-run Lighthouse against `https://chasing-chapters.com` right after a deploy, confirm the four `[Warmup] ... -> ok` lines in the container log, then add the measured row above this section.
 
 ---
 

@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
  */
 export function HeroSkeletonContent() {
 	return (
-		<div className="grid gap-8 lg:grid-cols-2 lg:gap-24 items-center w-full px-4 lg:px-16">
+		<div className="grid gap-8 lg:grid-cols-2 lg:gap-24 items-center w-full h-full px-4 lg:px-16">
 			{/* Content Side */}
 			<div className="flex flex-col justify-center space-y-6 order-2 lg:order-1 pl-6 md:pl-12 lg:pl-16 items-center lg:items-start">
 				<div className="space-y-4 w-full max-w-md">

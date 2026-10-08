@@ -15,4 +15,4 @@
 | Validation | Zod 4.6 |
 | Testing | Bun test (unit), Playwright (e2e, chromium) |
 | Lint/Format | Biome 2.5 (migrated from ESLint), husky pre-commit (bun check + biome + bun test) |
-| Deploy | Docker (bun alpine, standalone, non-root) → Docker Hub → Coolify (GitHub Actions) |
+| Deploy | Docker (bun alpine, standalone, non-root) → Docker Hub → Coolify (GitHub Actions); boot warm-up via `src/instrumentation.ts` → `src/lib/warm-up.ts` (ISR pages warmed on start, added 2026-10-08) |
