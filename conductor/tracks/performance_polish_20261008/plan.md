@@ -35,7 +35,7 @@
 - [x] Task: `will-change` for continuously animated elements (marquee, gradient); review CSS delivery
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
-## Phase 4: Accessibility Pass
+## Phase 4: Accessibility Pass [checkpoint: a51d6e8]
 
 - [x] Task: Skip-to-content link in public layout (visible on focus)
 - [x] Task: `aria-live="polite"` regions for async form feedback (comment submit, report form, share copy)
