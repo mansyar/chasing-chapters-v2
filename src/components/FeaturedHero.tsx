@@ -103,7 +103,9 @@ export function FeaturedHero({ reviews }: FeaturedHeroProps) {
 	return (
 		<section className="relative overflow-hidden min-h-[calc(100vh-4rem)] h-[calc(100vh-4rem)] flex items-center justify-center py-12 md:py-0">
 			<GradientBackground className="absolute inset-0 opacity-20 dark:opacity-10 from-primary/40 via-accent/30 to-primary/20" />
-			<div className="container mx-auto px-6 md:px-12 lg:px-32 max-w-[1600px] relative z-10 w-full">
+			{/* h-full + flex centering keeps this container's box fixed across the
+			    ssr:false skeleton -> carousel swap, preventing the hero CLS shift. */}
+			<div className="container mx-auto px-6 md:px-12 lg:px-32 max-w-[1600px] relative z-10 w-full h-full flex flex-col justify-center">
 				{hasMultipleReviews ? (
 					<CarouselComponent reviews={reviews} />
 				) : (
