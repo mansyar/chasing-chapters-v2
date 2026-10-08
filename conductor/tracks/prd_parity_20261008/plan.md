@@ -79,4 +79,8 @@
 
 ## Review Fixes
 
-*(Appended automatically by `conductor-review` if issues are found.)*
+- [x] Task: Apply review suggestions — commit 36ccdf1
+  - RSS `<description>`: cover-image HTML now wrapped in CDATA (RSS 2.0 spec compliance)
+  - Styleguide updated to document Biome formatting precedence (double quotes, tabs)
+  - Toolbar: h1 + Clear Filters grouped left so the button no longer floats to center
+  - README list dash normalized to em dash; stale eslint-disable comment removed
