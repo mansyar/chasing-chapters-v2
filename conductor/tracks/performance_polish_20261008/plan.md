@@ -19,13 +19,13 @@
 
 ## Phase 2: Dynamic OG Images
 
-- [ ] Task: Write failing tests (Red)
-  - [ ] `src/lib/__tests__/og-image.test.ts` — pure builder for OG image props (title/author/rating truncation, rating star rendering, list title + count, fallback defaults)
-- [ ] Task: Implement (Green)
-  - [ ] `src/lib/og-image.ts` — pure prop-builder logic
-  - [ ] `opengraph-image.tsx` (`ImageResponse`) for `reviews/[slug]` and `reading-lists/[slug]`
-  - [ ] Static `/og-image.jpg` remains fallback for all other routes
-- [ ] Task: Verify OG tags render on detail pages (metadata inspection + e2e smoke)
+- [x] Task: Write failing tests (Red)
+  - [x] `src/lib/__tests__/og-image.test.ts` — pure builder for OG image props (title/author/rating truncation, rating star rendering, list title + count, fallback defaults)
+- [x] Task: Implement (Green)
+  - [x] `src/lib/og-image.ts` — pure prop-builder logic
+  - [x] `opengraph-image.tsx` (`ImageResponse`) for `reviews/[slug]` and `reading-lists/[slug]`
+  - [x] Static `/og-image.jpg` remains fallback for all other routes
+- [x] Task: Verify OG tags render on detail pages (metadata inspection + e2e smoke)
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 3: Advanced Optimizations (Phase 4)

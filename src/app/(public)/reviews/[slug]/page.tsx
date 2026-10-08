@@ -62,7 +62,6 @@ export async function generateMetadata({
 		};
 	}
 
-	const coverImage = review.coverImage as any;
 	const description = `Read our review of ${review.title} by ${review.bookAuthor}. Rating: ${review.rating}/5 stars.`;
 
 	return {
@@ -79,22 +78,11 @@ export async function generateMetadata({
 			title: review.title,
 			description,
 			type: "article",
-			images: coverImage?.url
-				? [
-						{
-							url: coverImage.url,
-							width: 800,
-							height: 1200,
-							alt: review.title,
-						},
-					]
-				: [],
 		},
 		twitter: {
 			card: "summary_large_image",
 			title: review.title,
 			description,
-			images: coverImage?.url ? [coverImage.url] : [],
 		},
 	};
 }
