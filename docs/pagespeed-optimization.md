@@ -249,6 +249,21 @@ Conclusion: the 3.5s cold TTFB matches Lighthouse landing in the window right af
 
 Mitigation: self-warming at boot via `src/instrumentation.ts` → `src/lib/warm-up.ts` — once per server start (production, nodejs runtime), poll until the HTTP listener answers (that first poll absorbs the boot cost), then GET `/`, `/reviews`, `/reading-lists`, `/about` to warm ISR caches. Verified locally: after restart, warm-up logs show all four routes ok, and external TTFB is ~0.22s immediately afterwards.
 
+| 2026-10-08 | -     | -    | -    | -    | 0     | -           | **Lighthouse Production Fixes — local, pre-deploy** (track `lighthouse_prod_fixes_20261008`, branch `fix/lighthouse-prod-scores`): carousel prev/next accessible names (`aria-label`), `https://static.cloudflareinsights.com` added to the production `script-src`, and a reserved hero container height that removes the skeleton→carousel layout shift. CLS A/B on a production build (desktop 1350×940, 2 featured reviews, Playwright `layout-shift` observer): **0.0376 pre-fix → 0.0000 post-fix (0 entries)**. Gates: typecheck 160 files clean, lint 67 pre-existing warnings only, `bun test` 203 pass / 0 fail, Playwright 33/33. Production re-run pending deploy. |
+
+### Post-fix verification & pending production re-run (2026-10-08)
+
+Local verification of the three code fixes and the TTFB mitigation (all pre-deploy, branch `fix/lighthouse-prod-scores`):
+
+| Item | Before | After | How measured |
+| ---- | ------ | ----- | ------------ |
+| Carousel CLS | 0.0376 (1 shift @ t≈3486ms, source = hero container div) | **0.0000** (0 entries) | Playwright `PerformanceObserver('layout-shift')`, production build, 1350×940, carousel mounted with 2 slides |
+| Cold TTFB (local boot) | first 200 at 26.2s; first-request TTFB **20.5s** | external TTFB **0.22s** right after boot | standalone restart; warm-up logs `[Warmup] / 36ms, /reviews 1602ms, /reading-lists 867ms, /about 846ms` |
+| Typecheck / lint / unit | 158 files / 67 warnings / 194 pass | 160 files / 67 warnings / **203 pass** | `bun run typecheck`, `bun run lint`, `bun test` |
+| Playwright e2e | — | **33/33 passed** | `bunx playwright test --workers=1`. Caveat: the default parallel run flakes **on this machine** — failures are all `page.goto` 30s timeouts (never assertion failures) with a different failing set each run, and only against the locally booted server; serial is green. Not introduced by this track. |
+
+**Pending (requires the deploy of this branch):** production Lighthouse 13.4.1 re-run and the post-deploy TTFB comparison. Targets: Accessibility ≥ 95 (no `button-name` failures), Best Practices ≥ 95 (no CSP console errors for the RUM beacon), CLS < 0.1, and a cold TTFB absorbed by the boot warm-up. To complete: re-run Lighthouse against `https://chasing-chapters.com` right after a deploy, confirm the four `[Warmup] ... -> ok` lines in the container log, then add the measured row above this section.
+
 ---
 
 ## 📚 Resources
