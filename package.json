@@ -7,7 +7,7 @@
 		"dev": "bun --bun next dev",
 		"build": "bun --bun next build --webpack",
 		"analyze": "cross-env ANALYZE=true bun --bun next build --webpack",
-		"start": "bun --bun .next/standalone/server.js",
+		"start": "bun run scripts/copy-standalone-assets.ts && bun --bun .next/standalone/server.js",
 		"lint": "biome check .",
 		"format": "biome format --write .",
 		"payload": "payload",
