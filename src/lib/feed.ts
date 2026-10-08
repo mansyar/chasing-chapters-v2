@@ -76,7 +76,11 @@ function buildItemXml(review: FeedReview, siteUrl: string): string {
 	let description = excerpt ? escapeXml(excerpt) : "";
 	if (coverImage?.url) {
 		const alt = coverImage.alt ? ` alt="${escapeXml(coverImage.alt)}"` : "";
-		description = `<img src="${escapeXml(coverImage.url)}"${alt} />${excerpt ? `<p>${escapeXml(excerpt)}</p>` : ""}`;
+		// HTML in <description> must not become child elements of the XML node;
+		// wrap it in CDATA so readers treat it as markup, per the RSS 2.0 spec.
+		const img = `<img src="${escapeXml(coverImage.url)}"${alt} />`;
+		const body = excerpt ? `<p>${escapeXml(excerpt)}</p>` : "";
+		description = `<![CDATA[${img}${body}]]>`;
 	}
 
 	return [

@@ -20,8 +20,16 @@ Style Guide, which is enforced by the `gts` tool.
         visibility with `private` or `protected` where possible.
 -   **Functions:** Prefer function declarations for named functions. Use arrow
     functions for anonymous functions/callbacks.
--   **String Literals:** Use single quotes (`'`). Use template literals (`` `
-    ``) for interpolation and multi-line strings.
+-   **String Literals:** Use **double quotes (`"`)** as enforced by Biome
+    (`quoteStyle: "double"`). Use template literals (`` ` ``) for interpolation
+    and multi-line strings.
+
+> **Formatting note (Biome):** Formatting is enforced by Biome 2.5, migrated
+> from ESLint in Oct 2026. Biome's formatting decisions (tabs for indentation,
+> double quotes, import organization) take precedence over any conflicting
+> formatting guidance in this guide. The substantive rules below (type safety,
+> equality checks, naming) remain in force and map to Biome rules in
+> `biome.json`.
 -   **Equality Checks:** Always use triple equals (`===`) and not equals
     (`!==`).
 -   **Type Assertions:** **Avoid type assertions (`x as SomeType`) and

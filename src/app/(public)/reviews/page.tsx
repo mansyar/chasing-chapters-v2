@@ -50,7 +50,6 @@ export default async function BrowsePage({ searchParams }: PageProps) {
 	const limit = 9;
 	const payload = await getPayload({ config: configPromise });
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const where: any = {
 		_status: {
 			equals: "published",
@@ -198,24 +197,26 @@ export default async function BrowsePage({ searchParams }: PageProps) {
 
 				{/* Main Content */}
 				<div className="flex-1 space-y-6">
-					<div className="flex items-center justify-between">
-						<h1 className="font-serif text-3xl font-bold">
-							{q
-								? `Search Results for "${q}"`
-								: genre
-									? `Genre: ${genres.find((g) => g.slug === genre)?.name}`
-									: tag
-										? `Tag: ${tags.find((t) => t.slug === tag)?.name}`
-										: "All Reviews"}
-						</h1>
-						{(q || genre || tag) && (
-							<Button variant="ghost" size="sm" asChild>
-								<Link href="/reviews">
-									<X className="mr-2 h-4 w-4" />
-									Clear Filters
-								</Link>
-							</Button>
-						)}
+					<div className="flex items-center justify-between gap-4">
+						<div className="flex items-center gap-4 min-w-0">
+							<h1 className="font-serif text-3xl font-bold">
+								{q
+									? `Search Results for "${q}"`
+									: genre
+										? `Genre: ${genres.find((g) => g.slug === genre)?.name}`
+										: tag
+											? `Tag: ${tags.find((t) => t.slug === tag)?.name}`
+											: "All Reviews"}
+							</h1>
+							{(q || genre || tag) && (
+								<Button variant="ghost" size="sm" asChild>
+									<Link href="/reviews">
+										<X className="mr-2 h-4 w-4" />
+										Clear Filters
+									</Link>
+								</Button>
+							)}
+						</div>
 						<SortSelect currentSort={currentSort} />
 					</div>
 					<Separator />

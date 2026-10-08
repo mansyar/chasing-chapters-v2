@@ -117,7 +117,10 @@ describe("feed", () => {
 				],
 				siteUrl: "https://chasing-chapters.com",
 			});
-			expect(xml).toContain(`<img src="https://cdn.example.com/cover.jpg"`);
+			expect(xml).toContain(
+				`<description><![CDATA[<img src="https://cdn.example.com/cover.jpg" />`,
+			);
+			expect(xml).toContain(`<p>A short review body.</p>]]></description>`);
 		});
 
 		it("omits the cover image when absent", () => {
