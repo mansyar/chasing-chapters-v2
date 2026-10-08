@@ -60,7 +60,7 @@
 - [x] Task: Reusable `EmptyState` component; apply to `/reviews` no-results, `/reading-lists`, homepage fallbacks
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
-## Phase 7: Final Verification & Documentation
+## Phase 7: Final Verification & Documentation [checkpoint: 5590816]
 
 - [x] Task: Full quality gates — `bun run typecheck && bun run lint && bun test` + Playwright e2e suite
 - [x] Task: Update `docs/pagespeed-optimization.md` — mark Phase 3 fully complete, log Phase 4 results, record final metrics in Progress History
