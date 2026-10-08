@@ -7,7 +7,7 @@
 
 > Execution follows `conductor/workflow.md`: TDD for logic-bearing code (Red → Green → Refactor), quality gates per task, git-notes task summaries, and phase verification checkpoints.
 
-## Phase 1: Toolchain Modernization
+## Phase 1: Toolchain Modernization [checkpoint: 42df1d1]
 
 - [x] Task: Verify Bun supports `bun check` (check `bun --version`; upgrade Bun if needed)
   - Document the supported version in the task summary
