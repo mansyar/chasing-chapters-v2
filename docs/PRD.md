@@ -374,7 +374,11 @@ chasing-chapters/
 - Next.js pages fetch data from Payload
 - ISR/SSG for fast page loads
 - Server Actions for interactions (likes, comments)
-- Automatic translation to Indonesian on publish
+- Automatic translation to Indonesian on publish (batched requests, 3-retry
+  with backoff; failures never fall back to English — the review is marked
+  `failed` in the admin and can be retried via the **Re-translate** button.
+  Per-review auto-translate toggle and translation status tracking; drafts can
+  be translated on demand)
 
 **Revalidation Flow:**
 
@@ -470,7 +474,7 @@ Automatically implemented on every page:
 - **ISR/SSG**: Static generation with on-demand revalidation
 - **Caching Strategy**:
   - Static pages cached
-  - Translation results cached in Redis (24h TTL)
+  - Translation results cached in Redis (30-day TTL, refreshed on re-translation)
   - Rate limit counters in Redis
 - **Bundle Optimization**:
   - Tree-shaking for unused code

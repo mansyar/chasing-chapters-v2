@@ -327,6 +327,16 @@ export interface Review {
   readingStartDate?: string | null;
   readingFinishDate?: string | null;
   featured?: boolean | null;
+  /**
+   * When enabled, publishing an English update also refreshes the Indonesian translation. Turn off to keep manual control of the Indonesian locale.
+   */
+  autoTranslate?: boolean | null;
+  /**
+   * Managed automatically by the translation pipeline.
+   */
+  translationStatus?: ('untranslated' | 'pending' | 'translated' | 'failed' | 'stale') | null;
+  translationError?: string | null;
+  translationUpdatedAt?: string | null;
   views?: number | null;
   likes?: number | null;
   publishDate?: string | null;
@@ -657,6 +667,10 @@ export interface ReviewsSelect<T extends boolean = true> {
   readingStartDate?: T;
   readingFinishDate?: T;
   featured?: T;
+  autoTranslate?: T;
+  translationStatus?: T;
+  translationError?: T;
+  translationUpdatedAt?: T;
   views?: T;
   likes?: T;
   publishDate?: T;

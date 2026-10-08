@@ -2,16 +2,40 @@ import type { CollectionConfig, Where } from "payload";
 import formatSlug from "../hooks/formatSlug";
 import { revalidateReviewPages } from "../hooks/revalidatePages";
 import { translateReview } from "../hooks/translateReview";
+import { retranslateReview } from "../lib/retranslate";
+import {
+	canTransition,
+	TRANSLATION_STATUSES,
+	type TranslationStatus,
+} from "../lib/translation-status";
 
 export const Reviews: CollectionConfig = {
 	slug: "reviews",
 	admin: {
 		useAsTitle: "title",
-		defaultColumns: ["title", "bookAuthor", "rating", "status", "publishDate"],
+		defaultColumns: [
+			"title",
+			"bookAuthor",
+			"rating",
+			"status",
+			"translationStatus",
+			"publishDate",
+		],
 	},
 	versions: {
 		drafts: true,
 	},
+	endpoints: [
+		{
+			path: "/:id/retranslate",
+			method: "post",
+			handler: async (req) => {
+				const id = Number(req.routeParams?.id);
+				const result = await retranslateReview(req.payload, req.user, id);
+				return Response.json(result, { status: result.httpStatus });
+			},
+		},
+	],
 	access: {
 		read: ({ req: { user } }) => {
 			// Admins can see all reviews
@@ -149,6 +173,83 @@ export const Reviews: CollectionConfig = {
 			name: "featured",
 			type: "checkbox",
 			defaultValue: false,
+		},
+		{
+			name: "autoTranslate",
+			type: "checkbox",
+			label: "Auto-translate to Indonesian",
+			defaultValue: true,
+			admin: {
+				position: "sidebar",
+				description:
+					"When enabled, publishing an English update also refreshes the Indonesian translation. Turn off to keep manual control of the Indonesian locale.",
+			},
+		},
+		{
+			name: "translationStatus",
+			type: "select",
+			label: "Translation Status",
+			options: [...TRANSLATION_STATUSES],
+			defaultValue: "untranslated",
+			validate: (
+				value: string | string[] | null | undefined,
+				options: { previousValue?: unknown },
+			) => {
+				const previousValue = options.previousValue;
+				if (!value || !previousValue || previousValue === value) {
+					return true;
+				}
+				const isKnown = (v: unknown) =>
+					TRANSLATION_STATUSES.includes(v as TranslationStatus);
+				if (!isKnown(value) || !isKnown(previousValue)) {
+					return true;
+				}
+				return canTransition(
+					previousValue as TranslationStatus,
+					value as TranslationStatus,
+				)
+					? true
+					: `Invalid translation status transition: ${previousValue} → ${value}`;
+			},
+			admin: {
+				position: "sidebar",
+				readOnly: true,
+				description: "Managed automatically by the translation pipeline.",
+			},
+		},
+		{
+			name: "translationError",
+			type: "textarea",
+			label: "Translation Error",
+			admin: {
+				position: "sidebar",
+				readOnly: true,
+				condition: (data) => data?.translationStatus === "failed",
+			},
+		},
+		{
+			name: "retranslateAction",
+			type: "ui",
+			label: "Re-translate",
+			admin: {
+				position: "sidebar",
+				components: {
+					Field:
+						"/collections/Reviews/admin/RetranslateButton#RetranslateButton",
+				},
+			},
+		},
+		{
+			name: "translationUpdatedAt",
+			type: "date",
+			label: "Translation Updated At",
+			admin: {
+				position: "sidebar",
+				readOnly: true,
+				date: {
+					pickerAppearance: "dayOnly",
+				},
+			},
 		},
 		{
 			name: "views",
