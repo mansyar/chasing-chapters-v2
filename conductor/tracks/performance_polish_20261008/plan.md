@@ -65,4 +65,8 @@
 - [x] Task: Full quality gates — `bun run typecheck && bun run lint && bun test` + Playwright e2e suite
 - [x] Task: Update `docs/pagespeed-optimization.md` — mark Phase 3 fully complete, log Phase 4 results, record final metrics in Progress History
 - [x] Task: Final bundle comparison summary (before/after first-load JS)
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+
+## Phase: Review Fixes
+
+- [x] Task: Apply review suggestions 6c60328
