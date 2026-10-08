@@ -90,7 +90,7 @@ jobs:
     steps:
       - name: Trigger Coolify webhook
         run: |
-          curl -X GET "${{ secrets.COOLIFY_WEBHOOK_URL }}" \
+          curl -X POST "${{ secrets.COOLIFY_WEBHOOK_URL }}" \
             -H "Accept: application/json" \
             -H "Authorization: Bearer ${{ secrets.COOLIFY_WEBHOOK_TOKEN }}" \
             --fail-with-body
