@@ -18,7 +18,7 @@ const VALID_TRANSITIONS: TransitionMap = {
 	pending: ["translated", "failed"],
 	translated: ["pending", "stale"],
 	failed: ["pending"],
-	stale: ["pending"],
+	stale: ["pending", "translated"],
 };
 
 export function canTransition(

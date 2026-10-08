@@ -61,3 +61,11 @@
 - [x] Task: Update docs — ADMIN_GUIDE (translation behavior, toggle, re-translate), PRD §5 alignment (`ce7ec50`)
 - [x] Task: Commit + git note (`ce7ec50`)
 - [x] Task: Final Phase Verification & Checkpoint (Refer to workflow.md) → `[checkpoint: ce7ec50]` (live manual verification completed by user: re-translate button, publish flow, toggle behavior all confirmed working)
+
+## Phase: Review Fixes
+
+- [~] Task: Apply review suggestions
+  - [x] Wire canTransition into 	ranslationStatus field validator (Medium)
+  - [x] Memoize the Google Translate client (Low)
+  - [x] Allow stale -> translated transition (required by format-sync on stale docs; test updated)
+

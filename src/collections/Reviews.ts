@@ -3,7 +3,11 @@ import formatSlug from "../hooks/formatSlug";
 import { revalidateReviewPages } from "../hooks/revalidatePages";
 import { translateReview } from "../hooks/translateReview";
 import { retranslateReview } from "../lib/retranslate";
-import { TRANSLATION_STATUSES } from "../lib/translation-status";
+import {
+	canTransition,
+	TRANSLATION_STATUSES,
+	type TranslationStatus,
+} from "../lib/translation-status";
 
 export const Reviews: CollectionConfig = {
 	slug: "reviews",
@@ -187,6 +191,26 @@ export const Reviews: CollectionConfig = {
 			label: "Translation Status",
 			options: [...TRANSLATION_STATUSES],
 			defaultValue: "untranslated",
+			validate: (
+				value: string | string[] | null | undefined,
+				options: { previousValue?: unknown },
+			) => {
+				const previousValue = options.previousValue;
+				if (!value || !previousValue || previousValue === value) {
+					return true;
+				}
+				const isKnown = (v: unknown) =>
+					TRANSLATION_STATUSES.includes(v as TranslationStatus);
+				if (!isKnown(value) || !isKnown(previousValue)) {
+					return true;
+				}
+				return canTransition(
+					previousValue as TranslationStatus,
+					value as TranslationStatus,
+				)
+					? true
+					: `Invalid translation status transition: ${previousValue} → ${value}`;
+			},
 			admin: {
 				position: "sidebar",
 				readOnly: true,

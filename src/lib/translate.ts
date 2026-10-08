@@ -7,8 +7,19 @@ import { getCachedTranslation, setCachedTranslation } from "./redis";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Initialize client - handles both file-based and inline credentials
+// Initialize client - handles both file-based and inline credentials.
+// The client is memoized for the process lifetime: credential parsing is
+// expensive and the client is stateless, so it is safe to reuse.
+let cachedTranslateClient: v2.Translate | undefined;
 const getTranslateClient = () => {
+	if (cachedTranslateClient) {
+		return cachedTranslateClient;
+	}
+	cachedTranslateClient = createTranslateClient();
+	return cachedTranslateClient;
+};
+
+const createTranslateClient = (): v2.Translate => {
 	logger.info("[Translation] Initializing Google Cloud client...");
 
 	// Option 1: Inline JSON credentials (for Docker/production)

@@ -61,11 +61,14 @@ describe("translation-status", () => {
 			expect(canTransition("stale", "pending")).toBe(true);
 		});
 
+		it("allows stale -> translated (format-sync refreshes a stale translation)", () => {
+			expect(canTransition("stale", "translated")).toBe(true);
+		});
+
 		it("rejects invalid transitions", () => {
 			expect(canTransition("translated", "untranslated")).toBe(false);
 			expect(canTransition("pending", "stale")).toBe(false);
 			expect(canTransition("failed", "translated")).toBe(false);
-			expect(canTransition("stale", "translated")).toBe(false);
 			expect(canTransition("untranslated", "failed")).toBe(false);
 		});
 
