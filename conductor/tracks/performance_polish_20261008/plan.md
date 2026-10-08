@@ -13,7 +13,7 @@
   - [ ] Remove the `NEXT_PUBLIC_MODERN_CAROUSEL` gate in `src/components/FeaturedHero.tsx` — `ModernBookCarousel` becomes the only carousel
   - [ ] Remove `.env.example` / docs references to the flag
   - [ ] Verify homepage e2e (`e2e/homepage.spec.ts`) still passes
-- [ ] Task: Record bundle delta
+- [x] Task: Record bundle delta
   - [ ] Re-run build; record after-metric (KiB saved) in the tracker doc
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 

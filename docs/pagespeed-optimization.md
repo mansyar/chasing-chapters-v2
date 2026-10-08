@@ -91,7 +91,7 @@ Target: Reduce unused JS by 100+ KiB
 
 | Task | Description                                         | Status     | Impact |
 | ---- | --------------------------------------------------- | ---------- | ------ |
-| 3.1  | Evaluate replacing react-pageflip with CSS solution | ⬜ Pending | High   |
+| 3.1  | Evaluate replacing react-pageflip with CSS solution | ✅ Done    | High   |
 | 3.2  | Tree-shake motion library imports                   | ⬜ Pending | Medium |
 | 3.3  | Lazy load Sheet/Dialog components                   | ⬜ Pending | Medium |
 | 3.4  | Review bundle analyzer output                       | ⬜ Pending | Low    |
@@ -224,7 +224,7 @@ After each phase, verify:
 | Date       | Score | FCP  | LCP  | TBT  | CLS   | Speed Index | Notes    |
 | ---------- | ----- | ---- | ---- | ---- | ----- | ----------- | -------- |
 | 2026-01-19 | 61    | 0.6s | 1.3s | 90ms | 1.862 | 5.3s        | Baseline |
-| 2026-10-08 | -     | -    | -    | -    | -     | -           | JS bundle baseline (track `performance_polish_20261008`): 110 client chunks, 4,704KB raw / 1,504KB gzip total client JS (`.next/static/chunks`); Next 16 no longer prints per-route First Load JS, so this total is the comparative metric |
+| 2026-10-08 | -     | -    | -    | -    | -     | -           | Phase 3 finalized: removed `RealisticBookCarousel` + `react-pageflip` dep + `NEXT_PUBLIC_MODERN_CAROUSEL` flag; only `ModernBookCarousel` (CSS Scroll Snap) remains. Client JS: 110 → 108 chunks, 1,504KB → 1,490KB gzip (−14KB gz / −54KB raw; pageflip was already lazy-loaded, so removal mainly eliminates the dead code path and dependency) |
 
 ---
 
