@@ -4,6 +4,7 @@ import * as migration_20251206_191512 from './20251206_191512';
 import * as migration_20251214_135240 from './20251214_135240';
 import * as migration_20251217_095543_add_blur_data_url_to_media from './20251217_095543_add_blur_data_url_to_media';
 import * as migration_20261008_015213_payload_390_schema_delta from './20261008_015213_payload_390_schema_delta';
+import * as migration_20261008_060518_add_translation_status_fields from './20261008_060518_add_translation_status_fields';
 import * as migration_20261008_131000_commenters_email_hash_fix from './20261008_131000_commenters_email_hash_fix';
 
 export const migrations = [
@@ -35,7 +36,12 @@ export const migrations = [
   {
     up: migration_20261008_015213_payload_390_schema_delta.up,
     down: migration_20261008_015213_payload_390_schema_delta.down,
-    name: '20261008_015213_payload_390_schema_delta'
+    name: '20261008_015213_payload_390_schema_delta',
+  },
+  {
+    up: migration_20261008_060518_add_translation_status_fields.up,
+    down: migration_20261008_060518_add_translation_status_fields.down,
+    name: '20261008_060518_add_translation_status_fields',
   },
   {
     up: migration_20261008_131000_commenters_email_hash_fix.up,

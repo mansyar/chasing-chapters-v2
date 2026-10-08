@@ -2,12 +2,20 @@ import type { CollectionConfig, Where } from "payload";
 import formatSlug from "../hooks/formatSlug";
 import { revalidateReviewPages } from "../hooks/revalidatePages";
 import { translateReview } from "../hooks/translateReview";
+import { TRANSLATION_STATUSES } from "../lib/translation-status";
 
 export const Reviews: CollectionConfig = {
 	slug: "reviews",
 	admin: {
 		useAsTitle: "title",
-		defaultColumns: ["title", "bookAuthor", "rating", "status", "publishDate"],
+		defaultColumns: [
+			"title",
+			"bookAuthor",
+			"rating",
+			"status",
+			"translationStatus",
+			"publishDate",
+		],
 	},
 	versions: {
 		drafts: true,
@@ -149,6 +157,51 @@ export const Reviews: CollectionConfig = {
 			name: "featured",
 			type: "checkbox",
 			defaultValue: false,
+		},
+		{
+			name: "autoTranslate",
+			type: "checkbox",
+			label: "Auto-translate to Indonesian",
+			defaultValue: true,
+			admin: {
+				position: "sidebar",
+				description:
+					"When enabled, publishing an English update also refreshes the Indonesian translation. Turn off to keep manual control of the Indonesian locale.",
+			},
+		},
+		{
+			name: "translationStatus",
+			type: "select",
+			label: "Translation Status",
+			options: [...TRANSLATION_STATUSES],
+			defaultValue: "untranslated",
+			admin: {
+				position: "sidebar",
+				readOnly: true,
+				description: "Managed automatically by the translation pipeline.",
+			},
+		},
+		{
+			name: "translationError",
+			type: "textarea",
+			label: "Translation Error",
+			admin: {
+				position: "sidebar",
+				readOnly: true,
+				condition: (data) => data?.translationStatus === "failed",
+			},
+		},
+		{
+			name: "translationUpdatedAt",
+			type: "date",
+			label: "Translation Updated At",
+			admin: {
+				position: "sidebar",
+				readOnly: true,
+				date: {
+					pickerAppearance: "dayOnly",
+				},
+			},
 		},
 		{
 			name: "views",
