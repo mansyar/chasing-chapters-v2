@@ -6,7 +6,7 @@
 
 ## Phase 1: Carousel Finalization (Phase 3 Completion)
 
-- [~] Task: Record bundle baseline
+- [x] Task: Record bundle baseline
   - [ ] Run `bun run build` and record first-load JS for `/` (and `bun run analyze` route breakdown) as the before-metric in `docs/pagespeed-optimization.md`
 - [ ] Task: Remove legacy carousel and feature flag
   - [ ] Delete `src/components/RealisticBookCarousel.tsx` and remove `react-pageflip` from `package.json` + lockfile

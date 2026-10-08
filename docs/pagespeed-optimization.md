@@ -224,7 +224,7 @@ After each phase, verify:
 | Date       | Score | FCP  | LCP  | TBT  | CLS   | Speed Index | Notes    |
 | ---------- | ----- | ---- | ---- | ---- | ----- | ----------- | -------- |
 | 2026-01-19 | 61    | 0.6s | 1.3s | 90ms | 1.862 | 5.3s        | Baseline |
-| -          | -     | -    | -    | -    | -     | -           | -        |
+| 2026-10-08 | -     | -    | -    | -    | -     | -           | JS bundle baseline (track `performance_polish_20261008`): 110 client chunks, 4,704KB raw / 1,504KB gzip total client JS (`.next/static/chunks`); Next 16 no longer prints per-route First Load JS, so this total is the comparative metric |
 
 ---
 
