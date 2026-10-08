@@ -51,9 +51,9 @@
 
 - [ ] Task: Implement translation endpoint/route (auth: admin/writer; runs pipeline for any review regardless of draft/published; overrides toggle; updates status)
 - [ ] Task: Add "Re-translate now" button in review edit view with pending/success/failure feedback
-- [ ] Task: Unit tests for endpoint logic (auth, toggle override, status updates)
-- [ ] Task: Commit + git note
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Unit tests for endpoint logic (auth, toggle override, status updates) — 7 tests
+- [x] Task: Commit + git note (`e68258e`)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) → `[checkpoint: e68258e]` (live admin verification at Phase 5, user-approved)
 
 ## Phase 5 — Full Verification & Documentation
 
