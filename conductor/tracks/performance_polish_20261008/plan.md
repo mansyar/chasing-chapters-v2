@@ -28,7 +28,7 @@
 - [x] Task: Verify OG tags render on detail pages (metadata inspection + e2e smoke)
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
-## Phase 3: Advanced Optimizations (Phase 4)
+## Phase 3: Advanced Optimizations (Phase 4) [checkpoint: 4fe17a4]
 
 - [x] Task: `content-visibility: auto` on below-fold sections (comments, related reviews)
 - [x] Task: Resource hints (`preconnect` / `dns-prefetch`) for R2/CDN origins in root layout
