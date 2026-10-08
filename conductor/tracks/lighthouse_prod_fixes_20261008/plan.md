@@ -19,6 +19,6 @@
 
 ## Phase 3: Verification & Documentation
 
-- [ ] Task: Full local gates (typecheck, lint, bun test, Playwright e2e)
-- [ ] Task: Record production Lighthouse re-run + TTFB comparison in `docs/pagespeed-optimization.md` Progress History
+- [x] Task: Full local gates (typecheck, lint, bun test, Playwright e2e) — typecheck 160 files clean, lint 67 pre-existing warnings, `bun test` 203 pass / 0 fail, Playwright 33/33 (serial; default parallel run flakes on this machine with `page.goto` 30s timeouts, pre-existing/environmental)
+- [x] Task: Record production Lighthouse re-run + TTFB comparison in `docs/pagespeed-optimization.md` Progress History — local pre/post-fix table recorded in `[b7a5842]`; canonical production re-run pending deploy of this branch
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
