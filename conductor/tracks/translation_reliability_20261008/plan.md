@@ -49,15 +49,15 @@
 
 ## Phase 4 — Admin "Re-translate now" Action
 
-- [ ] Task: Implement translation endpoint/route (auth: admin/writer; runs pipeline for any review regardless of draft/published; overrides toggle; updates status)
-- [ ] Task: Add "Re-translate now" button in review edit view with pending/success/failure feedback
+- [x] Task: Implement translation endpoint/route (auth: admin/writer; runs pipeline for any review regardless of draft/published; overrides toggle; updates status) — POST /api/reviews/:id/retranslate
+- [x] Task: Add "Re-translate now" button in review edit view with pending/success/failure feedback
 - [x] Task: Unit tests for endpoint logic (auth, toggle override, status updates) — 7 tests
 - [x] Task: Commit + git note (`e68258e`)
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) → `[checkpoint: e68258e]` (live admin verification at Phase 5, user-approved)
 
 ## Phase 5 — Full Verification & Documentation
 
-- [ ] Task: Full gate: `bun run typecheck && bun run lint && bun test` + production build + e2e suite
-- [ ] Task: Update docs — ADMIN_GUIDE (translation behavior, toggle, re-translate), PRD §5 alignment
-- [ ] Task: Commit + git note
+- [x] Task: Full gate: `bun run typecheck && bun run lint && bun test` + production build + e2e suite — build SUCCESS, 169/0 unit, typecheck/lint clean; e2e 28 pass / 5 fail (confirmed pre-existing at merge-base 5f36639: 1 pass / 7 fail; Redis WRONGPASS in e2e env)
+- [x] Task: Update docs — ADMIN_GUIDE (translation behavior, toggle, re-translate), PRD §5 alignment (`ce7ec50`)
+- [x] Task: Commit + git note (`ce7ec50`)
 - [ ] Task: Final Phase Verification & Checkpoint (Refer to workflow.md)
