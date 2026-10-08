@@ -8,7 +8,7 @@
 
 - [x] Task: Record bundle baseline
   - [ ] Run `bun run build` and record first-load JS for `/` (and `bun run analyze` route breakdown) as the before-metric in `docs/pagespeed-optimization.md`
-- [ ] Task: Remove legacy carousel and feature flag
+- [x] Task: Remove legacy carousel and feature flag
   - [ ] Delete `src/components/RealisticBookCarousel.tsx` and remove `react-pageflip` from `package.json` + lockfile
   - [ ] Remove the `NEXT_PUBLIC_MODERN_CAROUSEL` gate in `src/components/FeaturedHero.tsx` — `ModernBookCarousel` becomes the only carousel
   - [ ] Remove `.env.example` / docs references to the flag

@@ -11,22 +11,11 @@ import { GradientBackground } from "@/components/ui/gradient-background";
 import { cn, extractTextFromRichText } from "@/lib/utils";
 import type { Media, Review } from "@/payload-types";
 
-// Feature flag for modern carousel
-const USE_MODERN_CAROUSEL = process.env.NEXT_PUBLIC_MODERN_CAROUSEL === "true";
-
-// Lazy load the appropriate carousel based on the feature flag
-const CarouselComponent = dynamic(
-	() =>
-		USE_MODERN_CAROUSEL
-			? import("./ModernBookCarousel")
-			: import("./RealisticBookCarousel").then(
-					(mod) => mod.RealisticBookCarousel,
-				),
-	{
-		ssr: false,
-		loading: () => <HeroSkeletonContent />,
-	},
-);
+// Lazy load the carousel to reduce initial bundle size
+const CarouselComponent = dynamic(() => import("./ModernBookCarousel"), {
+	ssr: false,
+	loading: () => <HeroSkeletonContent />,
+});
 
 interface FeaturedHeroProps {
 	reviews: Review[];
