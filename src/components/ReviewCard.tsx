@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardFooter, CardHeader } from "@/components/ui/card";
+import type { AppLocale } from "@/lib/date-format";
+import { formatDate } from "@/lib/date-format";
 import { cn } from "@/lib/utils";
 import type { Media, Review } from "@/payload-types";
 
@@ -12,12 +14,15 @@ interface ReviewCardProps {
 	review: Review;
 	className?: string;
 	priority?: boolean;
+	/** UI language for the publish date; defaults to English. */
+	locale?: AppLocale;
 }
 
 export function ReviewCard({
 	review,
 	className,
 	priority = false,
+	locale = "en",
 }: ReviewCardProps) {
 	const coverImage = review.coverImage as Media;
 
@@ -58,13 +63,7 @@ export function ReviewCard({
 							))}
 						</div>
 						<span className="text-xs text-muted-foreground">
-							{new Date(
-								review.publishDate || review.createdAt,
-							).toLocaleDateString(undefined, {
-								year: "numeric",
-								month: "long",
-								day: "numeric",
-							})}
+							{formatDate(review.publishDate || review.createdAt, locale)}
 						</span>
 					</div>
 					<h3 className="font-serif text-xl font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2">

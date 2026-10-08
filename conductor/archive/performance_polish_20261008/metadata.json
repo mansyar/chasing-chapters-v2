@@ -1,0 +1,10 @@
+{
+	"id": "performance_polish_20261008",
+	"title": "Performance & Polish (Phase 3 finalize, Phase 4, OG images, a11y, toasts, empty states, locale dates)",
+	"type": "refactor/chore-hybrid",
+	"status": "complete",
+	"created": "2026-10-08",
+	"updated": "2026-10-08",
+	"branch": "perf/performance-polish",
+	"registry": "../tracks.md"
+}

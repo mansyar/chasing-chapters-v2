@@ -1,5 +1,5 @@
 import configPromise from "@payload-config";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, BookOpen } from "lucide-react";
 import Link from "next/link";
 import { getPayload } from "payload";
 import { FeaturedHero } from "@/components/FeaturedHero";
@@ -7,6 +7,7 @@ import { GenreMarquee } from "@/components/GenreMarquee";
 import { ReadingListCard } from "@/components/ReadingListCard";
 import { ReviewCard } from "@/components/ReviewCard";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
 
 // Enable ISR with 60 second revalidation for better caching
 export const revalidate = 60;
@@ -108,9 +109,12 @@ export default async function Homepage() {
 						))}
 					</div>
 				) : (
-					<p className="text-muted-foreground text-center py-12">
-						No reviews published yet. Check back soon!
-					</p>
+					<EmptyState
+						icon={BookOpen}
+						title="No reviews yet"
+						description="The first reviews are being written — check back soon."
+						className="py-12"
+					/>
 				)}
 			</section>
 		</div>

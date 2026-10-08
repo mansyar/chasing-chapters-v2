@@ -1,8 +1,9 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
-import { CheckCircle, Clock, Loader2, Send } from "lucide-react";
+import { Loader2, Send } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { submitComment } from "@/app/actions/comments";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,10 +22,6 @@ export function CommentForm({
 	const [email, setEmail] = useState("");
 	const [content, setContent] = useState("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [message, setMessage] = useState<{
-		type: "success" | "pending" | "error";
-		text: string;
-	} | null>(null);
 
 	// Load saved name/email from localStorage
 	useEffect(() => {
@@ -41,7 +38,6 @@ export function CommentForm({
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setIsSubmitting(true);
-		setMessage(null);
 
 		const result = await submitComment({
 			name,
@@ -64,25 +60,21 @@ export function CommentForm({
 			// Clear content field
 			setContent("");
 
-			// Show appropriate message
+			// Show appropriate toast (sonner auto-dismisses; 5s keeps prior timing)
 			const status = result.data?.status;
-			setMessage({
-				type: status === "approved" ? "success" : "pending",
-				text: result.message || "Comment submitted!",
-			});
+			const text = result.message || "Comment submitted!";
+			if (status === "approved") {
+				toast.success(text, { duration: 5000 });
+			} else {
+				toast.warning(text, { duration: 5000 });
+			}
 
 			// Notify parent to refresh comments
 			if (status === "approved") {
 				onCommentSubmitted?.();
 			}
-
-			// Clear message after 5 seconds
-			setTimeout(() => setMessage(null), 5000);
 		} else {
-			setMessage({
-				type: "error",
-				text: result.error,
-			});
+			toast.error(result.error, { duration: 5000 });
 		}
 	};
 
@@ -117,8 +109,9 @@ export function CommentForm({
 						onChange={(e) => setEmail(e.target.value)}
 						required
 						className="bg-background"
+						aria-describedby="email-help"
 					/>
-					<p className="text-xs text-muted-foreground">
+					<p id="email-help" className="text-xs text-muted-foreground">
 						Your email won&apos;t be published
 					</p>
 				</div>
@@ -138,30 +131,15 @@ export function CommentForm({
 					maxLength={2000}
 					rows={4}
 					className="bg-background"
+					aria-describedby="content-help"
 				/>
-				<p className="text-xs text-muted-foreground text-right">
+				<p
+					id="content-help"
+					className="text-xs text-muted-foreground text-right"
+				>
 					{content.length}/2000
 				</p>
 			</div>
-
-			{message && (
-				<div
-					className={`flex items-center gap-2 p-3 rounded-lg text-sm ${
-						message.type === "success"
-							? "bg-green-50 text-green-800 dark:bg-green-950/30 dark:text-green-300"
-							: message.type === "pending"
-								? "bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-300"
-								: "bg-red-50 text-red-800 dark:bg-red-950/30 dark:text-red-300"
-					}`}
-				>
-					{message.type === "success" ? (
-						<CheckCircle className="h-4 w-4 shrink-0" />
-					) : message.type === "pending" ? (
-						<Clock className="h-4 w-4 shrink-0" />
-					) : null}
-					{message.text}
-				</div>
-			)}
 
 			<Button
 				type="submit"

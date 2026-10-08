@@ -17,6 +17,7 @@ import { RelatedReviews } from "@/components/reviews/RelatedReviews";
 import { ShareButton } from "@/components/ShareButton";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { formatDate, normalizeLocale } from "@/lib/date-format";
 import {
 	generateBreadcrumbSchema,
 	generateReviewSchema,
@@ -62,7 +63,6 @@ export async function generateMetadata({
 		};
 	}
 
-	const coverImage = review.coverImage as any;
 	const description = `Read our review of ${review.title} by ${review.bookAuthor}. Rating: ${review.rating}/5 stars.`;
 
 	return {
@@ -79,22 +79,11 @@ export async function generateMetadata({
 			title: review.title,
 			description,
 			type: "article",
-			images: coverImage?.url
-				? [
-						{
-							url: coverImage.url,
-							width: 800,
-							height: 1200,
-							alt: review.title,
-						},
-					]
-				: [],
 		},
 		twitter: {
 			card: "summary_large_image",
 			title: review.title,
 			description,
-			images: coverImage?.url ? [coverImage.url] : [],
 		},
 	};
 }
@@ -122,6 +111,7 @@ export async function generateStaticParams() {
 export default async function ReviewPage({ params, searchParams }: PageProps) {
 	const { slug } = await params;
 	const { locale = "en" } = await searchParams;
+	const appLocale = normalizeLocale(locale);
 	const payload = await getPayload({ config: configPromise });
 
 	const { docs: reviews } = await payload.find({
@@ -216,13 +206,10 @@ export default async function ReviewPage({ params, searchParams }: PageProps) {
 								<div className="flex items-center gap-1">
 									<Calendar className="h-4 w-4" />
 									<span>
-										{new Date(
+										{formatDate(
 											review.publishDate || review.createdAt,
-										).toLocaleDateString(undefined, {
-											year: "numeric",
-											month: "long",
-											day: "numeric",
-										})}
+											appLocale,
+										)}
 									</span>
 								</div>
 							</div>
@@ -373,14 +360,9 @@ export default async function ReviewPage({ params, searchParams }: PageProps) {
 									<div className="flex justify-between items-center">
 										<span className="text-muted-foreground">Started</span>
 										<span className="font-medium">
-											{new Date(review.readingStartDate).toLocaleDateString(
-												undefined,
-												{
-													year: "numeric",
-													month: "short",
-													day: "numeric",
-												},
-											)}
+											{formatDate(review.readingStartDate, appLocale, {
+												month: "short",
+											})}
 										</span>
 									</div>
 								)}
@@ -388,14 +370,9 @@ export default async function ReviewPage({ params, searchParams }: PageProps) {
 									<div className="flex justify-between items-center">
 										<span className="text-muted-foreground">Finished</span>
 										<span className="font-medium">
-											{new Date(review.readingFinishDate).toLocaleDateString(
-												undefined,
-												{
-													year: "numeric",
-													month: "short",
-													day: "numeric",
-												},
-											)}
+											{formatDate(review.readingFinishDate, appLocale, {
+												month: "short",
+											})}
 										</span>
 									</div>
 								)}
@@ -406,18 +383,21 @@ export default async function ReviewPage({ params, searchParams }: PageProps) {
 			</div>
 
 			{/* Related Reviews */}
-			<div className="container mx-auto px-6 md:px-12 lg:px-24 pb-12 max-w-7xl">
+			<div className="container mx-auto px-6 md:px-12 lg:px-24 pb-12 max-w-7xl [content-visibility:auto] [contain-intrinsic-size:auto_600px]">
 				<RelatedReviews
 					currentReviewId={review.id}
 					genres={review.genres}
 					tags={review.tags}
 					moodTags={review.moodTags}
+					locale={appLocale}
 				/>
 			</div>
 
 			{/* Comments Section */}
 			<Separator className="my-8" />
-			<CommentSection reviewId={review.id} />
+			<div className="[content-visibility:auto] [contain-intrinsic-size:auto_600px]">
+				<CommentSection reviewId={review.id} locale={appLocale} />
+			</div>
 		</article>
 	);
 }

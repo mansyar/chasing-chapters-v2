@@ -91,19 +91,21 @@ Target: Reduce unused JS by 100+ KiB
 
 | Task | Description                                         | Status     | Impact |
 | ---- | --------------------------------------------------- | ---------- | ------ |
-| 3.1  | Evaluate replacing react-pageflip with CSS solution | ⬜ Pending | High   |
+| 3.1  | Evaluate replacing react-pageflip with CSS solution | ✅ Done    | High   |
 | 3.2  | Tree-shake motion library imports                   | ⬜ Pending | Medium |
 | 3.3  | Lazy load Sheet/Dialog components                   | ⬜ Pending | Medium |
 | 3.4  | Review bundle analyzer output                       | ⬜ Pending | Low    |
 
-### Phase 4: Advanced Optimizations (Priority 4) ⬜
+### Phase 4: Advanced Optimizations (Priority 4) ✅
 
 | Task | Description                                            | Status     | Impact |
 | ---- | ------------------------------------------------------ | ---------- | ------ |
-| 4.1  | Add `content-visibility: auto` for off-screen sections | ⬜ Pending | Medium |
-| 4.2  | Implement resource hints (preconnect, prefetch)        | ⬜ Pending | Medium |
-| 4.3  | Add `will-change` CSS for animated elements            | ⬜ Pending | Low    |
-| 4.4  | Review and optimize CSS delivery                       | ⬜ Pending | Low    |
+| 4.1  | Add `content-visibility: auto` for off-screen sections | ✅ Done    | Medium |
+| 4.2  | Implement resource hints (preconnect, prefetch)        | ✅ Done    | Medium |
+| 4.3  | Add `will-change` CSS for animated elements            | ✅ Done    | Low    |
+| 4.4  | Review and optimize CSS delivery                       | ✅ Done    | Low    |
+
+Phase 4 completion notes (2026-10-08): 4.1 — `[content-visibility:auto]` + `contain-intrinsic-size` applied to below-fold Related Reviews and Comments sections on review detail pages. 4.2 — `preconnect` + `dns-prefetch` added to the public layout head for the Umami analytics origin (only genuine cross-origin resource: media streams same-origin via `/api/media/file/*` and fonts are self-hosted by `next/font`, so no other hints needed). 4.3 — `will-change:transform` added to marquee animated children (transform animations composite); `GradientBackground` intentionally NOT given `will-change` because its `background-position` animation is paint-only (no compositing benefit, would only waste GPU memory). 4.4 — CSS delivery reviewed: Next 16 inlines/loads the single `globals.css` automatically with optimal ordering; no action required.
 
 ---
 
@@ -224,7 +226,9 @@ After each phase, verify:
 | Date       | Score | FCP  | LCP  | TBT  | CLS   | Speed Index | Notes    |
 | ---------- | ----- | ---- | ---- | ---- | ----- | ----------- | -------- |
 | 2026-01-19 | 61    | 0.6s | 1.3s | 90ms | 1.862 | 5.3s        | Baseline |
-| -          | -     | -    | -    | -    | -     | -           | -        |
+| 2026-10-08 | -     | -    | -    | -    | -     | -           | Phase 3 finalized: removed `RealisticBookCarousel` + `react-pageflip` dep + `NEXT_PUBLIC_MODERN_CAROUSEL` flag; only `ModernBookCarousel` (CSS Scroll Snap) remains. Client JS: 110 → 108 chunks, 1,504KB → 1,490KB gzip (−14KB gz / −54KB raw; pageflip was already lazy-loaded, so removal mainly eliminates the dead code path and dependency) |
+| 2026-10-08 | 98    | 0.7s | 0.9s | 10ms | 0     | 1.3s        | Performance & Polish track complete (Lighthouse 13.4.1, desktop, local production standalone after the standalone asset-copy fix). Performance 61 → 98, CLS 1.862 → 0, Speed Index 5.3s → 1.3s, LCP 1.3s → 0.9s, TBT 90ms → 10ms. Accessibility 100, Best Practices 96, SEO 100. Caveat: measured on localhost with browser extensions injecting JS — re-run against the production URL for the canonical number. |
+| 2026-10-08 | -     | -    | -    | -    | -     | -           | Performance & Polish track complete. Phase 4 done: `content-visibility:auto` on below-fold Related Reviews/Comments, Umami preconnect/dns-prefetch, `will-change:transform` on marquee. Final client JS: 111 chunks / 4,694KB raw / 1,503KB gzip — net flat vs 1,504KB baseline despite adding `sonner` (toast system) + date-fns `id` locale, because the removed pageflip/flag dead code offset them. Remaining wins are render-level (content-visibility, fewer reflows) and Lighthouse/PageSpeed numbers should be captured manually per the Verification Checklist. |
 
 ---
 

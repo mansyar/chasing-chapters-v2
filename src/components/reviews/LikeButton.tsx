@@ -104,6 +104,7 @@ export function LikeButton({
 			)}
 			onClick={handleLike}
 			disabled={!isMounted}
+			aria-pressed={isLiked}
 		>
 			<Heart
 				className={cn(

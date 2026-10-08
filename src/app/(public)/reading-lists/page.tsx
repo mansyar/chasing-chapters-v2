@@ -1,9 +1,11 @@
 import configPromise from "@payload-config";
+import { Library } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { getPayload } from "payload";
 import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { generateItemListSchema, SITE_URL } from "@/lib/seo/structured-data";
 import type { Media } from "@/payload-types";
 
@@ -94,9 +96,11 @@ export default async function ReadingListsPage() {
 			</div>
 
 			{readingLists.length === 0 && (
-				<div className="text-center py-20 text-muted-foreground">
-					<p>No reading lists published yet.</p>
-				</div>
+				<EmptyState
+					icon={Library}
+					title="No reading lists yet"
+					description="Curated collections of reviews are on the way — check back soon."
+				/>
 			)}
 		</div>
 	);

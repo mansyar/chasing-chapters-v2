@@ -45,7 +45,6 @@ export async function generateMetadata({
 		};
 	}
 
-	const coverImage = list.coverImage as Media | null | undefined;
 	const description = list.description || `Curated reading list: ${list.title}`;
 
 	return {
@@ -58,22 +57,11 @@ export async function generateMetadata({
 			title: list.title,
 			description,
 			type: "website",
-			images: coverImage?.url
-				? [
-						{
-							url: coverImage.url,
-							width: 1200,
-							height: 630,
-							alt: list.title,
-						},
-					]
-				: [],
 		},
 		twitter: {
 			card: "summary_large_image",
 			title: list.title,
 			description,
-			images: coverImage?.url ? [coverImage.url] : [],
 		},
 	};
 }
