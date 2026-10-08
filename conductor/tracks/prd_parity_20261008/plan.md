@@ -68,14 +68,14 @@
 
 ## Phase 5: Cleanup & Documentation Alignment
 
-- [ ] Task: Remove dead pagination branch (FR3)
-  - Delete the always-null `filter().map()` block in `src/app/(public)/reviews/page.tsx` ("Re-implementing logic clearly" comment)
+- [x] Task: Remove dead pagination branch (FR3) — commit 03fba97
+  - Deleted the always-null `filter().map()` block in `src/app/(public)/reviews/page.tsx` ("Re-implementing logic clearly" comment)
   - Verify: typecheck/lint/tests green; reviews pagination still works
-- [ ] Task: Align documentation (FR4)
+- [x] Task: Align documentation (FR4) — commit 03fba97
   - README: remove "scheduled publishing" claim; RSS claim now true
   - `docs/PRD.md`: mark scheduled publishing as deferred/removed
   - `docs/ADMIN_GUIDE.md`: correct comment status list (pending/approved/rejected/reported; remove "Spam")
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md) — pending user verification
 
 ## Review Fixes
 
