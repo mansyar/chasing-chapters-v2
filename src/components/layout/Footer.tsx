@@ -1,3 +1,6 @@
+import { Rss } from "lucide-react";
+import Link from "next/link";
+
 export function Footer() {
 	return (
 		<footer className="border-t bg-muted/30">
@@ -9,9 +12,19 @@ export function Footer() {
 							A personal space for book lovers.
 						</p>
 					</div>
-					<div className="text-sm text-muted-foreground">
-						&copy; {new Date().getFullYear()} Chasing Chapters. All rights
-						reserved.
+					<div className="flex items-center gap-4 text-sm text-muted-foreground">
+						<Link
+							href="/feed.xml"
+							className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors"
+							aria-label="RSS feed of latest reviews"
+						>
+							<Rss className="h-4 w-4" aria-hidden="true" />
+							RSS
+						</Link>
+						<span>
+							&copy; {new Date().getFullYear()} Chasing Chapters. All rights
+							reserved.
+						</span>
 					</div>
 				</div>
 			</div>

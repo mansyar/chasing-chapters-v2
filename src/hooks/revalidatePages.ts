@@ -41,6 +41,9 @@ export const revalidateReviewPages: CollectionAfterChangeHook = async ({
 		// Revalidate homepage (featured reviews, latest reviews)
 		revalidatePath("/");
 
+		// Revalidate the RSS feed (latest reviews)
+		revalidatePath("/feed.xml");
+
 		// If featured status changed, homepage needs update (already covered above)
 		// Reading lists that include this review will be revalidated by their own ISR
 	}

@@ -11,6 +11,11 @@ export const metadata: Metadata = {
 	},
 	description:
 		"A digital sanctuary for book lovers, dedicated to the art of storytelling and the joy of getting lost in a good book.",
+	alternates: {
+		types: {
+			"application/rss+xml": "/feed.xml",
+		},
+	},
 	openGraph: {
 		type: "website",
 		locale: "en_US",
