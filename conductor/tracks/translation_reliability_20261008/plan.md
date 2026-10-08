@@ -32,9 +32,9 @@
 	- [ ] `autoTranslate` (checkbox, default `true`)
 	- [ ] `translationStatus` (select: untranslated/pending/translated/failed/stale, read-only) + `translationError` (textarea, read-only) + `translationUpdatedAt` (date, read-only)
 	- [ ] Admin: status column in list view, read-only sidebar card in edit view
-- [ ] Task: DB migration + backfill (existing reviews → `translated` or `untranslated`)
-- [ ] Task: Commit + git note
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: DB migration + backfill (existing reviews → `translated` or `untranslated`)
+- [x] Task: Commit + git note (`7cf0434`)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) → `[checkpoint: 7cf0434]` (manual UI check deferred to Phase 4, user-approved)
 
 ## Phase 3 — Hook Orchestration (`src/hooks/translateReview.ts`)
 
