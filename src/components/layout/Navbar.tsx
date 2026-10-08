@@ -108,6 +108,7 @@ export function Navbar() {
 						) : (
 							<Search className="h-5 w-5" />
 						)}
+						<span className="sr-only">Toggle search</span>
 					</Button>
 
 					{/* Mobile Menu */}

@@ -44,6 +44,7 @@ export function ShareButton({ title, url, className }: ShareButtonProps) {
 			size="sm"
 			className={cn("gap-2 transition-all", className)}
 			onClick={handleShare}
+			aria-live="polite"
 		>
 			{copied ? (
 				<>

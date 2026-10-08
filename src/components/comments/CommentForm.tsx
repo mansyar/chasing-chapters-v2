@@ -117,8 +117,9 @@ export function CommentForm({
 						onChange={(e) => setEmail(e.target.value)}
 						required
 						className="bg-background"
+						aria-describedby="email-help"
 					/>
-					<p className="text-xs text-muted-foreground">
+					<p id="email-help" className="text-xs text-muted-foreground">
 						Your email won&apos;t be published
 					</p>
 				</div>
@@ -138,14 +139,20 @@ export function CommentForm({
 					maxLength={2000}
 					rows={4}
 					className="bg-background"
+					aria-describedby="content-help"
 				/>
-				<p className="text-xs text-muted-foreground text-right">
+				<p
+					id="content-help"
+					className="text-xs text-muted-foreground text-right"
+				>
 					{content.length}/2000
 				</p>
 			</div>
 
 			{message && (
 				<div
+					aria-live="polite"
+					role={message.type === "error" ? "alert" : "status"}
 					className={`flex items-center gap-2 p-3 rounded-lg text-sm ${
 						message.type === "success"
 							? "bg-green-50 text-green-800 dark:bg-green-950/30 dark:text-green-300"

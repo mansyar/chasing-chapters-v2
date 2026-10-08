@@ -37,10 +37,10 @@
 
 ## Phase 4: Accessibility Pass
 
-- [ ] Task: Skip-to-content link in public layout (visible on focus)
-- [ ] Task: `aria-live="polite"` regions for async form feedback (comment submit, report form, share copy)
-- [ ] Task: `aria-describedby` linking comment form validation errors to inputs
-- [ ] Task: Keyboard/focus audit of interactive components (navbar sheet, carousels, like button)
+- [x] Task: Skip-to-content link in public layout (visible on focus)
+- [x] Task: `aria-live="polite"` regions for async form feedback (comment submit, report form, share copy)
+- [x] Task: `aria-describedby` linking comment form validation errors to inputs
+- [x] Task: Keyboard/focus audit of interactive components (navbar sheet, carousels, like button)
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 5: Toast System

@@ -47,19 +47,36 @@ export default function ModernBookCarousel({
 		scrollTo(prevIndex);
 	};
 
+	// Pause auto-play while the carousel is hovered or focused (WCAG 2.2.2)
+	const [isPaused, setIsPaused] = useState(false);
+
 	// Auto-play
 	useEffect(() => {
+		if (isPaused) return;
 		const timer = setInterval(next, 5000);
 		return () => clearInterval(timer);
-	}, [next]);
+	}, [next, isPaused]);
 
 	return (
-		<div className="relative group w-full max-w-5xl mx-auto">
+		<div
+			className="relative group w-full max-w-5xl mx-auto"
+			onMouseEnter={() => setIsPaused(true)}
+			onMouseLeave={() => setIsPaused(false)}
+			onFocus={() => setIsPaused(true)}
+			onBlur={(e) => {
+				if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+					setIsPaused(false);
+				}
+			}}
+		>
 			{/* Main Snap Container */}
 			<div
 				ref={scrollRef}
 				onScroll={handleScroll}
-				className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar gap-0 scroll-smooth"
+				role="region"
+				aria-label="Featured reviews carousel"
+				tabIndex={0}
+				className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar gap-0 scroll-smooth focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
 				style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
 			>
 				{reviews.map((review, index) => {
@@ -151,7 +168,7 @@ export default function ModernBookCarousel({
 			</div>
 
 			{/* Navigation Buttons */}
-			<div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 flex justify-between px-2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+			<div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 flex justify-between px-2 pointer-events-none opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
 				<Button
 					variant="outline"
 					size="icon"
@@ -171,19 +188,27 @@ export default function ModernBookCarousel({
 			</div>
 
 			{/* Indicators */}
-			<div className="flex justify-center gap-2 mt-4">
+			<div className="flex justify-center gap-1 mt-4">
 				{reviews.map((_, i) => (
 					<button
 						key={i}
 						onClick={() => scrollTo(i)}
 						className={cn(
-							"h-1.5 transition-all duration-300 rounded-full",
-							activeSlide === i
-								? "w-8 bg-primary"
-								: "w-2 bg-primary/20 hover:bg-primary/40",
+							"group/dot grid h-6 min-w-6 place-items-center",
+							activeSlide === i && "cursor-default",
 						)}
 						aria-label={`Go to slide ${i + 1}`}
-					/>
+						aria-current={activeSlide === i || undefined}
+					>
+						<span
+							className={cn(
+								"h-1.5 transition-all duration-300 rounded-full",
+								activeSlide === i
+									? "w-8 bg-primary"
+									: "w-2 bg-primary/20 group-hover/dot:bg-primary/40",
+							)}
+						/>
+					</button>
 				))}
 			</div>
 

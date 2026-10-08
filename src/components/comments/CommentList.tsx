@@ -151,6 +151,8 @@ export function CommentList({ comments }: CommentListProps) {
 							{/* Report message */}
 							{reportMessage && reportMessage.id === comment.id && (
 								<p
+									aria-live="polite"
+									role={reportMessage.type === "error" ? "alert" : "status"}
 									className={`mt-2 text-xs ${
 										reportMessage.type === "success"
 											? "text-green-600"
