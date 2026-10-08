@@ -50,7 +50,7 @@
 - [x] Task: Remove dead inline-message state/rendering
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
-## Phase 6: Empty States & Locale-Aware Dates
+## Phase 6: Empty States & Locale-Aware Dates [checkpoint: b9e5bb9]
 
 - [x] Task: Write failing tests (Red)
   - [x] `src/lib/__tests__/date-format.test.ts` — locale-aware formatting util (en/id, invalid dates, date vs datetime)
