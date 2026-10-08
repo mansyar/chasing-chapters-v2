@@ -11,7 +11,7 @@
 - [x] Task: Diagnose and fix the hero-carousel CLS shift (inspect `FeaturedHero`/`ModernBookCarousel` swap path — reserve height / stable layout across skeleton→carousel→slide transitions) `[df72a7a]`; verify no layout shift in the hero container via Lighthouse or manual trace
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
-## Phase 2: TTFB Investigation & Mitigation
+## Phase 2: TTFB Investigation & Mitigation [checkpoint: fea512d]
 
 - [x] Task: Investigate cold root-document TTFB — isolate ISR cache miss vs. container cold start vs. DB/edge latency (curl timing on production + staged local checks); document findings with evidence in the tracker `[5947ead]`
 - [x] Task: Implement smallest proven mitigation (candidate: post-deploy warm-up of key ISR pages wired into the deploy workflow or Coolify hook; if the script is logic-bearing → TDD with unit tests first) `[fea512d]`
