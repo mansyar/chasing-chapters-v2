@@ -280,33 +280,6 @@ export default async function BrowsePage({ searchParams }: PageProps) {
 							)}
 
 							{/* Page Numbers */}
-							{Array.from({ length: totalPages }, (_, i) => i + 1)
-								.filter(
-									(p) =>
-										p === 1 ||
-										p === totalPages ||
-										(p >= currentPage - 1 && p <= currentPage + 1),
-								)
-								.map((p) => {
-									// Skip if previously handled by first/last page logic to avoid duplicates
-									// specifically if we are showing 1 ... [current] ... last
-									// logic above handles the ellipsis, here we just want the range around current
-									// but simplifying: just show range around current, and first/last if far away.
-
-									// Let's refine the logic to be simpler standard pagination
-									// Show: 1 ... prev current next ... last
-
-									// If page is 1 or last, we handled/will handle it or it's in the loop?
-									// Let's just do a simple logic:
-									// if page is within distance 1 of current, show it.
-									if (p < currentPage - 1 && p !== 1) return null;
-									if (p > currentPage + 1 && p !== totalPages) return null;
-
-									// If it's 1 and we are far, we showed it above with ellipsis? No let's do it all here.
-									return null;
-								})}
-
-							{/* Re-implementing logic clearly */}
 							{(() => {
 								const pages = [];
 								const showFirst = currentPage > 2;

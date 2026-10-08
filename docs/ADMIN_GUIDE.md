@@ -89,7 +89,8 @@ A guide for managing your book review website.
 
 - **Pending**: Awaiting review (new submissions)
 - **Approved**: Visible on the website
-- **Spam**: Marked for removal
+- **Rejected**: Hidden from the website
+- **Reported**: Flagged by readers for moderator review
 
 ---
 

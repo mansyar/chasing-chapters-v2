@@ -64,7 +64,7 @@
 - [x] Task: Implement sort query logic (Green phase) (FR2) — src/lib/reviews-sort.ts + page wiring — commit 3ffd157
 - [x] Task: Implement sort UI dropdown (FR2) — SortSelect component, labeled, preserves other params, resets to page 1 — commit 3ffd157
 - [x] Task: Add e2e coverage for sorting — e2e/sort.spec.ts 4 passing — commit 3ffd157
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md) — pending user verification
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) — checkpoint 3ffd157, user-approved
 
 ## Phase 5: Cleanup & Documentation Alignment
 

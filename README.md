@@ -10,7 +10,7 @@ A beautifully crafted personal book review platform — a digital space that fee
 - **Favorite Quotes** — Highlight memorable passages with special formatting
 - **Mood & Genre Tagging** — Organize reviews with genres, tags, and mood tags
 - **Reading Stats** — Track reading dates, books per month, and favorite genres
-- **Draft & Schedule** — Save drafts and schedule publications
+- **Draft & Publish** - Save drafts and publish when ready (scheduled publishing is planned but not yet available)
 - **Comment Moderation** — Approve and manage reader comments
 - **Auto-Translation** — Reviews are automatically translated to Indonesian using Google Cloud Translation API
 
