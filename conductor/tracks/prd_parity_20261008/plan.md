@@ -66,7 +66,7 @@
 - [x] Task: Add e2e coverage for sorting — e2e/sort.spec.ts 4 passing — commit 3ffd157
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) — checkpoint 3ffd157, user-approved
 
-## Phase 5: Cleanup & Documentation Alignment
+## Phase 5: Cleanup & Documentation Alignment [checkpoint: 03fba97]
 
 - [x] Task: Remove dead pagination branch (FR3) — commit 03fba97
   - Deleted the always-null `filter().map()` block in `src/app/(public)/reviews/page.tsx` ("Re-implementing logic clearly" comment)
@@ -75,7 +75,7 @@
   - README: remove "scheduled publishing" claim; RSS claim now true
   - `docs/PRD.md`: mark scheduled publishing as deferred/removed
   - `docs/ADMIN_GUIDE.md`: correct comment status list (pending/approved/rejected/reported; remove "Spam")
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md) — pending user verification
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) — checkpoint 03fba97, user-approved
 
 ## Review Fixes
 
