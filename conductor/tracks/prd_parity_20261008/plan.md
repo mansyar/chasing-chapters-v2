@@ -18,7 +18,7 @@
   - Update `conductor/workflow.md` Development Commands / pre-commit references
   - Run `bun check`; fix all TS 7 fallout (strict defaults, side-effect CSS imports TS2882, removed compiler options in `tsconfig.json`)
   - Verify: `bun check` exits 0; grep confirms no remaining `tsc --noEmit` invocations
-- [ ] Task: Adopt Biome, remove ESLint + Prettier (FR0b)
+- [x] Task: Adopt Biome, remove ESLint + Prettier (FR0b) — commits 2651e8e, 42df1d1
   - Install Biome; run `biome migrate eslint --write` to port existing ESLint rules where mappable
   - Configure `biome.json` (formatter, linter, ignores for build outputs/generated files)
   - Update `package.json` scripts (`lint`, new `format`), husky pre-commit chain, CI
