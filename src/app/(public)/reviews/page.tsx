@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { getPayload } from "payload";
 import { GenreSelect } from "@/components/GenreSelect";
 import { ReviewCard } from "@/components/ReviewCard";
+import { SortSelect } from "@/components/SortSelect";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ import {
 	PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Separator } from "@/components/ui/separator";
+import { parseSortParam, sortToPayloadSort } from "@/lib/reviews-sort";
 import { generateItemListSchema, SITE_URL } from "@/lib/seo/structured-data";
 import type { Media } from "@/payload-types";
 
@@ -37,12 +39,14 @@ interface PageProps {
 		genre?: string;
 		tag?: string;
 		page?: string;
+		sort?: string;
 	}>;
 }
 
 export default async function BrowsePage({ searchParams }: PageProps) {
-	const { q, genre, tag, page } = await searchParams;
+	const { q, genre, tag, page, sort } = await searchParams;
 	const currentPage = Number(page) || 1;
+	const currentSort = parseSortParam(sort);
 	const limit = 9;
 	const payload = await getPayload({ config: configPromise });
 
@@ -83,7 +87,7 @@ export default async function BrowsePage({ searchParams }: PageProps) {
 	const { docs: reviews, totalPages } = await payload.find({
 		collection: "reviews",
 		where,
-		sort: "-publishDate",
+		sort: sortToPayloadSort(currentSort),
 		depth: 1,
 		limit,
 		page: currentPage,
@@ -212,6 +216,7 @@ export default async function BrowsePage({ searchParams }: PageProps) {
 								</Link>
 							</Button>
 						)}
+						<SortSelect currentSort={currentSort} />
 					</div>
 					<Separator />
 
@@ -245,6 +250,7 @@ export default async function BrowsePage({ searchParams }: PageProps) {
 											...(q && { q }),
 											...(genre && { genre }),
 											...(tag && { tag }),
+											...(currentSort !== "recent" && { sort: currentSort }),
 											page: (currentPage - 1).toString(),
 										}).toString()}`}
 									/>
@@ -260,6 +266,7 @@ export default async function BrowsePage({ searchParams }: PageProps) {
 												...(q && { q }),
 												...(genre && { genre }),
 												...(tag && { tag }),
+												...(currentSort !== "recent" && { sort: currentSort }),
 												page: "1",
 											}).toString()}`}
 										>
@@ -337,6 +344,9 @@ export default async function BrowsePage({ searchParams }: PageProps) {
 													...(q && { q }),
 													...(genre && { genre }),
 													...(tag && { tag }),
+													...(currentSort !== "recent" && {
+														sort: currentSort,
+													}),
 													page: p.toString(),
 												}).toString()}`}
 											>
@@ -357,6 +367,9 @@ export default async function BrowsePage({ searchParams }: PageProps) {
 													...(q && { q }),
 													...(genre && { genre }),
 													...(tag && { tag }),
+													...(currentSort !== "recent" && {
+														sort: currentSort,
+													}),
 													page: p.toString(),
 												}).toString()}`}
 											>
@@ -374,6 +387,7 @@ export default async function BrowsePage({ searchParams }: PageProps) {
 											...(q && { q }),
 											...(genre && { genre }),
 											...(tag && { tag }),
+											...(currentSort !== "recent" && { sort: currentSort }),
 											page: (currentPage + 1).toString(),
 										}).toString()}`}
 									/>
