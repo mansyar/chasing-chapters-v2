@@ -96,14 +96,16 @@ Target: Reduce unused JS by 100+ KiB
 | 3.3  | Lazy load Sheet/Dialog components                   | ⬜ Pending | Medium |
 | 3.4  | Review bundle analyzer output                       | ⬜ Pending | Low    |
 
-### Phase 4: Advanced Optimizations (Priority 4) ⬜
+### Phase 4: Advanced Optimizations (Priority 4) ✅
 
 | Task | Description                                            | Status     | Impact |
 | ---- | ------------------------------------------------------ | ---------- | ------ |
-| 4.1  | Add `content-visibility: auto` for off-screen sections | ⬜ Pending | Medium |
-| 4.2  | Implement resource hints (preconnect, prefetch)        | ⬜ Pending | Medium |
-| 4.3  | Add `will-change` CSS for animated elements            | ⬜ Pending | Low    |
-| 4.4  | Review and optimize CSS delivery                       | ⬜ Pending | Low    |
+| 4.1  | Add `content-visibility: auto` for off-screen sections | ✅ Done    | Medium |
+| 4.2  | Implement resource hints (preconnect, prefetch)        | ✅ Done    | Medium |
+| 4.3  | Add `will-change` CSS for animated elements            | ✅ Done    | Low    |
+| 4.4  | Review and optimize CSS delivery                       | ✅ Done    | Low    |
+
+Phase 4 completion notes (2026-10-08): 4.1 — `[content-visibility:auto]` + `contain-intrinsic-size` applied to below-fold Related Reviews and Comments sections on review detail pages. 4.2 — `preconnect` + `dns-prefetch` added to the public layout head for the Umami analytics origin (only genuine cross-origin resource: media streams same-origin via `/api/media/file/*` and fonts are self-hosted by `next/font`, so no other hints needed). 4.3 — `will-change:transform` added to marquee animated children (transform animations composite); `GradientBackground` intentionally NOT given `will-change` because its `background-position` animation is paint-only (no compositing benefit, would only waste GPU memory). 4.4 — CSS delivery reviewed: Next 16 inlines/loads the single `globals.css` automatically with optimal ordering; no action required.
 
 ---
 

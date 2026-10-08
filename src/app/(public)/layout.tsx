@@ -20,6 +20,10 @@ const playfair = Playfair_Display({
 	adjustFontFallback: true,
 });
 
+const umamiOrigin = process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL
+	? new URL(process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL).origin
+	: null;
+
 export default function PublicLayout({
 	children,
 }: {
@@ -30,6 +34,12 @@ export default function PublicLayout({
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<head>
+				{umamiOrigin && (
+					<>
+						<link rel="preconnect" href={umamiOrigin} crossOrigin="anonymous" />
+						<link rel="dns-prefetch" href={umamiOrigin} />
+					</>
+				)}
 				<script
 					type="application/ld+json"
 					dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}

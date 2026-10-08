@@ -92,7 +92,7 @@ export function Marquee({
 									!vertical
 										? "flex-row [gap:var(--gap)]"
 										: "flex-col [gap:var(--gap)]",
-									"flex shrink-0 justify-around",
+									"flex shrink-0 justify-around [will-change:transform]",
 									!vertical && "animate-marquee flex-row",
 									vertical && "animate-marquee-vertical flex-col",
 									pauseOnHover && "group-hover:[animation-play-state:paused]",

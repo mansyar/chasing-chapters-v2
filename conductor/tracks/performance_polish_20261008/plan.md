@@ -30,9 +30,9 @@
 
 ## Phase 3: Advanced Optimizations (Phase 4)
 
-- [ ] Task: `content-visibility: auto` on below-fold sections (comments, related reviews)
-- [ ] Task: Resource hints (`preconnect` / `dns-prefetch`) for R2/CDN origins in root layout
-- [ ] Task: `will-change` for continuously animated elements (marquee, gradient); review CSS delivery
+- [x] Task: `content-visibility: auto` on below-fold sections (comments, related reviews)
+- [x] Task: Resource hints (`preconnect` / `dns-prefetch`) for R2/CDN origins in root layout
+- [x] Task: `will-change` for continuously animated elements (marquee, gradient); review CSS delivery
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 4: Accessibility Pass

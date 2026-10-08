@@ -394,7 +394,7 @@ export default async function ReviewPage({ params, searchParams }: PageProps) {
 			</div>
 
 			{/* Related Reviews */}
-			<div className="container mx-auto px-6 md:px-12 lg:px-24 pb-12 max-w-7xl">
+			<div className="container mx-auto px-6 md:px-12 lg:px-24 pb-12 max-w-7xl [content-visibility:auto] [contain-intrinsic-size:auto_600px]">
 				<RelatedReviews
 					currentReviewId={review.id}
 					genres={review.genres}
@@ -405,7 +405,9 @@ export default async function ReviewPage({ params, searchParams }: PageProps) {
 
 			{/* Comments Section */}
 			<Separator className="my-8" />
-			<CommentSection reviewId={review.id} />
+			<div className="[content-visibility:auto] [contain-intrinsic-size:auto_600px]">
+				<CommentSection reviewId={review.id} />
+			</div>
 		</article>
 	);
 }
