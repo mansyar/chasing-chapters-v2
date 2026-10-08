@@ -1,6 +1,6 @@
 import bundleAnalyzer from "@next/bundle-analyzer";
 import { withPayload } from "@payloadcms/next/withPayload";
-import { withSentryConfig } from "@sentry/nextjs";
+import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 
 // Bundle analyzer - run with ANALYZE=true pnpm build

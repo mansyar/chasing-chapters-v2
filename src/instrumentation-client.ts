@@ -13,9 +13,6 @@ Sentry.init({
 	// Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
 	tracesSampleRate: 0.1, // 10% of transactions for performance monitoring
 
-	// Enable logs to be sent to Sentry
-	enableLogs: true,
-
 	// Define how likely Replay events are sampled.
 	// Lower in production to reduce storage costs
 	replaysSessionSampleRate: 0.01, // 1% of sessions
