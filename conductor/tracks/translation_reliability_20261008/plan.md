@@ -60,4 +60,4 @@
 - [x] Task: Full gate: `bun run typecheck && bun run lint && bun test` + production build + e2e suite — build SUCCESS, 169/0 unit, typecheck/lint clean; e2e 28 pass / 5 fail (confirmed pre-existing at merge-base 5f36639: 1 pass / 7 fail; Redis WRONGPASS in e2e env)
 - [x] Task: Update docs — ADMIN_GUIDE (translation behavior, toggle, re-translate), PRD §5 alignment (`ce7ec50`)
 - [x] Task: Commit + git note (`ce7ec50`)
-- [ ] Task: Final Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Final Phase Verification & Checkpoint (Refer to workflow.md) → `[checkpoint: ce7ec50]` (live manual verification completed by user: re-translate button, publish flow, toggle behavior all confirmed working)
