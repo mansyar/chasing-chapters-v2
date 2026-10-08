@@ -2,6 +2,7 @@ import type { CollectionConfig, Where } from "payload";
 import formatSlug from "../hooks/formatSlug";
 import { revalidateReviewPages } from "../hooks/revalidatePages";
 import { translateReview } from "../hooks/translateReview";
+import { retranslateReview } from "../lib/retranslate";
 import { TRANSLATION_STATUSES } from "../lib/translation-status";
 
 export const Reviews: CollectionConfig = {
@@ -20,6 +21,17 @@ export const Reviews: CollectionConfig = {
 	versions: {
 		drafts: true,
 	},
+	endpoints: [
+		{
+			path: "/:id/retranslate",
+			method: "post",
+			handler: async (req) => {
+				const id = Number(req.routeParams?.id);
+				const result = await retranslateReview(req.payload, req.user, id);
+				return Response.json(result, { status: result.httpStatus });
+			},
+		},
+	],
 	access: {
 		read: ({ req: { user } }) => {
 			// Admins can see all reviews
@@ -189,6 +201,18 @@ export const Reviews: CollectionConfig = {
 				position: "sidebar",
 				readOnly: true,
 				condition: (data) => data?.translationStatus === "failed",
+			},
+		},
+		{
+			name: "retranslateAction",
+			type: "ui",
+			label: "Re-translate",
+			admin: {
+				position: "sidebar",
+				components: {
+					Field:
+						"/collections/Reviews/admin/RetranslateButton#RetranslateButton",
+				},
 			},
 		},
 		{
