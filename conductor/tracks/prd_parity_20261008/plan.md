@@ -9,9 +9,9 @@
 
 ## Phase 1: Toolchain Modernization
 
-- [ ] Task: Verify Bun supports `bun check` (check `bun --version`; upgrade Bun if needed)
+- [x] Task: Verify Bun supports `bun check` (check `bun --version`; upgrade Bun if needed)
   - Document the supported version in the task summary
-- [ ] Task: Migrate type checking to `bun check` (FR0a)
+- [x] Task: Migrate type checking to `bun check` (FR0a) — commit c5b30e8
   - Update `package.json` `typecheck` script: `tsc --noEmit` → `bun check`
   - Update husky pre-commit chain to use `bun check`
   - Update CI workflow(s) that invoke `tsc --noEmit`
