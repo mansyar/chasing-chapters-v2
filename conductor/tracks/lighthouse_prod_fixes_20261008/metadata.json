@@ -1,0 +1,10 @@
+{
+	"id": "lighthouse_prod_fixes_20261008",
+	"title": "Lighthouse Production Fixes (carousel a11y names, CSP beacon, hero CLS, cold TTFB mitigation)",
+	"type": "fix/chore-hybrid",
+	"status": "new",
+	"created": "2026-10-08",
+	"updated": "2026-10-08",
+	"branch": "fix/lighthouse-prod-scores",
+	"registry": "../tracks.md"
+}
