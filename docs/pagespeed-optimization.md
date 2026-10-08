@@ -227,6 +227,7 @@ After each phase, verify:
 | ---------- | ----- | ---- | ---- | ---- | ----- | ----------- | -------- |
 | 2026-01-19 | 61    | 0.6s | 1.3s | 90ms | 1.862 | 5.3s        | Baseline |
 | 2026-10-08 | -     | -    | -    | -    | -     | -           | Phase 3 finalized: removed `RealisticBookCarousel` + `react-pageflip` dep + `NEXT_PUBLIC_MODERN_CAROUSEL` flag; only `ModernBookCarousel` (CSS Scroll Snap) remains. Client JS: 110 → 108 chunks, 1,504KB → 1,490KB gzip (−14KB gz / −54KB raw; pageflip was already lazy-loaded, so removal mainly eliminates the dead code path and dependency) |
+| 2026-10-08 | -     | -    | -    | -    | -     | -           | Performance & Polish track complete. Phase 4 done: `content-visibility:auto` on below-fold Related Reviews/Comments, Umami preconnect/dns-prefetch, `will-change:transform` on marquee. Final client JS: 111 chunks / 4,694KB raw / 1,503KB gzip — net flat vs 1,504KB baseline despite adding `sonner` (toast system) + date-fns `id` locale, because the removed pageflip/flag dead code offset them. Remaining wins are render-level (content-visibility, fewer reflows) and Lighthouse/PageSpeed numbers should be captured manually per the Verification Checklist. |
 
 ---
 
