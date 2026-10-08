@@ -43,7 +43,7 @@
 - [x] Task: Keyboard/focus audit of interactive components (navbar sheet, carousels, like button)
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
-## Phase 5: Toast System
+## Phase 5: Toast System [checkpoint: 01d0f4d]
 
 - [x] Task: Install & wire toast library (sonner, theme-aware `<Toaster />` in public layout)
 - [x] Task: Replace `setTimeout` inline messages in `CommentForm.tsx`, `CommentList.tsx`, `ShareButton.tsx` with toasts (keep copy/behavior)
