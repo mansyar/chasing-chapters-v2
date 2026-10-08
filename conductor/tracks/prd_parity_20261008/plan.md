@@ -36,7 +36,7 @@
 - [x] Task: Full verification gate — all gates green: bun check (131 files), biome (0 errors), bun test (91 pass), build (7 static pages), e2e 25/25; tech-stack.md updated; hydration warning fixed via non-modal theme dropdown (086319a)
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) — checkpoint 086319a, e2e verified 25/25 with hydration warning eliminated
 
-## Phase 3: RSS Feed
+## Phase 3: RSS Feed [checkpoint: 79ca7c5]
 
 - [ ] Task: Write failing tests for the feed builder (Red phase) (FR1)
   - New `src/lib/__tests__/` test file for feed generation logic (follow existing test naming/style)
@@ -56,22 +56,15 @@
   - robots.txt reference SKIPPED — MetadataRoute.Robots has no feed field; robots.txt is not a feed-discovery mechanism (documented deviation, see git note on 79ca7c5)
 - [x] Task: Add e2e coverage for the feed — commit 79ca7c5
   - Playwright spec e2e/feed.spec.ts: valid XML + content type, item content, head discovery link, footer link (4 passing)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) — checkpoint 79ca7c5, user-approved
+
+## Phase 4: Sort Options on /reviews [checkpoint: 3ffd157]
+
+- [x] Task: Write failing tests for sort logic (Red phase) (FR2) — 7 tests, confirmed failing then green
+- [x] Task: Implement sort query logic (Green phase) (FR2) — src/lib/reviews-sort.ts + page wiring — commit 3ffd157
+- [x] Task: Implement sort UI dropdown (FR2) — SortSelect component, labeled, preserves other params, resets to page 1 — commit 3ffd157
+- [x] Task: Add e2e coverage for sorting — e2e/sort.spec.ts 4 passing — commit 3ffd157
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md) — pending user verification
-
-## Phase 4: Sort Options on /reviews
-
-- [ ] Task: Write failing tests for sort logic (Red phase) (FR2)
-  - New unit tests in `src/lib/__tests__/` for: sort-param parsing (recent/rating/title), invalid value fallback, rating tie-break by publishDate desc, title locale-aware case-insensitive ordering
-  - Run tests; confirm they fail
-- [ ] Task: Implement sort query logic (Green phase) (FR2)
-  - Extend the reviews query building (server-side, SSR) to apply the sort; compose with existing search/genre/pagination
-  - Changing sort resets to page 1; >80% coverage on new logic
-- [ ] Task: Implement sort UI dropdown (FR2)
-  - Labeled, keyboard-accessible dropdown in the reviews toolbar near search/genre filters
-  - Updates `?sort=` URL param preserving other params; no client-side data fetching
-- [ ] Task: Add e2e coverage for sorting
-  - Playwright spec: default order unchanged; `?sort=rating` and `?sort=title` order correctly; composes with filters
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 5: Cleanup & Documentation Alignment
 
