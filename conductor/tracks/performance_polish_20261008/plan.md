@@ -17,7 +17,7 @@
   - [ ] Re-run build; record after-metric (KiB saved) in the tracker doc
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
-## Phase 2: Dynamic OG Images
+## Phase 2: Dynamic OG Images [checkpoint: bb8dcb8]
 
 - [x] Task: Write failing tests (Red)
   - [x] `src/lib/__tests__/og-image.test.ts` — pure builder for OG image props (title/author/rating truncation, rating star rendering, list title + count, fallback defaults)
