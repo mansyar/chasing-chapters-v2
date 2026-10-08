@@ -1,4 +1,5 @@
 import configPromise from "@payload-config";
+import { notFound } from "next/navigation";
 import { ImageResponse } from "next/og";
 import { getPayload } from "payload";
 import { OgImageFrame } from "@/components/og/OgImageFrame";
@@ -29,6 +30,7 @@ export default async function Image({
 	});
 
 	const list = docs[0];
+	if (!list) notFound();
 	const bookCount = Array.isArray(list?.reviews) ? list.reviews.length : 0;
 	const props = buildReadingListOgProps({
 		title: list?.title,

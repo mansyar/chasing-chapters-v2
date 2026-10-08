@@ -21,9 +21,18 @@ const playfair = Playfair_Display({
 	adjustFontFallback: true,
 });
 
-const umamiOrigin = process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL
-	? new URL(process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL).origin
-	: null;
+function getUmamiOrigin(): string | null {
+	const scriptUrl = process.env.NEXT_PUBLIC_UMAMI_SCRIPT_URL;
+	if (!scriptUrl) return null;
+	try {
+		return new URL(scriptUrl).origin;
+	} catch {
+		// Malformed env value — skip the resource hints rather than crash.
+		return null;
+	}
+}
+
+const umamiOrigin = getUmamiOrigin();
 
 export default function PublicLayout({
 	children,
@@ -70,9 +79,9 @@ export default function PublicLayout({
 						</main>
 						<Footer />
 					</div>
+					<Toaster />
 				</ThemeProvider>
 				<UmamiScript />
-				<Toaster />
 			</body>
 		</html>
 	);

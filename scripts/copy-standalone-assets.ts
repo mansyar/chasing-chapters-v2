@@ -11,30 +11,55 @@
 import { cpSync, existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
-const root = process.cwd();
-const standalone = join(root, ".next", "standalone");
-
-if (!existsSync(join(standalone, "server.js"))) {
-	console.error(
-		"No standalone build found. Run `bun run build` before `bun run start`.",
-	);
-	process.exit(1);
+export interface CopyStandaloneResult {
+	/** Source dirs that were copied into the standalone output. */
+	copied: string[];
+	/** Source dirs that did not exist and were skipped. */
+	skipped: string[];
 }
 
-const copies = [
-	{
-		from: join(root, ".next", "static"),
-		to: join(standalone, ".next", "static"),
-	},
-	{ from: join(root, "public"), to: join(standalone, "public") },
-];
+/**
+ * Copy `.next/static` and `public/` into `.next/standalone/` under `root`.
+ * Throws when no standalone build exists (i.e. `bun run build` was not run).
+ */
+export function copyStandaloneAssets(root: string): CopyStandaloneResult {
+	const standalone = join(root, ".next", "standalone");
 
-for (const { from, to } of copies) {
-	if (!existsSync(from)) {
-		console.warn(`Skipping missing source: ${from}`);
-		continue;
+	if (!existsSync(join(standalone, "server.js"))) {
+		throw new Error(
+			"No standalone build found. Run `bun run build` before `bun run start`.",
+		);
 	}
-	rmSync(to, { recursive: true, force: true });
-	cpSync(from, to, { recursive: true });
-	console.log(`Copied ${from} -> ${to}`);
+
+	const sources = [join(root, ".next", "static"), join(root, "public")];
+
+	const result: CopyStandaloneResult = { copied: [], skipped: [] };
+
+	for (const from of sources) {
+		if (!existsSync(from)) {
+			result.skipped.push(from);
+			continue;
+		}
+		const to = join(standalone, from.slice(root.length + 1));
+		rmSync(to, { recursive: true, force: true });
+		cpSync(from, to, { recursive: true });
+		result.copied.push(from);
+	}
+
+	return result;
+}
+
+if (import.meta.main) {
+	try {
+		const { copied, skipped } = copyStandaloneAssets(process.cwd());
+		for (const from of copied) {
+			console.log(`Copied ${from}`);
+		}
+		for (const from of skipped) {
+			console.warn(`Skipping missing source: ${from}`);
+		}
+	} catch (error) {
+		console.error(error instanceof Error ? error.message : error);
+		process.exit(1);
+	}
 }

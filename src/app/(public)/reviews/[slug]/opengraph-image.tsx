@@ -1,4 +1,5 @@
 import configPromise from "@payload-config";
+import { notFound } from "next/navigation";
 import { ImageResponse } from "next/og";
 import { getPayload } from "payload";
 import { OgImageFrame } from "@/components/og/OgImageFrame";
@@ -29,6 +30,7 @@ export default async function Image({
 	});
 
 	const review = docs[0];
+	if (!review) notFound();
 	const props = buildReviewOgProps({
 		title: review?.title,
 		bookAuthor: review?.bookAuthor,

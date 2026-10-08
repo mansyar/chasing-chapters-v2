@@ -1,5 +1,6 @@
 import configPromise from "@payload-config";
 import { getPayload, Where } from "payload";
+import type { AppLocale } from "@/lib/date-format";
 import { Genre, MoodTag, Tag } from "@/payload-types";
 import { ReviewCard } from "../ReviewCard";
 
@@ -8,6 +9,8 @@ interface RelatedReviewsProps {
 	genres?: (Genre | number)[] | null;
 	tags?: (Tag | number)[] | null;
 	moodTags?: (MoodTag | number)[] | null;
+	/** UI language for the related cards' dates; defaults to English. */
+	locale?: AppLocale;
 }
 
 export async function RelatedReviews({
@@ -15,6 +18,7 @@ export async function RelatedReviews({
 	genres = [],
 	tags = [],
 	moodTags = [],
+	locale = "en",
 }: RelatedReviewsProps) {
 	// 1. Extract IDs safely
 	const genreIds = (genres || [])
@@ -102,7 +106,7 @@ export async function RelatedReviews({
 
 			<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
 				{relatedReviews.map((review) => (
-					<ReviewCard key={review.id} review={review} />
+					<ReviewCard key={review.id} review={review} locale={locale} />
 				))}
 			</div>
 		</section>

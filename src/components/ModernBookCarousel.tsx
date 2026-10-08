@@ -194,7 +194,7 @@ export default function ModernBookCarousel({
 						key={i}
 						onClick={() => scrollTo(i)}
 						className={cn(
-							"group/dot grid h-6 min-w-6 place-items-center",
+							"group/dot grid h-11 min-w-11 place-items-center",
 							activeSlide === i && "cursor-default",
 						)}
 						aria-label={`Go to slide ${i + 1}`}
