@@ -43,9 +43,9 @@
 	- [ ] Any failure → ID locale not updated; status `failed` with error + attempts
 	- [ ] Toggle OFF + EN text change → no translation, status `stale`
 	- [ ] Draft save → no auto-translation; format-only change → format sync preserved
-- [ ] Task: Implement hook orchestration (Green)
-- [ ] Task: Commit + git note
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Implement hook orchestration (Green)
+- [x] Task: Commit + git note (`7d55043`)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) → `[checkpoint: 7d55043]` (live hook test deferred to Phase 4, user-approved)
 
 ## Phase 4 — Admin "Re-translate now" Action
 
