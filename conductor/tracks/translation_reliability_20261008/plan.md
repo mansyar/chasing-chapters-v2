@@ -64,7 +64,7 @@
 
 ## Phase: Review Fixes
 
-- [~] Task: Apply review suggestions
+- [x] Task: Apply review suggestions `[checkpoint: b5255da]`
   - [x] Wire canTransition into 	ranslationStatus field validator (Medium)
   - [x] Memoize the Google Translate client (Low)
   - [x] Allow stale -> translated transition (required by format-sync on stale docs; test updated)
