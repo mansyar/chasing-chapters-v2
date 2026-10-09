@@ -22,11 +22,11 @@ Branch: `perf/r2-images` · Spec: `./spec.md` · Workflow: `conductor/workflow.m
 - [x] Task: Delete throwaway probe scripts and the probe review/cover/comment in FK-safe order; verify local DB back to the fixture review. — Probe review 8, its 91KB cover media (id 6) deleted in FK-safe order; local DB verified back to the single fixture review; `lcp-probe.ts`/`probe-review.ts`/`standalone.log` removed.
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
-## Phase 3: Verification & Documentation
+## Phase 3: Verification & Documentation [checkpoint: a406412]
 
 - [x] Task: Full local gates — `bun run typecheck` (162 files clean), `bun run lint` (67 pre-existing warnings, none new), `bun test` (211 pass / 0 fail across 17 files), Playwright e2e 33/33 with `--workers=1` (verified after the run; the parallel `page.goto` flake did not recur)
 - [x] Task: Record the local pre/post numbers (image load duration, warm LCP, CLS, SSR URL audit) and the pending post-deploy targets in `docs/pagespeed-optimization.md` Progress History, following the established pattern. — recorded in `[a406412]`
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) — user-confirmed; verification report attached as a git note to a406412
 
 ## Notes
 
