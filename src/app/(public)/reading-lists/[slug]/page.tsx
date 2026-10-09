@@ -158,8 +158,14 @@ export default async function ReadingListDetailPage({ params }: PageProps) {
 			<div className="container px-4 md:px-6 py-16">
 				{reviews.length > 0 ? (
 					<div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-						{reviews.map((review) => (
-							<ReviewCard key={review.id} review={review} />
+						{reviews.map((review, index) => (
+							// The first two cards sit above the fold, so their covers
+							// are LCP candidates and must not stay lazy.
+							<ReviewCard
+								key={review.id}
+								review={review}
+								priority={index < 2}
+							/>
 						))}
 					</div>
 				) : (
