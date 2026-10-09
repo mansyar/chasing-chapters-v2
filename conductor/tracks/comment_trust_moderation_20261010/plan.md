@@ -40,9 +40,9 @@
 - [x] Task: Commit `feat(admin): comment moderation dashboard widget` + git note + plan update — SHA `80f87d4`
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
-## Phase 4: User Feedback & Final Verification
+## Phase 4: User Feedback & Final Verification [checkpoint: 7795c1b]
 
 - [x] Task: Verify pending warning toast + success toast behavior (no regression; adjust e2e if needed) — e2e comments spec asserts `/posted|submitted|pending|moderation/i` + form reset, both unchanged; CommentForm toasts untouched (FR5 verified)
 - [x] Task: Run full gates — `bun run typecheck && bun run lint && CI=true bun test && bun run test:e2e` — typecheck 172 files ✓; lint baseline (67 pre-existing warnings); 236 unit tests pass; e2e 33 passed / 1 pre-existing skip / 0 failed (CI mode; parallel mode vs cold dev server is flaky-by-environment)
-- [~] Task: Final commit `feat(comments): complete comment trust & moderation track` + git note + plan update
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Final commit `feat(comments): complete comment trust & moderation track` + git note + plan update — SHA `7795c1b`
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
