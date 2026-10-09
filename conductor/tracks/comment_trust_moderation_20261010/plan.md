@@ -37,7 +37,7 @@
   - [x] Quick Approve/Reject actions
   - [x] Deep links to filtered Payload Comments list views
 - [~] Task: Verify widget actions end-to-end
-- [~] Task: Commit `feat(admin): comment moderation dashboard widget` + git note + plan update
+- [x] Task: Commit `feat(admin): comment moderation dashboard widget` + git note + plan update — SHA `80f87d4`
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 4: User Feedback & Final Verification
