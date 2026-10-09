@@ -252,6 +252,7 @@ Mitigation: self-warming at boot via `src/instrumentation.ts` → `src/lib/warm-
 | 2026-10-08 | 71    | 1.0s | 3.0s | 170ms | 0     | 2.7s        | **Lighthouse Production Fixes — production, post-deploy** (PR #5): Performance 71 (unchanged), Accessibility 94 → **100** ✅, Best Practices 92 → **96** ✅, SEO 100, CLS 0.116 → **0** ✅, root-document TTFB 3.5s cold → **230ms** ✅. Performance held at 71 because LCP (3.0s) is an unrelated bottleneck: the hero cover is not discoverable in the initial HTML (`ssr:false` carousel), costing 1041ms of resource load delay. See the post-deploy section below. |
 | 2026-10-08 | -     | -    | -    | -    | 0     | -           | **Lighthouse Production Fixes — local, pre-deploy** (track `lighthouse_prod_fixes_20261008`, branch `fix/lighthouse-prod-scores`): carousel prev/next accessible names (`aria-label`), `https://static.cloudflareinsights.com` added to the production `script-src`, and a reserved hero container height that removes the skeleton→carousel layout shift. CLS A/B on a production build (desktop 1350×940, 2 featured reviews, Playwright `layout-shift` observer): **0.0376 pre-fix → 0.0000 post-fix (0 entries)**. Gates: typecheck 160 files clean, lint 67 pre-existing warnings only, `bun test` 203 pass / 0 fail, Playwright 33/33. Production re-run pending deploy. |
 | 2026-10-09 | -     | -    | 0.35s | -    | 0     | -           | **Hero LCP & Image Delivery — local, pre-deploy** (track `hero_lcp_image_delivery_20261009`, branch `perf/hero-lcp`): the hero carousel is server-rendered so the LCP cover reaches the initial HTML, `images.minimumCacheTTL` 60s → 24h, and `/reviews` + reading-list cards prioritise their above-the-fold covers. Local A/B on a production build: hero **resource load delay 715ms → 9ms**, warm LCP **1404ms → 352ms**, CLS 0 → 0, initial client JS **unchanged** (1,529,858 → 1,529,851 bytes across 21 script tags). Gates: typecheck 160 files clean, lint 67 pre-existing warnings, `bun test` 205 pass / 0 fail, Playwright 33/33. Production re-run pending deploy — see the section below. |
+| 2026-10-09 | 68–77 | 1.0s | 2.8–3.0s | 77–236ms | 0 | 2.4s | **Hero LCP & Image Delivery — production, post-deploy** (PR #7): `requestDiscoverable` **False → True** with `fetchpriority=high` ✅, A11y **100** ✅, BP **96** ✅, CLS **0** ✅, root TTFB 333–365ms. LCP stays 2.8–3.0s: the bottleneck moved from discovery to the image fetch itself (~2.0s through `/_next/image` → Payload local media API — the scoped-out R2 lever). The `inspector-issues` CSP ding is pre-existing (fails in the #5-era baseline too). See the post-deploy section below. |
 
 ### Post-fix verification & pending production re-run (2026-10-08)
 
@@ -326,7 +327,18 @@ Directly targets the `requestDiscoverable: false` finding above. All numbers are
 | `bun test` | 205 pass / 0 fail (16 files) |
 | Playwright e2e | 33/33 (`--workers=1`; the parallel-run `page.goto` flake described above still applies) |
 
-**Pending (requires deploy):** the production Lighthouse re-run. Targets: `requestDiscoverable: true`, resource load delay < 300ms, LCP ≤ 2.0s and Performance ≥ 85, with Accessibility ≥ 95, Best Practices ≥ 95, CLS < 0.1 held. Record the measured row above once the branch is live.
+**Post-deploy re-run (2026-10-09, PR #7 → `main`):** three Lighthouse runs (desktop preset, system Chrome) after confirming the rollout by SSR probe. Scores: Performance **68 / 77** (two runs), Accessibility **100**, Best Practices **96**, SEO 100; LCP **3019ms / 2782ms** simulated (1722ms / 2026ms observed), FCP ~1.0s, TBT 77–236ms, **CLS 0**, root-document TTFB 333–365ms (boot warm-up holding).
+
+| Target (spec) | Result |
+| -------------- | ------ |
+| `requestDiscoverable: true` | ✅ **False → True** (both runs), with `fetchpriority=high` applied and not lazy-loaded |
+| Resource load delay < 300ms | ❌ 1118ms / 1697ms simulated — but this is now Lighthouse's lantern-mode modelling of the *fetch*, not discovery; observed LCP improved 2696ms → 1722ms / 2026ms |
+| LCP ≤ 2.0s, Performance ≥ 85 | ❌ LCP 2.8–3.0s, Performance 68–77 |
+| Accessibility ≥ 95, BP ≥ 95, CLS < 0.1 | ✅ 100 / 96 / 0 |
+
+**What moved and what didn't.** The discovery fix is confirmed live: the LCP image is in the initial HTML with `fetchpriority="high"`, and the previous 1041ms pure-discovery penalty is gone from the checklist. But the LCP element is now gated by the **image fetch itself**: simulated load duration ~2.0s through `/_next/image` → Payload's local media API (`/api/media/file/...`). That path was explicitly out of scope for this track (moving covers to R2 / pre-sizing hero art is the named lever), so the remaining LCP cost is a known, scoped-out follow-up — not a regression from this change.
+
+**Caveats.** (1) The `inspector-issues` Best Practices audit (a DevTools "Content security policy" issue entry) fails in *both* the #5-era baseline and these runs — pre-existing, not introduced here; BP held at 96 throughout. (2) Performance varied 68–77 across back-to-back runs, so single-run comparisons inside ~5 points are noise; the #5-era 71 sits inside that band. (3) A 28.7s TTFB outlier was observed once during the rollout window (probable mid-rollout container restart); all post-rollout probes were 0.28–0.84s.
 
 ---
 
