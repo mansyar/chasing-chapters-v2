@@ -127,6 +127,7 @@ export async function submitComment(
 				relatedReview: reviewId,
 				commenter: commenter.id,
 				status: status,
+				spamSignals: decision.spamSignals.map((signal) => ({ signal })),
 				reportCount: 0,
 			},
 		});

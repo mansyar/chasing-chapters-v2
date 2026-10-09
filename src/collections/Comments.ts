@@ -7,7 +7,13 @@ export const Comments: CollectionConfig = {
 		useAsTitle: "authorName",
 		group: "Engagement",
 		description: "Comments on book reviews",
-		defaultColumns: ["authorName", "status", "relatedReview", "createdAt"],
+		defaultColumns: [
+			"authorName",
+			"status",
+			"spamSignals",
+			"relatedReview",
+			"createdAt",
+		],
 	},
 	access: {
 		// Public can only see approved comments
@@ -87,6 +93,9 @@ export const Comments: CollectionConfig = {
 							trusted: commenter?.trusted === true,
 						});
 						data.status = decision.status;
+						data.spamSignals = decision.spamSignals.map((signal) => ({
+							signal,
+						}));
 					} else {
 						// No commenter linked, resolve via the shared policy (non-trusted)
 						const decision = resolveCommentStatus({
@@ -95,6 +104,9 @@ export const Comments: CollectionConfig = {
 							trusted: false,
 						});
 						data.status = decision.status;
+						data.spamSignals = decision.spamSignals.map((signal) => ({
+							signal,
+						}));
 					}
 				}
 
@@ -191,6 +203,24 @@ export const Comments: CollectionConfig = {
 			admin: {
 				position: "sidebar",
 			},
+		},
+		{
+			name: "spamSignals",
+			type: "array",
+			label: "Spam Signals",
+			admin: {
+				position: "sidebar",
+				readOnly: true,
+				description: "Spam signals detected when this comment was submitted",
+				condition: (data) =>
+					Array.isArray(data?.spamSignals) && data.spamSignals.length > 0,
+			},
+			fields: [
+				{
+					name: "signal",
+					type: "text",
+				},
+			],
 		},
 		{
 			name: "reportCount",

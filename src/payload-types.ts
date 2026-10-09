@@ -387,6 +387,15 @@ export interface Comment {
   commenter: number | Commenter;
   status: 'pending' | 'approved' | 'rejected' | 'reported';
   /**
+   * Spam signals detected when this comment was submitted
+   */
+  spamSignals?:
+    | {
+        signal?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
    * Number of times this comment has been reported
    */
   reportCount?: number | null;
@@ -710,6 +719,12 @@ export interface CommentsSelect<T extends boolean = true> {
   relatedReview?: T;
   commenter?: T;
   status?: T;
+  spamSignals?:
+    | T
+    | {
+        signal?: T;
+        id?: T;
+      };
   reportCount?: T;
   reportedBy?:
     | T
