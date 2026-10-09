@@ -4,7 +4,7 @@
 - **Branch:** `feat/comment-trust-moderation`
 - **Methodology:** TDD per `conductor/workflow.md` (Red → Green → Refactor; phase checkpoints; git notes)
 
-## Phase 1: Shared Moderation Module & Trust Bypass
+## Phase 1: Shared Moderation Module & Trust Bypass [checkpoint: 2920652]
 
 - [x] Task: Write failing unit tests for `src/lib/comment-moderation.ts`
   - [ ] Clean content → `{ status: "approved", spamSignals: [] }`
@@ -17,7 +17,7 @@
 - [x] Task: Refactor `Comments.beforeChange` hook (`src/collections/Comments.ts`) to consume the module; remove duplicated inline logic; keep banned-commenter rejection
 - [x] Task: Verify >80% coverage on the new module; full suite green
 - [x] Task: Commit `feat(comments): shared moderation module with trust bypass` + git note + plan update (2920652)
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 2: Spam Signals Persistence
 
