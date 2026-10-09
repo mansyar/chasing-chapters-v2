@@ -366,7 +366,7 @@ Two live defects were caught and fixed during verification: re-encoding the alre
 | `bun test` | 211 pass / 0 fail (17 files, includes the 6 new `media-url` tests) |
 | Playwright e2e | 33/33 (`--workers=1`) |
 
-**Pending (requires deploy):** the production Lighthouse re-run — targets LCP ≤ 2.0s and Performance ≥ 85 with A11y ≥ 95, BP ≥ 95, CLS < 0.1. The deploy also requires the `R2_PUBLIC_URL` GitHub secret to hold the public domain (user-confirmed).
+**Pending (requires deploy):** the production Lighthouse re-run — targets LCP ≤ 2.0s and Performance ≥ 85 with A11y ≥ 95, BP ≥ 95, CLS < 0.1. The deploy also requires the `R2_PUBLIC_URL` GitHub secret to hold the public domain (user-confirmed). Additionally, verify no legacy media object is missing from the bucket: any file uploaded before the S3 plugin was configured exists only in the container's local `media/` dir, and its `resolveMediaUrl`-mapped URL would 404 (a one-off `ListObjectsV2` diff of DB filenames vs bucket keys, or HTTP-status check of every mapped cover URL on published content, closes this — conductor-review finding, 2026-10-09).
 
 ---
 
