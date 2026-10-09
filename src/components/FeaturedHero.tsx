@@ -11,9 +11,13 @@ import { GradientBackground } from "@/components/ui/gradient-background";
 import { cn, extractTextFromRichText } from "@/lib/utils";
 import type { Media, Review } from "@/payload-types";
 
-// Lazy load the carousel to reduce initial bundle size
+// Lazy load the carousel, but keep it server-rendered. With `ssr: false` the hero
+// shipped as a skeleton only, so the LCP cover was absent from the initial HTML
+// (Lighthouse `requestDiscoverable: false`) and could not be fetched until the
+// client bundle mounted — 1041ms of resource load delay on a 3.0s LCP.
+// Server-rendering it puts the first slide's <img fetchpriority="high"> in the
+// document; the `loading` fallback now only covers client-side navigation.
 const CarouselComponent = dynamic(() => import("./ModernBookCarousel"), {
-	ssr: false,
 	loading: () => <HeroSkeletonContent />,
 });
 

@@ -16,7 +16,7 @@ A beautifully crafted personal book-review platform — a boutique bookstore mee
 6. **Admin** — role-based access (admin/writer), analytics dashboard, comment moderation
 
 ## Quality Pillars
-Performance (ISR + on-demand revalidation, caching, post-deploy boot warm-up so the first response after a restart is not seconds), Security (rate-limiting, CSP, hashed emails, spam detection), SEO, Polish (dark mode, skeletons, blur placeholders)
+Performance (ISR + on-demand revalidation, caching, post-deploy boot warm-up so the first response after a restart is not seconds, server-rendered above-the-fold content so the LCP image ships in the initial HTML), Security (rate-limiting, CSP, hashed emails, spam detection), SEO, Polish (dark mode, skeletons, blur placeholders)
 
 ## Non-Goals
 Multi-tenant platform, user accounts/registration for readers, e-commerce, mobile app

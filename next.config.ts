@@ -60,7 +60,11 @@ const nextConfig: NextConfig = {
 		formats: ["image/webp", "image/avif"],
 		deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
 		imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-		minimumCacheTTL: 60,
+		// Covers are immutable content: Payload writes a new filename per upload,
+		// so a replaced cover is a new cache key rather than a stale hit. At 60s
+		// the optimizer re-optimized constantly and each miss re-entered the app
+		// through the local media API (a 1198ms request measured in production).
+		minimumCacheTTL: 86400,
 		remotePatterns: [
 			{
 				protocol: "https",
