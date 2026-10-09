@@ -21,14 +21,14 @@
   - [x] Do not rewrite the file tree, deployment section, or voice beyond a false claim.
   - [x] Verify: grep README for `test:vitest`, `Framer Motion`, `Payload CMS 3.0`, `books per month`, `favorite genres`, and `planned`. None remain as current claims.
   - [x] Commit: `docs(readme): Align stack, scripts, and feature claims with the repo`
-- [ ] Task: Align the admin guide with publishing and moderation (FR2)
-  - [ ] Creating a review, and the publishing table, list only Draft and Published.
-  - [ ] One sentence: scheduled publishing is not available.
-  - [ ] Rewrite the moderation section to match `resolveCommentStatus`: clean → approved; flagged and not trusted → pending with `spamSignals`; trusted bypass; banned → rejected; 3 reader reports → `reported`.
-  - [ ] Name the Comment Moderation panel on the author analytics dashboard: counts, recent items, Approve / Reject, links into Comments.
-  - [ ] Read the Indonesian Translation section. Edit a sentence only if it is false.
-  - [ ] Verify: grep `docs/ADMIN_GUIDE.md` for a Scheduled status row. It is gone. The not-available sentence is present.
-  - [ ] Commit: `docs(admin): Remove scheduled status and match comment moderation`
+- [x] Task: Align the admin guide with publishing and moderation (FR2) — c5c0791
+  - [x] Creating a review, and the publishing table, list only Draft and Published.
+  - [x] One sentence: scheduled publishing is not available.
+  - [x] Rewrite the moderation section to match `resolveCommentStatus`: clean → approved; flagged and not trusted → pending with `spamSignals`; trusted bypass; banned → rejected; 3 reader reports → `reported`.
+  - [x] Name the Comment Moderation panel on the author analytics dashboard: counts, recent items, Approve / Reject, links into Comments.
+  - [x] Read the Indonesian Translation section. Edit a sentence only if it is false.
+  - [x] Verify: grep `docs/ADMIN_GUIDE.md` for a Scheduled status row. It is gone. The not-available sentence is present.
+  - [x] Commit: `docs(admin): Remove scheduled status and match comment moderation`
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 2: Pagespeed opening and scope gate
