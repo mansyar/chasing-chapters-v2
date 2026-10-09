@@ -7,7 +7,7 @@
 
 > Execution follows `conductor/workflow.md`. This chore changes no logic-bearing code, so there is no Red/Green test phase and no new test file. Each phase still ends with the workflow checkpoint. `CI=true bun test` must stay green because nothing under `src/` changed. Doc commits use the `docs` type. Plan-status commits stay `conductor(plan)` and may touch only this track's conductor files. That is the operational reading of spec AC6: no product source, PRD, or other conductor doc changes.
 
-## Phase 1: Operator docs
+## Phase 1: Operator docs [checkpoint: c5c0791]
 
 - [x] Task: Align README with the repo (FR1) — 9f1944e
   - [x] Set CMS to Payload 3.90. Replace Motion / Framer Motion with CSS animations (`tw-animate-css`). No claim that Motion is installed.
@@ -29,7 +29,7 @@
   - [x] Read the Indonesian Translation section. Edit a sentence only if it is false.
   - [x] Verify: grep `docs/ADMIN_GUIDE.md` for a Scheduled status row. It is gone. The not-available sentence is present.
   - [x] Commit: `docs(admin): Remove scheduled status and match comment moderation`
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) — checkpoint c5c0791, user approved
 
 ## Phase 2: Pagespeed opening and scope gate
 
