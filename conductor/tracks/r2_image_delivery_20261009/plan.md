@@ -24,8 +24,8 @@ Branch: `perf/r2-images` · Spec: `./spec.md` · Workflow: `conductor/workflow.m
 
 ## Phase 3: Verification & Documentation
 
-- [ ] Task: Full local gates — `bun run typecheck`, `bun run lint` (no new warnings), `bun test`, Playwright e2e (`--workers=1` caveat per tracker).
-- [ ] Task: Record the local pre/post numbers (image load duration, warm LCP, CLS, SSR URL audit) and the pending post-deploy targets in `docs/pagespeed-optimization.md` Progress History, following the established pattern.
+- [x] Task: Full local gates — `bun run typecheck` (162 files clean), `bun run lint` (67 pre-existing warnings, none new), `bun test` (211 pass / 0 fail across 17 files), Playwright e2e 33/33 with `--workers=1` (verified after the run; the parallel `page.goto` flake did not recur)
+- [x] Task: Record the local pre/post numbers (image load duration, warm LCP, CLS, SSR URL audit) and the pending post-deploy targets in `docs/pagespeed-optimization.md` Progress History, following the established pattern. — recorded in `[<hash>]`
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Notes
