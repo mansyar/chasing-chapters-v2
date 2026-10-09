@@ -70,6 +70,16 @@ const nextConfig: NextConfig = {
 				protocol: "https",
 				hostname: "**.r2.dev",
 			},
+			// Public R2 custom domains — the optimizer fetches covers straight
+			// from the bucket instead of re-entering the app's media proxy.
+			{
+				protocol: "https",
+				hostname: "storage.chasing-chapters.com",
+			},
+			{
+				protocol: "https",
+				hostname: "storage-dev.chasing-chapters.com",
+			},
 		],
 	},
 	// Security headers

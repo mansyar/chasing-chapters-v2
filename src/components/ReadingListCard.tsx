@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { resolveMediaUrl } from "@/lib/media-url";
 import { cn } from "@/lib/utils";
 import type { Media, ReadingList } from "@/payload-types";
 
@@ -31,7 +32,7 @@ export function ReadingListCard({
 				<div className="aspect-video relative overflow-hidden rounded-t-lg">
 					{coverImage?.url ? (
 						<Image
-							src={coverImage.url}
+							src={resolveMediaUrl(coverImage.url)}
 							alt={coverImage.alt || readingList.title}
 							fill
 							className="object-cover transition-transform duration-500 group-hover:scale-105"

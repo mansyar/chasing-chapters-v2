@@ -1,3 +1,4 @@
+import { resolveMediaUrl } from "@/lib/media-url";
 import type { Media, Review } from "@/payload-types";
 
 export const SITE_URL =
@@ -49,7 +50,7 @@ export function generateReviewSchema(review: Review, coverImage?: Media) {
 				"@type": "Person",
 				name: review.bookAuthor,
 			},
-			...(coverImage?.url && { image: coverImage.url }),
+			...(coverImage?.url && { image: resolveMediaUrl(coverImage.url) }),
 		},
 		publisher: {
 			"@type": "Organization",

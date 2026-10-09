@@ -18,6 +18,7 @@ import { ShareButton } from "@/components/ShareButton";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatDate, normalizeLocale } from "@/lib/date-format";
+import { resolveMediaUrl } from "@/lib/media-url";
 import {
 	generateBreadcrumbSchema,
 	generateReviewSchema,
@@ -163,7 +164,7 @@ export default async function ReviewPage({ params, searchParams }: PageProps) {
 						<div className="mx-auto lg:mx-0 w-[240px] md:w-[300px] aspect-2/3 relative shadow-2xl rounded-lg rotate-2 hover:rotate-0 transition-transform duration-500 bg-background">
 							{coverImage?.url && (
 								<Image
-									src={coverImage.url}
+									src={resolveMediaUrl(coverImage.url)}
 									alt={coverImage.alt || review.title}
 									fill
 									className="object-cover rounded-lg"

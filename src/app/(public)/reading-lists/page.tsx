@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getPayload } from "payload";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { resolveMediaUrl } from "@/lib/media-url";
 import { generateItemListSchema, SITE_URL } from "@/lib/seo/structured-data";
 import type { Media } from "@/payload-types";
 
@@ -68,7 +69,7 @@ export default async function ReadingListsPage() {
 								<div className="aspect-video relative overflow-hidden rounded-xl shadow-md group-hover:shadow-xl transition-all duration-300 group-hover:-translate-y-1">
 									{coverImage?.url ? (
 										<Image
-											src={coverImage.url}
+											src={resolveMediaUrl(coverImage.url)}
 											alt={coverImage.alt || list.title}
 											fill
 											className="object-cover transition-transform duration-500 group-hover:scale-105"
