@@ -249,6 +249,7 @@ Conclusion: the 3.5s cold TTFB matches Lighthouse landing in the window right af
 
 Mitigation: self-warming at boot via `src/instrumentation.ts` → `src/lib/warm-up.ts` — once per server start (production, nodejs runtime), poll until the HTTP listener answers (that first poll absorbs the boot cost), then GET `/`, `/reviews`, `/reading-lists`, `/about` to warm ISR caches. Verified locally: after restart, warm-up logs show all four routes ok, and external TTFB is ~0.22s immediately afterwards.
 
+| 2026-10-08 | 71    | 1.0s | 3.0s | 170ms | 0     | 2.7s        | **Lighthouse Production Fixes — production, post-deploy** (PR #5): Performance 71 (unchanged), Accessibility 94 → **100** ✅, Best Practices 92 → **96** ✅, SEO 100, CLS 0.116 → **0** ✅, root-document TTFB 3.5s cold → **230ms** ✅. Performance held at 71 because LCP (3.0s) is an unrelated bottleneck: the hero cover is not discoverable in the initial HTML (`ssr:false` carousel), costing 1041ms of resource load delay. See the post-deploy section below. |
 | 2026-10-08 | -     | -    | -    | -    | 0     | -           | **Lighthouse Production Fixes — local, pre-deploy** (track `lighthouse_prod_fixes_20261008`, branch `fix/lighthouse-prod-scores`): carousel prev/next accessible names (`aria-label`), `https://static.cloudflareinsights.com` added to the production `script-src`, and a reserved hero container height that removes the skeleton→carousel layout shift. CLS A/B on a production build (desktop 1350×940, 2 featured reviews, Playwright `layout-shift` observer): **0.0376 pre-fix → 0.0000 post-fix (0 entries)**. Gates: typecheck 160 files clean, lint 67 pre-existing warnings only, `bun test` 203 pass / 0 fail, Playwright 33/33. Production re-run pending deploy. |
 
 ### Post-fix verification & pending production re-run (2026-10-08)
@@ -263,6 +264,38 @@ Local verification of the three code fixes and the TTFB mitigation (all pre-depl
 | Playwright e2e | — | **33/33 passed** | `bunx playwright test --workers=1`. Caveat: the default parallel run flakes **on this machine** — failures are all `page.goto` 30s timeouts (never assertion failures) with a different failing set each run, and only against the locally booted server; serial is green. Not introduced by this track. |
 
 **Pending (requires the deploy of this branch):** production Lighthouse 13.4.1 re-run and the post-deploy TTFB comparison. Targets: Accessibility ≥ 95 (no `button-name` failures), Best Practices ≥ 95 (no CSP console errors for the RUM beacon), CLS < 0.1, and a cold TTFB absorbed by the boot warm-up. To complete: re-run Lighthouse against `https://chasing-chapters.com` right after a deploy, confirm the four `[Warmup] ... -> ok` lines in the container log, then add the measured row above this section.
+
+### Post-deploy production re-run (2026-10-08, PR #5 → `main`)
+
+Track `lighthouse_prod_fixes_20261008` shipped in PR #5 (merge commit `fe3a037`). Re-ran Lighthouse against the live URL with the desktop preset, system Chrome, after confirming the new image was actually serving (the CSP header now carries `https://static.cloudflareinsights.com`).
+
+| Metric | 2026-10-08 baseline | Post-deploy | Target | Result |
+| ------ | ------------------ | ----------- | ------ | ------ |
+| Performance | 71 | **71** | — | unchanged — see below |
+| Accessibility | 94 | **100** | ≥ 95 | ✅ |
+| Best Practices | 92 | **96** | ≥ 95 | ✅ |
+| SEO | 100 | **100** | — | ✅ |
+| CLS | 0.116 | **0** | < 0.1 | ✅ |
+| Root document TTFB | 3.5s (cold) | **230ms** | cold absorbed | ✅ (warm measurement) |
+| LCP | — | 3.0s | — | ❌ now the bottleneck |
+| FCP / TBT / Speed Index | — | 1.0s / 170ms / 2.7s | — | — |
+
+Warm production TTFB after rollout: 0.28–0.35s across 5 requests (first hit after the container restart 1.34s, then settled); `x-nextjs-cache: HIT` throughout, so ISR behaviour is unchanged.
+
+**Why Performance did not move.** None of the four defects in this track is the LCP bottleneck. The LCP element is the hero book cover (`img.object-cover`), and its phase breakdown is:
+
+| LCP subpart | Duration |
+| ----------- | -------- |
+| Time to first byte | 1070ms |
+| Resource load delay | **1041ms** |
+| Resource load duration | 226ms |
+| Element render delay | 358ms |
+
+The decisive fact is in `lcp-discovery-insight`: `requestDiscoverable: false` — the LCP image is **not present in the initial HTML**, so the preload scanner cannot start fetching it until the client bundle mounts the hero (the `ssr:false` carousel path). That is the 1s load delay, and it is the direct cost of keeping the hero out of the server response. The track's own scope explicitly excluded image delivery, so this is the natural next track rather than a regression here: the previous CLS fix reserved the hero's height (CLS 0 confirmed) without touching when the image arrives.
+
+Supporting evidence that image delivery is the remaining cost: the heaviest non-JS request was `/_next/image?url=/api/media/file/atom.jpg&w=640&q=75` at **1198ms** — cover art is served through Payload's local media API (`/api/media/file/...`), not R2, so every optimizer cache miss re-enters the app itself. Pointing the optimizer at R2 (or pre-sizing hero art) is the lever.
+
+Two audit numbers to read with care: `redirects` reported 413ms, but `curl -I https://chasing-chapters.com/` returns `200 OK` with no `Location` header and `num_redirects=0`, so that figure is most likely a headless-Challenge/measurement artifact rather than a real user-facing hop — re-measure from PageSpeed Insights or a headed browser before acting on it.
 
 ---
 
