@@ -2,7 +2,7 @@
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 16.4 (stable) App Router, standalone build (webpack) |
+| Framework | Next.js 16.4 (stable) App Router, standalone build (webpack), server-rendered hero (no `ssr:false` above the fold), next/image optimizer cache 24h |
 | CMS | Payload CMS 3.90 (local API, Postgres adapter, drafts/versions, localization en/id) |
 | Language | TypeScript 7 (`bun check` — Bun-native type checker, TS7 behavior) |
 | Runtime/Package Manager | Bun (runtime, package manager, test runner, type checking) |
