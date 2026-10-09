@@ -4,7 +4,7 @@
 - **Spec:** [`spec.md`](./spec.md)
 - **Branch:** `perf/hero-lcp`
 
-## Phase 1: Baseline & Hero SSR
+## Phase 1: Baseline & Hero SSR [checkpoint: aa95d33]
 
 The measurement problem is that the local database holds only one published featured review, so the homepage renders `SingleReviewHero` (already server-rendered) and the carousel path — the thing under test — never executes locally. The baseline has to be captured on the carousel path, which means a temporary second featured review.
 
@@ -16,7 +16,7 @@ The measurement problem is that the local database holds only one published feat
 - [x] Task: Delete all throwaway probe scripts before committing — any root-level `.ts` file is type-checked by `next build` and will fail the build. The temporary review and its cover stay in the local DB until the checkpoint, so the carousel path can be verified manually, and are removed in Phase 3
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
-## Phase 2: Image Delivery
+## Phase 2: Image Delivery [checkpoint: ad9ff77]
 
 - [x] Task: Audit every above-the-fold `next/image` usage for `sizes` and `priority`/`fetchPriority` correctness — **two genuine gaps found and fixed**: `/reviews` and `/reading-lists/[slug]` passed no `priority` to their card grids, leaving above-the-fold covers lazy; both now use `priority={index < 2}`. Already correct and deliberately untouched: homepage hero/cards, `SingleReviewHero`, review detail hero, about page, reading-lists page
 - [x] Task: Raise `images.minimumCacheTTL` from 60 to 86400 in `next.config.ts`, with a comment recording why this is safe — verified in the response header (`max-age=86400`, previously `max-age=60`); the churn it removes was measured at 2.65s cold optimize vs 0.22s repeat for a single cover — `[ad9ff77]`
