@@ -29,15 +29,15 @@
 
 ## Phase 3: Moderation Dashboard Widget
 
-- [ ] Task: Write failing unit tests for `src/lib/moderation-summary.ts` (pending/reported counts + latest N items via `select`, no full-doc loads)
-- [ ] Task: Implement the data module (Green)
-- [ ] Task: Build the "Comment Moderation" panel in `src/components/admin/AnalyticsDashboard.tsx`
-  - [ ] Pending + reported counts
-  - [ ] Latest ~5 pending/reported comments inline
-  - [ ] Quick Approve/Reject actions
-  - [ ] Deep links to filtered Payload Comments list views
-- [ ] Task: Verify widget actions end-to-end
-- [ ] Task: Commit `feat(admin): comment moderation dashboard widget` + git note + plan update
+- [x] Task: Write failing unit tests for `src/lib/moderation-summary.ts` (pending/reported counts + latest N items via `select`, no full-doc loads)
+- [x] Task: Implement the data module (Green)
+- [x] Task: Build the "Comment Moderation" panel in `src/components/admin/AnalyticsDashboard.tsx`
+  - [x] Pending + reported counts
+  - [x] Latest ~5 pending/reported comments inline
+  - [x] Quick Approve/Reject actions
+  - [x] Deep links to filtered Payload Comments list views
+- [~] Task: Verify widget actions end-to-end
+- [~] Task: Commit `feat(admin): comment moderation dashboard widget` + git note + plan update
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 4: User Feedback & Final Verification
