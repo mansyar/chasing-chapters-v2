@@ -16,7 +16,7 @@
 - [x] Task: Refactor `submitComment` (`src/app/actions/comments.ts`) to consume the module (reads `commenter.trusted`/`banned` it already fetches)
 - [x] Task: Refactor `Comments.beforeChange` hook (`src/collections/Comments.ts`) to consume the module; remove duplicated inline logic; keep banned-commenter rejection
 - [x] Task: Verify >80% coverage on the new module; full suite green
-- [~] Task: Commit `feat(comments): shared moderation module with trust bypass` + git note + plan update
+- [x] Task: Commit `feat(comments): shared moderation module with trust bypass` + git note + plan update (2920652)
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 2: Spam Signals Persistence
