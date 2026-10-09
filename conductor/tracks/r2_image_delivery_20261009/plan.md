@@ -28,6 +28,11 @@ Branch: `perf/r2-images` · Spec: `./spec.md` · Workflow: `conductor/workflow.m
 - [x] Task: Record the local pre/post numbers (image load duration, warm LCP, CLS, SSR URL audit) and the pending post-deploy targets in `docs/pagespeed-optimization.md` Progress History, following the established pattern. — recorded in `[a406412]`
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) — user-confirmed; verification report attached as a git note to a406412
 
+## Phase 4: Review Fixes
+
+- [x] Task: Apply review suggestions — CSP `img-src` gains both storage domains (defence against a future plain-`<img>` render path being silently blocked); `deploy.yml` documents the deliberate `R2_PUBLIC_URL` secret coupling; the legacy-media 404 risk is recorded as a post-deploy verification step in `docs/pagespeed-optimization.md` [b71ba8a]
+- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+
 ## Notes
 
 - Post-deploy Lighthouse verification (acceptance criterion 3) happens after merge via a follow-up docs-only PR — the pattern used at the end of `lighthouse_prod_fixes_20261008` and `hero_lcp_image_delivery_20261009`.
