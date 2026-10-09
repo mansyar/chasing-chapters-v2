@@ -18,9 +18,9 @@ The measurement problem is that the local database holds only one published feat
 
 ## Phase 2: Image Delivery
 
-- [ ] Task: Audit every above-the-fold `next/image` usage for `sizes` and `priority`/`fetchPriority` correctness — homepage hero, homepage latest reviews and reading lists, `/reviews`, `/reading-lists`, review detail — and fix only genuine gaps
-- [ ] Task: Raise `images.minimumCacheTTL` from 60 to 86400 in `next.config.ts`, with a comment recording why this is safe (Payload generates a new filename per upload, so a replaced cover is a new cache key rather than a stale hit)
-- [ ] Task: Confirm no duplicate-preload or image-loading regression in the dev/production console after the config change
+- [x] Task: Audit every above-the-fold `next/image` usage for `sizes` and `priority`/`fetchPriority` correctness — **two genuine gaps found and fixed**: `/reviews` and `/reading-lists/[slug]` passed no `priority` to their card grids, leaving above-the-fold covers lazy; both now use `priority={index < 2}`. Already correct and deliberately untouched: homepage hero/cards, `SingleReviewHero`, review detail hero, about page, reading-lists page
+- [x] Task: Raise `images.minimumCacheTTL` from 60 to 86400 in `next.config.ts`, with a comment recording why this is safe — verified in the response header (`max-age=86400`, previously `max-age=60`); the churn it removes was measured at 2.65s cold optimize vs 0.22s repeat for a single cover — `[ad9ff77]`
+- [x] Task: Confirm no duplicate-preload or image-loading regression after the config change — homepage re-checked in the SSR HTML (carousel region present, slide 0 `fetchpriority=high`, slide 1 lazy, both cards eager); `/reviews` shows 2 preload links for 2 priority images
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 3: Verification & Documentation
