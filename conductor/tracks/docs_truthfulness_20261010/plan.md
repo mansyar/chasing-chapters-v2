@@ -31,7 +31,7 @@
   - [x] Commit: `docs(admin): Remove scheduled status and match comment moderation`
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) — checkpoint c5c0791, user approved
 
-## Phase 2: Pagespeed opening and scope gate
+## Phase 2: Pagespeed opening and scope gate [checkpoint: 76f091c]
 
 - [x] Task: Relabel the pagespeed opening without new numbers (FR3) — 76f091c
   - [x] Edit only the goal callout, Last Updated line, baseline table, and the present-tense Identified Issues checklist. Do not edit the progress-history log.
@@ -44,6 +44,6 @@
 - [x] Task: Confirm the track diff stays inside the three documents (AC6)
   - [x] `git diff --name-only origin/main` lists only `README.md`, `docs/ADMIN_GUIDE.md`, `docs/pagespeed-optimization.md`, and this track's conductor files.
   - [x] No `src/`, `docs/PRD.md`, or other conductor doc appears.
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) — checkpoint 76f091c, user approved
 
 Manual check at each checkpoint is a read of the edited doc, not a running app. Expected outcome: an operator is not told to use a script, status, or score the repo does not have.
