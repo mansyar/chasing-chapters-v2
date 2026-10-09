@@ -31,7 +31,7 @@ Branch: `perf/r2-images` · Spec: `./spec.md` · Workflow: `conductor/workflow.m
 ## Phase 4: Review Fixes
 
 - [x] Task: Apply review suggestions — CSP `img-src` gains both storage domains (defence against a future plain-`<img>` render path being silently blocked); `deploy.yml` documents the deliberate `R2_PUBLIC_URL` secret coupling; the legacy-media 404 risk is recorded as a post-deploy verification step in `docs/pagespeed-optimization.md` [b71ba8a]
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) — user-confirmed; verification report attached as a git note to b71ba8a
 
 ## Notes
 
