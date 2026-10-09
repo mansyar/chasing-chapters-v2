@@ -5,6 +5,8 @@ import type { AdminViewServerProps } from "payload";
 import { getPayload } from "payload";
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getModerationSummary } from "@/lib/moderation-summary";
+import { ModerationPanel } from "./moderation-panel";
 
 export const AnalyticsDashboard = async ({
 	initPageResult,
@@ -47,6 +49,12 @@ export const AnalyticsDashboard = async ({
 	// 3. Top Reviews
 	const topReviews = reviews.slice(0, 5);
 
+	// 4. Comment moderation queue (admin only)
+	const isAdmin = user?.role === "admin";
+	const moderationSummary = isAdmin
+		? await getModerationSummary(payload)
+		: null;
+
 	return (
 		<Gutter>
 			<div className="py-12 space-y-12">
@@ -81,6 +89,8 @@ export const AnalyticsDashboard = async ({
 						icon={<Star className="h-4 w-4 text-muted-foreground" />}
 					/>
 				</div>
+
+				{moderationSummary && <ModerationPanel {...moderationSummary} />}
 
 				<div className="space-y-6">
 					<h2 className="text-2xl font-bold">Top Performing Reviews</h2>

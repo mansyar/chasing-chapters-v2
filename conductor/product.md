@@ -10,7 +10,7 @@ A beautifully crafted personal book-review platform — a boutique bookstore mee
 ## Core Features
 1. **Reviews** — rich structured content (What I Loved / Could Be Better / Perfect For), favorite quotes with page numbers, 5-star ratings, cover images, drafts + versions
 2. **Discovery** — browse by genre/tag/mood, search by title/author/genre, curated reading lists, related reviews
-3. **Engagement** — guest comments with moderation/spam-filtering/trust levels, likes, view tracking
+3. **Engagement** — guest comments with automatic spam screening on every submission: clean comments auto-approve, spam-flagged ones are held pending with their persisted spam signals visible in admin, trusted commenters (≥3 approved comments) bypass the hold, banned users are rejected; likes, view tracking
 4. **Bilingual** — EN/ID content with background auto-translation (Google Cloud Translation), language toggle
 5. **SEO & Distribution** — JSON-LD structured data, sitemap, OpenGraph, RSS feed
 6. **Admin** — role-based access (admin/writer), analytics dashboard, comment moderation

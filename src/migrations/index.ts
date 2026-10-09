@@ -6,6 +6,7 @@ import * as migration_20251217_095543_add_blur_data_url_to_media from './2025121
 import * as migration_20261008_015213_payload_390_schema_delta from './20261008_015213_payload_390_schema_delta';
 import * as migration_20261008_060518_add_translation_status_fields from './20261008_060518_add_translation_status_fields';
 import * as migration_20261008_131000_commenters_email_hash_fix from './20261008_131000_commenters_email_hash_fix';
+import * as migration_20261009_195737_add_spam_signals_to_comments from './20261009_195737_add_spam_signals_to_comments';
 
 export const migrations = [
   {
@@ -46,6 +47,11 @@ export const migrations = [
   {
     up: migration_20261008_131000_commenters_email_hash_fix.up,
     down: migration_20261008_131000_commenters_email_hash_fix.down,
-    name: '20261008_131000_commenters_email_hash_fix'
+    name: '20261008_131000_commenters_email_hash_fix',
+  },
+  {
+    up: migration_20261009_195737_add_spam_signals_to_comments.up,
+    down: migration_20261009_195737_add_spam_signals_to_comments.down,
+    name: '20261009_195737_add_spam_signals_to_comments'
   },
 ];
