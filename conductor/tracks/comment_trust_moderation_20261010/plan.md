@@ -46,3 +46,6 @@
 - [x] Task: Run full gates — `bun run typecheck && bun run lint && CI=true bun test && bun run test:e2e` — typecheck 172 files ✓; lint baseline (67 pre-existing warnings); 236 unit tests pass; e2e 33 passed / 1 pre-existing skip / 0 failed (CI mode; parallel mode vs cold dev server is flaky-by-environment)
 - [x] Task: Final commit `feat(comments): complete comment trust & moderation track` + git note + plan update — SHA `7795c1b`
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+
+## Phase: Review Fixes
+- [x] Task: Apply review suggestions — SHA `502ec4d` (simplified date normalization in moderation-summary.ts; type-guard `isAllowedStatus` replacing cast narrowing in moderation.ts; 236/236 tests, typecheck, lint verified)
