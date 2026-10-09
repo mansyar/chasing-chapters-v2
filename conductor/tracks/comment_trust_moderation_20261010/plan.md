@@ -27,7 +27,7 @@
 - [x] Task: Commit `feat(comments): persist and display spam signals` + git note + plan update (6ff1f72)
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
-## Phase 3: Moderation Dashboard Widget
+## Phase 3: Moderation Dashboard Widget [checkpoint: 80f87d4]
 
 - [x] Task: Write failing unit tests for `src/lib/moderation-summary.ts` (pending/reported counts + latest N items via `select`, no full-doc loads)
 - [x] Task: Implement the data module (Green)
@@ -36,9 +36,9 @@
   - [x] Latest ~5 pending/reported comments inline
   - [x] Quick Approve/Reject actions
   - [x] Deep links to filtered Payload Comments list views
-- [~] Task: Verify widget actions end-to-end
+- [x] Task: Verify widget actions end-to-end
 - [x] Task: Commit `feat(admin): comment moderation dashboard widget` + git note + plan update — SHA `80f87d4`
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 4: User Feedback & Final Verification
 
