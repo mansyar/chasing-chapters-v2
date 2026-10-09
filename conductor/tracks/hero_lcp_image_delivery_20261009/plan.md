@@ -33,3 +33,8 @@ The measurement problem is that the local database holds only one published feat
 
 - Production Lighthouse verification (LCP ≤ 2.0s, Performance ≥ 85) happens after merge and deploy, and is recorded by a follow-up docs-only PR — the same pattern used at the end of `lighthouse_prod_fixes_20261008`.
 - Thrown away after measurement: the second-featured-review script, the LCP/CLS probe, and the temporary local review itself. Cleanup order mattered — the e2e run left a comment on the probe review that blocks its deletion with a FK violation, so the comment goes first, then the review, then its cover media. Local DB verified back to the single fixture review.
+
+## Phase 4: Review Fixes
+
+- [x] Task: Add a hydration regression guard for the newly server-rendered carousel (Medium finding from `conductor-review`) — `e2e/homepage.spec.ts` now asserts zero console/page errors while the carousel is mounted, and self-skips when the local DB has fewer than two featured reviews. Verified against a production build with two featured reviews: the test ran rather than skipped and passed (7 passed in `homepage.spec.ts`) — `[5cb12ff]`
+- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
