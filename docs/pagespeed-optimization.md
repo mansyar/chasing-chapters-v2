@@ -251,6 +251,7 @@ Mitigation: self-warming at boot via `src/instrumentation.ts` → `src/lib/warm-
 
 | 2026-10-08 | 71    | 1.0s | 3.0s | 170ms | 0     | 2.7s        | **Lighthouse Production Fixes — production, post-deploy** (PR #5): Performance 71 (unchanged), Accessibility 94 → **100** ✅, Best Practices 92 → **96** ✅, SEO 100, CLS 0.116 → **0** ✅, root-document TTFB 3.5s cold → **230ms** ✅. Performance held at 71 because LCP (3.0s) is an unrelated bottleneck: the hero cover is not discoverable in the initial HTML (`ssr:false` carousel), costing 1041ms of resource load delay. See the post-deploy section below. |
 | 2026-10-08 | -     | -    | -    | -    | 0     | -           | **Lighthouse Production Fixes — local, pre-deploy** (track `lighthouse_prod_fixes_20261008`, branch `fix/lighthouse-prod-scores`): carousel prev/next accessible names (`aria-label`), `https://static.cloudflareinsights.com` added to the production `script-src`, and a reserved hero container height that removes the skeleton→carousel layout shift. CLS A/B on a production build (desktop 1350×940, 2 featured reviews, Playwright `layout-shift` observer): **0.0376 pre-fix → 0.0000 post-fix (0 entries)**. Gates: typecheck 160 files clean, lint 67 pre-existing warnings only, `bun test` 203 pass / 0 fail, Playwright 33/33. Production re-run pending deploy. |
+| 2026-10-09 | -     | -    | 0.35s | -    | 0     | -           | **Hero LCP & Image Delivery — local, pre-deploy** (track `hero_lcp_image_delivery_20261009`, branch `perf/hero-lcp`): the hero carousel is server-rendered so the LCP cover reaches the initial HTML, `images.minimumCacheTTL` 60s → 24h, and `/reviews` + reading-list cards prioritise their above-the-fold covers. Local A/B on a production build: hero **resource load delay 715ms → 9ms**, warm LCP **1404ms → 352ms**, CLS 0 → 0, initial client JS **unchanged** (1,529,858 → 1,529,851 bytes across 21 script tags). Gates: typecheck 160 files clean, lint 67 pre-existing warnings, `bun test` 205 pass / 0 fail, Playwright 33/33. Production re-run pending deploy — see the section below. |
 
 ### Post-fix verification & pending production re-run (2026-10-08)
 
@@ -263,7 +264,7 @@ Local verification of the three code fixes and the TTFB mitigation (all pre-depl
 | Typecheck / lint / unit | 158 files / 67 warnings / 194 pass | 160 files / 67 warnings / **203 pass** | `bun run typecheck`, `bun run lint`, `bun test` |
 | Playwright e2e | — | **33/33 passed** | `bunx playwright test --workers=1`. Caveat: the default parallel run flakes **on this machine** — failures are all `page.goto` 30s timeouts (never assertion failures) with a different failing set each run, and only against the locally booted server; serial is green. Not introduced by this track. |
 
-**Pending (requires the deploy of this branch):** production Lighthouse 13.4.1 re-run and the post-deploy TTFB comparison. Targets: Accessibility ≥ 95 (no `button-name` failures), Best Practices ≥ 95 (no CSP console errors for the RUM beacon), CLS < 0.1, and a cold TTFB absorbed by the boot warm-up. To complete: re-run Lighthouse against `https://chasing-chapters.com` right after a deploy, confirm the four `[Warmup] ... -> ok` lines in the container log, then add the measured row above this section.
+**Pending:** superseded — that deploy happened (PR #5) and the results are recorded in the post-deploy section below.
 
 ### Post-deploy production re-run (2026-10-08, PR #5 → `main`)
 
@@ -296,6 +297,36 @@ The decisive fact is in `lcp-discovery-insight`: `requestDiscoverable: false` �
 Supporting evidence that image delivery is the remaining cost: the heaviest non-JS request was `/_next/image?url=/api/media/file/atom.jpg&w=640&q=75` at **1198ms** — cover art is served through Payload's local media API (`/api/media/file/...`), not R2, so every optimizer cache miss re-enters the app itself. Pointing the optimizer at R2 (or pre-sizing hero art) is the lever.
 
 Two audit numbers to read with care: `redirects` reported 413ms, but `curl -I https://chasing-chapters.com/` returns `200 OK` with no `Location` header and `num_redirects=0`, so that figure is most likely a headless-Challenge/measurement artifact rather than a real user-facing hop — re-measure from PageSpeed Insights or a headed browser before acting on it.
+
+### Hero LCP & Image Delivery — local verification (2026-10-09, track `hero_lcp_image_delivery_20261009`)
+
+Directly targets the `requestDiscoverable: false` finding above. All numbers are local, measured against a real production build (desktop 1350×940, Playwright observers), on the carousel path with two featured reviews.
+
+**1. Server-render the hero.** `FeaturedHero` loaded `ModernBookCarousel` through `next/dynamic` with `ssr: false`, so the server shipped only the skeleton and the cover could not be requested until the client bundle mounted. Removing that flag puts the first slide in the initial HTML.
+
+| Measurement | Before | After |
+| ----------- | ------ | ----- |
+| Hero `<img>` present in SSR HTML | no | **yes**, `fetchpriority="high"` |
+| Carousel region in SSR HTML | absent | present |
+| Hero resource load delay | 715ms | **9ms** |
+| Warm-cache LCP (LCP element = `IMG`) | 1404ms | **352ms** |
+| Resource load duration | 563ms | 14ms |
+| CLS | 0 | **0** |
+
+**2. Image delivery.** `images.minimumCacheTTL` 60 → 86400. Verified in the response header (`Cache-Control: public, max-age=86400`, previously `max-age=60`). The churn this removes is measurable: optimizing one cover cold took 2.65s versus 0.22s on repeat — a miss that previously recurred every 60 seconds, each one re-entering the app through Payload's local media API.
+
+**3. Above-the-fold covers.** `/reviews` and `/reading-lists/[slug]` rendered their card grids with no `priority`, leaving the first two rows lazy despite being above the fold. Both now pass `priority={index < 2}`, matching the homepage. Verified in the SSR HTML: 2 images, both `loading="eager"`, 2 preload links for 2 priority images with no duplicates. Already correct and left untouched: homepage hero and cards, `SingleReviewHero`, review detail hero, about page, reading-lists page.
+
+**Bundle cost: none measurable.** Initial client JS went from 1,529,858 to 1,529,851 bytes across the same 21 script tags (−7 bytes). The carousel chunk was already referenced by the page's script set, so server-rendering it cost nothing in practice — better than the few-KB estimate the spec allowed for.
+
+| Gate | Result |
+| ---- | ------ |
+| `bun run typecheck` | no type errors in 160 files |
+| `bun run lint` | 67 warnings, all pre-existing |
+| `bun test` | 205 pass / 0 fail (16 files) |
+| Playwright e2e | 33/33 (`--workers=1`; the parallel-run `page.goto` flake described above still applies) |
+
+**Pending (requires deploy):** the production Lighthouse re-run. Targets: `requestDiscoverable: true`, resource load delay < 300ms, LCP ≤ 2.0s and Performance ≥ 85, with Accessibility ≥ 95, Best Practices ≥ 95, CLS < 0.1 held. Record the measured row above once the branch is live.
 
 ---
 
