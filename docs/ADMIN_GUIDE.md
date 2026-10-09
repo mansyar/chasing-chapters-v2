@@ -20,7 +20,7 @@ A guide for managing your book review website.
    - **Book Author**: Author name
    - **Rating**: 1-5 stars
    - **Cover Image**: Upload or select from media library
-   - **Status**: Draft, Published, or Scheduled
+   - **Status**: Draft or Published
 
 ### Review Content Sections
 
@@ -80,17 +80,16 @@ A guide for managing your book review website.
 
 ## Moderating Comments
 
-1. Go to **Comments** in the sidebar
-2. Review pending comments
-3. **Approve** or **Delete** as needed
-4. Approved comments appear on review pages
+Clean comments auto-approve and appear on the review. A spam-flagged comment from a non-trusted commenter is held as **pending**, and the matched spam signals are saved on the comment. A trusted commenter (3 or more approved comments) bypasses that hold. A banned commenter is rejected. Readers can report a comment; 3 reports mark it **reported**.
+
+The **Comment Moderation** panel on the author analytics dashboard shows pending and reported counts, the latest items, and **Approve** / **Reject**. The counts link into the filtered Comments collection.
 
 ### Comment Status
 
-- **Pending**: Awaiting review (new submissions)
-- **Approved**: Visible on the website
-- **Rejected**: Hidden from the website
-- **Reported**: Flagged by readers for moderator review
+- **Approved**: Visible on the website. Clean comments land here, as do flagged comments from trusted commenters.
+- **Pending**: Held for review. The comment was spam-flagged and the commenter is not trusted. Spam signals are stored on the comment.
+- **Rejected**: Hidden from the website. Banned commenters are rejected.
+- **Reported**: A reader report count has reached 3. Review it from the dashboard panel or the Comments collection.
 
 ---
 
@@ -100,7 +99,8 @@ A guide for managing your book review website.
 | ------------- | ----------------------------- |
 | **Draft**     | Work in progress, not visible |
 | **Published** | Live on the website           |
-| **Scheduled** | Will publish at set date/time |
+
+Scheduled publishing is not available.
 
 ### To Publish a Review
 
