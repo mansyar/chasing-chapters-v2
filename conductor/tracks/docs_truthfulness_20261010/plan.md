@@ -33,17 +33,17 @@
 
 ## Phase 2: Pagespeed opening and scope gate
 
-- [ ] Task: Relabel the pagespeed opening without new numbers (FR3)
-  - [ ] Edit only the goal callout, Last Updated line, baseline table, and the present-tense Identified Issues checklist. Do not edit the progress-history log.
-  - [ ] Label the 2026-01-19 table as the historical baseline, not the current score.
-  - [ ] Point the top at the 2026-10-09 hero LCP post-deploy production runs already in the file: Performance 68 and 77, Accessibility 100, Best Practices 96, SEO 100, CLS 0, simulated LCP about 2.8–3.0s. Cite that section. Do not change any number in the file.
-  - [ ] State that R2-direct delivery is shipped in code and that its production Lighthouse re-run is not recorded. Do not present the local R2 timings as the current production score.
-  - [ ] Last Updated may say the status block was clarified on 2026-10-10. It must not read as a new audit. The 90+ goal may remain as a goal.
-  - [ ] Verify: `git diff -U0 -- docs/pagespeed-optimization.md` contains no changed digit that was a recorded measurement. The January table is labeled historical. The pending post-R2 audit sentence is present.
-  - [ ] Commit: `docs(pagespeed): Label January baseline historical and cite recorded audits`
-- [ ] Task: Confirm the track diff stays inside the three documents (AC6)
-  - [ ] `git diff --name-only origin/main` lists only `README.md`, `docs/ADMIN_GUIDE.md`, `docs/pagespeed-optimization.md`, and this track's conductor files.
-  - [ ] No `src/`, `docs/PRD.md`, or other conductor doc appears.
+- [x] Task: Relabel the pagespeed opening without new numbers (FR3) — 76f091c
+  - [x] Edit only the goal callout, Last Updated line, baseline table, and the present-tense Identified Issues checklist. Do not edit the progress-history log.
+  - [x] Label the 2026-01-19 table as the historical baseline, not the current score.
+  - [x] Point the top at the 2026-10-09 hero LCP post-deploy production runs already in the file: Performance 68 and 77, Accessibility 100, Best Practices 96, SEO 100, CLS 0, simulated LCP about 2.8–3.0s. Cite that section. Do not change any number in the file.
+  - [x] State that R2-direct delivery is shipped in code and that its production Lighthouse re-run is not recorded. Do not present the local R2 timings as the current production score.
+  - [x] Last Updated may say the status block was clarified on 2026-10-10. It must not read as a new audit. The 90+ goal may remain as a goal.
+  - [x] Verify: `git diff -U0 -- docs/pagespeed-optimization.md` contains no changed digit that was a recorded measurement. The January table is labeled historical. The pending post-R2 audit sentence is present.
+  - [x] Commit: `docs(pagespeed): Label January baseline historical and cite recorded audits`
+- [x] Task: Confirm the track diff stays inside the three documents (AC6)
+  - [x] `git diff --name-only origin/main` lists only `README.md`, `docs/ADMIN_GUIDE.md`, `docs/pagespeed-optimization.md`, and this track's conductor files.
+  - [x] No `src/`, `docs/PRD.md`, or other conductor doc appears.
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 Manual check at each checkpoint is a read of the edited doc, not a running app. Expected outcome: an operator is not told to use a script, status, or score the repo does not have.
