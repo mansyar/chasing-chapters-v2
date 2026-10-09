@@ -9,17 +9,18 @@ A beautifully crafted personal book review platform — a digital space that fee
 - **Rich Review Editor** — Write detailed reviews with structured sections (What I Loved, What Could Be Better, Perfect For)
 - **Favorite Quotes** — Highlight memorable passages with special formatting
 - **Mood & Genre Tagging** — Organize reviews with genres, tags, and mood tags
-- **Reading Stats** — Track reading dates, books per month, and favorite genres
-- **Draft & Publish** — Save drafts and publish when ready (scheduled publishing is planned but not yet available)
-- **Comment Moderation** — Approve and manage reader comments
-- **Auto-Translation** — Reviews are automatically translated to Indonesian using Google Cloud Translation API
+- **Reading Dates** — Record when a book was started and finished. Dates appear on the review page.
+- **Author Dashboard** — Views, likes, review count, and average rating
+- **Draft & Publish** — Save drafts and publish when ready. Scheduled publishing is not available.
+- **Comment Moderation** — Clean comments auto-approve. Spam-flagged comments are held with their spam signals saved; trusted commenters (3+ approved comments) bypass that hold, and banned commenters are rejected. Admins work the queue from the Comment Moderation panel on the analytics dashboard.
+- **Auto-Translation** — Reviews can be translated to Indonesian with the Google Cloud Translation API. Status is tracked per review; a failure never falls back to English, and Re-translate retries it from the admin.
 
 ### For Readers
 
-- **Browse & Discover** — Explore reviews by genre, mood, or curated reading lists
-- **Search** — Find books by title, author, or genre
-- **Language Toggle** — Switch between English and Indonesian translations
-- **Reactions** — Like and react to reviews
+- **Browse & Discover** — Filter reviews by genre or tag, or open a curated reading list. Moods are shown on the review; they are not a browse filter.
+- **Search** — Find books by title or author.
+- **Language Toggle** — On a review, switch between the English text and the Indonesian translation.
+- **Likes** — Like a review.
 - **Comments** — Leave thoughts and engage with reviews
 - **RSS Feed** — Subscribe to new review updates
 
@@ -28,13 +29,13 @@ A beautifully crafted personal book review platform — a digital space that fee
 | Category             | Technology                                        |
 | -------------------- | ------------------------------------------------- |
 | **Framework**        | Next.js 16 with App Router                        |
-| **CMS**              | Payload CMS 3.0 (integrated)                      |
+| **CMS**              | Payload CMS 3.90 (integrated)                     |
 | **Database**         | PostgreSQL 16                                     |
 | **Caching**          | Redis (for translation caching and rate limiting) |
 | **Styling**          | Tailwind CSS 4                                    |
 | **UI Components**    | Radix UI + shadcn/ui                              |
-| **Animations**       | Motion (Framer Motion)                            |
-| **Media Storage**    | Cloudflare R2                                     |
+| **Animations**       | CSS (`tw-animate-css`)                            |
+| **Media Storage**    | Cloudflare R2 (public covers from the bucket domain; admin uploads still go through the app) |
 | **Translation**      | Google Cloud Translation API                      |
 | **Error Monitoring** | Sentry                                            |
 | **Language**         | TypeScript                                        |
@@ -103,9 +104,8 @@ bun run seed
 ### Running Tests
 
 ```bash
-bun run test:vitest   # Watch mode
-bun run test:vitest:run # Single run
-bun test              # Bun's native test runner
+bun test              # Unit tests
+bun run test:e2e      # Playwright end-to-end tests
 ```
 
 ## 📁 Project Structure
