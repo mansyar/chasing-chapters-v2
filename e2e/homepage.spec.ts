@@ -74,4 +74,33 @@ test.describe("Homepage", () => {
 		}
 		// If no section, that's okay - means no reading lists published
 	});
+
+	// The hero carousel is server-rendered (no `ssr: false`) so its LCP cover ships
+	// in the initial HTML. A hydration mismatch there would be invisible otherwise:
+	// nothing else in this suite asserts the absence of console errors, so this
+	// guards the change that made the hero render on the server.
+	test("should server-render the featured carousel without hydration errors", async ({
+		page,
+	}) => {
+		const errors: string[] = [];
+		page.on("console", (message) => {
+			if (message.type() === "error") errors.push(message.text());
+		});
+		page.on("pageerror", (error) => errors.push(error.message));
+
+		await page.goto("/");
+
+		const carousel = page.locator(
+			'[role="region"][aria-label="Featured reviews carousel"]',
+		);
+		// A single featured review renders SingleReviewHero instead, so the carousel
+		// path is unreachable — skip rather than assert something the page never shows.
+		test.skip(
+			(await carousel.count()) === 0,
+			"carousel requires two or more published featured reviews",
+		);
+
+		await expect(carousel).toBeVisible();
+		expect(errors).toEqual([]);
+	});
 });
