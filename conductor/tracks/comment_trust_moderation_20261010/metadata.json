@@ -2,7 +2,7 @@
 	"trackId": "comment_trust_moderation_20261010",
 	"title": "Comment Trust & Moderation",
 	"type": "feature",
-	"status": "new",
+	"status": "complete",
 	"branch": "feat/comment-trust-moderation",
 	"createdAt": "2026-10-10",
 	"updatedAt": "2026-10-10"
