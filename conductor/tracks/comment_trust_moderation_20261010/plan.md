@@ -24,8 +24,8 @@
 - [x] Task: Write failing tests asserting `spamSignals` is populated on flagged creation via both create paths
 - [x] Task: Add read-only `spamSignals` array field to `src/collections/Comments.ts` + admin list column
 - [x] Task: Persist signals through the shared module in both create paths (Green)
-- [~] Task: Commit `feat(comments): persist and display spam signals` + git note + plan update
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Commit `feat(comments): persist and display spam signals` + git note + plan update (6ff1f72)
+- [~] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 3: Moderation Dashboard Widget
 
