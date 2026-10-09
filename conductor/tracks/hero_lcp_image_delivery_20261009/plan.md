@@ -8,12 +8,12 @@
 
 The measurement problem is that the local database holds only one published featured review, so the homepage renders `SingleReviewHero` (already server-rendered) and the carousel path — the thing under test — never executes locally. The baseline has to be captured on the carousel path, which means a temporary second featured review.
 
-- [ ] Task: Create a throwaway second featured review so the local carousel path renders (script must be deleted after measurement, and the review removed from the local DB)
-- [ ] Task: Capture the local baseline: LCP subparts (TTFB / resource load delay / load duration / render delay) and CLS against a real production build, using a throwaway Playwright probe
-- [ ] Task: Remove `ssr: false` from the `ModernBookCarousel` dynamic import in `src/components/FeaturedHero.tsx` (UI/config change — exempt from unit tests per Workflow Principle 4)
-- [ ] Task: Verify the hero cover is now in the server response: curl the SSR HTML and confirm the cover `<img>` with `fetchpriority` is present, with exactly one preload hint (no duplicate from Next's automatic `priority` preload)
-- [ ] Task: Re-measure LCP subparts and CLS on the same setup; confirm the resource load delay collapses and CLS remains 0 (reserved height preserved)
-- [ ] Task: Delete all throwaway probe scripts and remove the temporary review from the local DB before committing — any root-level `.ts` file is type-checked by `next build` and will fail the build
+- [x] Task: Create a throwaway second featured review so the local carousel path renders — `LCP Probe Review` (id 5), with a distinct 91KB cover (`lcp-probe-cover` media, id 5) so the hero image is large enough to be the LCP element and has its own URL; the shared fixture cover decoded to 70 bytes and its preload hint masked the hero's discovery delay
+- [x] Task: Capture the local baseline: LCP subparts and CLS against a real production build, using a throwaway Playwright probe — pre-fix resourceLoadDelay **715ms**, warm LCP **1404ms**, CLS 0
+- [x] Task: Remove `ssr: false` from the `ModernBookCarousel` dynamic import in `src/components/FeaturedHero.tsx` (UI/config change — exempt from unit tests per Workflow Principle 4) — `[aa95d33]`
+- [x] Task: Verify the hero cover is now in the server response — carousel region present in SSR HTML, hero `<img fetchpriority="high">` present, img tags 2 → 4, image preload links 1 → 2 (one per priority image, no duplicate)
+- [x] Task: Re-measure LCP subparts and CLS on the same setup — resourceLoadDelay **715ms → 9ms**, warm LCP **1404ms → 352ms**, CLS **0 → 0**
+- [x] Task: Delete all throwaway probe scripts before committing — any root-level `.ts` file is type-checked by `next build` and will fail the build. The temporary review and its cover stay in the local DB until the checkpoint, so the carousel path can be verified manually, and are removed in Phase 3
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 2: Image Delivery
