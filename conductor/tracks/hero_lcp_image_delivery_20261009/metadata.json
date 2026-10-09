@@ -1,0 +1,9 @@
+{
+	"trackId": "hero_lcp_image_delivery_20261009",
+	"title": "Hero LCP & Image Delivery Optimization",
+	"type": "fix",
+	"status": "new",
+	"branch": "perf/hero-lcp",
+	"createdAt": "2026-10-09",
+	"updatedAt": "2026-10-09"
+}
