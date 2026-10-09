@@ -23,11 +23,11 @@ The measurement problem is that the local database holds only one published feat
 - [x] Task: Confirm no duplicate-preload or image-loading regression after the config change — homepage re-checked in the SSR HTML (carousel region present, slide 0 `fetchpriority=high`, slide 1 lazy, both cards eager); `/reviews` shows 2 preload links for 2 priority images
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
-## Phase 3: Verification & Documentation
+## Phase 3: Verification & Documentation [checkpoint: 47e0c09]
 
 - [x] Task: Full local gates — `bun run typecheck` (160 files clean), `bun run lint` (67 pre-existing warnings), `bun test` (205 pass / 0 fail across 16 files), Playwright **33/33** with `--workers=1`; the machine-local parallel `page.goto` flake did not recur
 - [x] Task: Record the pre/post LCP subparts, CLS, and the client JS bundle delta in `docs/pagespeed-optimization.md` Progress History, alongside the caveat that the production Lighthouse re-run is deferred until after deploy — `[47e0c09]` (bundle cost came out at **−7 bytes** across the same 21 initial scripts, so SSR-ing the carousel cost nothing measurable)
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) — user-confirmed; verification report attached as a git note to `47e0c09`
 
 ## Notes
 
