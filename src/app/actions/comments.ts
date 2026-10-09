@@ -4,7 +4,7 @@ import configPromise from "@payload-config";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { getPayload } from "payload";
-import { isSpamContent } from "@/lib/blocklist";
+import { resolveCommentStatus } from "@/lib/comment-moderation";
 import { getClientIP, rateLimit } from "@/lib/rate-limit";
 import {
 	commentSchema,
@@ -108,11 +108,15 @@ export async function submitComment(
 			});
 		}
 
-		// Determine initial status - auto-approve unless flagged as spam
-		const contentFlagged = isSpamContent(content);
-		const status: "pending" | "approved" = contentFlagged
-			? "pending"
-			: "approved";
+		// Determine initial status via the shared moderation policy
+		// (trust-aware; banned commenters were rejected above, so this
+		// resolves to approved or pending)
+		const decision = resolveCommentStatus({
+			content,
+			banned: commenter.banned === true,
+			trusted: commenter.trusted === true,
+		});
+		const status = decision.status;
 
 		// Create the comment
 		await payload.create({

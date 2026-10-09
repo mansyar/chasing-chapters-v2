@@ -1,5 +1,5 @@
 import type { CollectionConfig, Where } from "payload";
-import { isSpamContent } from "@/lib/blocklist";
+import { resolveCommentStatus } from "@/lib/comment-moderation";
 
 export const Comments: CollectionConfig = {
 	slug: "comments",
@@ -59,37 +59,42 @@ export const Comments: CollectionConfig = {
 				if (operation === "create" && data) {
 					const { payload } = req;
 
-					// Check if commenter exists and get their trust status
 					if (data.commenter) {
+						// Look up the commenter; a failed lookup (e.g. missing record)
+						// falls back to a non-trusted decision below
+						let commenter: {
+							banned?: boolean | null;
+							trusted?: boolean | null;
+						} | null = null;
 						try {
-							const commenter = await payload.findByID({
+							commenter = await payload.findByID({
 								collection: "commenters",
 								id: data.commenter,
 							});
-
-							// If commenter is banned, reject the comment
-							if (commenter?.banned) {
-								throw new Error("You are not allowed to comment.");
-							}
-
-							// Check content for spam
-							const contentIsSpam = isSpamContent(data.content || "");
-
-							// Auto-approve unless content is flagged as spam
-							if (contentIsSpam) {
-								data.status = "pending"; // Hold for review
-							} else {
-								data.status = "approved"; // Auto-approve clean content
-							}
 						} catch {
-							// If commenter not found, check spam and auto-approve if clean
-							const contentIsSpam = isSpamContent(data.content || "");
-							data.status = contentIsSpam ? "pending" : "approved";
+							commenter = null;
 						}
+
+						// If commenter is banned, reject the comment
+						if (commenter?.banned) {
+							throw new Error("You are not allowed to comment.");
+						}
+
+						// Resolve status via the shared moderation policy
+						const decision = resolveCommentStatus({
+							content: data.content || "",
+							banned: false,
+							trusted: commenter?.trusted === true,
+						});
+						data.status = decision.status;
 					} else {
-						// No commenter linked, check spam and auto-approve if clean
-						const contentIsSpam = isSpamContent(data.content || "");
-						data.status = contentIsSpam ? "pending" : "approved";
+						// No commenter linked, resolve via the shared policy (non-trusted)
+						const decision = resolveCommentStatus({
+							content: data.content || "",
+							banned: false,
+							trusted: false,
+						});
+						data.status = decision.status;
 					}
 				}
 

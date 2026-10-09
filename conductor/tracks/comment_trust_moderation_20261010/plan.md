@@ -6,17 +6,17 @@
 
 ## Phase 1: Shared Moderation Module & Trust Bypass
 
-- [ ] Task: Write failing unit tests for `src/lib/comment-moderation.ts`
+- [x] Task: Write failing unit tests for `src/lib/comment-moderation.ts`
   - [ ] Clean content → `{ status: "approved", spamSignals: [] }`
   - [ ] Flagged content, non-trusted → `{ status: "pending", spamSignals: [...] }`
   - [ ] Flagged content, trusted → `{ status: "approved", spamSignals: [...] }`
   - [ ] Banned → rejected outcome
-- [ ] Task: Run tests and confirm Red phase (`CI=true bun test`)
-- [ ] Task: Implement `src/lib/comment-moderation.ts` as a pure module over `blocklist.getSpamReasons()` (Green)
-- [ ] Task: Refactor `submitComment` (`src/app/actions/comments.ts`) to consume the module (reads `commenter.trusted`/`banned` it already fetches)
-- [ ] Task: Refactor `Comments.beforeChange` hook (`src/collections/Comments.ts`) to consume the module; remove duplicated inline logic; keep banned-commenter rejection
-- [ ] Task: Verify >80% coverage on the new module; full suite green
-- [ ] Task: Commit `feat(comments): shared moderation module with trust bypass` + git note + plan update
+- [x] Task: Run tests and confirm Red phase (`CI=true bun test`)
+- [x] Task: Implement `src/lib/comment-moderation.ts` as a pure module over `blocklist.getSpamReasons()` (Green)
+- [x] Task: Refactor `submitComment` (`src/app/actions/comments.ts`) to consume the module (reads `commenter.trusted`/`banned` it already fetches)
+- [x] Task: Refactor `Comments.beforeChange` hook (`src/collections/Comments.ts`) to consume the module; remove duplicated inline logic; keep banned-commenter rejection
+- [x] Task: Verify >80% coverage on the new module; full suite green
+- [~] Task: Commit `feat(comments): shared moderation module with trust bypass` + git note + plan update
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 2: Spam Signals Persistence
