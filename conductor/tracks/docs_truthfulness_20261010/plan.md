@@ -9,18 +9,18 @@
 
 ## Phase 1: Operator docs
 
-- [ ] Task: Align README with the repo (FR1)
-  - [ ] Set CMS to Payload 3.90. Replace Motion / Framer Motion with CSS animations (`tw-animate-css`). No claim that Motion is installed.
-  - [ ] Replace the test section with `bun test` and `bun run test:e2e`. Delete `test:vitest` and `test:vitest:run`.
-  - [ ] Say scheduled publishing is not available. Delete "planned but not yet available".
-  - [ ] Describe comment trust in one or two sentences: clean auto-approves, flagged non-trusted comments are held with spam signals, trusted commenters bypass the hold, banned commenters are rejected. Name the dashboard widget.
-  - [ ] Mention translation status, no English fallback on failure, and Re-translate. Do not paste the admin guide.
-  - [ ] Say public covers are served from the R2 public domain; admin uploads still go through the app.
-  - [ ] Remove books-per-month and favorite-genre analytics. Reading dates are stored and shown on the review. The dashboard shows views, likes, review count, and average rating.
-  - [ ] Search is title and book author. Browse filters are genre and tag. Moods display on the review and are not a filter.
-  - [ ] Do not rewrite the file tree, deployment section, or voice beyond a false claim.
-  - [ ] Verify: grep README for `test:vitest`, `Framer Motion`, `Payload CMS 3.0`, `books per month`, `favorite genres`, and `planned`. None remain as current claims.
-  - [ ] Commit: `docs(readme): Align stack, scripts, and feature claims with the repo`
+- [x] Task: Align README with the repo (FR1) — 9f1944e
+  - [x] Set CMS to Payload 3.90. Replace Motion / Framer Motion with CSS animations (`tw-animate-css`). No claim that Motion is installed.
+  - [x] Replace the test section with `bun test` and `bun run test:e2e`. Delete `test:vitest` and `test:vitest:run`.
+  - [x] Say scheduled publishing is not available. Delete "planned but not yet available".
+  - [x] Describe comment trust in one or two sentences: clean auto-approves, flagged non-trusted comments are held with spam signals, trusted commenters bypass the hold, banned commenters are rejected. Name the dashboard widget.
+  - [x] Mention translation status, no English fallback on failure, and Re-translate. Do not paste the admin guide.
+  - [x] Say public covers are served from the R2 public domain; admin uploads still go through the app.
+  - [x] Remove books-per-month and favorite-genre analytics. Reading dates are stored and shown on the review. The dashboard shows views, likes, review count, and average rating.
+  - [x] Search is title and book author. Browse filters are genre and tag. Moods display on the review and are not a filter.
+  - [x] Do not rewrite the file tree, deployment section, or voice beyond a false claim.
+  - [x] Verify: grep README for `test:vitest`, `Framer Motion`, `Payload CMS 3.0`, `books per month`, `favorite genres`, and `planned`. None remain as current claims.
+  - [x] Commit: `docs(readme): Align stack, scripts, and feature claims with the repo`
 - [ ] Task: Align the admin guide with publishing and moderation (FR2)
   - [ ] Creating a review, and the publishing table, list only Draft and Published.
   - [ ] One sentence: scheduled publishing is not available.
