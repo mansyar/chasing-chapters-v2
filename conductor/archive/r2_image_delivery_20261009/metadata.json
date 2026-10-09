@@ -1,0 +1,9 @@
+{
+	"trackId": "r2_image_delivery_20261009",
+	"title": "R2-Direct Image Delivery",
+	"type": "fix",
+	"status": "new",
+	"branch": "perf/r2-images",
+	"createdAt": "2026-10-09",
+	"updatedAt": "2026-10-09"
+}

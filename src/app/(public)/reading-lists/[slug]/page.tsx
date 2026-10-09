@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { getPayload } from "payload";
 import { ReviewCard } from "@/components/ReviewCard";
 import { ShareButton } from "@/components/ShareButton";
+import { resolveMediaUrl } from "@/lib/media-url";
 import { generateBreadcrumbSchema, SITE_URL } from "@/lib/seo/structured-data";
 import type { Media, Review } from "@/payload-types";
 
@@ -143,7 +144,7 @@ export default async function ReadingListDetailPage({ params }: PageProps) {
 				{coverImage?.url && (
 					<div className="absolute inset-0 z-0 opacity-10 blur-3xl scale-110">
 						<Image
-							src={coverImage.url}
+							src={resolveMediaUrl(coverImage.url)}
 							alt=""
 							fill
 							className="object-cover"

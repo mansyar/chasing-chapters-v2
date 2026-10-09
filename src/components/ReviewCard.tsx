@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardFooter, CardHeader } from "@/components/ui/card";
 import type { AppLocale } from "@/lib/date-format";
 import { formatDate } from "@/lib/date-format";
+import { resolveMediaUrl } from "@/lib/media-url";
 import { cn } from "@/lib/utils";
 import type { Media, Review } from "@/payload-types";
 
@@ -35,7 +36,7 @@ export function ReviewCard({
 				<div className="aspect-2/3 relative overflow-hidden rounded-md shadow-md group-hover:shadow-none transition-all duration-300">
 					{coverImage?.url && (
 						<Image
-							src={coverImage.url}
+							src={resolveMediaUrl(coverImage.url)}
 							alt={coverImage.alt || review.title}
 							fill
 							className="object-cover"

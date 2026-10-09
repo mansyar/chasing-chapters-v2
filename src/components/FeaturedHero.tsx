@@ -8,6 +8,7 @@ import { HeroSkeletonContent } from "@/components/HeroSkeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { GradientBackground } from "@/components/ui/gradient-background";
+import { resolveMediaUrl } from "@/lib/media-url";
 import { cn, extractTextFromRichText } from "@/lib/utils";
 import type { Media, Review } from "@/payload-types";
 
@@ -79,7 +80,7 @@ function SingleReviewHero({ review }: { review: Review }) {
 				<div className="relative w-[280px] md:w-[350px] lg:w-[400px] aspect-2/3 shadow-2xl rounded-lg rotate-3 hover:rotate-0 transition-transform duration-500">
 					{coverImage?.url && (
 						<Image
-							src={coverImage.url}
+							src={resolveMediaUrl(coverImage.url)}
 							alt={coverImage.alt || review.title}
 							fill
 							className="object-cover rounded-lg"

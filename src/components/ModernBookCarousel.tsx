@@ -6,6 +6,7 @@ import Link from "next/link";
 import React, { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { resolveMediaUrl } from "@/lib/media-url";
 import { cn, extractTextFromRichText } from "@/lib/utils";
 import type { Media, Review } from "@/payload-types";
 
@@ -147,7 +148,7 @@ export default function ModernBookCarousel({
 								<div className="relative w-[240px] md:w-[320px] lg:w-[380px] aspect-2/3 shadow-2xl rounded-lg transform perspective-1000 rotate-y-n12 group-hover:rotate-y-0 transition-transform duration-700">
 									{coverImage?.url && (
 										<Image
-											src={coverImage.url}
+											src={resolveMediaUrl(coverImage.url)}
 											alt={coverImage.alt || review.title}
 											fill
 											className="object-cover rounded-lg shadow-2xl"

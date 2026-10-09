@@ -21,7 +21,7 @@ const publicCspHeader = `
   script-src 'self' 'unsafe-inline' https://analytics.ansyar-world.top https://static.cloudflareinsights.com;
   worker-src 'self' blob:;
   style-src 'self' 'unsafe-inline';
-  img-src 'self' blob: data: https://*.r2.dev https://www.gravatar.com;
+  img-src 'self' blob: data: https://*.r2.dev https://storage.chasing-chapters.com https://storage-dev.chasing-chapters.com https://www.gravatar.com;
   font-src 'self';
   connect-src 'self' https://*.sentry.io https://*.ingest.de.sentry.io https://analytics.ansyar-world.top;
   media-src 'self' https://*.r2.dev;
@@ -39,7 +39,7 @@ const adminCspHeader = `
   script-src 'self' 'unsafe-inline' 'unsafe-eval' https://analytics.ansyar-world.top;
   worker-src 'self' blob:;
   style-src 'self' 'unsafe-inline';
-  img-src 'self' blob: data: https://*.r2.dev https://www.gravatar.com;
+  img-src 'self' blob: data: https://*.r2.dev https://storage.chasing-chapters.com https://storage-dev.chasing-chapters.com https://www.gravatar.com;
   font-src 'self' data:;
   connect-src 'self' https://*.r2.dev https://*.sentry.io https://*.ingest.de.sentry.io https://analytics.ansyar-world.top;
   media-src 'self' https://*.r2.dev;
@@ -69,6 +69,16 @@ const nextConfig: NextConfig = {
 			{
 				protocol: "https",
 				hostname: "**.r2.dev",
+			},
+			// Public R2 custom domains — the optimizer fetches covers straight
+			// from the bucket instead of re-entering the app's media proxy.
+			{
+				protocol: "https",
+				hostname: "storage.chasing-chapters.com",
+			},
+			{
+				protocol: "https",
+				hostname: "storage-dev.chasing-chapters.com",
 			},
 		],
 	},

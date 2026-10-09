@@ -253,6 +253,7 @@ Mitigation: self-warming at boot via `src/instrumentation.ts` → `src/lib/warm-
 | 2026-10-08 | -     | -    | -    | -    | 0     | -           | **Lighthouse Production Fixes — local, pre-deploy** (track `lighthouse_prod_fixes_20261008`, branch `fix/lighthouse-prod-scores`): carousel prev/next accessible names (`aria-label`), `https://static.cloudflareinsights.com` added to the production `script-src`, and a reserved hero container height that removes the skeleton→carousel layout shift. CLS A/B on a production build (desktop 1350×940, 2 featured reviews, Playwright `layout-shift` observer): **0.0376 pre-fix → 0.0000 post-fix (0 entries)**. Gates: typecheck 160 files clean, lint 67 pre-existing warnings only, `bun test` 203 pass / 0 fail, Playwright 33/33. Production re-run pending deploy. |
 | 2026-10-09 | -     | -    | 0.35s | -    | 0     | -           | **Hero LCP & Image Delivery — local, pre-deploy** (track `hero_lcp_image_delivery_20261009`, branch `perf/hero-lcp`): the hero carousel is server-rendered so the LCP cover reaches the initial HTML, `images.minimumCacheTTL` 60s → 24h, and `/reviews` + reading-list cards prioritise their above-the-fold covers. Local A/B on a production build: hero **resource load delay 715ms → 9ms**, warm LCP **1404ms → 352ms**, CLS 0 → 0, initial client JS **unchanged** (1,529,858 → 1,529,851 bytes across 21 script tags). Gates: typecheck 160 files clean, lint 67 pre-existing warnings, `bun test` 205 pass / 0 fail, Playwright 33/33. Production re-run pending deploy — see the section below. |
 | 2026-10-09 | 68–77 | 1.0s | 2.8–3.0s | 77–236ms | 0 | 2.4s | **Hero LCP & Image Delivery — production, post-deploy** (PR #7): `requestDiscoverable` **False → True** with `fetchpriority=high` ✅, A11y **100** ✅, BP **96** ✅, CLS **0** ✅, root TTFB 333–365ms. LCP stays 2.8–3.0s: the bottleneck moved from discovery to the image fetch itself (~2.0s through `/_next/image` → Payload local media API — the scoped-out R2 lever). The `inspector-issues` CSP ding is pre-existing (fails in the #5-era baseline too). See the post-deploy section below. |
+| 2026-10-09 | -     | -    | -     | -    | 0     | -           | **R2-Direct Image Delivery — local, pre-deploy** (track `r2_image_delivery_20261009`, branch `perf/r2-images`): covers are served straight from the public R2 domain via a mapping util (`src/lib/media-url.ts`) instead of re-entering the app through `/api/media/file`. Local A/B on a production build: hero image cold load **2522ms → 1742ms**, warm **14ms → 11ms**, CLS 0 → 0, real pixels verified (`decoded=91075B`). Homepage SSR: **94 storage-domain refs, 0 proxy `src` attributes**. Gates: typecheck clean, lint 67 pre-existing warnings, `bun test` 211 pass / 0 fail, Playwright 33/33. Production re-run pending deploy — see the section below. |
 
 ### Post-fix verification & pending production re-run (2026-10-08)
 
@@ -339,6 +340,33 @@ Directly targets the `requestDiscoverable: false` finding above. All numbers are
 **What moved and what didn't.** The discovery fix is confirmed live: the LCP image is in the initial HTML with `fetchpriority="high"`, and the previous 1041ms pure-discovery penalty is gone from the checklist. But the LCP element is now gated by the **image fetch itself**: simulated load duration ~2.0s through `/_next/image` → Payload's local media API (`/api/media/file/...`). That path was explicitly out of scope for this track (moving covers to R2 / pre-sizing hero art is the named lever), so the remaining LCP cost is a known, scoped-out follow-up — not a regression from this change.
 
 **Caveats.** (1) The `inspector-issues` Best Practices audit (a DevTools "Content security policy" issue entry) fails in *both* the #5-era baseline and these runs — pre-existing, not introduced here; BP held at 96 throughout. (2) Performance varied 68–77 across back-to-back runs, so single-run comparisons inside ~5 points are noise; the #5-era 71 sits inside that band. (3) A 28.7s TTFB outlier was observed once during the rollout window (probable mid-rollout container restart); all post-rollout probes were 0.28–0.84s.
+
+---
+
+### R2-Direct Image Delivery — local verification (2026-10-09, track `r2_image_delivery_20261009`)
+
+Directly targets the image-fetch bottleneck identified above. All numbers are local, measured against a real production build (desktop 1350×940, Playwright probe), on the carousel path with a temporary second featured review and a distinct 91KB cover (removed after measurement).
+
+**The change.** Every page consumes `coverImage.url`, which is a root-relative `/api/media/file/<filename>` proxy path — each optimizer cache miss re-entered the Next server, streamed the object from R2 through Payload, and only then reached sharp. The plugin's own `generateURL` emits the private S3 endpoint, so the fix is an application-layer mapping: `src/lib/media-url.ts` (TDD, 6 unit tests) rewrites those paths to `<NEXT_PUBLIC_R2_PUBLIC_URL>/<filename>`, wired into 9 consumers (hero carousel, SingleReviewHero, ReviewCard, ReadingListCard, review detail, reading-lists index + detail, RSS `feed.xml`, SEO structured-data — the latter two now emit absolute URLs, which is more correct anyway). The value is build-time inlined (`NEXT_PUBLIC_`), unset locally passes through, and `images.remotePatterns` gained both storage hosts. CSP `img-src` is unchanged: browsers still fetch only same-origin `/_next/image`.
+
+| Measurement | Before (proxy path) | After (R2 direct) |
+| ----------- | ------------------- | ----------------- |
+| Hero image cold load duration | 2522ms | **1742ms** |
+| Hero image warm load duration | 14ms | **11ms** |
+| Hero `<img>` real pixels | ✅ (decoded 91075B) | ✅ (decoded 91075B) |
+| CLS | 0 | **0** |
+| Homepage `/api/media/file` refs in SSR HTML | 99 | **0** in `src` attributes (94 storage-domain refs) |
+
+Two live defects were caught and fixed during verification: re-encoding the already-URL-encoded filename produced `%2520` and a 404 against the bucket (curl-verified: double-encoded 404, single-encoded 200), and the new remote host initially missing from `remotePatterns` made the optimizer reject the URL (30-byte error bodies). Local numbers understate the production gain — locally the R2 hop is near-zero and the Payload/DB proxy cost is small, whereas production measured a 1198ms media-API request per optimizer miss.
+
+| Gate | Result |
+| ---- | ------ |
+| `bun run typecheck` | no type errors in 162 files |
+| `bun run lint` | 67 warnings, all pre-existing |
+| `bun test` | 211 pass / 0 fail (17 files, includes the 6 new `media-url` tests) |
+| Playwright e2e | 33/33 (`--workers=1`) |
+
+**Pending (requires deploy):** the production Lighthouse re-run — targets LCP ≤ 2.0s and Performance ≥ 85 with A11y ≥ 95, BP ≥ 95, CLS < 0.1. The deploy also requires the `R2_PUBLIC_URL` GitHub secret to hold the public domain (user-confirmed). Additionally, verify no legacy media object is missing from the bucket: any file uploaded before the S3 plugin was configured exists only in the container's local `media/` dir, and its `resolveMediaUrl`-mapped URL would 404 (a one-off `ListObjectsV2` diff of DB filenames vs bucket keys, or HTTP-status check of every mapped cover URL on published content, closes this — conductor-review finding, 2026-10-09).
 
 ---
 

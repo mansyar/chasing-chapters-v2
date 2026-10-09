@@ -9,7 +9,7 @@
 | Database | PostgreSQL 16 (drizzle-orm 0.45, schema managed via migrations) |
 | Cache | Redis (ioredis 6) — translation cache + rate limiting |
 | Styling | Tailwind CSS 4 (latest), shadcn/ui + Radix (latest), tw-animate-css, sonner (toasts, added 2026-10-08) |
-| Media | Cloudflare R2 (S3 adapter, latest), sharp (blurDataURL, resized variants) |
+| Media | Cloudflare R2 (S3 adapter, latest), sharp (blurDataURL, resized variants); public covers served straight from the R2 bucket domain via `src/lib/media-url.ts` + `NEXT_PUBLIC_R2_PUBLIC_URL` (added 2026-10-09), admin uploads still proxy through `/api/media/file` |
 | Translation | Google Cloud Translation API v10 |
 | Monitoring | Sentry 11 (`withSentryConfig` from `@sentry/nextjs/config`, `dataCollection` replaces `sendDefaultPii`), Umami analytics |
 | Validation | Zod 4.6 |
