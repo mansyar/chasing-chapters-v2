@@ -25,11 +25,11 @@ The measurement problem is that the local database holds only one published feat
 
 ## Phase 3: Verification & Documentation
 
-- [ ] Task: Full local gates — `bun run typecheck`, `bun run lint`, `bun test`, Playwright e2e
-- [ ] Task: Record the pre/post LCP subparts, CLS, and the client JS bundle delta in `docs/pagespeed-optimization.md` Progress History, alongside the caveat that the production Lighthouse re-run is deferred until after deploy
+- [x] Task: Full local gates — `bun run typecheck` (160 files clean), `bun run lint` (67 pre-existing warnings), `bun test` (205 pass / 0 fail across 16 files), Playwright **33/33** with `--workers=1`; the machine-local parallel `page.goto` flake did not recur
+- [x] Task: Record the pre/post LCP subparts, CLS, and the client JS bundle delta in `docs/pagespeed-optimization.md` Progress History, alongside the caveat that the production Lighthouse re-run is deferred until after deploy — `[47e0c09]` (bundle cost came out at **−7 bytes** across the same 21 initial scripts, so SSR-ing the carousel cost nothing measurable)
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Notes
 
 - Production Lighthouse verification (LCP ≤ 2.0s, Performance ≥ 85) happens after merge and deploy, and is recorded by a follow-up docs-only PR — the same pattern used at the end of `lighthouse_prod_fixes_20261008`.
-- Thrown away after measurement: the second-featured-review script, the LCP/CLS probe, and the temporary local review itself.
+- Thrown away after measurement: the second-featured-review script, the LCP/CLS probe, and the temporary local review itself. Cleanup order mattered — the e2e run left a comment on the probe review that blocks its deletion with a FK violation, so the comment goes first, then the review, then its cover media. Local DB verified back to the single fixture review.
