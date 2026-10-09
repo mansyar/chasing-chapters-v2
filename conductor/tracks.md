@@ -7,3 +7,4 @@
 - [x] **Track: Hero LCP & Image Delivery Optimization — server-render the hero, stop optimizer cache churn** *Link: [hero_lcp_image_delivery_20261009/index.md](./archive/hero_lcp_image_delivery_20261009/index.md)*
 - [x] **Track: R2-Direct Image Delivery — serve covers straight from R2, cut the app out of the image path** *Link: [r2_image_delivery_20261009/index.md](./archive/r2_image_delivery_20261009/index.md)*
 - [x] **Track: Comment Trust & Moderation — shared moderation module, spam-signal persistence, trusted bypass, dashboard moderation widget** *Link: [comment_trust_moderation_20261010/index.md](./archive/comment_trust_moderation_20261010/index.md)*
+- [x] **Track: Docs Truthfulness — sync README, admin guide, and pagespeed opening with the shipped product** *Link: [docs_truthfulness_20261010/index.md](./archive/docs_truthfulness_20261010/index.md)*

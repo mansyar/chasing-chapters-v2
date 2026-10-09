@@ -1,28 +1,36 @@
 # PageSpeed Optimization Tracker
 
-> **Goal**: Improve desktop PageSpeed score from **61** to **90+**
+> **Goal**: Desktop Performance **90+**. That figure is the original goal, not the current score.
 >
 > **Started**: 2026-01-19
-> **Last Updated**: 2026-01-19
+> **Status block clarified**: 2026-10-10. This is not a new audit.
+>
+> **Latest recorded production audit**: 2026-10-09, in Progress History under "Post-deploy re-run (2026-10-09, PR #7 → `main`)". Those runs recorded Performance **68 / 77**, Accessibility **100**, Best Practices **96**, SEO 100, simulated LCP **3019ms / 2782ms**, and CLS **0**. Do not treat any other number in this file as newer.
+>
+> **Not yet recorded**: R2-direct image delivery is shipped in code. Its production Lighthouse re-run has not been recorded. The local R2 timings later in this file are not the current production score.
 
 ---
 
-## 📊 Baseline Metrics (Desktop)
+## 📊 Historical baseline (2026-01-19)
 
-| Metric                         | Current | Target  | Status               |
-| ------------------------------ | ------- | ------- | -------------------- |
-| **Performance Score**          | 61      | 90+     | 🔴 Needs Work        |
-| First Contentful Paint (FCP)   | 0.6s    | < 1.8s  | ✅ Good              |
-| Largest Contentful Paint (LCP) | 1.3s    | < 2.5s  | 🟡 Needs Improvement |
-| Total Blocking Time (TBT)      | 90ms    | < 200ms | ✅ Good              |
-| Cumulative Layout Shift (CLS)  | 1.862   | < 0.1   | 🔴 Poor              |
-| Speed Index                    | 5.3s    | < 3.4s  | 🔴 Poor              |
+The table below is the January 2026 starting point. It is not the current score.
+
+| Metric                         | January 2026 | Target  | Status then          |
+| ------------------------------ | ------------ | ------- | -------------------- |
+| **Performance Score**          | 61           | 90+     | 🔴 Needs Work        |
+| First Contentful Paint (FCP)   | 0.6s         | < 1.8s  | ✅ Good              |
+| Largest Contentful Paint (LCP) | 1.3s         | < 2.5s  | 🟡 Needs Improvement |
+| Total Blocking Time (TBT)      | 90ms         | < 200ms | ✅ Good              |
+| Cumulative Layout Shift (CLS)  | 1.862        | < 0.1   | 🔴 Poor              |
+| Speed Index                    | 5.3s         | < 3.4s  | 🔴 Poor              |
 
 ---
 
-## 🎯 Identified Issues
+## 🎯 January 2026 issue list (historical)
 
-### Critical (Must Fix)
+These items are the January findings. They are not an open queue. Later sections record what was measured after that date. No checkbox below was updated by the 2026-10-10 clarification.
+
+### Critical (as recorded in January)
 
 - [ ] **CLS 1.862** - Extremely high layout shift
   - Cause: Dynamic hero content, lazy-loaded carousel, images without dimensions
@@ -32,7 +40,7 @@
   - Cause: Heavy client-side JavaScript, complex animations on initial load
   - Impact: Poor perceived performance
 
-### High Priority
+### High priority (as recorded in January)
 
 - [ ] **Unused JavaScript (147 KiB)**
   - Files: react-pageflip, motion library, Radix UI components
@@ -44,7 +52,7 @@
 - [ ] **Main Thread Work (6.4s)**
   - Minimize blocking operations
 
-### Medium Priority
+### Medium priority (as recorded in January)
 
 - [ ] **Render-blocking Resources (160ms potential savings)**
   - Review CSS and JS loading order
