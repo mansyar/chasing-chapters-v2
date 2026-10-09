@@ -13,6 +13,10 @@ type CommentStatus = "approved" | "rejected";
 
 const ALLOWED_STATUSES: CommentStatus[] = ["approved", "rejected"];
 
+function isAllowedStatus(status: string): status is CommentStatus {
+	return (ALLOWED_STATUSES as string[]).includes(status);
+}
+
 /**
  * Sets a comment's moderation status. Admin-only: moderation decisions
  * must not be available to writers (who can only manage their own
@@ -23,7 +27,7 @@ export async function setCommentStatus(
 	status: string,
 ): Promise<ModerationActionResult> {
 	try {
-		if (!ALLOWED_STATUSES.includes(status as CommentStatus)) {
+		if (!isAllowedStatus(status)) {
 			return { success: false, error: "Invalid status" };
 		}
 
@@ -43,7 +47,7 @@ export async function setCommentStatus(
 		await payload.update({
 			collection: "comments",
 			id,
-			data: { status: status as CommentStatus },
+			data: { status },
 		});
 
 		return { success: true };

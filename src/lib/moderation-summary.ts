@@ -62,10 +62,7 @@ export async function getModerationSummary(
 			authorName: doc.authorName,
 			content: doc.content,
 			status: doc.status,
-			createdAt:
-				typeof doc.createdAt === "string"
-					? doc.createdAt
-					: new Date(doc.createdAt as unknown as Date).toISOString(),
+			createdAt: new Date(doc.createdAt).toISOString(),
 			spamSignals: doc.spamSignals,
 		})),
 	};
