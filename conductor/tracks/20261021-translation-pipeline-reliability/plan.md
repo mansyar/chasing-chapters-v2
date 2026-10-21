@@ -78,7 +78,7 @@ The primary appends after acceptance:
 - **Covers:** FR-4, AC-4
 - **Touches:** `src/collections/Reviews/**` (endpoints/list config), `src/lib/retranslate.ts` (only if shared run logic needs a batch wrapper), new tests
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P3.T1: Bulk re-translate endpoint** — covers: FR-4
   - [ ] **P3.T1.1: Endpoint that sequentially re-translates each selected failed/stale review, enforcing access rules and reporting per-review outcomes**
