@@ -2,6 +2,7 @@
 
 import { Button, useDocumentInfo, useForm } from "@payloadcms/ui";
 import React, { useState } from "react";
+import { TranslationStatusPoller } from "@/components/admin/TranslationStatusPoller";
 
 type RetranslateResponse = {
 	ok: boolean;
@@ -88,6 +89,10 @@ export const RetranslateButton: React.FC = () => {
 				marginBottom: "8px",
 			}}
 		>
+			{/* This ui field is also the mount point for the live translation
+			    status poller (FR-1 / FR-2): it renders no UI of its own but
+			    needs to sit inside the document form context, like this button. */}
+			<TranslationStatusPoller />
 			<Button
 				buttonStyle="secondary"
 				disabled={busy || !id}
