@@ -20,7 +20,7 @@
 - **Verification:** `bun run typecheck && bun run lint && bun test` — pass
   criteria: exit 0, zero tests failed, total warnings strictly below the
   67-warning baseline, no new rule introduced beyond the baseline.
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P1.T1: Type `src/lib/translate.ts` (12 warnings)** — covers: FR-1
   - [ ] **P1.T1.1: Replace `any` with Payload generated types / `unknown` + narrowing per spec strategy; remove dead `eslint-disable` lines (FR-4)**
