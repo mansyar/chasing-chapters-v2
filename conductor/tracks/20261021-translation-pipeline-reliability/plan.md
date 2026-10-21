@@ -171,13 +171,17 @@ The primary appends after acceptance:
 - **Covers:** F1, F2, F3
 - **Touches:** `src/lib/translate.ts`, `src/hooks/translateReview.ts`, test files under `src/**/__tests__/*`
 - **Verification:** `bun run typecheck && bun run lint && bun test` (plus a production build run by the primary)
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **R3.T1: A provider failure stays a provider failure (F1)** — covers: F1, FR-5, FR-7, AC-5, AC-7
-  - [ ] **R3.T1.1: Rethrow the original provider error instead of converting every error into a budget stop; drop the `isDeadlineReached` clause from the pipeline's budget-stop detection**
-  - [ ] **R3.T1.2: Update the deadline test and add a test that a quota failure at/after the deadline stays a quota failure and still schedules the delayed re-run**
-- [ ] **R3.T2: Cover the guard's not-found branch (F3)** — covers: F3, FR-7, AC-7
-  - [ ] **R3.T2.1: Test — a delayed re-run for a review deleted between the failure and the re-run aborts without writing**
+**Result:** verified
+**Checkpoint:** 2290560
+**Evidence:** conductor/tracks/20261021-translation-pipeline-reliability/verification/phase-R3.md
+
+- [x] **R3.T1: A provider failure stays a provider failure (F1)** — covers: F1, FR-5, FR-7, AC-5, AC-7
+  - [x] **R3.T1.1: Rethrow the original provider error instead of converting every error into a budget stop; drop the `isDeadlineReached` clause from the pipeline's budget-stop detection**
+  - [x] **R3.T1.2: Update the deadline test and add a test that a quota failure at/after the deadline stays a quota failure and still schedules the delayed re-run**
+- [x] **R3.T2: Cover the guard's not-found branch (F3)** — covers: F3, FR-7, AC-7
+  - [x] **R3.T2.1: Test — a delayed re-run for a review deleted between the failure and the re-run aborts without writing**
 - [x] **R3.T3: Tick the Phase R2 parent boxes (F2)** — covers: F2
   - [x] **R3.T3.1: Tick R2.T2 and R2.T3** — applied by the primary
 

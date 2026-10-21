@@ -122,13 +122,22 @@ Translation API.
   stands: `untranslated`, `pending`, `translated`, `failed`, or `stale`.
   - **Stale** means the English content was edited after the last translation
     (e.g. auto-translate is turned off), so the Indonesian version no longer
-    matches.
+    matches. The status is compared against the time the *English content*
+    changed, not the time the review was last saved, so an unrelated edit
+    (a rating, a cover image) never marks a review stale.
 - The edit view sidebar shows the same status, plus the error message when a
   translation **failed**.
+- While the edit view is open the status refreshes on its own (about every 20
+  seconds) and a toast appears when a translation finishes — you do not have to
+  reload the page to see that it succeeded or failed.
 - If a translation fails (e.g. the API is temporarily unavailable), the system
-  retries up to 3 times. On repeated failure the review is marked **failed**
-  and the Indonesian version is left untouched — it never shows a mix of
-  English text.
+  retries up to 3 times. A temporary failure (quota, network, timeout) is
+  retried **once more automatically** after about 3 minutes before the review is
+  marked **failed**. The Indonesian version is left untouched on failure — it
+  never shows a mix of English text.
+- The failure message says what to do about it, for example "translation quota
+  exceeded — wait a few minutes, or check your Google Cloud quota and billing".
+  The underlying technical detail is kept after it in parentheses.
 
 ### Auto-translate toggle
 
@@ -136,7 +145,15 @@ Translation API.
   or editing English content triggers translation automatically.
 - When OFF, nothing is translated automatically and the status becomes
   **stale** once English content changes — a signal that the Indonesian version
-  is out of date.
+  is out of date. Re-translate it by hand when you are ready.
+
+### Translation attention indicator
+
+- A **bell icon** in the admin bar shows how many reviews need attention:
+  translations that are **failed**, **stale**, or have been **pending for more
+  than 24 hours** (a sign that a pipeline was interrupted).
+- Clicking it lists those reviews with their status and a link straight to the
+  review's edit view.
 
 ### Re-translate now
 
@@ -145,6 +162,19 @@ Translation API.
   and published reviews.
 - The button shows progress and reports success or failure. Status and error
   fields update in place after it finishes.
+
+### Re-translate in bulk
+
+- The **Bulk re-translate** action in the reviews admin area lists the reviews
+  whose translation is **failed** or **stale**. Tick the ones you want and
+  click **Re-translate N review(s)**.
+- The reviews are translated one after another, and the result is reported per
+  review: **translated**, **failed** (with the reason), or **skipped** (already
+  being translated, or not selected).
+- A batch runs under a time budget so the request always returns promptly. If
+  the budget runs out, the reviews that were not reached are reported as
+  **skipped — not attempted, batch time budget reached**; run the action again
+  to pick them up.
 
 ---
 
