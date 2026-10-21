@@ -2,246 +2,76 @@
 
 ## Guiding Principles
 
-1.  **The Plan is the Source of Truth:** All work must be tracked in `plan.md`
-2.  **The Tech Stack is Deliberate:** Changes to the tech stack must be
-    documented in `tech-stack.md` *before* implementation
-3.  **Test-Driven Development:** Write unit tests before implementing
-    functionality
-4.  **Test Scope — Logic-Bearing Code Only:** Unit tests are required for
-    logic-bearing modules (`src/lib/`, `src/hooks/`, `src/app/actions/`,
-    collection hooks, scripts). Pure UI components (layout, styling, static
-    presentational components) are exempt from mandatory unit tests; they are
-    verified by lint, typecheck, and e2e where applicable.
-5.  **User Experience First:** Every decision should prioritize user experience
-6.  **Non-Interactive & CI-Aware:** Prefer non-interactive commands. Use
-    `CI=true` for watch-mode tools (tests, linters) to ensure single execution.
+1. **The plan is the source of truth.** Every phase, task, result, checkpoint,
+   and evidence link lives in `plan.md`.
+2. **The tech stack is deliberate.** A change to the stack is recorded in
+   `tech-stack.md` before the implementation depends on it.
+3. **Verification is agent-executed.** The phase subagent runs the configured
+   checks and writes evidence. The user is not asked to manually verify routine
+   work.
+4. **Evidence over assertion.** A phase is complete only when the configured
+   checks pass and the evidence file exists.
+5. **No silent debt.** A finding is fixed, explicitly accepted with a reason, or
+   tracked as an issue. It is never quietly ignored.
+6. **Stay inside the phase contract.** `Touches` defines the expected blast
+   radius. A required deviation is allowed, recorded, and reviewed.
+7. **Non-interactive and CI-aware.** Prefer commands that terminate. Use
+   `CI=true` for watch-mode tools where the ecosystem supports it.
+8. **Test-first for logic-bearing code.** Unit tests are required for
+   logic-bearing modules (`src/lib/`, `src/hooks/`, `src/app/actions/`,
+   collection hooks, scripts). Pure UI components (layout, styling, static
+   presentational components) are exempt from mandatory unit tests; they are
+   verified by lint, typecheck, and e2e where applicable.
+9. **User experience first.** Every decision prioritizes user experience,
+   including mobile (44x44px touch targets, readable text, responsive layouts).
 
-## Task Workflow
+## Workflow Config
 
-All tasks follow a strict lifecycle:
-
-### Standard Task Workflow
-
-1.  **Select Task:** Choose the next available task from `plan.md` in sequential
-    order
-
-2.  **Mark In Progress:** Before beginning work, edit `plan.md` and change the
-    task from `[ ]` to `[~]`
-
-3.  **Write Failing Tests (Red Phase):** *(logic-bearing code only — see
-    Principle 4)*
-
-    -   Create a new test file for the feature or bug fix.
-    -   Write one or more unit tests that clearly define the expected behavior
-        and acceptance criteria for the task.
-    -   **CRITICAL:** Run the tests and confirm that they fail as expected. This
-        is the "Red" phase of TDD. Do not proceed until you have failing tests.
-
-4.  **Implement to Pass Tests (Green Phase):**
-
-    -   Write the minimum amount of application code necessary to make the
-        failing tests pass.
-    -   Run the test suite again and confirm that all tests now pass. This is
-        the "Green" phase.
-
-5.  **Refactor (Optional but Recommended):**
-
-    -   With the safety of passing tests, refactor the implementation code and
-        the test code to improve clarity, remove duplication, and enhance
-        performance without changing the external behavior.
-    -   Rerun tests to ensure they still pass after refactoring.
-
-6.  **Verify Coverage:** Run coverage for the changed logic-bearing modules.
-    Target: >80% coverage for new logic-bearing code. UI-only components are
-    exempt.
-
-7.  **Document Deviations:** If implementation differs from tech stack:
-
-    -   **STOP** implementation
-    -   Update `tech-stack.md` with new design
-    -   Add dated note explaining the change
-    -   Resume implementation
-
-8.  **Commit Code Changes:**
-
-    -   Stage all code changes related to the task.
-    -   Propose a clear, concise commit message e.g, `feat(ui): Create basic
-        HTML structure for calculator`.
-    -   Perform the commit.
-
-9.  **Attach Task Summary with Git Notes:**
-
-    -   **Step 9.1: Get Commit Hash:** Obtain the hash of the *just-completed
-        commit* (`git log -1 --format="%H"`).
-    -   **Step 9.2: Draft Note Content:** Create a detailed summary for the
-        completed task. This should include the task name, a summary of changes,
-        a list of all created/modified files, and the core "why" for the change.
-    -   **Step 9.3: Attach Note:** Use the `git notes` command to attach the
-        summary to the commit. `bash # The note content from the previous step
-        is passed via the -m flag. git notes add -m "<note content>"
-        <commit_hash>`
-
-10. **Get and Record Task Commit SHA:**
-
-    -   **Step 10.1: Update Plan:** Read `plan.md`, find the line for the
-        completed task, update its status from `[~]` to `[x]`, and append the
-        first 7 characters of the *just-completed commit's* commit hash.
-    -   **Step 10.2: Write Plan:** Write the updated content back to `plan.md`.
-
-11. **Commit Plan Update:**
-
-    -   **Action:** Stage the modified `plan.md` file.
-    -   **Action:** Commit this change with a descriptive message (e.g.,
-        `conductor(plan): Mark task 'Create user model' as complete`).
-
-### Task Correction & Plan Amendment Workflows
-
-When an implemented task or phase requires corrections, amendments, or additions, follow these standard workflows to maintain plan integrity and avoid untracked code drift:
-
-1.  **In-Flight Refinements:** If minor gaps are found while a task is actively
-    in-progress (`[~]`), make the adjustments directly in the active
-    implementation stream and ensure passing tests before committing.
-2.  **Code Review Corrections (`conductor-review`):** If issues are identified
-    during or after a code review, instruct the agent to review your changes
-    (e.g., *"run a review"* or triggering the action manually in compatible
-    clients). The review agent will automatically append a `Review Fixes` phase
-    to `plan.md` so that correction tasks are formally tracked and
-    checkpointed.
-3.  **Logical State Reversions (`conductor-revert`):** If a task implementation
-    is fundamentally flawed or needs to be redone, instruct the agent to revert
-    the changes (e.g., *"revert the last task"* or triggering the action
-    manually in compatible clients). This safely rolls back associated git
-    commits and resets the task state in `plan.md` back to pending `[ ]` to
-    allow a clean restart.
-
-### Phase Completion Verification and Checkpointing Protocol
-
-**Trigger:** This protocol is executed immediately after a task is completed
-that also concludes a phase in `plan.md`.
-
-1.  **Announce Protocol Start:** Inform the user that the phase is complete and
-    the verification and checkpointing protocol has begun.
-
-2.  **Ensure Test Coverage for Phase Changes:**
-
-    -   **Step 2.1: Determine Phase Scope:** To identify the files changed in
-        this phase, you must first find the starting point. Read `plan.md` to
-        find the Git commit SHA of the *previous* phase's checkpoint. If no
-        previous checkpoint exists, the scope is all changes since the first
-        commit.
-    -   **Step 2.2: List Changed Files:** Execute `git diff --name-only
-        <previous_checkpoint_sha> HEAD` to get a precise list of all files
-        modified during this phase.
-    -   **Step 2.3: Verify and Create Tests:** For each file in the list:
-        -   **CRITICAL:** First, check its extension. Exclude non-code files
-            (e.g., `.json`, `.md`, `.yaml`).
-        -   **Second:** Apply Principle 4 — pure UI components are exempt.
-        -   For each remaining logic-bearing code file, verify a corresponding
-            test file exists.
-        -   If a test file is missing, you **must** create one. Before writing
-            the test, **first, analyze other test files in the repository to
-            determine the correct naming convention and testing style.** The new
-            tests **must** validate the functionality described in this phase's
-            tasks (`plan.md`).
-
-3.  **Execute Automated Tests with Proactive Debugging:**
-
-    -   Before execution, you **must** announce the exact shell command you will
-        use to run the tests.
-    -   **Example Announcement:** "I will now run the automated test suite to
-        verify the phase. **Command:** `CI=true bun test`"
-    -   Execute the announced command.
-    -   If tests fail, you **must** inform the user and begin debugging. You may
-        attempt to propose a fix a **maximum of two times**. If the tests still
-        fail after your second proposed fix, you **must stop**, report the
-        persistent failure, and ask the user for guidance.
-
-4.  **Propose a Detailed, Actionable Manual Verification Plan:**
-
-    -   **CRITICAL:** To generate the plan, first analyze `product.md`,
-        `product-guidelines.md`, and `plan.md` to determine the user-facing
-        goals of the completed phase.
-    -   You **must** generate a step-by-step plan that walks the user through
-        the verification process, including any necessary commands and specific,
-        expected outcomes.
-    -   The plan you present to the user **must** follow this format:
-
-        **For a Frontend Change:** ``` The automated tests have passed. For
-        manual verification, please follow these steps:
-
-        **Manual Verification Steps:** 1. **Start the development server with
-        the command:** `bun run dev` 2. **Open your browser to:**
-        `http://localhost:3000` 3. **Confirm that you see:** The new user
-        profile page, with the user's name and email displayed correctly. ```
-
-        **For a Backend Change:** ``` The automated tests have passed. For
-        manual verification, please follow these steps:
-
-        **Manual Verification Steps:** 1. **Ensure the server is running.** 2.
-        **Execute the following command in your terminal:** `curl -X POST
-        http://localhost:8080/api/v1/users -d '{"name": "test"}'` 3. **Confirm
-        that you receive:** A JSON response with a status of `201 Created`. ```
-
-5.  **Await Explicit User Feedback:**
-
-    -   After presenting the detailed plan, ask the user for confirmation:
-        "**Does this meet your expectations? Please confirm with yes or provide
-        feedback on what needs to be changed.**"
-    -   **PAUSE** and await the user's response. Do not proceed without an
-        explicit yes or confirmation.
-
-6.  **Identify Target Commit for Report:**
-
-    -   Do NOT create a new empty commit for checkpointing.
-    -   Identify the hash of the last functional commit made during this phase. This will be the target for the verification report.
-
-7.  **Attach Auditable Verification Report using Git Notes:**
-
-    -   **Step 7.1: Draft Note Content:** Create a detailed verification report
-        including the automated test command, the manual verification steps, and
-        the user's confirmation.
-    -   **Step 7.2: Attach Note:** Use the `git notes` command to attach the full report to the target commit identified in step 6.
-
-8.  **Get and Record Phase Checkpoint SHA:**
-
-    -   **Step 8.1: Get Commit Hash:** Obtain the hash of the *just-created
-        checkpoint commit* (`git log -1 --format="%H"`).
-    -   **Step 8.2: Update Plan:** Read `plan.md`, find the heading for the
-        completed phase, and append the first 7 characters of the commit hash in
-        the format `[checkpoint: <sha>]`.
-    -   **Step 8.3: Write Plan:** Write the updated content back to `plan.md`.
-
-9.  **Commit Plan Update:**
-
-    -   **Action:** Stage the modified `plan.md` file.
-    -   **Action:** Commit this change with a descriptive message following the
-        format `conductor(plan): Mark phase '<PHASE NAME>' as complete`.
-
-10. **Announce Completion:** Inform the user that the phase is complete and the
-    checkpoint has been created, with the detailed verification report attached
-    as a git note.
-
-### Quality Gates
-
-Before marking any task complete, verify:
-
--   [ ] All tests pass
--   [ ] Code coverage meets requirements for logic-bearing code (>80%)
--   [ ] Code follows project's code style guidelines (as defined in
-    `code_styleguides/`)
--   [ ] All public functions/methods are documented (e.g., docstrings, JSDoc,
-    GoDoc)
--   [ ] Type safety is enforced (e.g., type hints, TypeScript types, Go types)
--   [ ] No linting or static analysis errors (using the project's configured
-    tools)
--   [ ] Works correctly on mobile (if applicable)
--   [ ] Documentation updated if needed
--   [ ] No security vulnerabilities introduced
+```yaml
+project:
+  type: "web-app"
+  languages: ["typescript"]
+commands:
+  setup: "bun install && cp .env.example .env && docker compose up -d && bun run seed"
+  dev: "bun run dev"
+  test: "bun test"
+  coverage: "bun test --coverage"
+  lint: "bun run lint"
+  format: "bun run format"
+  typecheck: "bun run typecheck"
+  build: "bun run build"
+  verify_phase: "bun run typecheck && bun run lint && bun test"
+coverage:
+  gate: 80
+  scope: "new-code"
+verification:
+  layers: ["static", "unit", "e2e"]
+  retry: 2
+  manual_exceptions: ["Physical iPhone device testing", "Production deployment approval"]
+git:
+  base_branch: "main"
+  fetch: true
+  commit_style: "conventional"
+  task_commits: true
+  phase_squash: true
+review:
+  strict: true
+  issues:
+    enabled: false
+    auto_create: false
+    min_severity: "medium"
+    group_low: true
+    labels: ["tech-debt", "conductor"]
+pr:
+  enabled: true
+  tool: "gh"
+  base: "main"
+  watch_ci: true
+  watch_timeout_minutes: 15
+  merge_method: "squash"
+```
 
 ## Development Commands
-
-**AI AGENT INSTRUCTION: This section should be adapted to the project's specific
-language, framework, and build tools.**
 
 ### Setup
 
@@ -255,103 +85,168 @@ bun run seed                # Seed initial data
 ### Daily Development
 
 ```bash
-bun run dev                 # Start Next.js dev server (http://localhost:3000)
-bun run lint                # Biome (lint + format check)
-bun run typecheck           # bun check
-bun run payload             # Payload CMS CLI
-```
+# Start the app
+bun run dev                 # Next.js dev server (http://localhost:3000)
 
-### Testing
-
-```bash
+# Run tests
 bun test                    # Unit tests (Bun test runner)
 bun run test:e2e            # Playwright e2e tests
-bun run test:e2e:ui         # Playwright UI mode
+
+# Run coverage
+bun test --coverage
+
+# Lint
+bun run lint                # Biome (lint + format check)
+
+# Format
+bun run format
+
+# Typecheck
+bun run typecheck           # bun check
+
+# Build
+bun run build
 ```
 
 ### Before Committing
 
 ```bash
-bun run typecheck && bun run lint && bun test   # Full pre-commit check
+bun run typecheck && bun run lint && bun test   # Full phase verification
 ```
 
-## Testing Requirements
+## Phase & Task Workflow
 
-### Unit Testing
+Implementation is executed one phase at a time by a phase subagent. The primary
+agent owns `plan.md`, `metadata.json`, the registry, and review artifacts.
 
--   Required for logic-bearing code only (see Guiding Principle 4):
-    `src/lib/`, `src/hooks/`, `src/app/actions/`, collection hooks, scripts.
--   Pure UI components (layout, styling, static presentational components) are
-    exempt from mandatory unit tests.
--   Use appropriate test setup/teardown mechanisms (e.g., fixtures,
-    beforeEach/afterEach).
--   Mock external dependencies (Redis, Google Translate, database).
--   Test both success and failure cases.
+### Task Lifecycle
 
-### Integration Testing
+1. Read the phase contract in `plan.md`, the relevant requirements in `spec.md`,
+   and the applicable style guides.
+2. Work through the phase's tasks in order.
+3. For logic-bearing code, write or update the failing test before the
+   implementation (TDD, Red-Green). Pure UI components are exempt; add or
+   update tests alongside the behavior change when applicable.
+4. Implement the smallest change that satisfies the task.
+5. Run the targeted checks for the task.
+6. Commit the task with a conventional commit message.
+7. Report the task's status and commit SHA to the primary agent.
 
--   Test complete user flows (Playwright e2e)
--   Verify database transactions
--   Test authentication and authorization
--   Check form submissions
+The subagent does **not** edit `plan.md`. The primary marks tasks complete after
+it accepts the phase.
 
-### Mobile Testing
+### Deviations
 
--   Test on actual iPhone when possible
--   Use Safari developer tools
--   Test touch interactions
--   Verify responsive layouts
--   Check performance on 3G/4G
+- If the phase goal requires a file outside `Touches`, make the smallest
+  necessary change and record it in the report under `deviations`.
+- If the work requires a product or design decision, stop and report `blocked`.
+- Do not silently expand scope, add a dependency, or migrate unrelated code.
+- If implementation deviates from `tech-stack.md`: stop, update
+  `tech-stack.md` with a dated note, then resume.
 
-## Code Review Process
+### Phase Completion
 
-### Self-Review Checklist
+1. Run the phase's `Verification` command exactly as written in `plan.md`.
+2. Run `verify_phase` when it is configured and different from the phase command.
+3. Write the evidence file using the configured evidence path.
+4. Return the structured report to the primary agent.
+5. Do not merge, rebase, reset, push, open a PR, or edit Conductor state files.
 
-Before requesting review:
+## Verification Strategy
 
-1.  **Functionality**
+### Layers
 
-    -   Feature works as specified
-    -   Edge cases handled
-    -   Error messages are user-friendly
+- **Static:** lint (`bun run lint`), format check, typecheck (`bun run typecheck`), build (`bun run build`)
+- **Unit:** isolated behavior and edge cases (`bun test`) — logic-bearing modules only
+- **E2E:** complete user flows (`bun run test:e2e`, Playwright)
 
-2.  **Code Quality**
+The project has no separate integration layer; integration behavior is covered
+by unit tests with mocked externals (Redis, Google Translate, database) and by
+Playwright e2e flows.
 
-    -   Follows style guide
-    -   DRY principle applied
-    -   Clear variable/function names
-    -   Appropriate comments
+### Commands
 
-3.  **Testing**
+| Layer | Command | Required |
+| --- | --- | --- |
+| static | `bun run lint` | yes |
+| static | `bun run typecheck` | yes |
+| static | `bun run build` | yes |
+| unit | `bun test` | yes |
+| e2e | `bun run test:e2e` | when the phase touches user-facing flows |
 
-    -   Unit tests comprehensive (logic-bearing code)
-    -   Integration tests pass
+### Services and Fixtures
 
-4.  **Security**
+- **Services:** PostgreSQL and Redis via `docker compose up -d`
+- **Database:** Payload CMS 3 with Drizzle/Postgres; schema lives in `src/`
+- **Fixtures/seed data:** `bun run seed` (`src/scripts/seed.ts`)
+- **Environment variables:** copy `.env.example` to `.env`
+- **Start/stop commands:** `docker compose up -d` / `docker compose down`
 
-    -   No hardcoded secrets
-    -   Input validation present
-    -   SQL injection prevented
-    -   XSS protection in place
+### Pass Criteria
 
-5.  **Performance**
+- Every required command exits `0`.
+- The coverage gate (80%) is met for new logic-bearing code.
+- Every acceptance criterion has a test or a documented evidence artifact.
+- No new Critical or High review findings remain.
 
-    -   Database queries optimized
-    -   Images optimized
-    -   Caching implemented where needed
+### Evidence
 
-6.  **Mobile Experience**
+Write a report to:
 
-    -   Touch targets adequate (44x44px)
-    -   Text readable without zooming
-    -   Performance acceptable on mobile
-    -   Interactions feel native
+```text
+conductor/tracks/<track-id>/verification/phase-<n>.md
+```
+
+Include: title; track, phase, date, branch, base and head commits; result
+(`verified`, `failed`, `blocked`, or `partial`); a commands table (layer,
+command, exit, summary); an acceptance-criteria table (ID, criterion, evidence,
+status); evidence paths; deviations; and notes. Put binaries, screenshots, and
+large reports under `.conductor/evidence/`; that directory is gitignored. The
+report itself is committed with the track.
+
+### Fallback Ladder
+
+1. Run the full configured layer.
+2. If a service is missing, start it with the documented command
+   (`docker compose up -d`).
+3. If it still cannot run, run the narrowest reliable subset and mark the phase
+   `partial` with the reason.
+4. Stop and ask the user only for credentials, hardware, or an external
+   approval.
+
+### Retry Policy
+
+- A failed check may be fixed and re-run at most **2** times.
+- If it still fails, report `failed` with the command and output.
+- Never mark a phase `verified` when a required check did not run.
+
+### Human-Only Exceptions
+
+- Physical iPhone device testing (Safari developer tools, touch interactions,
+  3G/4G performance) — the agent cannot perform this.
+- Production deployment approval — merging to `main` triggers the deploy
+  pipeline and requires explicit user sign-off.
+
+## Quality Gates
+
+Before a phase is accepted:
+
+- [ ] Required tests pass (logic-bearing code covered)
+- [ ] Coverage gate is met for new logic-bearing code
+- [ ] Lint and format checks pass
+- [ ] Typecheck passes
+- [ ] Build passes
+- [ ] Code follows the applicable `conductor/code_styleguides/`
+- [ ] No secrets, credentials, or PII are introduced
+- [ ] Public behavior is documented when it changed
+- [ ] Works correctly on mobile (responsive layouts, touch targets)
+- [ ] Evidence is written and linked in `plan.md`
 
 ## Commit Guidelines
 
 ### Message Format
 
-```
+```text
 <type>(<scope>): <description>
 
 [optional body]
@@ -361,97 +256,98 @@ Before requesting review:
 
 ### Types
 
--   `feat`: New feature
--   `fix`: Bug fix
--   `docs`: Documentation only
--   `style`: Formatting, missing semicolons, etc.
--   `refactor`: Code change that neither fixes a bug nor adds a feature
--   `test`: Adding missing tests
--   `chore`: Maintenance tasks
--   `conductor`: Conductor infrastructure (setup, plan updates)
+- `feat`: new feature
+- `fix`: bug fix
+- `docs`: documentation only
+- `style`: formatting
+- `refactor`: behavior-preserving change
+- `test`: tests only
+- `chore`: maintenance
+- `conductor`: Conductor infrastructure (setup, plan updates)
 
 ### Examples
 
 ```bash
-git commit -m "feat(auth): Add remember me functionality"
-git commit -m "fix(posts): Correct excerpt generation for short posts"
-git commit -m "test(comments): Add tests for emoji reaction limits"
-git commit -m "style(mobile): Improve button touch targets"
+git commit -m "feat(auth): add remember-me session"
+git commit -m "fix(posts): correct excerpt generation for short posts"
+git commit -m "test(comments): cover emoji reaction limits"
 ```
+
+Task-level commits are made by the phase subagent. The primary squashes them
+into one phase commit on acceptance, unless a foreign commit landed in the range.
+The plan update is a separate state commit.
 
 ## Definition of Done
 
-A task is complete when:
+A track is complete when:
 
-1.  All code implemented to specification
-2.  Unit tests written and passing (logic-bearing code only)
-3.  Code coverage meets project requirements for logic-bearing code
-4.  Documentation complete (if applicable)
-5.  Code passes all configured linting and static analysis checks
-6.  Works beautifully on mobile (if applicable)
-7.  Implementation notes added to `plan.md`
-8.  Changes committed with proper message
-9.  Git note with task summary attached to the commit
+1. Every phase is `verified` with a checkpoint and evidence.
+2. The integrated verification on the track branch passes.
+3. Review is `PASS` in strict mode: every finding is fixed or explicitly
+   accepted with a reason recorded in `review.md`. No unresolved findings.
+4. Post-review documentation sync is complete.
+5. The registry and `metadata.json` show the track as complete.
+6. When a remote exists, the branch is pushed. When `pr.enabled` is true, a PR
+   is open or `pr_state: "unavailable"` records that PR creation could not run.
 
 ## Emergency Procedures
 
 ### Critical Bug in Production
 
-1.  Create hotfix branch from main
-2.  Write failing test for bug (if logic-bearing)
-3.  Implement minimal fix
-4.  Test thoroughly including mobile
-5.  Deploy immediately
-6.  Document in plan.md
+1. Create a hotfix branch from `main`.
+2. Write a failing regression test (if logic-bearing).
+3. Implement the minimal fix.
+4. Run the full verification strategy.
+5. Open a PR immediately; do not batch unrelated work.
 
 ### Data Loss
 
-1.  Stop all write operations
-2.  Restore from latest backup
-3.  Verify data integrity
-4.  Document incident
-5.  Update backup procedures
+1. Stop all write operations.
+2. Restore from the latest verified backup.
+3. Verify data integrity.
+4. Document the incident and update the recovery procedure.
 
 ### Security Breach
 
-1.  Rotate all secrets immediately
-2.  Review access logs
-3.  Patch vulnerability
-4.  Notify affected users (if any)
-5.  Document and update security procedures
+1. Rotate all affected secrets.
+2. Review access logs.
+3. Patch the vulnerability.
+4. Notify affected users when required.
+5. Document the incident and update the security procedure.
 
-## Deployment Workflow
+## Deployment
+
+Deploys run via GitHub Actions (`deploy.yml`) → Docker Hub → Coolify webhook
+when `main` is updated.
 
 ### Pre-Deployment Checklist
 
--   [ ] All tests passing
--   [ ] No linting errors
--   [ ] Mobile testing complete
--   [ ] Environment variables configured
--   [ ] Database migrations ready
--   [ ] Backup created
+- [ ] All required checks pass
+- [ ] Coverage gate met
+- [ ] Migrations reviewed and reversible
+- [ ] Environment variables configured
+- [ ] Backup created
+- [ ] Rollback plan documented
 
 ### Deployment Steps
 
-1.  Merge feature branch to main
-2.  Tag release with version
-3.  Push to deployment service (GitHub Actions → Docker Hub → Coolify webhook)
-4.  Run database migrations
-5.  Verify deployment
-6.  Test critical paths
-7.  Monitor for errors
+1. Merge the track PR to `main` (with explicit user approval — see
+   Human-Only Exceptions).
+2. Tag the release.
+3. Deploy (GitHub Actions → Docker Hub → Coolify).
+4. Run migrations.
+5. Verify the critical path.
+6. Monitor errors and key metrics.
 
 ### Post-Deployment
 
-1.  Monitor analytics
-2.  Check error logs
-3.  Gather user feedback
-4.  Plan next iteration
+1. Monitor analytics and Sentry error logs.
+2. Gather user feedback.
+3. Record follow-ups as issues or a new track.
 
 ## Continuous Improvement
 
--   Review workflow weekly
--   Update based on pain points
--   Document lessons learned
--   Optimize for user happiness
--   Keep things simple and maintainable
+- Review this workflow after each track.
+- Update commands and verification layers when the tooling changes.
+- Record recurring review findings as process improvements.
+- Keep the process as small as the project allows.

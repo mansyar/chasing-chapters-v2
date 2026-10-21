@@ -54,3 +54,7 @@ data
 .env.sentry-build-plugin
 
 fixture*.local.ts
+
+# Conductor runtime state
+.conductor/
+
