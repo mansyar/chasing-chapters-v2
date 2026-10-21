@@ -52,7 +52,7 @@
 - **Verification:** `bun run typecheck && bun run lint && bun test` — pass
   criteria: exit 0, zero tests failed, total warnings strictly below the
   Phase 1 result, no new rule introduced beyond the baseline.
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P2.T1: Type reviews pages (6 warnings in 2 files)** — covers: FR-1
   - [ ] **P2.T1.1: `src/app/(public)/reviews/[slug]/page.tsx` (5) — Payload doc params via generated types; remove dead `eslint-disable` lines (FR-4)**
