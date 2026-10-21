@@ -5,8 +5,24 @@ import {
 	syncRichTextFormat,
 } from "../translate";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type RichTextResult = { root: any };
+/**
+ * Concrete view of the rich text documents the utilities return, narrow
+ * enough for the assertions below without casting individual nodes.
+ */
+type ResultTextNode = { type: string; text: string; [key: string]: unknown };
+type ResultParagraphNode = {
+	type: string;
+	format?: string;
+	children: ResultTextNode[];
+	[key: string]: unknown;
+};
+type RichTextResult = {
+	root: {
+		children: ResultParagraphNode[];
+		[key: string]: unknown;
+	};
+	[key: string]: unknown;
+};
 
 describe("translate utilities", () => {
 	describe("extractPlainText", () => {

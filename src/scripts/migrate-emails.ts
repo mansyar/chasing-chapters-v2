@@ -61,7 +61,6 @@ async function migrateEmails() {
 			await payload.update({
 				collection: "commenters",
 				id: commenter.id,
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 				data: { emailHash: hash },
 			});
 

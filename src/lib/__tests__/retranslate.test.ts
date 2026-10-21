@@ -3,10 +3,13 @@ import {
 	beforeEach,
 	describe,
 	expect,
+	type Mock,
 	mock,
 	spyOn,
 	test,
 } from "bun:test";
+import type { Payload } from "payload";
+import type { Review } from "../../payload-types";
 
 // ---------------------------------------------------------------------------
 // Mock the Google Translate SDK before any module under test loads (see
@@ -34,37 +37,54 @@ mock.module("@google-cloud/translate", () => ({
 	},
 }));
 
+type HooksModule = typeof import("../../hooks/translateReview");
+
+type PipelineSpy = ReturnType<
+	typeof spyOn<HooksModule, "runTranslationPipeline">
+>;
+
 // ---------------------------------------------------------------------------
 
 describe("retranslateReview", () => {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	let retranslateReview: any;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	let pipelineSpy: any;
+	let retranslateReview: typeof import("../retranslate").retranslateReview;
+	let pipelineSpy: PipelineSpy;
 
-	// Minimal mocked Payload Local API
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const makePayload = (doc: any, updatedDoc?: any) => {
+	// Minimal mocked Payload Local API. The full Payload interface is
+	// impractical to stub in a unit test, so the partial mock is widened here.
+	const makePayload = (doc: Review, updatedDoc?: Review): Payload => {
 		const findByID = mock(async () => {
 			// Bun records the call before executing: 1st call → doc, later → updatedDoc
 			return findByID.mock.calls.length <= 1 ? doc : updatedDoc;
 		});
 		return {
 			findByID,
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			update: mock(async (_args: any) => ({})),
-		};
+			update: mock(async (_args: { collection: string; id: number }) => ({})),
+		} as unknown as Payload;
 	};
 
 	/** Review doc fixture: author 7 owns it; auto-translate toggle configurable. */
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const makeDoc = (overrides: Record<string, any> = {}) => ({
+	const makeDoc = (overrides: Partial<Review> = {}): Review => ({
 		id: 1,
 		title: "A Great Book",
-		_status: "draft",
+		bookAuthor: "Some Author",
+		rating: 5,
+		coverImage: 1,
 		author: 7,
+		reviewContent: {
+			root: {
+				type: "root",
+				children: [],
+				direction: null,
+				format: "",
+				indent: 0,
+				version: 1,
+			},
+		},
 		autoTranslate: true,
 		translationStatus: "stale",
+		updatedAt: "2026-01-01T00:00:00.000Z",
+		createdAt: "2026-01-01T00:00:00.000Z",
+		_status: "draft",
 		...overrides,
 	});
 
@@ -72,13 +92,8 @@ describe("retranslateReview", () => {
 		const mod = await import("../retranslate");
 		retranslateReview = mod.retranslateReview;
 		const hooksMod = await import("../../hooks/translateReview");
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		pipelineSpy = spyOn(
-			hooksMod as any,
-			"runTranslationPipeline",
-		).mockImplementation(
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			async (payload: any) => {
+		pipelineSpy = spyOn(hooksMod, "runTranslationPipeline").mockImplementation(
+			async (payload: Payload) => {
 				await payload.update({
 					collection: "reviews",
 					id: 1,
@@ -164,7 +179,6 @@ describe("retranslateReview", () => {
 			translationError: "API down (after 3 attempts)",
 		});
 		const payload = makePayload(doc, updated);
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		pipelineSpy.mockImplementation(async () => {});
 		const user = { id: 7, role: "writer" };
 
@@ -178,13 +192,11 @@ describe("retranslateReview", () => {
 
 	test("missing review → 404", async () => {
 		const payload = {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			findByID: mock(async (_args: any) => {
+			findByID: mock(async (_args: { collection: string; id: number }) => {
 				throw new Error("Not Found");
 			}),
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			update: mock(async (_args: any) => ({})),
-		};
+			update: mock(async (_args: { collection: string; id: number }) => ({})),
+		} as unknown as Payload;
 		const user = { id: 7, role: "writer" };
 
 		const result = await retranslateReview(payload, user, 999);
