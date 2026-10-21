@@ -42,7 +42,7 @@
 - **Covers:** FR-3, FR-4, FR-8, AC-3, AC-4, AC-8, NFR-2, NFR-4
 - **Touches:** `src/lib/e2e-harness.ts` (extend with the dataset definition), `src/lib/__tests__/e2e-harness.test.ts` (extend with the dataset assertions), `e2e/global-setup.ts` (new), `e2e/homepage.spec.ts`, `e2e/navigation.spec.ts`, `e2e/review-detail.spec.ts`, `e2e/comments.spec.ts`, `e2e/feed.spec.ts`, `e2e/sort.spec.ts`, `playwright.config.ts` (register the global setup - Phase 1's changes are already on the branch), `package.json` (add the `seed:e2e` script and order it **before** the build, so the prerendered pages carry the fixture's data)
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e && bun run test:e2e`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P2.T1: Build the e2e dataset fixture** — covers: FR-3
   - [ ] **P2.T1.1: Define the dataset as pure data** — `src/lib/e2e-harness.ts` holds the fixed identifiers (the author/admin with the fixed test-only credential, review slugs, a reading list, a featured review, and reviews in the `translated`, `failed` and `stale` states); the unit test asserts the identifiers are stable across calls.
