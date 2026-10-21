@@ -22,25 +22,25 @@
 		"rules": {
 			"preset": "none",
 			"complexity": {
-				"noBannedTypes": "warn",
+				"noBannedTypes": "error",
 				"noUselessThisAlias": "error",
 				"noUselessTypeConstraint": "error"
 			},
 			"correctness": {
-				"noBeforeInteractiveScriptOutsideDocument": "warn",
-				"noNextAsyncClientComponent": "warn",
+				"noBeforeInteractiveScriptOutsideDocument": "error",
+				"noNextAsyncClientComponent": "error",
 				"noUnusedVariables": "error",
 				"useInlineScriptId": "error"
 			},
 			"performance": {
-				"noImgElement": "warn",
+				"noImgElement": "error",
 				"noSyncScripts": "error",
-				"noUnwantedPolyfillio": "warn",
-				"useGoogleFontPreconnect": "warn"
+				"noUnwantedPolyfillio": "error",
+				"useGoogleFontPreconnect": "error"
 			},
 			"style": {
 				"noCommonJs": "error",
-				"noHeadElement": "warn",
+				"noHeadElement": "error",
 				"noNamespace": "error",
 				"useArrayLiterals": "error",
 				"useAsConstAssertion": "error"
@@ -48,7 +48,7 @@
 			"suspicious": {
 				"noDocumentImportInPage": "error",
 				"noDuplicateEnumValues": "error",
-				"noExplicitAny": "warn",
+				"noExplicitAny": "error",
 				"noExtraNonNullAssertion": "error",
 				"noHeadImportInDocument": "error",
 				"noMisleadingInstantiator": "error",
@@ -56,7 +56,7 @@
 				"noTsIgnore": "error",
 				"noUnsafeDeclarationMerging": "error",
 				"noUnusedExpressions": "off",
-				"useGoogleFontDisplay": "warn",
+				"useGoogleFontDisplay": "error",
 				"useNamespaceKeyword": "error"
 			}
 		},
@@ -211,40 +211,40 @@
 			"linter": {
 				"rules": {
 					"a11y": {
-						"noAriaUnsupportedElements": "warn",
-						"useAltText": "warn",
-						"useAriaPropsForRole": "warn",
-						"useAriaPropsSupportedByRole": "warn",
-						"useValidAriaProps": "warn",
-						"useValidAriaValues": "warn"
+						"noAriaUnsupportedElements": "error",
+						"useAltText": "error",
+						"useAriaPropsForRole": "error",
+						"useAriaPropsSupportedByRole": "error",
+						"useValidAriaProps": "error",
+						"useValidAriaValues": "error"
 					},
 					"correctness": {
-						"noBeforeInteractiveScriptOutsideDocument": "warn",
+						"noBeforeInteractiveScriptOutsideDocument": "error",
 						"noChildrenProp": "error",
-						"noNextAsyncClientComponent": "warn",
-						"useExhaustiveDependencies": "warn",
+						"noNextAsyncClientComponent": "error",
+						"useExhaustiveDependencies": "error",
 						"useHookAtTopLevel": "error",
 						"useInlineScriptId": "error",
 						"useJsxKeyInIterable": "error"
 					},
 					"performance": {
-						"noImgElement": "warn",
-						"noSyncScripts": "warn",
-						"noUnwantedPolyfillio": "warn",
-						"useGoogleFontPreconnect": "warn"
+						"noImgElement": "error",
+						"noSyncScripts": "error",
+						"noUnwantedPolyfillio": "error",
+						"useGoogleFontPreconnect": "error"
 					},
 					"security": {
 						"noBlankTarget": "off",
 						"noDangerouslySetInnerHtmlWithChildren": "error"
 					},
-					"style": { "noHeadElement": "warn" },
+					"style": { "noHeadElement": "error" },
 					"suspicious": {
 						"noCommentText": "error",
 						"noDocumentImportInPage": "error",
 						"noDuplicateJsxProps": "error",
 						"noHeadImportInDocument": "error",
 						"noUnknownAttribute": "off",
-						"useGoogleFontDisplay": "warn"
+						"useGoogleFontDisplay": "error"
 					}
 				}
 			}
