@@ -22,27 +22,25 @@
 - **Covers:** FR-1, FR-2, AC-1, AC-2, NFR-1, NFR-5
 - **Touches:** `playwright.config.ts`, `package.json`, `src/lib/e2e-harness.ts` (new), `src/lib/__tests__/e2e-harness.test.ts` (new)
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e e2e/feed.spec.ts`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P1.T1: Serve the suite from a production build** — covers: FR-1
-  - [ ] **P1.T1.1: Point the Playwright web server at a production server** — `next start` on a dedicated port (3100, overridable), with `baseURL` matching and no reuse of a foreign server on that port.
-  - [ ] **P1.T1.2: Build before the suite** — `bun run test:e2e` runs `bun run build` and then `bunx playwright test`; raise the web server start timeout to cover a cold production start, and fail loudly when the build is missing or fails rather than serving stale code.
-- [ ] **P1.T2: Bound the worker count** — covers: FR-2
-  - [ ] **P1.T2.1: Resolve the worker count in one place** — `src/lib/e2e-harness.ts` exports `resolveWorkerCount(env)`: 3 by default, `PLAYWRIGHT_WORKERS` override, 1 when `CI` is set; wire it into `playwright.config.ts` (import the module by relative path).
-  - [ ] **P1.T2.2: Prove the resolution** — `src/lib/__tests__/e2e-harness.test.ts` (a bun unit test) asserts 3 by default, 1 in CI, and the env override.
+- [x] **P1.T1: Serve the suite from a production build** — covers: FR-1
+  - [x] **P1.T1.1: Point the Playwright web server at a production server** — `next start` on a dedicated port (3100, overridable), with `baseURL` matching and no reuse of a foreign server on that port.
+  - [x] **P1.T1.2: Build before the suite** — `bun run test:e2e` runs `bun run build` and then `bunx playwright test`; raise the web server start timeout to cover a cold production start, and fail loudly when the build is missing or fails rather than serving stale code.
+- [x] **P1.T2: Bound the worker count** — covers: FR-2
+  - [x] **P1.T2.1: Resolve the worker count in one place** — `src/lib/e2e-harness.ts` exports `resolveWorkerCount(env)`: 3 by default, `PLAYWRIGHT_WORKERS` override, 1 when `CI` is set; wire it into `playwright.config.ts` (import the module by relative path).
+  - [x] **P1.T2.2: Prove the resolution** — `src/lib/__tests__/e2e-harness.test.ts` (a bun unit test) asserts 3 by default, 1 in CI, and the env override.
 
-<!--
 **Result:** verified
-**Checkpoint:** <short-sha>
+**Checkpoint:** c6ffbdc
 **Evidence:** conductor/tracks/20261022-e2e-production-harness/verification/phase-1.md
--->
 
 ## Phase 2: Deterministic Fixture and Green Public Suite
 
 - **Goal:** The public specs run against a known dataset and the whole public suite is green.
 - **Depends on:** Phase 1
 - **Covers:** FR-3, FR-4, FR-8, AC-3, AC-4, AC-8, NFR-2, NFR-4
-- **Touches:** `src/lib/e2e-harness.ts` (extend with the dataset definition), `src/lib/__tests__/e2e-harness.test.ts` (extend with the dataset assertions), `e2e/global-setup.ts` (new), `e2e/homepage.spec.ts`, `e2e/navigation.spec.ts`, `e2e/review-detail.spec.ts`, `e2e/comments.spec.ts`, `e2e/feed.spec.ts`, `e2e/sort.spec.ts`, `playwright.config.ts` (register the global setup - Phase 1's changes are already on the branch)
+- **Touches:** `src/lib/e2e-harness.ts` (extend with the dataset definition), `src/lib/__tests__/e2e-harness.test.ts` (extend with the dataset assertions), `e2e/global-setup.ts` (new), `e2e/homepage.spec.ts`, `e2e/navigation.spec.ts`, `e2e/review-detail.spec.ts`, `e2e/comments.spec.ts`, `e2e/feed.spec.ts`, `e2e/sort.spec.ts`, `playwright.config.ts` (register the global setup - Phase 1's changes are already on the branch), `package.json` (add the `seed:e2e` script and order it **before** the build, so the prerendered pages carry the fixture's data)
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e && bun run test:e2e`
 - **Status:** pending
 
