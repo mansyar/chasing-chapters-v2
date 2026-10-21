@@ -651,6 +651,30 @@ describe("runTranslationPipeline", () => {
 		expect(payload.update.mock.calls.length).toBe(4);
 	});
 
+	test("the guard skips the run when the review no longer exists", async () => {
+		const payload = makePayload();
+		payload.findByID.mockImplementation(async () => {
+			throw Object.assign(new Error("Not Found"), {
+				status: 404,
+				name: "NotFound",
+			});
+		});
+		const translateModule = await import("../../lib/translate");
+		translateRichTextSpy = spyOn(
+			translateModule,
+			"translateRichText",
+		).mockImplementation(async () => makeRichText(para("ID:Hello world")));
+
+		const doc = makeDoc();
+		await runTranslationPipeline(payload as unknown as Payload, doc, {
+			abortIfTranslationNewerThan: new Date().toISOString(),
+		});
+
+		// The deleted review is skipped, not translated: nothing was written.
+		expect(payload.update).not.toHaveBeenCalled();
+		expect(translateRichTextSpy).not.toHaveBeenCalled();
+	});
+
 	test("the remaining time is passed to the translation layer", async () => {
 		const payload = makePayload();
 		const translateModule = await import("../../lib/translate");
