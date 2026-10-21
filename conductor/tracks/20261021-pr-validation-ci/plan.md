@@ -41,16 +41,20 @@ After phase acceptance the primary agent appends under the phase:
 - **Covers:** FR-1, FR-2, FR-6; NFR-2; AC-1, AC-2, AC-3, AC-4
 - **Touches:** `.github/workflows/ci.yml` (fixes only if validation exposes defects), `conductor/tracks/<track-id>/verification/*`
 - **Verification:** `bun run typecheck && bun run lint && bun test`; live CI run URLs recorded as evidence in `verification/phase-2.md`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P2.T1: Green-path validation** — covers: FR-1, FR-2, NFR-2; AC-1, AC-4
+- [x] **P2.T1: Green-path validation** — covers: FR-1, FR-2, NFR-2; AC-1, AC-4
   - Open a scratch draft PR from the track branch (or a scratch branch off it); observe the CI run execute all four steps and go green; record run URL and duration.
-- [ ] **P2.T2: Red-path validation (strict lint)** — covers: FR-4, FR-2; AC-2
+- [x] **P2.T2: Red-path validation (strict lint)** — covers: FR-4, FR-2; AC-2
   - On the scratch branch, commit a deliberate lint violation (e.g. a stray `any`); confirm the lint step fails at error severity and the run goes red; revert the violation commit.
-- [ ] **P2.T3: Required check enforcement** — covers: FR-6; AC-3
+- [x] **P2.T3: Required check enforcement** — covers: FR-6; AC-3
   - Apply branch protection on `main` via `gh api` requiring the CI check; verify GitHub blocks merge while the scratch PR is red and allows it when green; close the scratch PR.
-- [ ] **P2.T4: Final integration check** — covers: NFR-2
+- [x] **P2.T4: Final integration check** — covers: NFR-2
   - Confirm a complete CI run duration ≤ 5 minutes; record timings in evidence.
+
+**Result:** verified
+**Checkpoint:** 18af5a4
+**Evidence:** conductor/tracks/20261021-pr-validation-ci/verification/phase-2.md
 
 <!--
 Review fixes are appended by `conductor-review` as `## Phase R<n>: Review Fixes` when needed.
