@@ -1,5 +1,6 @@
 # Tracks Registry
 
+- [x] **Track: Translation Pipeline Reliability** - [20261021-translation-pipeline-reliability](./archive/20261021-translation-pipeline-reliability/index.md) - feature - high
 - [x] **Track: PR Validation CI** — [20261021-pr-validation-ci](./archive/20261021-pr-validation-ci/index.md) — chore — high
 - [x] **Track: Lint Debt Cleanup** — [20261021-lint-debt-cleanup](./archive/20261021-lint-debt-cleanup/index.md) — refactor — medium
 - [x] **Track: PRD Parity - RSS Feed, Sort Options & Cleanup** *Link: [prd_parity_20261008/index.md](./archive/prd_parity_20261008/index.md)*

@@ -45,6 +45,25 @@ export function isStale(
 	return english.getTime() > translation.getTime();
 }
 
+export interface StalenessInput {
+	translationStatus?: string | null | undefined;
+	englishUpdatedAt?: string | Date | null | undefined;
+	translationUpdatedAt?: string | Date | null | undefined;
+}
+
+/**
+ * Backfill selection predicate: a review should be marked `stale` when its
+ * recorded translation is complete (`translated`) and the English content
+ * is newer than the stored translation. Reviews that are `pending`,
+ * `failed`, or `untranslated` are never touched, and reviews without both
+ * timestamps are skipped (no dates to compare — mirrors the SQL backfill).
+ */
+export function shouldBackfillToStale(input: StalenessInput): boolean {
+	if (input.translationStatus !== "translated") return false;
+	if (!input.englishUpdatedAt || !input.translationUpdatedAt) return false;
+	return isStale(input.englishUpdatedAt, input.translationUpdatedAt);
+}
+
 export interface FailedStatus {
 	status: "failed";
 	error: string;

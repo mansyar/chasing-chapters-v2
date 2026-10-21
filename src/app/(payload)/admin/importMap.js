@@ -1,3 +1,4 @@
+import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from "@payloadcms/next/rsc";
 import {
 	AlignFeatureClient as AlignFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
 	BlockquoteFeatureClient as BlockquoteFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
@@ -26,11 +27,14 @@ import {
 	RscEntryLexicalField as RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e,
 } from "@payloadcms/richtext-lexical/rsc";
 import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from "@payloadcms/storage-s3/client";
-import { CollectionCards as CollectionCards_ab83ff7e88da8d3530831f296ec4756a } from "@payloadcms/ui/rsc";
 import { AdminLogin as AdminLogin_fa00c180b3f657f6de380c1d2896c16a } from "@/components/AdminLogin";
 import { AdminStyleProvider as AdminStyleProvider_28a320d35397731301b152c32111b42a } from "@/components/AdminStyleProvider";
 import { AnalyticsDashboard as AnalyticsDashboard_d8816c4bca290ed5b5596bb3533c3751 } from "@/components/admin/AnalyticsDashboard";
+import { BulkRetranslateAction as BulkRetranslateAction_708c1e8afd07e71504f16fd3ad23a526 } from "@/components/admin/BulkRetranslateAction";
+import { TranslationAttentionBell as TranslationAttentionBell_4614064c5a55676044bf5957b5262af2 } from "@/components/admin/TranslationAttentionBell";
+import { RetranslateButton as RetranslateButton_8e2b4cee1966104759db58c9db42cd22 } from "../../../collections/Reviews/admin/RetranslateButton";
 
+/** @type import('payload').ImportMap */
 export const importMap = {
 	"@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell":
 		RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
@@ -78,14 +82,20 @@ export const importMap = {
 		BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
 	"@payloadcms/richtext-lexical/client#ItalicFeatureClient":
 		ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
+	"/collections/Reviews/admin/RetranslateButton#RetranslateButton":
+		RetranslateButton_8e2b4cee1966104759db58c9db42cd22,
+	"@/components/admin/TranslationAttentionBell#TranslationAttentionBell":
+		TranslationAttentionBell_4614064c5a55676044bf5957b5262af2,
+	"@/components/admin/BulkRetranslateAction#BulkRetranslateAction":
+		BulkRetranslateAction_708c1e8afd07e71504f16fd3ad23a526,
 	"@/components/AdminStyleProvider#AdminStyleProvider":
 		AdminStyleProvider_28a320d35397731301b152c32111b42a,
-	"@payloadcms/storage-s3/client#S3ClientUploadHandler":
-		S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,
 	"@/components/AdminLogin#AdminLogin":
 		AdminLogin_fa00c180b3f657f6de380c1d2896c16a,
 	"@/components/admin/AnalyticsDashboard#AnalyticsDashboard":
 		AnalyticsDashboard_d8816c4bca290ed5b5596bb3533c3751,
-	"@payloadcms/ui/rsc#CollectionCards":
-		CollectionCards_ab83ff7e88da8d3530831f296ec4756a,
+	"@payloadcms/next/rsc#CollectionCards":
+		CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1,
+	"@payloadcms/storage-s3/client#S3ClientUploadHandler":
+		S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,
 };

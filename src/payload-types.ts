@@ -337,6 +337,10 @@ export interface Review {
   translationStatus?: ('untranslated' | 'pending' | 'translated' | 'failed' | 'stale') | null;
   translationError?: string | null;
   translationUpdatedAt?: string | null;
+  /**
+   * When the English content last changed. Compared with the translation timestamp to detect a stale translation.
+   */
+  englishUpdatedAt?: string | null;
   views?: number | null;
   likes?: number | null;
   publishDate?: string | null;
@@ -680,6 +684,7 @@ export interface ReviewsSelect<T extends boolean = true> {
   translationStatus?: T;
   translationError?: T;
   translationUpdatedAt?: T;
+  englishUpdatedAt?: T;
   views?: T;
   likes?: T;
   publishDate?: T;
