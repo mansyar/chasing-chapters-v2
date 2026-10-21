@@ -41,7 +41,7 @@ After phase acceptance the primary agent appends under the phase:
 - **Covers:** FR-1, FR-2, FR-6; NFR-2; AC-1, AC-2, AC-3, AC-4
 - **Touches:** `.github/workflows/ci.yml` (fixes only if validation exposes defects), `conductor/tracks/<track-id>/verification/*`
 - **Verification:** `bun run typecheck && bun run lint && bun test`; live CI run URLs recorded as evidence in `verification/phase-2.md`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P2.T1: Green-path validation** — covers: FR-1, FR-2, NFR-2; AC-1, AC-4
   - Open a scratch draft PR from the track branch (or a scratch branch off it); observe the CI run execute all four steps and go green; record run URL and duration.
