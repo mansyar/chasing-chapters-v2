@@ -35,6 +35,9 @@ export default buildConfig({
 			baseDir: path.resolve(dirname),
 		},
 		components: {
+			actions: [
+				"@/components/admin/TranslationAttentionBell#TranslationAttentionBell",
+			],
 			providers: ["@/components/AdminStyleProvider#AdminStyleProvider"],
 			views: {
 				login: {

@@ -30,6 +30,7 @@ import { CollectionCards as CollectionCards_ab83ff7e88da8d3530831f296ec4756a } f
 import { AdminLogin as AdminLogin_fa00c180b3f657f6de380c1d2896c16a } from "@/components/AdminLogin";
 import { AdminStyleProvider as AdminStyleProvider_28a320d35397731301b152c32111b42a } from "@/components/AdminStyleProvider";
 import { AnalyticsDashboard as AnalyticsDashboard_d8816c4bca290ed5b5596bb3533c3751 } from "@/components/admin/AnalyticsDashboard";
+import { TranslationAttentionBell as TranslationAttentionBell_6e6a0ba7a2d23dcf57d595ba4a1a06ad } from "@/components/admin/TranslationAttentionBell";
 
 export const importMap = {
 	"@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell":
@@ -88,4 +89,6 @@ export const importMap = {
 		AnalyticsDashboard_d8816c4bca290ed5b5596bb3533c3751,
 	"@payloadcms/ui/rsc#CollectionCards":
 		CollectionCards_ab83ff7e88da8d3530831f296ec4756a,
+	"@/components/admin/TranslationAttentionBell#TranslationAttentionBell":
+		TranslationAttentionBell_6e6a0ba7a2d23dcf57d595ba4a1a06ad,
 };
