@@ -84,6 +84,9 @@ permissions:
   - action: shell
     resource: "git ls-files *"
     effect: allow
+  - action: shell
+    resource: "git rm *"
+    effect: allow
   # --- PROJECT COMMANDS START ---
   # From conductor/workflow.md Workflow Config
   - action: shell
@@ -139,6 +142,9 @@ permissions:
     effect: allow
   - action: shell
     resource: "bunx payload migrate:create *"
+    effect: allow
+  - action: shell
+    resource: "bunx payload generate:types"
     effect: allow
   - action: shell
     resource: "bunx biome check --write *"
