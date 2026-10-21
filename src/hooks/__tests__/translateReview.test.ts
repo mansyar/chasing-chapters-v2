@@ -3,61 +3,115 @@ import {
 	beforeEach,
 	describe,
 	expect,
+	type Mock,
 	mock,
 	spyOn,
 	test,
 } from "bun:test";
+import type { Payload } from "payload";
+import type { RichTextDocument } from "../../lib/utils";
+import type { Review } from "../../payload-types";
 
 // ---------------------------------------------------------------------------
 // Shared fixtures
 // ---------------------------------------------------------------------------
 
-type TextNode = { type: "text"; text: string };
+type TextNode = { type: "text"; text: string; version: number };
 type ParagraphNode = {
 	type: "paragraph";
 	format?: string;
-	children: (TextNode | { type: "linebreak" })[];
+	version: number;
+	children: TextNode[];
 };
-type RichText = { root: { type: "root"; children: ParagraphNode[] } };
+/** Fixture rich text shape, assignable to Review["reviewContent"]. */
+type RichText = {
+	root: {
+		type: "root";
+		children: ParagraphNode[];
+		direction: "ltr" | null;
+		format: "";
+		indent: number;
+		version: number;
+	};
+};
 
 function makeRichText(...paragraphs: ParagraphNode[]): RichText {
-	return { root: { type: "root", children: paragraphs } };
+	return {
+		root: {
+			type: "root",
+			children: paragraphs,
+			direction: null,
+			format: "",
+			indent: 0,
+			version: 1,
+		},
+	};
 }
 
 function para(text: string, format?: string): ParagraphNode {
 	return {
 		type: "paragraph",
 		...(format ? { format } : {}),
-		children: [{ type: "text", text }],
+		version: 1,
+		children: [{ type: "text", text, version: 1 }],
 	};
 }
 
+type TranslateReviewModule = typeof import("../translateReview");
+type TranslateModule = typeof import("../../lib/translate");
+
+type TranslateRichTextSpy = ReturnType<
+	typeof spyOn<TranslateModule, "translateRichText">
+>;
+type TranslateTextSpy = ReturnType<
+	typeof spyOn<TranslateModule, "translateText">
+>;
+
+/** Arg shape of the payload.update calls the translation pipeline makes. */
+type UpdateArgs = {
+	collection: string;
+	id: number;
+	locale?: string;
+	data: {
+		translationStatus?: string;
+		translationError?: string | null;
+		translationUpdatedAt?: string;
+		/** Optional: the "pending" status update sends no content fields. */
+		reviewContent?: RichText;
+		favoriteQuotes: { quote: string; page?: string | null }[];
+		[key: string]: unknown;
+	};
+	context: { skipTranslation?: boolean };
+};
+
 /** Minimal review-shaped doc for decision + pipeline tests. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function makeDoc(overrides: Record<string, any> = {}): Record<string, any> {
+function makeDoc(overrides: Partial<Review> = {}): Review {
 	return {
 		id: 1,
 		title: "A Great Book",
-		_status: "published",
-		autoTranslate: true,
+		bookAuthor: "Some Author",
+		rating: 5,
+		coverImage: 1,
+		author: 1,
 		reviewContent: makeRichText(para("Hello world")),
 		whatILoved: null,
 		whatCouldBeBetter: null,
 		perfectFor: null,
 		favoriteQuotes: null,
+		autoTranslate: true,
 		translationStatus: "translated",
+		updatedAt: "2026-01-01T00:00:00.000Z",
+		createdAt: "2026-01-01T00:00:00.000Z",
+		_status: "published",
 		...overrides,
 	};
 }
 
 /** Minimal mocked Payload Local API. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function makePayload(): { update: any; findByID: any } {
+function makePayload() {
 	return {
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		update: mock(async (_args: any) => ({})),
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		findByID: mock(async (_args: any) => ({})),
+		update: mock(async (_args: UpdateArgs) => ({})),
+		findByID: mock(async (_args: { collection: string; id: number }) => ({})),
 	};
 }
 
@@ -89,8 +143,7 @@ describe("decideTranslationAction", () => {
 	// @google-cloud/translate stub (see translate-batch.test.ts for precedent).
 	// Decision logic is pure — extractPlainText never touches the network — so
 	// the import is safe.
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	let decideTranslationAction: any;
+	let decideTranslationAction: TranslateReviewModule["decideTranslationAction"];
 
 	beforeEach(async () => {
 		const mod = await import("../translateReview");
@@ -186,13 +239,10 @@ describe("decideTranslationAction", () => {
 });
 
 describe("runTranslationPipeline", () => {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	let runTranslationPipeline: any;
+	let runTranslationPipeline: TranslateReviewModule["runTranslationPipeline"];
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	let translateRichTextSpy: any;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	let translateTextSpy: any;
+	let translateRichTextSpy: TranslateRichTextSpy;
+	let translateTextSpy: TranslateTextSpy;
 
 	beforeEach(async () => {
 		const mod = await import("../translateReview");
@@ -206,18 +256,21 @@ describe("runTranslationPipeline", () => {
 
 	test("pending → translated: updates status then saves ID content with translated text", async () => {
 		const payload = makePayload();
+		const translateModule = await import("../../lib/translate");
 		translateRichTextSpy = spyOn(
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			(await import("../../lib/translate")) as any,
+			translateModule,
 			"translateRichText",
-		).mockImplementation(async (rt: RichText) =>
+		).mockImplementation(async (rt: RichTextDocument | null | undefined) =>
 			makeRichText(
-				para(`ID:${(rt.root.children[0].children[0] as TextNode).text}`),
+				// Safe cast: the pipeline passes doc.reviewContent straight through,
+				// and makeDoc builds that field with makeRichText, whose shape is
+				// exactly this fixture's RichText type (RichTextDocument keeps the
+				// traversed fields `unknown`).
+				para(`ID:${(rt as RichText).root.children[0].children[0].text}`),
 			),
 		);
 		translateTextSpy = spyOn(
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			(await import("../../lib/translate")) as any,
+			translateModule,
 			"translateText",
 		).mockImplementation(async (t: string) => `ID:${t}`);
 
@@ -225,7 +278,9 @@ describe("runTranslationPipeline", () => {
 			favoriteQuotes: [{ quote: "A fine line", page: "12" }],
 		});
 
-		await runTranslationPipeline(payload, doc);
+		// Partial Payload stub: the full Payload interface is impractical to
+		// implement in a unit test, so the mock is widened at the call boundary.
+		await runTranslationPipeline(payload as unknown as Payload, doc);
 
 		// First update: pending
 		const firstCall = payload.update.mock.calls[0][0];
@@ -240,18 +295,26 @@ describe("runTranslationPipeline", () => {
 		expect(secondCall.context.skipTranslation).toBe(true);
 		expect(secondCall.data.translationStatus).toBe("translated");
 		expect(secondCall.data.translationUpdatedAt).toBeTruthy();
-		expect(
-			secondCall.data.reviewContent.root.children[0].children[0].text,
-		).toBe("ID:Hello world");
+		// Explicit guard: with reviewContent optional on the mock type, fail
+		// loudly here rather than dereferencing a possibly-undefined value.
+		const translatedContent = secondCall.data.reviewContent;
+		if (!translatedContent) {
+			throw new Error(
+				"expected second update to include translated reviewContent",
+			);
+		}
+		expect(translatedContent.root.children[0].children[0].text).toBe(
+			"ID:Hello world",
+		);
 		expect(secondCall.data.favoriteQuotes[0].quote).toBe("ID:A fine line");
 		expect(secondCall.data.favoriteQuotes[0].page).toBe("12");
 	});
 
 	test("failure → ID content NOT updated, status failed with error message", async () => {
 		const payload = makePayload();
+		const translateModule = await import("../../lib/translate");
 		translateRichTextSpy = spyOn(
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			(await import("../../lib/translate")) as any,
+			translateModule,
 			"translateRichText",
 		).mockImplementation(async () => {
 			const { TranslationError } = await import("../../lib/translate");
@@ -260,7 +323,7 @@ describe("runTranslationPipeline", () => {
 
 		const doc = makeDoc();
 
-		await runTranslationPipeline(payload, doc);
+		await runTranslationPipeline(payload as unknown as Payload, doc);
 
 		// Only the "pending" update happened — no ID content update.
 		// (The status update carries no locale: status fields are non-localized.)

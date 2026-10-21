@@ -1,8 +1,14 @@
 import { describe, expect, it } from "bun:test";
 import formatSlug from "../formatSlug";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SlugHookFn = (args: any) => string | undefined;
+/** Minimal field-hook args shape that formatSlug actually reads. */
+type SlugHookArgs = {
+	value: string | null | undefined;
+	data?: Record<string, unknown>;
+	originalDoc?: Record<string, unknown>;
+};
+
+type SlugHookFn = (args: SlugHookArgs) => string | undefined;
 
 // Helper to create mock field hook context
 const createContext = (

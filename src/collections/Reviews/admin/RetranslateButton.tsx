@@ -56,8 +56,7 @@ export const RetranslateButton: React.FC = () => {
 								}
 							: {}),
 					},
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				} as any);
+				});
 			}
 
 			if (data.ok && data.translationStatus === "translated") {

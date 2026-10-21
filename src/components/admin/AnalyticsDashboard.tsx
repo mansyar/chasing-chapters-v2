@@ -1,7 +1,7 @@
 import configPromise from "@payload-config";
 import { Gutter } from "@payloadcms/ui";
 import { BookOpen, Eye, Heart, Star } from "lucide-react";
-import type { AdminViewServerProps } from "payload";
+import type { AdminViewServerProps, Where } from "payload";
 import { getPayload } from "payload";
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,8 +16,7 @@ export const AnalyticsDashboard = async ({
 
 	// 1. Fetch Reviews
 	// If admin, fetch all. If writer, fetch only theirs.
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const where: any = {};
+	const where: Where = {};
 	if (user?.role === "writer") {
 		where.author = {
 			equals: user?.id,
@@ -32,11 +31,7 @@ export const AnalyticsDashboard = async ({
 	});
 
 	// 2. Calculate Stats
-	const totalViews = reviews.reduce(
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		(acc, r) => acc + ((r as any).views || 0),
-		0,
-	);
+	const totalViews = reviews.reduce((acc, r) => acc + (r.views || 0), 0);
 	const totalLikes = reviews.reduce((acc, r) => acc + (r.likes || 0), 0);
 	const totalReviews = reviews.length;
 	const avgRating =
@@ -127,10 +122,7 @@ export const AnalyticsDashboard = async ({
 													{review.title}
 												</a>
 											</td>
-											<td className="p-4 align-middle">
-												{/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-												{(review as any).views || 0}
-											</td>
+											<td className="p-4 align-middle">{review.views || 0}</td>
 											<td className="p-4 align-middle">{review.likes || 0}</td>
 											<td className="p-4 align-middle">{review.rating}/5</td>
 										</tr>

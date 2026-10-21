@@ -3,7 +3,9 @@ import { BookOpen, Search, X } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import type { Where } from "payload";
 import { getPayload } from "payload";
+
 import { GenreSelect } from "@/components/GenreSelect";
 import { ReviewCard } from "@/components/ReviewCard";
 import { SortSelect } from "@/components/SortSelect";
@@ -51,7 +53,7 @@ export default async function BrowsePage({ searchParams }: PageProps) {
 	const limit = 9;
 	const payload = await getPayload({ config: configPromise });
 
-	const where: any = {
+	const where: Where = {
 		_status: {
 			equals: "published",
 		},

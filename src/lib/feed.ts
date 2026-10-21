@@ -1,5 +1,5 @@
 import { resolveMediaUrl } from "./media-url";
-import { extractTextFromRichText } from "./utils";
+import { extractTextFromRichText, type RichTextDocument } from "./utils";
 
 /**
  * RSS 2.0 feed builder for published reviews.
@@ -22,7 +22,7 @@ export interface FeedReview {
 	publishDate?: string | null;
 	createdAt?: string | null;
 	_status?: string | null;
-	reviewContent?: unknown;
+	reviewContent?: RichTextDocument | null;
 	coverImage?: unknown;
 }
 
@@ -51,7 +51,7 @@ export function rfc822(date: Date | string): string {
  * Collapses whitespace and truncates on a word boundary with an ellipsis.
  */
 export function getReviewExcerpt(
-	richText: unknown,
+	richText: RichTextDocument | null | undefined,
 	maxLength: number = EXCERPT_MAX_LENGTH,
 ): string {
 	const text = extractTextFromRichText(richText).replace(/\s+/g, " ").trim();

@@ -1,6 +1,12 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("Comments", () => {
+	// Run serially in one worker: parallel workers all submit comments from
+	// localhost and exhaust the shared per-IP rate-limit bucket
+	// (rateLimit(key, 5, 60)), making "should submit comment successfully"
+	// flake under full-suite parallelism.
+	test.describe.configure({ mode: "serial" });
+
 	// Helper to navigate to a review page
 	async function goToFirstReview(page: import("@playwright/test").Page) {
 		await page.goto("/reviews");

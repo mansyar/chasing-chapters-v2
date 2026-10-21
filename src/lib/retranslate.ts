@@ -1,17 +1,17 @@
 import type { Payload } from "payload";
 import { runTranslationPipeline } from "../hooks/translateReview";
+import type { Review } from "../payload-types";
 
 /** Outcome of the admin "Re-translate now" action. */
 export interface RetranslateResult {
 	ok: boolean;
 	httpStatus: 200 | 401 | 403 | 404;
 	/** Final translation status after the pipeline ran (when ok). */
-	translationStatus?: string;
+	translationStatus?: string | null;
 	/** Failure details when the translation pipeline marked the review failed. */
 	error?: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RetranslateUser = { id: number; role: string } | null | undefined;
 
 /**
@@ -28,8 +28,7 @@ export async function retranslateReview(
 		return { ok: false, httpStatus: 401, error: "Authentication required" };
 	}
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	let doc: any;
+	let doc: Review;
 	try {
 		doc = await payload.findByID({ collection: "reviews", id, depth: 0 });
 	} catch {
@@ -55,14 +54,13 @@ export async function retranslateReview(
 		depth: 0,
 	});
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const result: RetranslateResult = {
 		ok: true,
 		httpStatus: 200,
-		translationStatus: (updated as any).translationStatus,
+		translationStatus: updated.translationStatus,
 	};
-	if ((updated as any).translationError) {
-		result.error = (updated as any).translationError;
+	if (updated.translationError) {
+		result.error = updated.translationError;
 	}
 	return result;
 }
