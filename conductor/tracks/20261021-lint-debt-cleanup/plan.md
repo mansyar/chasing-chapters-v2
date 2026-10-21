@@ -88,7 +88,7 @@
   --reporter=summary` reports 0 warnings (AC-1), all 236 unit tests pass, e2e
   suite passes, and `: any` grep over touched files returns nothing outside
   strings/comments (AC-5).
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P3.T1: Type `src/hooks/__tests__/translateReview.test.ts` (13 warnings)** — covers: FR-1, NFR-3
   - [ ] **P3.T1.1: Retype mocks with concrete shapes; flag (do not adjust) any test whose observations would change (spec Edge Cases)**
