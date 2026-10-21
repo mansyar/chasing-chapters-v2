@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -77,11 +75,17 @@ export function ReviewCard({
 				<CardFooter className="px-4 pt-0 gap-2 flex-wrap">
 					{review.genres &&
 						Array.isArray(review.genres) &&
-						review.genres.slice(0, 2).map((genre: any) => (
-							<Badge key={genre.id} variant="secondary" className="font-normal">
-								{genre.name}
-							</Badge>
-						))}
+						review.genres.slice(0, 2).map((genre) =>
+							typeof genre === "number" ? null : (
+								<Badge
+									key={genre.id}
+									variant="secondary"
+									className="font-normal"
+								>
+									{genre.name}
+								</Badge>
+							),
+						)}
 				</CardFooter>
 			</Card>
 		</Link>

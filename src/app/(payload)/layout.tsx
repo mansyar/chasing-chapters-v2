@@ -2,6 +2,7 @@
 import configPromise from "@payload-config";
 import "@payloadcms/next/css";
 import { handleServerFunctions, RootLayout } from "@payloadcms/next/layouts";
+import type { ServerFunctionClientArgs } from "payload";
 /* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
 import React from "react";
 
@@ -13,8 +14,7 @@ type Args = {
 	children: React.ReactNode;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const serverFunction = async (args: any) => {
+const serverFunction = async (args: ServerFunctionClientArgs) => {
 	"use server";
 	return handleServerFunctions({
 		...args,

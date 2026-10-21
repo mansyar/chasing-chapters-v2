@@ -44,10 +44,6 @@ interface MarqueeProps extends ComponentPropsWithoutRef<"div"> {
 	 * ARIA live region politeness
 	 */
 	ariaLive?: "off" | "polite" | "assertive";
-	/**
-	 * ARIA role
-	 */
-	ariaRole?: string;
 }
 
 export function Marquee({
@@ -59,7 +55,6 @@ export function Marquee({
 	repeat = 4,
 	ariaLabel,
 	ariaLive = "off",
-	ariaRole = "marquee",
 	...props
 }: MarqueeProps) {
 	const marqueeRef = useRef<HTMLDivElement>(null);
@@ -79,7 +74,7 @@ export function Marquee({
 			)}
 			aria-label={ariaLabel}
 			aria-live={ariaLive}
-			role={ariaRole}
+			role="region"
 			tabIndex={0}
 		>
 			{React.useMemo(

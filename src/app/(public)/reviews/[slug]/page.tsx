@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react/no-unescaped-entities */
-
 import configPromise from "@payload-config";
 import { RichText } from "@payloadcms/richtext-lexical/react";
 import { Calendar, Star, User } from "lucide-react";
@@ -24,7 +21,7 @@ import {
 	generateReviewSchema,
 	SITE_URL,
 } from "@/lib/seo/structured-data";
-import type { Media } from "@/payload-types";
+import type { Author, Media } from "@/payload-types";
 
 // Enable ISR with 60 second revalidation for better caching
 export const revalidate = 60;
@@ -201,7 +198,7 @@ export default async function ReviewPage({ params, searchParams }: PageProps) {
 							<div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 text-sm text-muted-foreground">
 								<div className="flex items-center gap-1">
 									<User className="h-4 w-4" />
-									<span>{(review.author as any)?.name}</span>
+									<span>{(review.author as Author)?.name}</span>
 								</div>
 								<Separator orientation="vertical" className="h-4" />
 								<div className="flex items-center gap-1">
@@ -218,11 +215,13 @@ export default async function ReviewPage({ params, searchParams }: PageProps) {
 							<div className="flex flex-wrap justify-center lg:justify-start gap-2">
 								{review.genres &&
 									Array.isArray(review.genres) &&
-									review.genres.map((genre: any) => (
-										<Badge key={genre.id} variant="secondary">
-											{genre.name}
-										</Badge>
-									))}
+									review.genres.map((genre) =>
+										typeof genre === "number" ? null : (
+											<Badge key={genre.id} variant="secondary">
+												{genre.name}
+											</Badge>
+										),
+									)}
 
 								<LanguageToggle />
 								<ShareButton
@@ -291,7 +290,7 @@ export default async function ReviewPage({ params, searchParams }: PageProps) {
 								Favorite Quotes
 							</h3>
 							<div className="grid gap-6">
-								{review.favoriteQuotes.map((item: any, i: number) => (
+								{review.favoriteQuotes.map((item, i) => (
 									<blockquote
 										key={i}
 										className="relative pl-8 italic text-xl text-muted-foreground border-l-4 border-primary/30"
@@ -318,11 +317,13 @@ export default async function ReviewPage({ params, searchParams }: PageProps) {
 							<div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
 								<h3 className="font-semibold mb-4">Tags</h3>
 								<div className="flex flex-wrap gap-2">
-									{review.tags.map((tag: any) => (
-										<Badge key={tag.id} variant="outline">
-											{tag.name}
-										</Badge>
-									))}
+									{review.tags.map((tag) =>
+										typeof tag === "number" ? null : (
+											<Badge key={tag.id} variant="outline">
+												{tag.name}
+											</Badge>
+										),
+									)}
 								</div>
 							</div>
 						)}
@@ -334,20 +335,22 @@ export default async function ReviewPage({ params, searchParams }: PageProps) {
 							<div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
 								<h3 className="font-semibold mb-4">Mood</h3>
 								<div className="flex flex-wrap gap-2">
-									{review.moodTags.map((mood: any) => (
-										<div
-											key={mood.id}
-											className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-											style={{
-												backgroundColor: mood.color + "20",
-												color: mood.color,
-												borderColor: mood.color + "40",
-											}}
-										>
-											{mood.icon && <span className="mr-1">{mood.icon}</span>}
-											{mood.name}
-										</div>
-									))}
+									{review.moodTags.map((mood) =>
+										typeof mood === "number" ? null : (
+											<div
+												key={mood.id}
+												className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+												style={{
+													backgroundColor: mood.color + "20",
+													color: mood.color,
+													borderColor: mood.color + "40",
+												}}
+											>
+												{mood.icon && <span className="mr-1">{mood.icon}</span>}
+												{mood.name}
+											</div>
+										),
+									)}
 								</div>
 							</div>
 						)}

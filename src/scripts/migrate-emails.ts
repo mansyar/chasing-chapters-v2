@@ -62,7 +62,7 @@ async function migrateEmails() {
 				collection: "commenters",
 				id: commenter.id,
 				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				data: { emailHash: hash } as any,
+				data: { emailHash: hash },
 			});
 
 			console.log(

@@ -30,18 +30,18 @@ export default function ModernBookCarousel({
 		}
 	};
 
-	const scrollTo = (index: number) => {
+	const scrollTo = React.useCallback((index: number) => {
 		if (!scrollRef.current) return;
 		scrollRef.current.scrollTo({
 			left: index * scrollRef.current.clientWidth,
 			behavior: "smooth",
 		});
-	};
+	}, []);
 
 	const next = React.useCallback(() => {
 		const nextIndex = (activeSlide + 1) % reviews.length;
 		scrollTo(nextIndex);
-	}, [activeSlide, reviews.length]);
+	}, [activeSlide, reviews.length, scrollTo]);
 
 	const prev = () => {
 		const prevIndex = (activeSlide - 1 + reviews.length) % reviews.length;
