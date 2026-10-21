@@ -14,6 +14,22 @@ jobs:
     name: Typecheck, Lint, Test, Build
     runs-on: ubuntu-latest
 
+    # Placeholder values, not secrets: src/lib/env.ts is zod-validated at
+    # module load, so both `bun test` (tests import env.ts) and `next build`
+    # (prerendering loads payload.config) need these present. The build/test
+    # perform no real media operations, so dummy values satisfy validation
+    # while keeping the workflow secret-free (NFR-3).
+    env:
+      # Same variable name as deploy.yml and src/lib/env.ts (the app reads
+      # DATABASE_URI, not DATABASE_URL). Points at the postgres service
+      # container, which prerendering needs.
+      DATABASE_URI: postgresql://postgres:postgrespassword@localhost:5432/chasing-chapters
+      PAYLOAD_SECRET: ci-build-only-placeholder-secret-32-chars-min
+      R2_BUCKET: ci-build-bucket
+      R2_ENDPOINT: https://ci-build-placeholder.invalid
+      R2_ACCESS_KEY_ID: ci-build-placeholder-access-key
+      R2_SECRET_ACCESS_KEY: ci-build-placeholder-secret-key
+
     services:
       postgres:
         image: postgres:16
@@ -38,13 +54,15 @@ jobs:
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.2
+          # 1.4.3: `bun check` (the typecheck script's engine) exists from
+          # 1.4.3 - CI run 39567563082 proved 1.4.2 lacks it.
+          bun-version: 1.4.3
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
       - name: Run database migrations
-        # `echo y |` auto-accepts Payload's one-time dev-push drift prompt —
+        # `echo y |` auto-accepts Payload's one-time dev-push drift prompt -
         # same pattern as deploy.yml. With a clean migration-managed DB
         # nothing reads stdin and this is a no-op. Required because
         # prerendering queries schema during `next build`.
@@ -60,18 +78,4 @@ jobs:
         run: bun test
 
       - name: Build
-        env:
-          # Same variable name as deploy.yml and src/lib/env.ts (the app reads
-          # DATABASE_URI, not DATABASE_URL). Points at the postgres service
-          # container above, which `next build` needs for prerendering.
-          DATABASE_URI: postgresql://postgres:postgrespassword@localhost:5432/chasing-chapters
-          # Placeholder values, not secrets: src/lib/env.ts validates these via
-          # zod when payload.config loads during the build. The build performs
-          # no real media operations, so dummy values satisfy validation while
-          # keeping the workflow secret-free (NFR-3).
-          PAYLOAD_SECRET: ci-build-only-placeholder-secret-32-chars-min
-          R2_BUCKET: ci-build-bucket
-          R2_ENDPOINT: https://ci-build-placeholder.invalid
-          R2_ACCESS_KEY_ID: ci-build-placeholder-access-key
-          R2_SECRET_ACCESS_KEY: ci-build-placeholder-secret-key
         run: bun run build

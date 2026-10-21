@@ -63,7 +63,7 @@ After phase acceptance the primary agent appends under the phase:
 - **Covers:** F1, F2, F3, F4, F5
 - **Touches:** `.github/workflows/ci.yml`, `conductor/tracks/20261021-pr-validation-ci/spec.md`, `conductor/tracks/20261021-pr-validation-ci/verification/*`, branch protection via `gh api`
 - **Verification:** `bun run typecheck && bun run lint && bun test`; live CI run from a branch containing the committed ci.yml must be green (migrate + test + build steps green without a .env); protection re-applied with `enforce_admins: true`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **R1.T1: Restore validated CI config (F1, F2)** — covers: FR-2, NFR-1, AC-1
   - Pin `bun-version: 1.4.3` with the justification comment (run 39567563082 proved 1.4.2 lacks `bun check`).

@@ -50,7 +50,7 @@ broken site. The cost of not solving: broken `main` directly risks production.
 - Promote all `"warn"` severities in `biome.json` to `"error"` (repo baseline
   is currently 0 findings, so this is a no-op today by construction).
 - Concurrency group so superseded runs on the same PR are cancelled.
-- Bun pinned to `1.4.2` (matching `deploy.yml`).
+- Bun pinned to `1.4.3` (amended 2026-10-21 — `bun check` requires it; `deploy.yml` stays on `1.4.2`).
 - Branch protection on `main` requiring the CI check before merge.
 
 ### Out of Scope
@@ -68,7 +68,7 @@ broken site. The cost of not solving: broken `main` directly risks production.
 | ID  | Requirement                                                                                                     | Priority |
 | --- | --------------------------------------------------------------------------------------------------------------- | -------- |
 | FR-1 | A workflow runs automatically on every pull request targeting `main`, on open and on every push to the PR branch. | must     |
-| FR-2 | A single job executes `bun install` → `bun run typecheck` → `bun run lint` → `bun test` → `bun run build`, failing the run if any step exits non-zero. | must     |
+| FR-2 | A single job executes `bun install` → database migrations (`echo y | bun run payload migrate`) → `bun run typecheck` → `bun run lint` → `bun test` → `bun run build`, failing the run if any step exits non-zero. The migrate step is required because prerendering queries the schema on a fresh CI database (amended 2026-10-21, review F4). | must     |
 | FR-3 | The build step runs against a `postgres:16` service container with `DATABASE_URL` pointing at it.                | must     |
 | FR-4 | All `"warn"` rule severities in `biome.json` are promoted to `"error"`, and the repo lint remains green (0 errors). | must     |
 | FR-5 | A concurrency group cancels in-progress runs of the same PR when a new push arrives.                             | should   |
@@ -78,7 +78,7 @@ broken site. The cost of not solving: broken `main` directly risks production.
 
 | ID   | Requirement                                                                                          |
 | ---- | ---------------------------------------------------------------------------------------------------- |
-| NFR-1 | Bun version pinned to `1.4.2` (consistent with `deploy.yml`); action versions pinned by SHA or major tag. |
+| NFR-1 | Bun version pinned to `1.4.3` in ci.yml — amended from `1.4.2` (2026-10-21, review F1): the typecheck script's engine `bun check` exists only from 1.4.3 (CI run 39567563082 proved 1.4.2 lacks it); `deploy.yml` stays on `1.4.2` since it never runs typecheck; action versions pinned by SHA or major tag. |
 | NFR-2 | CI run completes in ≤ 5 minutes on a typical PR.                                                      |
 | NFR-3 | No repository secrets are required by the workflow.                                                   |
 | NFR-4 | Workflow changes only — zero production application code changes.                                    |
