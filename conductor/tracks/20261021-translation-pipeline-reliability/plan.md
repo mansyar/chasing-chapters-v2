@@ -14,7 +14,7 @@
 - **Covers:** FR-5, FR-6, FR-7, FR-8, AC-5, AC-6, AC-7, AC-8
 - **Touches:** `src/lib/translation-errors.ts` (new), `src/lib/translation-lock.ts` (new), `src/lib/translate.ts`, `src/lib/translation-status.ts`, `src/hooks/translateReview.ts`, `src/hooks/__tests__/*`, `src/lib/__tests__/*`, `src/migrations/*`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P1.T1: Error classification and actionable messages** — covers: FR-5
   - [ ] **P1.T1.1: Create classification module mapping Google API / network / timeout / credential failures to kinds + author-actionable guidance**
