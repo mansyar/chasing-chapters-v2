@@ -131,24 +131,69 @@ export class TranslationError extends Error {
 	}
 }
 
+/**
+ * Reason recorded when a translation run is stopped because its time budget
+ * ran out. It is not a provider failure: it must never be classified as
+ * transient and must never schedule the delayed automatic re-run.
+ */
+export const TRANSLATION_BUDGET_REASON = "translation time budget reached";
+
+/**
+ * Error thrown when a translation run is stopped by its deadline.
+ *
+ * The message deliberately avoids the patterns `classifyTranslationError`
+ * matches for provider failures (timeout / network / quota): the classifier
+ * maps it to "unexpected", which is not transient, so a budget stop never
+ * schedules the automatic re-run.
+ */
+export class TranslationBudgetError extends TranslationError {
+	constructor(message: string = TRANSLATION_BUDGET_REASON) {
+		super(message);
+		this.name = "TranslationBudgetError";
+	}
+}
+
 // Maximum number of strings sent in a single Google Translate API request.
 export const TRANSLATION_BATCH_SIZE = 64;
+
+/** Default per-request timeout for a single translation API call (ms). */
+export const TRANSLATION_REQUEST_TIMEOUT_MS = 30 * 1000;
 
 // Exponential backoff schedule between retry attempts (~2s -> ~8s -> ~30s).
 export const RETRY_DELAYS_MS = [2000, 8000, 30000];
 
 const MAX_ATTEMPTS = 3;
 
-type TranslateBatchOptions = {
+export type TranslateBatchOptions = {
 	/** Backoff delays (ms) between retry attempts. Defaults to RETRY_DELAYS_MS. */
 	delays?: number[];
 	/** Max strings per API request. Defaults to TRANSLATION_BATCH_SIZE. */
 	batchSize?: number;
+	/**
+	 * Per-request timeout (ms). Defaults to TRANSLATION_REQUEST_TIMEOUT_MS.
+	 * Capped by the remaining time when a deadline is set.
+	 */
+	timeoutMs?: number;
+	/**
+	 * Epoch-ms deadline. Before every attempt the run stops when the
+	 * deadline has passed, the backoff never sleeps past it, and a request
+	 * that would outlive it is cut short.
+	 */
+	deadline?: number;
 };
 
 function backoffDelay(delays: number[], attempt: number): number {
 	if (delays.length === 0) return 0;
 	return delays[Math.min(attempt, delays.length - 1)];
+}
+
+// The request timed out. Distinct from a provider failure so a timeout that
+// was cut by the deadline can be told apart from a real API error.
+class TranslationRequestTimeoutError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = "TranslationRequestTimeoutError";
+	}
 }
 
 // Helper to add timeout to a promise
@@ -157,28 +202,58 @@ function withTimeout<T>(
 	ms: number,
 	errorMessage: string,
 ): Promise<T> {
+	let timer: ReturnType<typeof setTimeout> | undefined;
 	const timeout = new Promise<never>((_, reject) => {
-		setTimeout(() => reject(new Error(errorMessage)), ms);
+		timer = setTimeout(
+			() => reject(new TranslationRequestTimeoutError(errorMessage)),
+			ms,
+		);
 	});
-	return Promise.race([promise, timeout]);
+	return Promise.race([promise, timeout]).finally(() => {
+		// The timer must not outlive the request it guards.
+		if (timer) clearTimeout(timer);
+	});
 }
 
 // Translate one chunk of texts with retries and exponential backoff.
 // Throws TranslationError after MAX_ATTEMPTS failed attempts.
+// When a deadline is set the run stops at the deadline: no further attempt is
+// started, the backoff never sleeps past it, and a request that would outlive
+// it is cut short. A deadline stop throws TranslationBudgetError — it is not a
+// provider failure.
 async function translateChunkWithRetry(
 	texts: string[],
 	targetLanguage: string,
 	delays: number[],
+	options?: TranslateBatchOptions,
 ): Promise<string[]> {
 	const client = getTranslateClient();
+	const deadline = options?.deadline;
+	const requestTimeoutMs = options?.timeoutMs ?? TRANSLATION_REQUEST_TIMEOUT_MS;
 	let lastError: unknown;
 
 	for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+		if (deadline !== undefined && Date.now() >= deadline) {
+			throw new TranslationBudgetError();
+		}
+
+		// The request must never outlive the deadline.
+		const remainingMs =
+			deadline === undefined ? undefined : deadline - Date.now();
+		const timeoutMs =
+			remainingMs === undefined
+				? requestTimeoutMs
+				: Math.min(requestTimeoutMs, Math.max(remainingMs, 0));
+		const budgetLimited =
+			remainingMs !== undefined && remainingMs < requestTimeoutMs;
+
 		try {
 			const [rawTranslations] = await withTimeout(
 				client.translate(texts, targetLanguage),
-				30000,
-				"Translation request timed out after 30 seconds",
+				timeoutMs,
+				budgetLimited
+					? TRANSLATION_BUDGET_REASON
+					: `Translation request timed out after ${Math.round(timeoutMs / 1000)} seconds`,
 			);
 			const translations = rawTranslations as string[];
 			if (
@@ -192,12 +267,30 @@ async function translateChunkWithRetry(
 			return translations;
 		} catch (error) {
 			lastError = error;
+			// A request that was cut by the deadline is a budget stop, not a
+			// provider failure. Any other error — even a quota error — is a
+			// provider failure, whatever the remaining time is.
+			if (error instanceof TranslationRequestTimeoutError && budgetLimited) {
+				throw new TranslationBudgetError();
+			}
+			if (deadline !== undefined && Date.now() >= deadline) {
+				throw new TranslationBudgetError();
+			}
 			logger.error(
 				`[Translation] Attempt ${attempt + 1}/${MAX_ATTEMPTS} failed for batch of ${texts.length}:`,
 				error,
 			);
 			if (attempt < MAX_ATTEMPTS - 1) {
-				await sleep(backoffDelay(delays, attempt));
+				let delay = backoffDelay(delays, attempt);
+				if (deadline !== undefined) {
+					const remaining = deadline - Date.now();
+					if (remaining <= 0) {
+						throw new TranslationBudgetError();
+					}
+					// Never sleep past the deadline.
+					delay = Math.min(delay, remaining);
+				}
+				await sleep(delay);
 			}
 		}
 	}
@@ -254,6 +347,7 @@ export async function translateBatch(
 			chunk,
 			targetLanguage,
 			delays,
+			options,
 		);
 		for (let j = 0; j < chunk.length; j++) {
 			const source = chunk[j];

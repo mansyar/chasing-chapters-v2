@@ -303,4 +303,58 @@ describe("bulk re-translate run (FR-4)", () => {
 			expect(skipped.reason).toBe("not attempted — batch time budget reached");
 		}
 	});
+
+	test("the in-flight review shares the batch deadline and the batch answers within the budget", async () => {
+		docs.set(1, makeDoc({ id: 1, translationStatus: "failed" }));
+		docs.set(2, makeDoc({ id: 2, translationStatus: "failed" }));
+		accessible.add(1);
+		accessible.add(2);
+		const payload = makePayload();
+
+		const budgetMs = 300;
+		const seenDeadlines: (number | undefined)[] = [];
+		pipelineSpy.mockImplementation(
+			async (
+				_payload: Payload,
+				doc: Review,
+				options?: { deadline?: number },
+			) => {
+				seenDeadlines.push(options?.deadline);
+				// The review runs until the shared deadline, then gives up.
+				const deadline = options?.deadline ?? Date.now();
+				const wait = Math.max(0, deadline - Date.now()) + 5;
+				await new Promise((resolve) => setTimeout(resolve, wait));
+				const stored = docs.get(doc.id);
+				if (stored) {
+					docs.set(doc.id, {
+						...stored,
+						translationStatus: "failed",
+						translationError: "translation time budget reached",
+					});
+				}
+			},
+		);
+
+		const startedAt = Date.now();
+		const outcomes = await retranslateReviews(payload, writer, [1, 2], {
+			timeBudgetMs: budgetMs,
+		});
+		const elapsed = Date.now() - startedAt;
+
+		// The in-flight review got the batch deadline.
+		expect(pipelineSpy).toHaveBeenCalledTimes(1);
+		expect(seenDeadlines[0]).toBeGreaterThan(startedAt);
+
+		// Every id still reports exactly one outcome.
+		expect(outcomes.map((outcome) => outcome.id)).toEqual([1, 2]);
+		expect(outcomes[0].status).toBe("failed");
+		expect(outcomes[0].reason).toContain("budget");
+		expect(outcomes[1].status).toBe("skipped");
+		expect(outcomes[1].reason).toBe(
+			"not attempted — batch time budget reached",
+		);
+
+		// The request answers within the budget, not past it.
+		expect(elapsed).toBeLessThan(budgetMs * 3);
+	});
 });

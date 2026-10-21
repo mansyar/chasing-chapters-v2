@@ -572,6 +572,59 @@ describe("runTranslationPipeline", () => {
 		await new Promise((resolve) => setTimeout(resolve, 50));
 		expect(payload.update.mock.calls.length).toBe(2);
 	});
+
+	test("a run whose deadline has passed stops before translating", async () => {
+		const payload = makePayload();
+		const translateModule = await import("../../lib/translate");
+		translateRichTextSpy = spyOn(
+			translateModule,
+			"translateRichText",
+		).mockImplementation(async () => makeRichText(para("ID:Hello world")));
+
+		const doc = makeDoc();
+		await runTranslationPipeline(payload as unknown as Payload, doc, {
+			deadline: Date.now() - 1,
+			retryDelayMs: 1,
+		});
+
+		// The budget stopped the run before the first translation.
+		expect(translateRichTextSpy).not.toHaveBeenCalled();
+		expect(payload.update.mock.calls.length).toBe(2);
+		const finalCall = payload.update.mock.calls[1][0];
+		expect(finalCall.data.translationStatus).toBe("failed");
+		expect(finalCall.data.translationError).toBe(
+			"translation time budget reached",
+		);
+
+		// A budget stop is not a transient provider failure: no re-run.
+		await new Promise((resolve) => setTimeout(resolve, 50));
+		expect(payload.update.mock.calls.length).toBe(2);
+	});
+
+	test("the remaining time is passed to the translation layer", async () => {
+		const payload = makePayload();
+		const translateModule = await import("../../lib/translate");
+		const seen: { timeoutMs?: number; deadline?: number }[] = [];
+		translateRichTextSpy = spyOn(
+			translateModule,
+			"translateRichText",
+		).mockImplementation(async (rt, _target, options) => {
+			seen.push(options ?? {});
+			return makeRichText(
+				para(`ID:${(rt as RichText).root.children[0].children[0].text}`),
+			);
+		});
+
+		const deadline = Date.now() + 5000;
+		const doc = makeDoc();
+		await runTranslationPipeline(payload as unknown as Payload, doc, {
+			deadline,
+		});
+
+		expect(seen.length).toBeGreaterThan(0);
+		expect(seen[0].deadline).toBe(deadline);
+		expect(typeof seen[0].timeoutMs).toBe("number");
+	});
 });
 
 describe("delayed re-run (F2)", () => {

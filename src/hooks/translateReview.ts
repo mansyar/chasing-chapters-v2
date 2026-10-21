@@ -8,6 +8,8 @@ import { logger } from "../lib/logger";
 import {
 	extractPlainText,
 	syncRichTextFormat,
+	TRANSLATION_BUDGET_REASON,
+	TranslationBudgetError,
 	TranslationError,
 	translateRichText,
 	translateText,
@@ -198,6 +200,13 @@ export interface RunPipelineOptions {
 	 * exposed so tests can exercise the delayed re-run without waiting.
 	 */
 	retryDelayMs?: number;
+	/**
+	 * Epoch-ms deadline for this run. When it is reached the run stops
+	 * translating, the review is reported as failed with the budget reason,
+	 * and no automatic re-run is scheduled — a budget stop is not a transient
+	 * provider failure.
+	 */
+	deadline?: number;
 }
 
 /**
@@ -238,28 +247,57 @@ export async function runTranslationPipeline(
 				context: { skipTranslation: true },
 			});
 
+			const ensureBudget = (): void => {
+				if (isDeadlineReached(options.deadline)) {
+					throw new TranslationBudgetError();
+				}
+			};
+			// The remaining time is recomputed per field, so a request never
+			// outlives the deadline.
+			const translationOptions = ():
+				| {
+						timeoutMs?: number;
+						deadline?: number;
+				  }
+				| undefined => buildTranslationOptions(options);
+
 			// Translate rich text fields while preserving structure
+			ensureBudget();
 			const translatedReviewContent = await translateRichText(
 				doc.reviewContent,
+				"id",
+				translationOptions(),
 			);
 
+			ensureBudget();
 			const translatedWhatILoved = doc.whatILoved
-				? await translateRichText(doc.whatILoved)
+				? await translateRichText(doc.whatILoved, "id", translationOptions())
 				: null;
 
+			ensureBudget();
 			const translatedWhatCouldBeBetter = doc.whatCouldBeBetter
-				? await translateRichText(doc.whatCouldBeBetter)
+				? await translateRichText(
+						doc.whatCouldBeBetter,
+						"id",
+						translationOptions(),
+					)
 				: null;
 
+			ensureBudget();
 			const translatedPerfectFor = doc.perfectFor
-				? await translateRichText(doc.perfectFor)
+				? await translateRichText(doc.perfectFor, "id", translationOptions())
 				: null;
 
 			// Translate favorite quotes (plain text array, not rich text)
+			ensureBudget();
 			const translatedQuotes = doc.favoriteQuotes
 				? await Promise.all(
 						doc.favoriteQuotes.map(async (item) => ({
-							quote: await translateText(item.quote),
+							quote: await translateText(
+								item.quote,
+								"id",
+								translationOptions(),
+							),
 							page: item.page,
 						})),
 					)
@@ -289,9 +327,14 @@ export async function runTranslationPipeline(
 			logger.info(`[Translation] Complete for: ${doc.title}`);
 		} catch (error) {
 			const attempts = error instanceof TranslationError ? error.attempts : 0;
+			// A budget stop is not a provider failure: it must not be reported
+			// as a transient error and must not schedule the automatic re-run.
+			const budgetStop =
+				error instanceof TranslationBudgetError ||
+				isDeadlineReached(options.deadline);
 			const classified = classifyTranslationError(error);
 			logger.error(
-				`[Translation] Failed for: ${doc.title} (${classified.kind})`,
+				`[Translation] Failed for: ${doc.title} (${budgetStop ? "budget" : classified.kind})`,
 				classified.raw,
 			);
 
@@ -307,7 +350,9 @@ export async function runTranslationPipeline(
 					id: doc.id,
 					data: {
 						translationStatus: failed.status,
-						translationError: formatTranslationError(error),
+						translationError: budgetStop
+							? TRANSLATION_BUDGET_REASON
+							: formatTranslationError(error),
 						translationUpdatedAt: failedAt,
 					},
 					context: { skipTranslation: true },
@@ -322,7 +367,7 @@ export async function runTranslationPipeline(
 			// One automatic re-run for transient failures; permanent classes
 			// stop here. The re-run goes through this same function, so it
 			// respects the per-review lock and cannot loop further.
-			if (!options.isRetry && classified.transient) {
+			if (!options.isRetry && !budgetStop && classified.transient) {
 				scheduleTranslationRetry(
 					payload,
 					doc.id,
@@ -402,6 +447,32 @@ async function runDelayedTranslationRetry(
 		`[Translation] Automatic delayed re-run starting for review ${reviewId}.`,
 	);
 	await runTranslationPipeline(payload, fresh, { isRetry: true });
+}
+
+/**
+ * Whether a deadline has passed. A run without a deadline never expires.
+ */
+function isDeadlineReached(deadline: number | undefined): boolean {
+	if (deadline === undefined) return false;
+	return Date.now() >= deadline;
+}
+
+/**
+ * The translation options for this run: the remaining time as the per-request
+ * timeout, so a hung HTTP request is cut at the deadline. Runs without a
+ * deadline keep the default behaviour.
+ */
+function buildTranslationOptions(options: RunPipelineOptions):
+	| {
+			timeoutMs?: number;
+			deadline?: number;
+	  }
+	| undefined {
+	if (options.deadline === undefined) return undefined;
+	return {
+		timeoutMs: Math.max(0, options.deadline - Date.now()),
+		deadline: options.deadline,
+	};
 }
 
 /**

@@ -40,6 +40,7 @@ mock.module("@google-cloud/translate", () => ({
 // Import AFTER mock.module so the mocked client is what translate.ts binds to.
 const {
 	TRANSLATION_BATCH_SIZE,
+	TranslationBudgetError,
 	TranslationError,
 	translateBatch,
 	translateRichText,
@@ -291,5 +292,80 @@ describe("translateRichText (no fallback)", () => {
 		await expect(
 			translateRichText(makeRichText(), "id", { delays: [0, 0, 0] }),
 		).rejects.toThrow(TranslationError);
+	});
+});
+
+describe("translateBatch (time budget)", () => {
+	beforeEach(() => {
+		mockClientTranslate.mockImplementation(echoTranslate);
+	});
+
+	it("stops before the first attempt when the deadline has passed", async () => {
+		let caught: unknown;
+		try {
+			await translateBatch(["Hello"], "id", {
+				deadline: Date.now() - 1,
+			});
+		} catch (error) {
+			caught = error;
+		}
+
+		expect(caught).toBeInstanceOf(TranslationBudgetError);
+		expect(mockClientTranslate).not.toHaveBeenCalled();
+	});
+
+	it("never sleeps past the deadline", async () => {
+		mockClientTranslate.mockImplementation(() =>
+			Promise.reject(new Error("API down")),
+		);
+
+		const started = Date.now();
+		let caught: unknown;
+		try {
+			await translateBatch(["Hello"], "id", {
+				delays: [5000, 5000, 5000],
+				deadline: Date.now() + 100,
+			});
+		} catch (error) {
+			caught = error;
+		}
+		const elapsed = Date.now() - started;
+
+		expect(caught).toBeInstanceOf(TranslationBudgetError);
+		// The backoff was cut at the deadline instead of sleeping 5 seconds.
+		expect(elapsed).toBeLessThan(2000);
+		expect(mockClientTranslate).toHaveBeenCalledTimes(1);
+	});
+
+	it("cuts a hung request at the deadline", async () => {
+		mockClientTranslate.mockImplementation(
+			() =>
+				new Promise<[string[]]>(() => {
+					// Never resolves: only the deadline can end this request.
+				}),
+		);
+
+		const started = Date.now();
+		let caught: unknown;
+		try {
+			await translateBatch(["Hello"], "id", {
+				delays: [0, 0, 0],
+				deadline: Date.now() + 100,
+			});
+		} catch (error) {
+			caught = error;
+		}
+		const elapsed = Date.now() - started;
+
+		expect(caught).toBeInstanceOf(TranslationBudgetError);
+		expect(elapsed).toBeLessThan(2000);
+	});
+
+	it("translates normally when the deadline leaves enough time", async () => {
+		const result = await translateBatch(["Hello"], "id", {
+			deadline: Date.now() + 10_000,
+		});
+
+		expect(result).toEqual(["ID:Hello"]);
 	});
 });

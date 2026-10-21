@@ -15,6 +15,16 @@ export interface RetranslateResult {
 
 type RetranslateUser = { id: number; role: string } | null | undefined;
 
+/** Options for one re-translate run. */
+export interface RetranslateOptions {
+	/**
+	 * Epoch-ms deadline for the pipeline run. When it is reached the run
+	 * stops translating and the review is marked failed with the budget
+	 * reason — the request that triggered it answers within its own budget.
+	 */
+	deadline?: number;
+}
+
 /**
  * Admin "Re-translate now" core: authorization, then a full translation
  * pipeline run for any review regardless of draft/published state. This is an
@@ -24,6 +34,7 @@ export async function retranslateReview(
 	payload: Payload,
 	user: RetranslateUser,
 	id: number,
+	options: RetranslateOptions = {},
 ): Promise<RetranslateResult> {
 	if (!user) {
 		return { ok: false, httpStatus: 401, error: "Authentication required" };
@@ -47,7 +58,7 @@ export async function retranslateReview(
 	}
 
 	// Explicit action: ignore the autoTranslate toggle entirely.
-	await runTranslationPipeline(payload, doc);
+	await runTranslationPipeline(payload, doc, { deadline: options.deadline });
 
 	const updated = await payload.findByID({
 		collection: "reviews",
@@ -75,10 +86,14 @@ export const BULK_RETRANSLATE_MAX_IDS = 50;
 
 /**
  * Wall-clock budget for one bulk re-translate request. The endpoint runs
- * behind a proxy with a 60s read timeout, so the batch stops before that
+ * behind a proxy with a 60s read timeout, so the batch stops well before that
  * and reports the reviews it did not attempt.
+ *
+ * The budget bounds the whole request, not only the loop: the review that is
+ * in flight when the budget runs out is aborted at the same deadline, so one
+ * slow review cannot push the response past the proxy timeout.
  */
-export const BULK_RETRANSLATE_TIME_BUDGET_MS = 45 * 1000;
+export const BULK_RETRANSLATE_TIME_BUDGET_MS = 30 * 1000;
 
 /** Why a review was not attempted: the batch ran out of time. */
 export const BULK_RETRANSLATE_BUDGET_REASON =
@@ -180,10 +195,11 @@ export interface BulkRetranslateOptions {
  * re-translate are skipped, a failing review is reported as failed, and
  * neither aborts the rest of the batch.
  *
- * The batch is bounded by a wall-clock budget: once it is exhausted the
- * remaining reviews are reported as skipped instead of being attempted, so
- * the request still answers with one outcome per selected review and the
- * proxy timeout cannot cut the response off.
+ * The batch is bounded by a wall-clock budget. Once the budget is exhausted
+ * the remaining reviews are reported as skipped instead of being attempted,
+ * and the review that was in flight is aborted at the same deadline — so the
+ * request answers with one outcome per selected review, within the budget
+ * plus a small overhead, and the proxy timeout cannot cut the response off.
  */
 export async function retranslateReviews(
 	payload: Payload,
@@ -204,7 +220,13 @@ export async function retranslateReviews(
 			});
 			continue;
 		}
-		outcomes.push(await retranslateOneReview(payload, user, id));
+		// The in-flight review shares the batch deadline: it is aborted when
+		// the budget runs out instead of running past it.
+		outcomes.push(
+			await retranslateOneReview(payload, user, id, {
+				deadline,
+			}),
+		);
 	}
 	return outcomes;
 }
@@ -213,6 +235,7 @@ async function retranslateOneReview(
 	payload: Payload,
 	user: TypedUser | null,
 	id: number,
+	options: RetranslateOptions = {},
 ): Promise<BulkRetranslateOutcome> {
 	if (!user) {
 		return { id, status: "skipped", reason: "Authentication required" };
@@ -259,7 +282,7 @@ async function retranslateOneReview(
 	}
 
 	try {
-		const result = await retranslateReview(payload, user, id);
+		const result = await retranslateReview(payload, user, id, options);
 		if (!result.ok) {
 			return {
 				id,
