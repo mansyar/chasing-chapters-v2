@@ -252,6 +252,20 @@ export const Reviews: CollectionConfig = {
 			},
 		},
 		{
+			name: "englishUpdatedAt",
+			type: "date",
+			label: "English Updated At",
+			admin: {
+				position: "sidebar",
+				readOnly: true,
+				date: {
+					pickerAppearance: "dayOnly",
+				},
+				description:
+					"When the English content last changed. Compared with the translation timestamp to detect a stale translation.",
+			},
+		},
+		{
 			name: "views",
 			type: "number",
 			defaultValue: 0,

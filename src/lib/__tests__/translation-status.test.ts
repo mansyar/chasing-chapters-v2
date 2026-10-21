@@ -216,6 +216,25 @@ describe("translation-status", () => {
 			).toBe(false);
 		});
 
+		it("skips legacy rows whose English change time was never recorded", () => {
+			// The English change time is unknown for pre-existing reviews, so
+			// their staleness cannot be established: they keep their status.
+			expect(
+				shouldBackfillToStale({
+					translationStatus: "translated",
+					englishUpdatedAt: null,
+					translationUpdatedAt: "2026-01-01T00:00:00.000Z",
+				}),
+			).toBe(false);
+			expect(
+				shouldBackfillToStale({
+					translationStatus: "translated",
+					englishUpdatedAt: undefined,
+					translationUpdatedAt: "2026-01-01T00:00:00.000Z",
+				}),
+			).toBe(false);
+		});
+
 		it("treats invalid dates as stale for translated reviews (isStale semantics)", () => {
 			expect(
 				shouldBackfillToStale({
