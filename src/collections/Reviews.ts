@@ -1,7 +1,10 @@
 import type { CollectionConfig, Where } from "payload";
 import formatSlug from "../hooks/formatSlug";
 import { revalidateReviewPages } from "../hooks/revalidatePages";
-import { translateReview } from "../hooks/translateReview";
+import {
+	recordEnglishChangeTime,
+	translateReview,
+} from "../hooks/translateReview";
 import { retranslateReview } from "../lib/retranslate";
 import {
 	canTransition,
@@ -379,6 +382,9 @@ export const Reviews: CollectionConfig = {
 				}
 				return data;
 			},
+			// Writes the English content's change time into the incoming
+			// data, so it lands in the same transaction as the save.
+			recordEnglishChangeTime,
 		],
 		afterChange: [translateReview, revalidateReviewPages],
 	},

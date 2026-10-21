@@ -715,7 +715,120 @@ describe("delayed re-run (F2)", () => {
 	});
 });
 
-describe("translateReview hook (F1: English change time)", () => {
+describe("recordEnglishChangeTime (F1: English change time)", () => {
+	let recordEnglishChangeTime: TranslateReviewModule["recordEnglishChangeTime"];
+	let englishContentChanged: TranslateReviewModule["englishContentChanged"];
+
+	beforeEach(async () => {
+		const mod = await import("../translateReview");
+		recordEnglishChangeTime = mod.recordEnglishChangeTime;
+		englishContentChanged = mod.englishContentChanged;
+	});
+
+	/** A request whose locale and default locale are the given ones. */
+	function makeReq(locale?: string) {
+		return {
+			locale,
+			payload: { config: { localization: { defaultLocale: "en" } } },
+		} as unknown as Parameters<typeof recordEnglishChangeTime>[0]["req"];
+	}
+
+	/**
+	 * Run the beforeChange hook and return the incoming data it wrote to.
+	 * The hook writes the change time into the data instead of performing a
+	 * nested write: the save's own transaction carries it.
+	 */
+	function runBeforeChange({
+		data,
+		operation = "update",
+		originalDoc,
+		locale,
+	}: {
+		data: Partial<Review>;
+		operation?: "create" | "update";
+		originalDoc?: Review;
+		locale?: string;
+	}): Partial<Review> {
+		recordEnglishChangeTime({
+			data,
+			operation,
+			originalDoc,
+			req: makeReq(locale),
+			collection: {} as never,
+			context: {},
+		});
+		return data;
+	}
+
+	test("an English text edit stamps the change time into the incoming data", () => {
+		const data = runBeforeChange({
+			data: { reviewContent: makeRichText(para("Changed text")) },
+			originalDoc: makeDoc(),
+		});
+
+		expect(typeof data.englishUpdatedAt).toBe("string");
+	});
+
+	test("a format-only change does not stamp the change time", () => {
+		const data = runBeforeChange({
+			data: { reviewContent: makeRichText(para("Hello world", "bold")) },
+			originalDoc: makeDoc(),
+		});
+
+		expect(data.englishUpdatedAt).toBeUndefined();
+	});
+
+	test("a write without a rich-text field does not stamp the change time", () => {
+		const data = runBeforeChange({
+			data: { translationStatus: "pending" },
+			originalDoc: makeDoc(),
+		});
+
+		expect(data.englishUpdatedAt).toBeUndefined();
+	});
+
+	test("a write against another locale does not stamp the change time", () => {
+		const data = runBeforeChange({
+			data: { reviewContent: makeRichText(para("Changed text")) },
+			originalDoc: makeDoc(),
+			locale: "id",
+		});
+
+		expect(data.englishUpdatedAt).toBeUndefined();
+	});
+
+	test("a create stamps the change time", () => {
+		const data = runBeforeChange({
+			data: { reviewContent: makeRichText(para("Hello world")) },
+			operation: "create",
+		});
+
+		expect(typeof data.englishUpdatedAt).toBe("string");
+	});
+
+	test("englishContentChanged compares plain text, not markup", () => {
+		expect(
+			englishContentChanged({
+				next: { reviewContent: makeRichText(para("Changed text")) },
+				previous: makeDoc(),
+			}),
+		).toBe(true);
+		expect(
+			englishContentChanged({
+				next: { reviewContent: makeRichText(para("Hello world", "bold")) },
+				previous: makeDoc(),
+			}),
+		).toBe(false);
+		expect(
+			englishContentChanged({
+				next: { translationStatus: "pending" },
+				previous: makeDoc(),
+			}),
+		).toBe(false);
+	});
+});
+
+describe("translateReview hook (F1: no nested write)", () => {
 	let translateReview: TranslateReviewModule["translateReview"];
 	let redisSpy: ReturnType<typeof spyOn<typeof redisModule, "getRedisClient">>;
 	let translateRichTextSpy: TranslateRichTextSpy;
@@ -764,7 +877,7 @@ describe("translateReview hook (F1: English change time)", () => {
 		await new Promise((resolve) => setTimeout(resolve, 10));
 	}
 
-	test("a text change records the English change time before the pipeline runs", async () => {
+	test("a text change starts the pipeline without a nested write", async () => {
 		const payload = makePayload();
 		await runHook({
 			doc: makeDoc({ reviewContent: makeRichText(para("Changed text")) }),
@@ -772,30 +885,63 @@ describe("translateReview hook (F1: English change time)", () => {
 			payload,
 		});
 
-		const firstCall = payload.update.mock.calls[0][0];
-		expect(firstCall.collection).toBe("reviews");
-		expect(firstCall.locale).toBe("en");
-		expect(firstCall.context.skipTranslation).toBe(true);
-		expect(typeof firstCall.data.englishUpdatedAt).toBe("string");
+		// The English change time is not written by a nested update: it is
+		// written by the beforeChange hook, in the save's own transaction.
+		for (const call of payload.update.mock.calls) {
+			expect(call[0].data.englishUpdatedAt).toBeUndefined();
+		}
+		// No nested write against the English locale either.
+		for (const call of payload.update.mock.calls) {
+			expect(call[0].locale).not.toBe("en");
+		}
+		// The pipeline itself ran.
+		expect(payload.update.mock.calls.length).toBeGreaterThan(0);
+		expect(payload.update.mock.calls[0][0].data.translationStatus).toBe(
+			"pending",
+		);
 	});
 
-	test("a text change with auto-translate off records the English change time", async () => {
+	test("the hook resolves while the write it triggered is still pending", async () => {
+		// A nested awaited write would wait for the row lock the outer
+		// transaction holds and deadlock the save: the hook must resolve
+		// without waiting for its own write.
 		const payload = makePayload();
-		await runHook({
-			doc: makeDoc({
-				autoTranslate: false,
-				reviewContent: makeRichText(para("Changed text")),
-			}),
-			previousDoc: makeDoc(),
-			payload,
+		let releaseWrite!: () => void;
+		const gate = new Promise<void>((resolve) => {
+			releaseWrite = resolve;
+		});
+		payload.update.mockImplementation(async () => {
+			await gate;
+			return {};
 		});
 
-		const firstCall = payload.update.mock.calls[0][0];
-		expect(firstCall.locale).toBe("en");
-		expect(typeof firstCall.data.englishUpdatedAt).toBe("string");
+		const doc = makeDoc({
+			id: 4242,
+			reviewContent: makeRichText(para("Changed text")),
+		});
+
+		await Promise.race([
+			translateReview({
+				doc,
+				previousDoc: makeDoc(),
+				req: { payload },
+				context: {},
+			} as unknown as Parameters<typeof translateReview>[0]),
+			new Promise((_, reject) =>
+				setTimeout(
+					() =>
+						reject(new Error("the afterChange hook awaited a nested write")),
+					500,
+				),
+			),
+		]);
+
+		// Let the pipeline finish so it releases the per-review lock.
+		releaseWrite();
+		await new Promise((resolve) => setTimeout(resolve, 10));
 	});
 
-	test("a format-only change does not record the English change time", async () => {
+	test("a format-only change does not write the English change time", async () => {
 		const payload = makePayload();
 		await runHook({
 			doc: makeDoc({
@@ -810,7 +956,7 @@ describe("translateReview hook (F1: English change time)", () => {
 		}
 	});
 
-	test("re-marking a stale translation does not record the English change time", async () => {
+	test("re-marking a stale translation does not write the English change time", async () => {
 		const payload = makePayload();
 		await runHook({
 			doc: makeDoc({

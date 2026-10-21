@@ -1,4 +1,9 @@
-import type { CollectionAfterChangeHook, Payload } from "payload";
+import type {
+	CollectionAfterChangeHook,
+	CollectionBeforeChangeHook,
+	Payload,
+	PayloadRequest,
+} from "payload";
 import { logger } from "../lib/logger";
 import {
 	extractPlainText,
@@ -34,6 +39,30 @@ export type TranslationAction =
 	| "none";
 
 /**
+ * Whether a rich-text field carried by `next` has different plain text than
+ * the same field in `previous`.
+ *
+ * Only fields present in `next` are compared: a write that carries no
+ * rich-text field at all (the pipeline's status writes) cannot have changed
+ * the English content. Plain text is compared, not the serialized markup, so
+ * a format-only change (same words, different markup) is not a content
+ * change.
+ */
+export function englishContentChanged({
+	next,
+	previous,
+}: {
+	next: Partial<Review> | null | undefined;
+	previous: Partial<Review> | null | undefined;
+}): boolean {
+	return richTextFields.some((field) => {
+		const nextValue = next?.[field];
+		if (nextValue === undefined) return false;
+		return extractPlainText(nextValue) !== extractPlainText(previous?.[field]);
+	});
+}
+
+/**
  * Whether this save changed the English rich text: a text edit or the first
  * publish. This is the only change that moves the English content's change
  * time, so it decides both the translation trigger and the
@@ -47,11 +76,9 @@ export function isEnglishContentChanged({
 	previousDoc: Review | null | undefined;
 }): boolean {
 	const firstPublish = previousDoc?._status !== "published";
-	const textChanged = richTextFields.some(
-		(field) =>
-			extractPlainText(doc[field]) !== extractPlainText(previousDoc?.[field]),
+	return (
+		firstPublish || englishContentChanged({ next: doc, previous: previousDoc })
 	);
-	return firstPublish || textChanged;
 }
 
 /**
@@ -113,9 +140,55 @@ export function decideTranslationAction({
 	return "none";
 }
 
+/**
+ * Record when the English content last changed — written into the incoming
+ * data by a `beforeChange` hook, so the outer UPDATE writes the column in the
+ * same transaction: one write, one transaction, one version.
+ *
+ * A nested `payload.update` from the `afterChange` hook cannot be used here:
+ * the Local API always builds a fresh request without a transaction ID, so
+ * the nested call opens a second transaction on a second pooled connection
+ * and waits for the row lock the outer transaction already holds — the two
+ * block each other and every admin save of a changed review hangs.
+ */
+export const recordEnglishChangeTime: CollectionBeforeChangeHook<Review> = ({
+	data,
+	operation,
+	originalDoc,
+	req,
+}) => {
+	// Only a write against the default locale can change the English content.
+	// The translation pipeline writes the Indonesian locale; it must never
+	// stamp the English change time.
+	const defaultLocale = resolveDefaultLocale(req);
+	if (req.locale && req.locale !== defaultLocale) return data;
+
+	if (operation === "create") {
+		data.englishUpdatedAt = new Date().toISOString();
+		return data;
+	}
+
+	// An update only stamps when it actually carries changed English text:
+	// a format-only change (same words, different markup) and a write that
+	// carries no rich-text field at all (the pipeline's status writes) do not.
+	if (englishContentChanged({ next: data, previous: originalDoc })) {
+		data.englishUpdatedAt = new Date().toISOString();
+	}
+
+	return data;
+};
+
+/** The locale the English content lives in. */
+function resolveDefaultLocale(req: PayloadRequest): string {
+	const localization = req.payload.config.localization;
+	if (localization && typeof localization === "object") {
+		return localization.defaultLocale;
+	}
+	return "en";
+}
+
 /** Delay before the single automatic re-run after a transient failure (3 minutes). */
 export const TRANSLATION_RETRY_DELAY_MS = 3 * 60 * 1000;
-
 /** Options for a translation pipeline run. */
 export interface RunPipelineOptions {
 	/** True when this run is the automatic re-run after a transient failure. */
@@ -348,35 +421,6 @@ function isNewerThan(
 }
 
 /**
- * Record when the English content last changed. This timestamp — not the
- * document's `updatedAt`, which every write restamps — is what the
- * staleness comparison uses. It is written on the English locale before the
- * pipeline runs, so the pipeline's own translation timestamp is newer.
- */
-export async function recordEnglishUpdatedAt(
-	payload: Payload,
-	docId: number,
-	timestamp: string = new Date().toISOString(),
-): Promise<void> {
-	try {
-		await payload.update({
-			collection: "reviews",
-			id: docId,
-			locale: "en",
-			data: { englishUpdatedAt: timestamp },
-			context: { skipTranslation: true },
-		});
-	} catch (error) {
-		// The pipeline must still run: a missing English change time only
-		// means the review can no longer be reported as stale.
-		logger.error(
-			`[Translation] Could not record the English content change time for review ${docId}`,
-			error,
-		);
-	}
-}
-
-/**
  * Format-only sync: re-applies the English formatting structure to the
  * existing Indonesian text without re-translating.
  */
@@ -491,9 +535,11 @@ export const translateReview: CollectionAfterChangeHook<Review> = async ({
 
 	switch (action) {
 		case "translate":
-			// The English content changed: record when, before the pipeline
-			// writes its own (newer) translation timestamp.
-			await recordEnglishUpdatedAt(payload, doc.id);
+			// The English change time was already written by the
+			// `beforeChange` hook, in the same transaction as this save.
+			// The pipeline is deliberately not awaited: a nested write from
+			// this hook would wait for the row lock the outer transaction
+			// holds and deadlock the save.
 			void runTranslationPipeline(payload, doc);
 			break;
 		case "format-sync":
@@ -503,10 +549,7 @@ export const translateReview: CollectionAfterChangeHook<Review> = async ({
 			break;
 		case "mark-stale":
 			// Only a real English content change moves the English change
-			// time; re-marking an already stale translation does not.
-			if (isEnglishContentChanged({ doc, previousDoc })) {
-				await recordEnglishUpdatedAt(payload, doc.id);
-			}
+			// time, and that stamp is written by the `beforeChange` hook.
 			void markTranslationStale(payload, doc.id);
 			break;
 		case "none":
