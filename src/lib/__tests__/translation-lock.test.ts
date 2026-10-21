@@ -3,6 +3,7 @@ import * as redisModule from "../redis";
 import {
 	acquireTranslationLock,
 	clearTranslationLocksForTest,
+	isTranslationLocked,
 	releaseTranslationLock,
 	TRANSLATION_LOCK_TTL_MS,
 	translationLockKey,
@@ -16,13 +17,18 @@ afterEach(() => {
 interface FakeRedisClient {
 	set: (...args: unknown[]) => Promise<unknown>;
 	eval: (...args: unknown[]) => Promise<unknown>;
+	get: (...args: unknown[]) => Promise<unknown>;
 }
 
-/** Install a fake Redis client behind getRedisClient for Redis-path tests. */
+/**
+ * Install a fake Redis client behind getRedisClient for Redis-path tests.
+ * `get` defaults to "no lock"; the lock check reads it.
+ */
 function useFakeRedisClient(overrides: Partial<FakeRedisClient> = {}) {
 	const fake: FakeRedisClient = {
 		set: mock(async () => "OK"),
 		eval: mock(async () => 1),
+		get: mock(async () => null),
 		...overrides,
 	};
 	const spy = spyOn(redisModule, "getRedisClient").mockReturnValue(
@@ -184,5 +190,74 @@ describe("translation-lock (Redis-backed)", () => {
 		await expect(
 			releaseTranslationLock(7, token as string),
 		).resolves.toBeUndefined();
+	});
+});
+
+describe("isTranslationLocked", () => {
+	test("a Redis lock is reported as locked", async () => {
+		const { fake } = useFakeRedisClient({
+			get: mock(async () => "lock-token"),
+		});
+
+		expect(await isTranslationLocked(7)).toBe(true);
+		const [key] = (fake.get as ReturnType<typeof mock>).mock.calls[0] as [
+			string,
+		];
+		expect(key).toBe(translationLockKey(7));
+	});
+
+	test("no Redis lock and no memory lock → not locked", async () => {
+		useFakeRedisClient({ get: mock(async () => null) });
+
+		expect(await isTranslationLocked(7)).toBe(false);
+	});
+
+	test("a Redis error falls through to the in-memory map (live lock)", async () => {
+		useFakeRedisClient({
+			// The acquire also fails and falls back to the memory lock.
+			set: mock(async () => {
+				throw new Error("connection refused");
+			}),
+			get: mock(async () => {
+				throw new Error("connection refused");
+			}),
+		});
+
+		const token = await acquireTranslationLock(7);
+		expect(token).not.toBeNull();
+
+		expect(await isTranslationLocked(7)).toBe(true);
+
+		await releaseTranslationLock(7, token as string);
+		expect(await isTranslationLocked(7)).toBe(false);
+	});
+
+	test("a Redis error falls through to the in-memory map (expired lock)", async () => {
+		useFakeRedisClient({
+			set: mock(async () => {
+				throw new Error("connection refused");
+			}),
+			get: mock(async () => {
+				throw new Error("connection refused");
+			}),
+		});
+
+		const token = await acquireTranslationLock(7, 1);
+		expect(token).not.toBeNull();
+		await new Promise((resolve) => setTimeout(resolve, 10));
+
+		expect(await isTranslationLocked(7)).toBe(false);
+	});
+
+	test("the memory-only path reports a live lock", async () => {
+		spyOn(redisModule, "getRedisClient").mockReturnValue(null);
+
+		const token = await acquireTranslationLock(7);
+		expect(token).not.toBeNull();
+
+		expect(await isTranslationLocked(7)).toBe(true);
+
+		await releaseTranslationLock(7, token as string);
+		expect(await isTranslationLocked(7)).toBe(false);
 	});
 });
