@@ -49,7 +49,7 @@ The primary appends after acceptance:
 - **Covers:** FR-1, FR-2, FR-3, AC-1, AC-2, AC-3
 - **Touches:** `src/collections/Reviews/admin/*`, `src/components/admin/*`, `src/payload.config.ts` (admin component registration), `src/app/(payload)/**` (only if registration requires), new admin-side tests
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P2.T1: Edit-view live status and completion toast** — covers: FR-1, FR-2
   - [ ] **P2.T1.1: Poll the document's translation status while the edit view is open (bounded interval) and reflect transitions without a manual refresh**
