@@ -64,6 +64,34 @@ export async function acquireTranslationLock(
 }
 
 /**
+ * Whether a translation pipeline currently holds the lock for a review.
+ *
+ * The bulk re-translate action uses this to skip reviews that are already
+ * being translated (the pipeline itself would no-op) instead of reporting a
+ * misleading failure. Checks the Redis lock first and falls back to the
+ * in-memory map, so both backends are covered.
+ */
+export async function isTranslationLocked(
+	reviewId: number | string,
+): Promise<boolean> {
+	const key = translationLockKey(reviewId);
+	const client = getRedisClient();
+
+	if (client) {
+		try {
+			const token = await client.get(key);
+			if (token !== null) return true;
+		} catch (error) {
+			// Redis errors must not block the caller: fall back to memory.
+			console.error("[TranslationLock] Redis check failed:", error);
+		}
+	}
+
+	const existing = memoryLocks.get(key);
+	return Boolean(existing && existing.expiresAt > Date.now());
+}
+
+/**
  * Release the translation lock for a review. The token must be the one
  * returned by acquire so a lock re-acquired by another owner after expiry
  * is never deleted by the previous holder.

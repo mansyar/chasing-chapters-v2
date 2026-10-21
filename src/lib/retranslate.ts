@@ -1,6 +1,7 @@
-import type { Payload } from "payload";
+import type { Payload, TypedUser } from "payload";
 import { runTranslationPipeline } from "../hooks/translateReview";
 import type { Review } from "../payload-types";
+import { isTranslationLocked } from "./translation-lock";
 
 /** Outcome of the admin "Re-translate now" action. */
 export interface RetranslateResult {
@@ -63,4 +64,200 @@ export async function retranslateReview(
 		result.error = updated.translationError;
 	}
 	return result;
+}
+
+// ---------------------------------------------------------------------------
+// Bulk re-translate (FR-4)
+// ---------------------------------------------------------------------------
+
+/** Maximum number of reviews one bulk re-translate request may cover. */
+export const BULK_RETRANSLATE_MAX_IDS = 50;
+
+/** Translation statuses the bulk re-translate action acts on. */
+export const BULK_RETRANSLATABLE_STATUSES = ["failed", "stale"] as const;
+
+/** Outcome of one review inside a bulk re-translate run. */
+export type BulkRetranslateOutcomeStatus = "translated" | "failed" | "skipped";
+
+export interface BulkRetranslateOutcome {
+	/** The review the outcome belongs to. */
+	id: number;
+	status: BulkRetranslateOutcomeStatus;
+	/** Why the review was skipped, or the failure detail. */
+	reason?: string;
+	/** The review's translation status after the attempt. */
+	translationStatus?: string | null;
+}
+
+/**
+ * Whether a review's translation status qualifies for a bulk re-translate:
+ * only `failed` and `stale` reviews need a new translation.
+ */
+export function isBulkRetranslatableStatus(
+	status: string | null | undefined,
+): boolean {
+	return (BULK_RETRANSLATABLE_STATUSES as readonly string[]).includes(
+		status ?? "",
+	);
+}
+
+/**
+ * Validate the review ids of a bulk re-translate request: an array of
+ * positive integer ids, at most BULK_RETRANSLATE_MAX_IDS of them,
+ * deduplicated. Returns the clean id list or a message describing why the
+ * request is invalid.
+ */
+export function normalizeBulkRetranslateIds(input: unknown): {
+	ids: number[];
+	error: string | null;
+} {
+	if (!Array.isArray(input)) {
+		return { ids: [], error: "Expected an array of review ids" };
+	}
+	if (input.length === 0) {
+		return { ids: [], error: "No review ids provided" };
+	}
+	if (input.length > BULK_RETRANSLATE_MAX_IDS) {
+		return {
+			ids: [],
+			error: `At most ${BULK_RETRANSLATE_MAX_IDS} reviews can be re-translated at once`,
+		};
+	}
+
+	const ids: number[] = [];
+	const seen = new Set<number>();
+	for (const raw of input) {
+		const id = toReviewId(raw);
+		if (id === null) {
+			return { ids: [], error: `Invalid review id: ${String(raw)}` };
+		}
+		if (seen.has(id)) continue;
+		seen.add(id);
+		ids.push(id);
+	}
+	return { ids, error: null };
+}
+
+function toReviewId(raw: unknown): number | null {
+	const value =
+		typeof raw === "number"
+			? raw
+			: typeof raw === "string" && /^\d+$/.test(raw.trim())
+				? Number(raw.trim())
+				: Number.NaN;
+	if (!Number.isInteger(value) || value <= 0) return null;
+	return value;
+}
+
+/**
+ * Re-translate a selection of reviews, one after the other.
+ *
+ * The runs are sequential on purpose: the translation provider is rate
+ * limited, so a burst of parallel pipelines would fail. Every review is
+ * reported individually — unauthorized targets and reviews that do not need a
+ * re-translate are skipped, a failing review is reported as failed, and
+ * neither aborts the rest of the batch.
+ */
+export async function retranslateReviews(
+	payload: Payload,
+	user: TypedUser | null,
+	ids: readonly number[],
+): Promise<BulkRetranslateOutcome[]> {
+	const outcomes: BulkRetranslateOutcome[] = [];
+	for (const id of ids) {
+		outcomes.push(await retranslateOneReview(payload, user, id));
+	}
+	return outcomes;
+}
+
+async function retranslateOneReview(
+	payload: Payload,
+	user: TypedUser | null,
+	id: number,
+): Promise<BulkRetranslateOutcome> {
+	if (!user) {
+		return { id, status: "skipped", reason: "Authentication required" };
+	}
+
+	let doc: Review;
+	try {
+		// Access rules apply: a writer only reaches their own reviews, an
+		// admin reaches all of them.
+		doc = await payload.findByID({
+			collection: "reviews",
+			id,
+			depth: 0,
+			overrideAccess: false,
+			user,
+		});
+	} catch (error) {
+		if (isNotFoundError(error)) {
+			return {
+				id,
+				status: "skipped",
+				reason: "Review not found or not accessible",
+			};
+		}
+		return { id, status: "failed", reason: describeError(error) };
+	}
+
+	if (!isBulkRetranslatableStatus(doc.translationStatus)) {
+		return {
+			id,
+			status: "skipped",
+			reason: `Translation status is "${doc.translationStatus ?? "unknown"}" (only failed or stale reviews are re-translated)`,
+		};
+	}
+
+	// A pipeline already running for this review is a no-op; report it as
+	// skipped instead of a misleading failure.
+	if (await isTranslationLocked(id)) {
+		return {
+			id,
+			status: "skipped",
+			reason: "A translation run is already in progress for this review",
+		};
+	}
+
+	try {
+		const result = await retranslateReview(payload, user, id);
+		if (!result.ok) {
+			return {
+				id,
+				status: "skipped",
+				reason: result.error ?? "Review could not be re-translated",
+				translationStatus: result.translationStatus ?? null,
+			};
+		}
+		if (result.translationStatus === "translated") {
+			return { id, status: "translated", translationStatus: "translated" };
+		}
+		if (result.translationStatus === "failed") {
+			return {
+				id,
+				status: "failed",
+				reason: result.error ?? "Translation failed",
+				translationStatus: "failed",
+			};
+		}
+		return {
+			id,
+			status: "skipped",
+			reason: `Translation status is "${result.translationStatus ?? "unknown"}"`,
+			translationStatus: result.translationStatus ?? null,
+		};
+	} catch (error) {
+		return { id, status: "failed", reason: describeError(error) };
+	}
+}
+
+function isNotFoundError(error: unknown): boolean {
+	if (typeof error !== "object" || error === null) return false;
+	const candidate = error as { status?: unknown; name?: unknown };
+	return candidate.status === 404 || candidate.name === "NotFound";
+}
+
+function describeError(error: unknown): string {
+	if (error instanceof Error) return error.message;
+	return String(error);
 }
