@@ -13,17 +13,21 @@
 - **Covers:** FR-1, FR-2, FR-3, FR-4, FR-5; NFR-1, NFR-2, NFR-3; AC-5
 - **Touches:** `biome.json`, `.github/workflows/ci.yml`
 - **Verification:** `bun run typecheck && bun run lint && bun test` — lint must report 0 errors and 0 warnings at the new severities; YAML validity confirmed
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P1.T1: Promote lint severities to error** — covers: FR-4, AC-5
+- [x] **P1.T1: Promote lint severities to error** — covers: FR-4, AC-5
   - Flip every `"warn"` value in `biome.json` linter rules to `"error"` (mechanical, no rule additions/removals).
   - Run full lint locally; confirm 0 errors, 0 warnings (baseline holds by construction).
-- [ ] **P1.T2: Author `.github/workflows/ci.yml`** — covers: FR-1, FR-2, FR-3, FR-5, NFR-1, NFR-3
+- [x] **P1.T2: Author `.github/workflows/ci.yml`** — covers: FR-1, FR-2, FR-3, FR-5, NFR-1, NFR-3
   - Trigger: `pull_request` targeting `main`.
   - Single job: checkout → setup-bun `1.4.2` (pinned action version) → `bun install` → `bun run typecheck` → `bun run lint` → `bun test` → `bun run build`.
   - `postgres:16` service container; `DATABASE_URL` wired for the build step (mirror `deploy.yml` env conventions).
   - Concurrency group `${{ github.workflow }}-${{ github.ref }}` with `cancel-in-progress: true`.
   - No secrets referenced; YAML parses cleanly.
+
+**Result:** verified
+**Checkpoint:** 7d5de2b
+**Evidence:** conductor/tracks/20261021-pr-validation-ci/verification/phase-1.md
 
 <!--
 After phase acceptance the primary agent appends under the phase:
