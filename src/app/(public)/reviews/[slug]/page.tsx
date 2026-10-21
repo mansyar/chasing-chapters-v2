@@ -21,7 +21,7 @@ import {
 	generateReviewSchema,
 	SITE_URL,
 } from "@/lib/seo/structured-data";
-import type { Author, Media } from "@/payload-types";
+import type { Media } from "@/payload-types";
 
 // Enable ISR with 60 second revalidation for better caching
 export const revalidate = 60;
@@ -198,7 +198,11 @@ export default async function ReviewPage({ params, searchParams }: PageProps) {
 							<div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 text-sm text-muted-foreground">
 								<div className="flex items-center gap-1">
 									<User className="h-4 w-4" />
-									<span>{(review.author as Author)?.name}</span>
+									<span>
+										{typeof review.author === "object" && review.author
+											? review.author.name
+											: null}
+									</span>
 								</div>
 								<Separator orientation="vertical" className="h-4" />
 								<div className="flex items-center gap-1">

@@ -76,7 +76,8 @@ type UpdateArgs = {
 		translationStatus?: string;
 		translationError?: string | null;
 		translationUpdatedAt?: string;
-		reviewContent: RichText;
+		/** Optional: the "pending" status update sends no content fields. */
+		reviewContent?: RichText;
 		favoriteQuotes: { quote: string; page?: string | null }[];
 		[key: string]: unknown;
 	};
@@ -261,6 +262,10 @@ describe("runTranslationPipeline", () => {
 			"translateRichText",
 		).mockImplementation(async (rt: RichTextDocument | null | undefined) =>
 			makeRichText(
+				// Safe cast: the pipeline passes doc.reviewContent straight through,
+				// and makeDoc builds that field with makeRichText, whose shape is
+				// exactly this fixture's RichText type (RichTextDocument keeps the
+				// traversed fields `unknown`).
 				para(`ID:${(rt as RichText).root.children[0].children[0].text}`),
 			),
 		);
@@ -290,9 +295,17 @@ describe("runTranslationPipeline", () => {
 		expect(secondCall.context.skipTranslation).toBe(true);
 		expect(secondCall.data.translationStatus).toBe("translated");
 		expect(secondCall.data.translationUpdatedAt).toBeTruthy();
-		expect(
-			secondCall.data.reviewContent.root.children[0].children[0].text,
-		).toBe("ID:Hello world");
+		// Explicit guard: with reviewContent optional on the mock type, fail
+		// loudly here rather than dereferencing a possibly-undefined value.
+		const translatedContent = secondCall.data.reviewContent;
+		if (!translatedContent) {
+			throw new Error(
+				"expected second update to include translated reviewContent",
+			);
+		}
+		expect(translatedContent.root.children[0].children[0].text).toBe(
+			"ID:Hello world",
+		);
 		expect(secondCall.data.favoriteQuotes[0].quote).toBe("ID:A fine line");
 		expect(secondCall.data.favoriteQuotes[0].page).toBe("12");
 	});
