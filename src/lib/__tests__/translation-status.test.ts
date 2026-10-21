@@ -4,6 +4,7 @@ import {
 	createFailedStatus,
 	describeFailure,
 	isStale,
+	shouldBackfillToStale,
 	TRANSLATION_STATUSES,
 	type TranslationStatus,
 } from "../translation-status";
@@ -145,6 +146,94 @@ describe("translation-status", () => {
 			expect(describeFailure(new Error("API down"), 1)).toBe(
 				"API down (after 1 attempt)",
 			);
+		});
+	});
+
+	describe("shouldBackfillToStale", () => {
+		it("selects translated reviews whose English content is newer", () => {
+			expect(
+				shouldBackfillToStale({
+					translationStatus: "translated",
+					englishUpdatedAt: "2026-01-02T00:00:00.000Z",
+					translationUpdatedAt: "2026-01-01T00:00:00.000Z",
+				}),
+			).toBe(true);
+		});
+
+		it("skips translated reviews whose translation is current", () => {
+			expect(
+				shouldBackfillToStale({
+					translationStatus: "translated",
+					englishUpdatedAt: "2026-01-01T00:00:00.000Z",
+					translationUpdatedAt: "2026-01-01T00:00:00.000Z",
+				}),
+			).toBe(false);
+			expect(
+				shouldBackfillToStale({
+					translationStatus: "translated",
+					englishUpdatedAt: "2026-01-01T00:00:00.000Z",
+					translationUpdatedAt: "2026-01-02T00:00:00.000Z",
+				}),
+			).toBe(false);
+		});
+
+		it("never touches pending, failed, or untranslated reviews", () => {
+			for (const translationStatus of ["pending", "failed", "untranslated"]) {
+				expect(
+					shouldBackfillToStale({
+						translationStatus,
+						englishUpdatedAt: "2026-01-02T00:00:00.000Z",
+						translationUpdatedAt: "2026-01-01T00:00:00.000Z",
+					}),
+				).toBe(false);
+			}
+		});
+
+		it("skips stale reviews already marked", () => {
+			expect(
+				shouldBackfillToStale({
+					translationStatus: "stale",
+					englishUpdatedAt: "2026-01-02T00:00:00.000Z",
+					translationUpdatedAt: "2026-01-01T00:00:00.000Z",
+				}),
+			).toBe(false);
+		});
+
+		it("skips rows missing either timestamp (mirrors the SQL backfill)", () => {
+			expect(
+				shouldBackfillToStale({
+					translationStatus: "translated",
+					englishUpdatedAt: "2026-01-02T00:00:00.000Z",
+					translationUpdatedAt: null,
+				}),
+			).toBe(false);
+			expect(
+				shouldBackfillToStale({
+					translationStatus: "translated",
+					englishUpdatedAt: null,
+					translationUpdatedAt: "2026-01-01T00:00:00.000Z",
+				}),
+			).toBe(false);
+		});
+
+		it("treats invalid dates as stale for translated reviews (isStale semantics)", () => {
+			expect(
+				shouldBackfillToStale({
+					translationStatus: "translated",
+					englishUpdatedAt: "not-a-date",
+					translationUpdatedAt: "2026-01-01T00:00:00.000Z",
+				}),
+			).toBe(true);
+		});
+
+		it("accepts Date instances like the hook path uses", () => {
+			expect(
+				shouldBackfillToStale({
+					translationStatus: "translated",
+					englishUpdatedAt: new Date("2026-01-02T00:00:00.000Z"),
+					translationUpdatedAt: new Date("2026-01-01T00:00:00.000Z"),
+				}),
+			).toBe(true);
 		});
 	});
 });

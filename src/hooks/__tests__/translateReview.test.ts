@@ -9,6 +9,7 @@ import {
 	test,
 } from "bun:test";
 import type { Payload } from "payload";
+import * as redisModule from "../../lib/redis";
 import type { RichTextDocument } from "../../lib/utils";
 import type { Review } from "../../payload-types";
 
@@ -228,6 +229,46 @@ describe("decideTranslationAction", () => {
 		expect(result).toBe("none");
 	});
 
+	test("auto-translate OFF, English newer than translation → mark-stale (real stale)", () => {
+		const result = decideTranslationAction({
+			doc: makeDoc({
+				autoTranslate: false,
+				updatedAt: "2026-01-02T00:00:00.000Z",
+				translationUpdatedAt: "2026-01-01T00:00:00.000Z",
+			}),
+			previousDoc: makeDoc(),
+			context: {},
+		});
+		expect(result).toBe("mark-stale");
+	});
+
+	test("auto-translate OFF, translation up to date → none", () => {
+		const result = decideTranslationAction({
+			doc: makeDoc({
+				autoTranslate: false,
+				updatedAt: "2026-01-01T00:00:00.000Z",
+				translationUpdatedAt: "2026-01-01T00:00:00.000Z",
+			}),
+			previousDoc: makeDoc(),
+			context: {},
+		});
+		expect(result).toBe("none");
+	});
+
+	test("auto-translate OFF, stale dates but status failed → none (failed → stale is illegal)", () => {
+		const result = decideTranslationAction({
+			doc: makeDoc({
+				autoTranslate: false,
+				translationStatus: "failed",
+				updatedAt: "2026-01-02T00:00:00.000Z",
+				translationUpdatedAt: "2026-01-01T00:00:00.000Z",
+			}),
+			previousDoc: makeDoc(),
+			context: {},
+		});
+		expect(result).toBe("none");
+	});
+
 	test("nothing changed → none", () => {
 		const result = decideTranslationAction({
 			doc: makeDoc(),
@@ -243,15 +284,20 @@ describe("runTranslationPipeline", () => {
 
 	let translateRichTextSpy: TranslateRichTextSpy;
 	let translateTextSpy: TranslateTextSpy;
+	let redisSpy: ReturnType<typeof spyOn<typeof redisModule, "getRedisClient">>;
 
 	beforeEach(async () => {
 		const mod = await import("../translateReview");
 		runTranslationPipeline = mod.runTranslationPipeline;
+		// Force the in-memory lock fallback so pipeline tests are
+		// deterministic without a live Redis (mirrors redis-less environments).
+		redisSpy = spyOn(redisModule, "getRedisClient").mockReturnValue(null);
 	});
 
 	afterEach(() => {
 		translateRichTextSpy?.mockRestore();
 		translateTextSpy?.mockRestore();
+		redisSpy?.mockRestore();
 	});
 
 	test("pending → translated: updates status then saves ID content with translated text", async () => {
@@ -335,5 +381,142 @@ describe("runTranslationPipeline", () => {
 		// No English fallback: translated rich text fields must not be present
 		expect(finalCall.data.reviewContent).toBeUndefined();
 		expect(finalCall.data.favoriteQuotes).toBeUndefined();
+	});
+
+	test("second concurrent trigger while pipeline is running → silent no-op (per-review lock)", async () => {
+		const payload = makePayload();
+		const translateModule = await import("../../lib/translate");
+
+		let release!: () => void;
+		translateRichTextSpy = spyOn(
+			translateModule,
+			"translateRichText",
+		).mockImplementation(async () => {
+			await new Promise<void>((resolve) => {
+				release = resolve;
+			});
+			return makeRichText(para("ID:Hello world"));
+		});
+		translateTextSpy = spyOn(
+			translateModule,
+			"translateText",
+		).mockImplementation(async (t: string) => `ID:${t}`);
+
+		const doc = makeDoc();
+		const run1 = runTranslationPipeline(payload as unknown as Payload, doc);
+		const run2 = runTranslationPipeline(payload as unknown as Payload, doc);
+
+		// Let run1 reach the blocked translation step.
+		await new Promise((resolve) => setTimeout(resolve, 5));
+
+		// Exactly one pipeline is running: only run1's pending update exists.
+		expect(payload.update.mock.calls.length).toBe(1);
+		expect(translateRichTextSpy).toHaveBeenCalledTimes(1);
+
+		release();
+		await Promise.all([run1, run2]);
+
+		// run1 completed normally; run2 added nothing.
+		expect(payload.update.mock.calls.length).toBe(2);
+		expect(translateRichTextSpy).toHaveBeenCalledTimes(1);
+	});
+
+	test("lock is released on failure — a later run can acquire it", async () => {
+		const payload = makePayload();
+		const translateModule = await import("../../lib/translate");
+		translateRichTextSpy = spyOn(
+			translateModule,
+			"translateRichText",
+		).mockImplementation(async () => {
+			const { TranslationError } = await import("../../lib/translate");
+			throw new TranslationError("API down", { attempts: 3 });
+		});
+
+		const doc = makeDoc();
+		await runTranslationPipeline(payload as unknown as Payload, doc, {
+			retryDelayMs: 1,
+		});
+		expect(payload.update.mock.calls.length).toBe(2);
+
+		// The failed run released the lock: a fresh run acquires and proceeds.
+		await runTranslationPipeline(payload as unknown as Payload, doc);
+		expect(payload.update.mock.calls.length).toBe(4);
+		expect(payload.update.mock.calls[3][0].data.translationStatus).toBe(
+			"failed",
+		);
+	});
+
+	test("transient failure → exactly one delayed re-run, then failed stays", async () => {
+		const payload = makePayload();
+		const translateModule = await import("../../lib/translate");
+		translateRichTextSpy = spyOn(
+			translateModule,
+			"translateRichText",
+		).mockImplementation(async () => {
+			const { TranslationError } = await import("../../lib/translate");
+			throw new TranslationError("Translation failed after 3 attempts", {
+				attempts: 3,
+				cause: new Error("quota exceeded"),
+			});
+		});
+
+		const doc = makeDoc();
+		await runTranslationPipeline(payload as unknown as Payload, doc, {
+			retryDelayMs: 1,
+		});
+
+		// First run recorded the failure.
+		expect(payload.update.mock.calls.length).toBe(2);
+		expect(payload.update.mock.calls[1][0].data.translationStatus).toBe(
+			"failed",
+		);
+		expect(payload.update.mock.calls[1][0].data.translationError).toContain(
+			"(raw: Translation failed after 3 attempts: quota exceeded)",
+		);
+		expect(translateRichTextSpy).toHaveBeenCalledTimes(1);
+
+		// The scheduled re-run fires and fails again → failed again.
+		await new Promise((resolve) => setTimeout(resolve, 50));
+		expect(payload.update.mock.calls.length).toBe(4);
+		expect(translateRichTextSpy).toHaveBeenCalledTimes(2);
+		expect(payload.update.mock.calls[3][0].data.translationStatus).toBe(
+			"failed",
+		);
+
+		// No further automatic re-runs after the retry failed.
+		await new Promise((resolve) => setTimeout(resolve, 50));
+		expect(payload.update.mock.calls.length).toBe(4);
+		expect(translateRichTextSpy).toHaveBeenCalledTimes(2);
+	});
+
+	test("permanent failure (credentials) → immediate failed, no re-run", async () => {
+		const payload = makePayload();
+		const translateModule = await import("../../lib/translate");
+		translateRichTextSpy = spyOn(
+			translateModule,
+			"translateRichText",
+		).mockImplementation(async () => {
+			throw new Error(
+				"invalid credentials: Could not load the default credentials",
+			);
+		});
+
+		const doc = makeDoc();
+		await runTranslationPipeline(payload as unknown as Payload, doc, {
+			retryDelayMs: 1,
+		});
+
+		expect(payload.update.mock.calls.length).toBe(2);
+		expect(translateRichTextSpy).toHaveBeenCalledTimes(1);
+		const finalCall = payload.update.mock.calls[1][0];
+		expect(finalCall.data.translationStatus).toBe("failed");
+		expect(finalCall.data.translationError).toContain("credentials");
+		expect(finalCall.data.translationError).toContain(
+			"(raw: invalid credentials",
+		);
+
+		// No automatic re-run was scheduled.
+		await new Promise((resolve) => setTimeout(resolve, 50));
+		expect(payload.update.mock.calls.length).toBe(2);
 	});
 });
