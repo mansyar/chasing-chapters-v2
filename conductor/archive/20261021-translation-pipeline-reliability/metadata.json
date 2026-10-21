@@ -1,7 +1,7 @@
 {
 	"id": "20261021-translation-pipeline-reliability",
 	"type": "feature",
-	"status": "completed",
+	"status": "complete",
 	"title": "Translation Pipeline Reliability",
 	"priority": "high",
 	"depends_on": [],
@@ -22,13 +22,13 @@
 	"review_verdict": "PASS",
 	"review_rounds": 3,
 	"doc_sync": "done",
-	"pr_url": null,
-	"pr_state": null,
+	"pr_url": "https://github.com/mansyar/chasing-chapters-v2/pull/17",
+	"pr_state": "open",
 	"merged_at": null,
 	"merge_commit": null,
 	"reverted_at": null,
 	"revert_commit": null,
 	"revert_pr_url": null,
-	"archived_at": null,
-	"archive_path": null
+	"archived_at": "2026-10-22T03:40:00Z",
+	"archive_path": "conductor/archive/20261021-translation-pipeline-reliability"
 }
