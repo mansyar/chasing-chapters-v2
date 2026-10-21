@@ -112,39 +112,65 @@ The primary appends after acceptance:
 **Evidence:** conductor/tracks/20261021-translation-pipeline-reliability/verification/phase-R1.md
 
 - [x] **R1.T1: Accurate staleness signal (F1)** — covers: F1, FR-8, AC-8
-  - [ ] **R1.T1.1: Add a non-localized `englishUpdatedAt` date field to the Reviews collection, plus a migration that adds the column**
-  - [ ] **R1.T1.2: Record `englishUpdatedAt` when the English rich text changes (text change or first publish), independent of the autoTranslate toggle**
-  - [ ] **R1.T1.3: Compare `englishUpdatedAt` against `translationUpdatedAt` in the hook's stale branch, in `shouldBackfillToStale`, and in the migration SQL; legacy rows (no `englishUpdatedAt`) are not backfilled and the migration says so**
-  - [ ] **R1.T1.4: Tests — a freshly translated review is never stale; an English edit newer than the translation is stale; legacy rows are skipped**
+  - [x] **R1.T1.1: Add a non-localized `englishUpdatedAt` date field to the Reviews collection, plus a migration that adds the column**
+  - [x] **R1.T1.2: Record `englishUpdatedAt` when the English rich text changes (text change or first publish), independent of the autoTranslate toggle**
+  - [x] **R1.T1.3: Compare `englishUpdatedAt` against `translationUpdatedAt` in the hook's stale branch, in `shouldBackfillToStale`, and in the migration SQL; legacy rows (no `englishUpdatedAt`) are not backfilled and the migration says so**
+  - [x] **R1.T1.4: Tests — a freshly translated review is never stale; an English edit newer than the translation is stale; legacy rows are skipped**
 - [x] **R1.T2: The delayed re-run reads fresh content (F2)** — covers: F2, FR-7, AC-7
-  - [ ] **R1.T2.1: In the retry, re-read the review (English locale) and skip the retry when it is gone, no longer published, or a newer translation already exists**
-  - [ ] **R1.T2.2: Test — a failed run followed by a successful run with changed content keeps the newer translation when the delayed retry fires**
+  - [x] **R1.T2.1: In the retry, re-read the review (English locale) and skip the retry when it is gone, no longer published, or a newer translation already exists**
+  - [x] **R1.T2.2: Test — a failed run followed by a successful run with changed content keeps the newer translation when the delayed retry fires**
 - [x] **R1.T3: The poller reacts to a just-saved document (F3)** — covers: F3, FR-1, FR-2, AC-1, AC-2
-  - [ ] **R1.T3.1: Extract a pure `shouldPollTranslationStatus` rule that also polls while the document was modified within a recent window, and use it in the poller**
-  - [ ] **R1.T3.2: Tests — the save-triggered case polls; a long-idle document does not**
+  - [x] **R1.T3.1: Extract a pure `shouldPollTranslationStatus` rule that also polls while the document was modified within a recent window, and use it in the poller**
+  - [x] **R1.T3.2: Tests — the save-triggered case polls; a long-idle document does not**
 - [x] **R1.T4: Cover `isTranslationLocked` (F4)** — covers: F4, FR-4, AC-4
-  - [ ] **R1.T4.1: Tests — Redis hit, Redis miss, Redis error falling through to the memory map, and the memory-only path**
+  - [x] **R1.T4.1: Tests — Redis hit, Redis miss, Redis error falling through to the memory map, and the memory-only path**
 - [x] **R1.T5: Bound the bulk batch (F5)** — covers: F5, FR-4, AC-4
-  - [ ] **R1.T5.1: Stop the sequential loop at a wall-clock budget and report the unattempted ids as skipped with a reason**
-  - [ ] **R1.T5.2: Test — the budget stops the loop and every id still reports an outcome**
+  - [x] **R1.T5.1: Stop the sequential loop at a wall-clock budget and report the unattempted ids as skipped with a reason**
+  - [x] **R1.T5.2: Test — the budget stops the loop and every id still reports an outcome**
 - [x] **R1.T6: The bell badge shows the real backlog (L1)** — covers: L1, FR-3
-  - [ ] **R1.T6.1: Use `totalDocs` from the REST list response for the badge count, keeping the "+" suffix past the limit**
-  - [ ] **R1.T6.2: Test the count/limit formatting**
+  - [x] **R1.T6.1: Use `totalDocs` from the REST list response for the badge count, keeping the "+" suffix past the limit**
+  - [x] **R1.T6.2: Test the count/limit formatting**
 - [x] **R1.T7: Contract alignment (L2, L4)** — covers: L2, L4
   - [x] **R1.T7.1: Amend Phase 3's `Touches` and the FR-4/AC-4/FR-8/AC-8 wording in `spec.md` to match the delivered surface** — applied by the primary in the review commit
   - [x] **R1.T7.2: Tick the delivered sub-task checkboxes** — applied by the primary in the review commit
 
+## Phase R2: Review Fixes (round 2)
+
+- **Goal:** Resolve the round-2 review findings F1 (High — the English change time was written with an awaited nested update inside the afterChange hook, which deadlocks every admin save), F2 (Medium — the bulk budget bounded the loop but not the in-flight review), F3 (Low — the delayed re-run checked freshness before the lock was acquired). L4 (unticked sub-task boxes) and L5 (the local migration) were handled by the primary.
+- **Depends on:** Phase R1
+- **Covers:** F1, F2, F3, L4, L5
+- **Touches:** `src/hooks/translateReview.ts`, `src/lib/translate.ts`, `src/lib/retranslate.ts`, `src/collections/Reviews.ts` (register the beforeChange hook — the only change to the root collection file), test files under `src/**/__tests__/*`
+- **Verification:** `bun run typecheck && bun run lint && bun test` (plus a production build run by the primary)
+- **Status:** in_progress
+
+- [ ] **R2.T1: Write the English change time in a beforeChange hook (F1)** — covers: F1, FR-8, AC-8
+  - [ ] **R2.T1.1: Add a `beforeChange` hook that stamps `englishUpdatedAt` into the incoming data — default locale only, plain-text comparison, no stamp for a format-only change or a write without rich text**
+  - [ ] **R2.T1.2: Register the hook in the Reviews collection's existing `beforeChange` array and remove the awaited nested write from the afterChange path**
+  - [ ] **R2.T1.3: Tests — the stamp rules, and that the hook performs no awaited nested update**
+- [ ] **R2.T2: Bound the in-flight work of a bulk batch (F2)** — covers: F2, FR-4, AC-4
+  - [ ] **R2.T2.1: Add `timeoutMs` and `deadline` to the translate options and honour them in the retry loop**
+  - [ ] **R2.T2.2: Give the pipeline a deadline and report a budget stop as its own outcome (no delayed retry)**
+  - [ ] **R2.T2.3: Lower the batch budget to 30s, give the in-flight review the same deadline, and correct the doc comment**
+  - [ ] **R2.T2.4: Tests — an exhausted budget, a review that hits the deadline, and the response returning within the budget**
+- [ ] **R2.T3: Close the TOCTOU window in the delayed re-run (F3)** — covers: F3, FR-7, AC-7
+  - [ ] **R2.T3.1: Re-check the stored translation timestamp after the lock is acquired and abort when a newer translation exists**
+  - [ ] **R2.T3.2: Test — a newer translation written between the re-read and the pipeline write survives**
+- [x] **R2.T4: Tick the Phase R1 sub-task boxes (L4)** — covers: L4
+  - [x] **R2.T4.1: Tick R1.T1.1–R1.T6.2** — applied by the primary
+- [x] **R2.T5: Apply the migration locally and re-run the build (L5)** — covers: L5
+  - [x] **R2.T5.1: Apply `20261021_140330_add_english_updated_at` to the local dev DB and confirm `bun run build` is green** — applied by the primary
+
 <!--
 Review fixes are appended by `conductor-review` as:
 
-## Phase R2: Review Fixes
+## Phase R3: Review Fixes
 
 - **Goal:** Resolve review findings ...
-- **Depends on:** Phase R1
+- **Depends on:** Phase R2
 - **Covers:** review findings
 - **Touches:** ...
 - **Verification:** ...
 - **Status:** pending
 
-- [ ] **R2.T1: Resolve <finding ID>** — covers: <finding ID>
+- [ ] **R3.T1: Resolve <finding ID>** — covers: <finding ID>
 -->
