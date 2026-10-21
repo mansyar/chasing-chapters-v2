@@ -105,7 +105,7 @@ The primary appends after acceptance:
 - **Covers:** F1, F2, F3, F4, F5, L1, L2, L4
 - **Touches:** `src/collections/Reviews.ts` (new `englishUpdatedAt` field — the only deliberate change to the root collection file in this track), `src/hooks/translateReview.ts`, `src/lib/translation-status.ts`, `src/lib/translation-lock.ts` (tests only), `src/lib/retranslate.ts`, `src/components/admin/*`, `src/migrations/*` (new migration + `index.ts`), test files under `src/**/__tests__/*`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **R1.T1: Accurate staleness signal (F1)** — covers: F1, FR-8, AC-8
   - [ ] **R1.T1.1: Add a non-localized `englishUpdatedAt` date field to the Reviews collection, plus a migration that adds the column**
