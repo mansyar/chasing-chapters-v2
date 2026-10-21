@@ -38,7 +38,9 @@ jobs:
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.2
+          # 1.4.3: `bun check` (the typecheck script's engine) exists from
+          # 1.4.3 — CI run 39567563082 proved 1.4.2 lacks it.
+          bun-version: 1.4.3
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
