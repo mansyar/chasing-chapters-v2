@@ -20,16 +20,20 @@
 - **Verification:** `bun run typecheck && bun run lint && bun test` — pass
   criteria: exit 0, zero tests failed, total warnings strictly below the
   67-warning baseline, no new rule introduced beyond the baseline.
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P1.T1: Type `src/lib/translate.ts` (12 warnings)** — covers: FR-1
-  - [ ] **P1.T1.1: Replace `any` with Payload generated types / `unknown` + narrowing per spec strategy; remove dead `eslint-disable` lines (FR-4)**
-- [ ] **P1.T2: Type `src/hooks/translateReview.ts` (9 warnings)** — covers: FR-1
-  - [ ] **P1.T2.1: Type translation results and API boundary inputs/outputs; remove dead `eslint-disable` lines (FR-4)**
-- [ ] **P1.T3: Type `src/lib/retranslate.ts` (4 warnings)** — covers: FR-1
-  - [ ] **P1.T3.1: Replace `any` with concrete types consistent with P1.T1; remove dead `eslint-disable` lines (FR-4)**
-- [ ] **P1.T4: Type `src/lib/utils.ts` `extractTextFromRichText` (2 warnings)** — covers: FR-1
-  - [ ] **P1.T4.1: Type the rich-text node shape with the Lexical/Payload generated types**
+- [x] **P1.T1: Type `src/lib/translate.ts` (12 warnings)** — covers: FR-1
+  - [x] **P1.T1.1: Replace `any` with Payload generated types / `unknown` + narrowing per spec strategy; remove dead `eslint-disable` lines (FR-4)**
+- [x] **P1.T2: Type `src/hooks/translateReview.ts` (9 warnings)** — covers: FR-1
+  - [x] **P1.T2.1: Type translation results and API boundary inputs/outputs; remove dead `eslint-disable` lines (FR-4)**
+- [x] **P1.T3: Type `src/lib/retranslate.ts` (4 warnings)** — covers: FR-1
+  - [x] **P1.T3.1: Replace `any` with concrete types consistent with P1.T1; remove dead `eslint-disable` lines (FR-4)**
+- [x] **P1.T4: Type `src/lib/utils.ts` `extractTextFromRichText` (2 warnings)** — covers: FR-1
+  - [x] **P1.T4.1: Type the rich-text node shape with the Lexical/Payload generated types**
+
+**Result:** verified
+**Checkpoint:** d8ce16c
+**Evidence:** conductor/tracks/20261021-lint-debt-cleanup/verification/phase-1.md
 
 ## Phase 2: App, Admin, and UI Correctness Fixes
 
