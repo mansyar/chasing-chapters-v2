@@ -1,9 +1,17 @@
 import { defineConfig, devices } from "@playwright/test";
+import {
+	resolveE2EBaseURL,
+	resolveE2EPort,
+	resolveWorkerCount,
+} from "./src/lib/e2e-harness";
 
 /**
  * Playwright E2E test configuration.
  * @see https://playwright.dev/docs/test-configuration
  */
+const e2ePort = resolveE2EPort(process.env);
+const baseURL = resolveE2EBaseURL(process.env);
+
 export default defineConfig({
 	// Test directory
 	testDir: "./e2e",
@@ -17,8 +25,10 @@ export default defineConfig({
 	// Retry on CI only
 	retries: process.env.CI ? 2 : 0,
 
-	// Opt out of parallel tests on CI
-	workers: process.env.CI ? 1 : undefined,
+	// Bounded worker count: 3 on a developer machine, 1 in CI. Playwright's
+	// default (half the logical CPUs) starves the app server and times out
+	// every page load.
+	workers: resolveWorkerCount(process.env),
 
 	// Reporter configuration
 	reporter: [["html", { open: "never" }], ["list"]],
@@ -26,7 +36,7 @@ export default defineConfig({
 	// Shared settings for all the projects below
 	use: {
 		// Base URL to use in actions like `await page.goto('/')`
-		baseURL: "http://localhost:3000",
+		baseURL,
 
 		// Collect trace when retrying the failed test
 		trace: "on-first-retry",
@@ -43,11 +53,15 @@ export default defineConfig({
 		},
 	],
 
-	// Run your local dev server before starting the tests
+	// Serve the production build. `bun run test:e2e` builds before the suite
+	// starts, so a missing or failed build fails the run loudly instead of
+	// serving stale code.
 	webServer: {
-		command: "next dev",
-		url: "http://localhost:3000",
-		reuseExistingServer: !process.env.CI,
-		timeout: 120 * 1000, // 2 minutes to start the server
+		command: `bun --bun next start --port ${e2ePort}`,
+		url: baseURL,
+		// A foreign server on this port must never be reused silently
+		reuseExistingServer: false,
+		// A cold production start plus the app warm-up can take a while
+		timeout: 300 * 1000,
 	},
 });
