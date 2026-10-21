@@ -22,7 +22,7 @@
 - **Covers:** FR-1, FR-2, AC-1, AC-2, NFR-1, NFR-5
 - **Touches:** `playwright.config.ts`, `package.json`, `src/lib/e2e-harness.ts` (new), `src/lib/__tests__/e2e-harness.test.ts` (new)
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e e2e/feed.spec.ts`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P1.T1: Serve the suite from a production build** — covers: FR-1
   - [ ] **P1.T1.1: Point the Playwright web server at a production server** — `next start` on a dedicated port (3100, overridable), with `baseURL` matching and no reuse of a foreign server on that port.
