@@ -19,8 +19,8 @@
 		"tasks_done": 10
 	},
 	"last_checkpoint": "a319338",
-	"review_verdict": null,
-	"review_rounds": 0,
+	"review_verdict": "BLOCK",
+	"review_rounds": 1,
 	"doc_sync": "pending",
 	"pr_url": null,
 	"pr_state": null,
