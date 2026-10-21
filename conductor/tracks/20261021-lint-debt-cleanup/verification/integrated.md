@@ -16,7 +16,7 @@ branch (all 3 phases applied):
 | Static — types | `bun run typecheck` | 0 | No type errors in 172 files |
 | Static — lint | `bun run lint` | 0 | **0 warnings, 0 errors** across 164 files (baseline was 67 warnings) |
 | Unit | `bun test` | 0 | 236 pass / 0 fail |
-| E2E | `bun run test:e2e` (`--workers=1`, CI-equivalent) | 0 | **Run 1:** 33 passed / 0 failed / 1 conditionally skipped at phase checkpoint `81cb66b`. **Run 2 (repeat, post-review-fixes `140e881`, fresh dev server):** 33 passed / 0 failed / 1 conditionally skipped — stability confirmed (F1) |
+| E2E | `bun run test:e2e` (`--workers=1`, CI-equivalent) | 0 | **Run 1:** 33 passed / 0 failed / 1 conditionally skipped at phase checkpoint `81cb66b`. **Run 2 (repeat, post-review-fixes, checkpoint `b043eab`, fresh dev server):** 33 passed / 0 failed / 1 conditionally skipped — stability confirmed (F1) |
 
 ## Acceptance criteria
 
