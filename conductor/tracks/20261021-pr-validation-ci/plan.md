@@ -56,6 +56,26 @@ After phase acceptance the primary agent appends under the phase:
 **Checkpoint:** 18af5a4
 **Evidence:** conductor/tracks/20261021-pr-validation-ci/verification/phase-2.md
 
+## Phase R1: Review Fixes
+
+- **Goal:** Resolve review findings F1–F5 from round 1 (BLOCK): restore the validated CI configuration to the committed file, enforce the spec's no-admin-bypass edge case, reconcile spec and evidence with the shipped artifact.
+- **Depends on:** Phase 2
+- **Covers:** F1, F2, F3, F4, F5
+- **Touches:** `.github/workflows/ci.yml`, `conductor/tracks/20261021-pr-validation-ci/spec.md`, `conductor/tracks/20261021-pr-validation-ci/verification/*`, branch protection via `gh api`
+- **Verification:** `bun run typecheck && bun run lint && bun test`; live CI run from a branch containing the committed ci.yml must be green (migrate + test + build steps green without a .env); protection re-applied with `enforce_admins: true`
+- **Status:** pending
+
+- [ ] **R1.T1: Restore validated CI config (F1, F2)** — covers: FR-2, NFR-1, AC-1
+  - Pin `bun-version: 1.4.3` with the justification comment (run 39567563082 proved 1.4.2 lacks `bun check`).
+  - Move the placeholder env block to job level (migrate + test + build all need env.ts module-load validation); remove the Build-step env block.
+  - Spec: amend NFR-1 to `1.4.3` (with note).
+- [ ] **R1.T2: enforce_admins true (F3)** — covers: FR-6, AC-3
+  - Re-apply branch protection with `enforce_admins: true` via `gh api`; verify config reads back correctly.
+- [ ] **R1.T3: Spec FR-2 step list (F4)** — covers: FR-2
+  - Add the "Run database migrations" step to FR-2's enumerated list.
+- [ ] **R1.T4: Re-run live CI from committed config + evidence reconciliation (F5)** — covers: AC-1
+  - Scratch branch at fixed HEAD → draft PR → observe green run (migrate/test/build without .env) → close; update phase-2.md and write phase-R1.md referencing the committed-config run.
+
 <!--
 Review fixes are appended by `conductor-review` as `## Phase R<n>: Review Fixes` when needed.
 -->
