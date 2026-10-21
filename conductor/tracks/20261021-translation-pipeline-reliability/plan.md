@@ -141,20 +141,24 @@ The primary appends after acceptance:
 - **Covers:** F1, F2, F3, L4, L5
 - **Touches:** `src/hooks/translateReview.ts`, `src/lib/translate.ts`, `src/lib/retranslate.ts`, `src/collections/Reviews.ts` (register the beforeChange hook — the only change to the root collection file), test files under `src/**/__tests__/*`
 - **Verification:** `bun run typecheck && bun run lint && bun test` (plus a production build run by the primary)
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **R2.T1: Write the English change time in a beforeChange hook (F1)** — covers: F1, FR-8, AC-8
-  - [ ] **R2.T1.1: Add a `beforeChange` hook that stamps `englishUpdatedAt` into the incoming data — default locale only, plain-text comparison, no stamp for a format-only change or a write without rich text**
-  - [ ] **R2.T1.2: Register the hook in the Reviews collection's existing `beforeChange` array and remove the awaited nested write from the afterChange path**
-  - [ ] **R2.T1.3: Tests — the stamp rules, and that the hook performs no awaited nested update**
+**Result:** verified
+**Checkpoint:** 281e0fc
+**Evidence:** conductor/tracks/20261021-translation-pipeline-reliability/verification/phase-R2.md
+
+- [x] **R2.T1: Write the English change time in a beforeChange hook (F1)** — covers: F1, FR-8, AC-8
+  - [x] **R2.T1.1: Add a `beforeChange` hook that stamps `englishUpdatedAt` into the incoming data — default locale only, plain-text comparison, no stamp for a format-only change or a write without rich text**
+  - [x] **R2.T1.2: Register the hook in the Reviews collection's existing `beforeChange` array and remove the awaited nested write from the afterChange path**
+  - [x] **R2.T1.3: Tests — the stamp rules, and that the hook performs no awaited nested update**
 - [ ] **R2.T2: Bound the in-flight work of a bulk batch (F2)** — covers: F2, FR-4, AC-4
-  - [ ] **R2.T2.1: Add `timeoutMs` and `deadline` to the translate options and honour them in the retry loop**
-  - [ ] **R2.T2.2: Give the pipeline a deadline and report a budget stop as its own outcome (no delayed retry)**
-  - [ ] **R2.T2.3: Lower the batch budget to 30s, give the in-flight review the same deadline, and correct the doc comment**
-  - [ ] **R2.T2.4: Tests — an exhausted budget, a review that hits the deadline, and the response returning within the budget**
+  - [x] **R2.T2.1: Add `timeoutMs` and `deadline` to the translate options and honour them in the retry loop**
+  - [x] **R2.T2.2: Give the pipeline a deadline and report a budget stop as its own outcome (no delayed retry)**
+  - [x] **R2.T2.3: Lower the batch budget to 30s, give the in-flight review the same deadline, and correct the doc comment**
+  - [x] **R2.T2.4: Tests — an exhausted budget, a review that hits the deadline, and the response returning within the budget**
 - [ ] **R2.T3: Close the TOCTOU window in the delayed re-run (F3)** — covers: F3, FR-7, AC-7
-  - [ ] **R2.T3.1: Re-check the stored translation timestamp after the lock is acquired and abort when a newer translation exists**
-  - [ ] **R2.T3.2: Test — a newer translation written between the re-read and the pipeline write survives**
+  - [x] **R2.T3.1: Re-check the stored translation timestamp after the lock is acquired and abort when a newer translation exists**
+  - [x] **R2.T3.2: Test — a newer translation written between the re-read and the pipeline write survives**
 - [x] **R2.T4: Tick the Phase R1 sub-task boxes (L4)** — covers: L4
   - [x] **R2.T4.1: Tick R1.T1.1–R1.T6.2** — applied by the primary
 - [x] **R2.T5: Apply the migration locally and re-run the build (L5)** — covers: L5

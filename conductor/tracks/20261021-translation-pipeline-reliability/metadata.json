@@ -13,12 +13,12 @@
 	"base_branch": "main",
 	"base_sha": "6d6e7b908b9288678e605ac02bb70ddad71317fa",
 	"progress": {
-		"phases_total": 4,
-		"phases_verified": 4,
-		"tasks_total": 17,
-		"tasks_done": 17
+		"phases_total": 5,
+		"phases_verified": 5,
+		"tasks_total": 20,
+		"tasks_done": 20
 	},
-	"last_checkpoint": "8646729",
+	"last_checkpoint": "281e0fc",
 	"review_verdict": "BLOCK",
 	"review_rounds": 1,
 	"doc_sync": "pending",
