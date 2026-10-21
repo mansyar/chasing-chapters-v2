@@ -30,6 +30,7 @@ import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc056
 import { AdminLogin as AdminLogin_fa00c180b3f657f6de380c1d2896c16a } from "@/components/AdminLogin";
 import { AdminStyleProvider as AdminStyleProvider_28a320d35397731301b152c32111b42a } from "@/components/AdminStyleProvider";
 import { AnalyticsDashboard as AnalyticsDashboard_d8816c4bca290ed5b5596bb3533c3751 } from "@/components/admin/AnalyticsDashboard";
+import { BulkRetranslateAction as BulkRetranslateAction_708c1e8afd07e71504f16fd3ad23a526 } from "@/components/admin/BulkRetranslateAction";
 import { TranslationAttentionBell as TranslationAttentionBell_4614064c5a55676044bf5957b5262af2 } from "@/components/admin/TranslationAttentionBell";
 import { RetranslateButton as RetranslateButton_8e2b4cee1966104759db58c9db42cd22 } from "../../../collections/Reviews/admin/RetranslateButton";
 
@@ -85,6 +86,8 @@ export const importMap = {
 		RetranslateButton_8e2b4cee1966104759db58c9db42cd22,
 	"@/components/admin/TranslationAttentionBell#TranslationAttentionBell":
 		TranslationAttentionBell_4614064c5a55676044bf5957b5262af2,
+	"@/components/admin/BulkRetranslateAction#BulkRetranslateAction":
+		BulkRetranslateAction_708c1e8afd07e71504f16fd3ad23a526,
 	"@/components/AdminStyleProvider#AdminStyleProvider":
 		AdminStyleProvider_28a320d35397731301b152c32111b42a,
 	"@/components/AdminLogin#AdminLogin":
