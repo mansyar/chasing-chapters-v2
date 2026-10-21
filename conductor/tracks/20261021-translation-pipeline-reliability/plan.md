@@ -20,17 +20,17 @@
 **Checkpoint:** 5a3dab7
 **Evidence:** conductor/tracks/20261021-translation-pipeline-reliability/verification/phase-1.md
 
-- [ ] **P1.T1: Error classification and actionable messages** — covers: FR-5
+- [x] **P1.T1: Error classification and actionable messages** — covers: FR-5
   - [ ] **P1.T1.1: Create classification module mapping Google API / network / timeout / credential failures to kinds + author-actionable guidance**
   - [ ] **P1.T1.2: Wire classification into the pipeline failure path so `translationError` stores actionable message + raw detail**
   - [ ] **P1.T1.3: Unit tests for each error class (quota, network, timeout, credentials, unexpected)**
-- [ ] **P1.T2: Per-review pipeline lock** — covers: FR-6
+- [x] **P1.T2: Per-review pipeline lock** — covers: FR-6
   - [ ] **P1.T2.1: Redis-backed lock (SET NX) with in-memory fallback when Redis is unavailable; second concurrent trigger is a no-op**
   - [ ] **P1.T2.2: Unit tests proving exactly one pipeline run under concurrent triggers**
-- [ ] **P1.T3: Automatic delayed re-run for transient failures** — covers: FR-7
+- [x] **P1.T3: Automatic delayed re-run for transient failures** — covers: FR-7
   - [ ] **P1.T3.1: Schedule one full pipeline re-run (~minutes) after a transient-classified failure; permanent classes fail immediately**
   - [ ] **P1.T3.2: Unit tests: transient → exactly one delayed re-run then failed; permanent → immediate failed**
-- [ ] **P1.T4: Real stale status and backfill** — covers: FR-8
+- [x] **P1.T4: Real stale status and backfill** — covers: FR-8
   - [ ] **P1.T4.1: Wire `isStale()` into pipeline status decisions so date-stale reviews transition to `stale` (respecting the existing transition map)**
   - [ ] **P1.T4.2: Migration backfilling `translated` reviews whose English is newer than their translation to `stale` (skipping pending/failed/untranslated)**
   - [ ] **P1.T4.3: Unit tests for stale transitions and backfill selection logic**
@@ -55,13 +55,13 @@ The primary appends after acceptance:
 **Checkpoint:** 16a8a73
 **Evidence:** conductor/tracks/20261021-translation-pipeline-reliability/verification/phase-2.md
 
-- [ ] **P2.T1: Edit-view live status and completion toast** — covers: FR-1, FR-2
+- [x] **P2.T1: Edit-view live status and completion toast** — covers: FR-1, FR-2
   - [ ] **P2.T1.1: Poll the document's translation status while the edit view is open (bounded interval) and reflect transitions without a manual refresh**
   - [ ] **P2.T1.2: Toast success/failure when a background pipeline completes**
-- [ ] **P2.T2: Global attention bell** — covers: FR-3
+- [x] **P2.T2: Global attention bell** — covers: FR-3
   - [ ] **P2.T2.1: Query/listing of failed, stale, and stuck-pending (>24h) translations honoring writer/admin access rules**
   - [ ] **P2.T2.2: Admin-shell indicator with count and linked document list**
-- [ ] **P2.T3: Phase evidence and verification** — covers: FR-1, FR-2, FR-3
+- [x] **P2.T3: Phase evidence and verification** — covers: FR-1, FR-2, FR-3
   - [ ] **P2.T3.1: Unit-test the attention-list query logic (status filters, threshold, access scoping) and record phase evidence**
 
 <!--
@@ -78,13 +78,17 @@ The primary appends after acceptance:
 - **Covers:** FR-4, AC-4
 - **Touches:** `src/collections/Reviews/**` (endpoints/list config), `src/lib/retranslate.ts` (only if shared run logic needs a batch wrapper), new tests
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P3.T1: Bulk re-translate endpoint** — covers: FR-4
+**Result:** verified
+**Checkpoint:** a319338
+**Evidence:** conductor/tracks/20261021-translation-pipeline-reliability/verification/phase-3.md
+
+- [x] **P3.T1: Bulk re-translate endpoint** — covers: FR-4
   - [ ] **P3.T1.1: Endpoint that sequentially re-translates each selected failed/stale review, enforcing access rules and reporting per-review outcomes**
-- [ ] **P3.T2: List-view bulk action UI** — covers: FR-4
+- [x] **P3.T2: List-view bulk action UI** — covers: FR-4
   - [ ] **P3.T2.1: Bulk action on the reviews list view with per-review outcome feedback**
-- [ ] **P3.T3: Integrated verification** — covers: FR-1, FR-2, FR-3, FR-4, FR-5, FR-6, FR-7, FR-8
+- [x] **P3.T3: Integrated verification** — covers: FR-1, FR-2, FR-3, FR-4, FR-5, FR-6, FR-7, FR-8
   - [ ] **P3.T3.1: Full gate run (typecheck, lint, tests, production build) and AC sweep across all eight acceptance criteria, recorded as integrated evidence**
 
 <!--
