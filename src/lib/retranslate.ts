@@ -73,6 +73,17 @@ export async function retranslateReview(
 /** Maximum number of reviews one bulk re-translate request may cover. */
 export const BULK_RETRANSLATE_MAX_IDS = 50;
 
+/**
+ * Wall-clock budget for one bulk re-translate request. The endpoint runs
+ * behind a proxy with a 60s read timeout, so the batch stops before that
+ * and reports the reviews it did not attempt.
+ */
+export const BULK_RETRANSLATE_TIME_BUDGET_MS = 45 * 1000;
+
+/** Why a review was not attempted: the batch ran out of time. */
+export const BULK_RETRANSLATE_BUDGET_REASON =
+	"not attempted — batch time budget reached";
+
 /** Translation statuses the bulk re-translate action acts on. */
 export const BULK_RETRANSLATABLE_STATUSES = ["failed", "stale"] as const;
 
@@ -149,6 +160,17 @@ function toReviewId(raw: unknown): number | null {
 	return value;
 }
 
+/** Options for one bulk re-translate run. */
+export interface BulkRetranslateOptions {
+	/**
+	 * Wall-clock budget for the whole batch (ms). Defaults to
+	 * BULK_RETRANSLATE_TIME_BUDGET_MS; injectable for tests.
+	 */
+	timeBudgetMs?: number | undefined;
+	/** Clock source, injectable for tests. Defaults to `Date.now`. */
+	now?: (() => number) | undefined;
+}
+
 /**
  * Re-translate a selection of reviews, one after the other.
  *
@@ -157,14 +179,31 @@ function toReviewId(raw: unknown): number | null {
  * reported individually — unauthorized targets and reviews that do not need a
  * re-translate are skipped, a failing review is reported as failed, and
  * neither aborts the rest of the batch.
+ *
+ * The batch is bounded by a wall-clock budget: once it is exhausted the
+ * remaining reviews are reported as skipped instead of being attempted, so
+ * the request still answers with one outcome per selected review and the
+ * proxy timeout cannot cut the response off.
  */
 export async function retranslateReviews(
 	payload: Payload,
 	user: TypedUser | null,
 	ids: readonly number[],
+	options: BulkRetranslateOptions = {},
 ): Promise<BulkRetranslateOutcome[]> {
+	const budgetMs = options.timeBudgetMs ?? BULK_RETRANSLATE_TIME_BUDGET_MS;
+	const clock = options.now ?? Date.now;
+	const deadline = clock() + budgetMs;
 	const outcomes: BulkRetranslateOutcome[] = [];
 	for (const id of ids) {
+		if (clock() >= deadline) {
+			outcomes.push({
+				id,
+				status: "skipped",
+				reason: BULK_RETRANSLATE_BUDGET_REASON,
+			});
+			continue;
+		}
 		outcomes.push(await retranslateOneReview(payload, user, id));
 	}
 	return outcomes;

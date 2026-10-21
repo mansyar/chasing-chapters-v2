@@ -264,4 +264,43 @@ describe("bulk re-translate run (FR-4)", () => {
 		expect(outcomes[0].reason).toContain("boom");
 		expect(outcomes[1].status).toBe("translated");
 	});
+
+	test("the wall-clock budget stops the loop and every id still reports an outcome", async () => {
+		docs.set(1, makeDoc({ id: 1, translationStatus: "failed" }));
+		docs.set(2, makeDoc({ id: 2, translationStatus: "failed" }));
+		docs.set(3, makeDoc({ id: 3, translationStatus: "failed" }));
+		accessible.add(1);
+		accessible.add(2);
+		accessible.add(3);
+		const payload = makePayload();
+
+		// The clock jumps past the budget while the first review runs.
+		let current = 0;
+		const clock = (): number => {
+			current += 1000;
+			return current;
+		};
+		pipelineSpy.mockImplementation(async (_payload: Payload, doc: Review) => {
+			const stored = docs.get(doc.id);
+			if (stored) {
+				docs.set(doc.id, { ...stored, translationStatus: "translated" });
+			}
+		});
+
+		const outcomes = await retranslateReviews(payload, writer, [1, 2, 3], {
+			timeBudgetMs: 1500,
+			now: clock,
+		});
+
+		// Every selected review has an outcome.
+		expect(outcomes).toHaveLength(3);
+		expect(outcomes.map((outcome) => outcome.id)).toEqual([1, 2, 3]);
+		// The budget stopped the loop: only the first review was attempted.
+		expect(pipelineSpy).toHaveBeenCalledTimes(1);
+		expect(outcomes[0].status).toBe("translated");
+		for (const skipped of outcomes.slice(1)) {
+			expect(skipped.status).toBe("skipped");
+			expect(skipped.reason).toBe("not attempted — batch time budget reached");
+		}
+	});
 });
