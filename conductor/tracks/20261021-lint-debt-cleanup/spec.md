@@ -54,6 +54,8 @@ the baseline now makes every subsequent strict review meaningful.
   (invalid `aria-label` on a `<div>`).
 - Remove now-useless `eslint-disable` comment lines left over from the
   pre-Biome ESLint configuration.
+- (Amended 2026-10-21) Make the comment e2e suite deterministic under
+  full-suite parallelism so shared rate-limit state cannot flake it (FR-5).
 
 ### Out of Scope
 
@@ -72,6 +74,7 @@ the baseline now makes every subsequent strict review meaningful.
 | FR-2 | `ModernBookCarousel`'s memoized callback declares every captured reactive dependency, including `scrollTo` | must |
 | FR-3 | `marquee.tsx` uses only ARIA props supported by its element's role | must |
 | FR-4 | Dead `eslint-disable` comment lines are removed wherever the associated warning is resolved | should |
+| FR-5 | The comment e2e suite must not race on shared rate-limit state: comment-submission tests run deterministically in full-suite parallel mode so that per-IP rate limiting cannot make a test flake (scope amendment 2026-10-21 — see Open Questions) | must |
 
 ## Non-Functional Requirements
 
@@ -91,6 +94,7 @@ the baseline now makes every subsequent strict review meaningful.
 | AC-3 | `bun test` exits 0 with all tests passing | FR-1, NFR-3 |
 | AC-4 | `bun run test:e2e` exits 0 (full final run, extra insurance for the FR-2 hook-dep correction) | FR-2 |
 | AC-5 | No `grep`-able `: any` remains in files touched by this track (excluding strings/comments) | FR-1 |
+| AC-6 | `bun run test:e2e` exits 0 with all tests passing in a full-suite parallel run, repeated to confirm stability | FR-5 |
 
 ## Edge Cases
 
@@ -121,6 +125,14 @@ the baseline now makes every subsequent strict review meaningful.
 - **Assumption:** `src/payload-types.ts` covers the document shapes used by
   the translation stack and reviews pages; gaps are handled by regeneration,
   not hand-written duplicates.
+- **Scope amendment (2026-10-21, user-approved):** AC-4 was blocked by a
+  pre-existing parallel-execution flake in `e2e/comments.spec.ts` — comment
+  submissions share a per-IP rate-limit bucket (`rateLimit(key, 5, 60)`), and
+  parallel Playwright workers submitting from `localhost` exhaust it mid-race.
+  Reproduced identically on the untouched base commit `d600a92` (1 failed /
+  32 passed), and the test passes in isolation and with `--workers=1`. FR-5 /
+  AC-6 were added to make the e2e gate deterministically green rather than
+  accept a red gate as pre-existing debt.
 
 ## References
 

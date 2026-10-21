@@ -88,16 +88,22 @@
   --reporter=summary` reports 0 warnings (AC-1), all 236 unit tests pass, e2e
   suite passes, and `: any` grep over touched files returns nothing outside
   strings/comments (AC-5).
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P3.T1: Type `src/hooks/__tests__/translateReview.test.ts` (13 warnings)** — covers: FR-1, NFR-3
-  - [ ] **P3.T1.1: Retype mocks with concrete shapes; flag (do not adjust) any test whose observations would change (spec Edge Cases)**
-- [ ] **P3.T2: Type remaining test files (12 warnings across 3 files)** — covers: FR-1
-  - [ ] **P3.T2.1: `src/lib/__tests__/retranslate.test.ts` (10), `src/lib/__tests__/translate.test.ts` (1), `src/hooks/__tests__/formatSlug.test.ts` (1)**
-- [ ] **P3.T3: Sweep leftover dead `eslint-disable` comments** — covers: FR-4
-  - [ ] **P3.T3.1: `grep` the touched files for ESLint-style disable directives and remove every line whose warning is resolved**
-- [ ] **P3.T4: Final full verification** — covers: AC-1, AC-2, AC-3, AC-4, AC-5
-  - [ ] **P3.T4.1: Run the Phase 3 verification commands and record zero-warning proof in the phase evidence file**
+- [x] **P3.T1: Type `src/hooks/__tests__/translateReview.test.ts` (13 warnings)** — covers: FR-1, NFR-3
+  - [x] **P3.T1.1: Retype mocks with concrete shapes; flag (do not adjust) any test whose observations would change (spec Edge Cases)**
+- [x] **P3.T2: Type remaining test files (12 warnings across 3 files)** — covers: FR-1
+  - [x] **P3.T2.1: `src/lib/__tests__/retranslate.test.ts` (10), `src/lib/__tests__/translate.test.ts` (1), `src/hooks/__tests__/formatSlug.test.ts` (1)**
+- [x] **P3.T3: Sweep leftover dead `eslint-disable` comments** — covers: FR-4
+  - [x] **P3.T3.1: `grep` the touched files for ESLint-style disable directives and remove every line whose warning is resolved**
+- [x] **P3.T4: Final full verification** — covers: AC-1, AC-2, AC-3, AC-4, AC-5
+  - [x] **P3.T4.1: Run the Phase 3 verification commands and record zero-warning proof in the phase evidence file**
+- [x] **P3.T5: Fix pre-existing e2e comment flake (scope amendment)** — covers: FR-5, AC-6
+  - [x] **P3.T5.1: Make comment-submission tests deterministic under full-suite parallelism (serialize the comment describe block or equivalent minimal, test-only change); no production-code changes**
+
+**Result:** verified
+**Checkpoint:** 81cb66b
+**Evidence:** conductor/tracks/20261021-lint-debt-cleanup/verification/phase-3.md
 
 <!--
 Review fixes are appended by `conductor-review` as:
