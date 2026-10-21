@@ -1,4 +1,10 @@
-# Phase 3 Verification — Test Typing, Sweep, and Final Verification
+# Phase 3 Verification - Test Typing, Sweep, and Final Verification
+
+> **Note (review round 1, F2):** per-task commit hashes cited below (e.g.
+> `93a23df`) were squashed by the primary into phase checkpoint `81cb66b` and
+> are no longer reachable; use the checkpoint hash for audit. The `Scope
+> amendment (FR-5 / AC-6)` section's `e2e/comments.spec.ts` change is
+> reachable via checkpoint `81cb66b`.
 
 - **Track:** 20261021-lint-debt-cleanup
 - **Phase:** 3

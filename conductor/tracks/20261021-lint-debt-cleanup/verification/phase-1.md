@@ -1,4 +1,8 @@
-# Phase 1 Verification — Translation Stack Typing (production)
+# Phase 1 Verification - Translation Stack Typing (production)
+
+> **Note (review round 1, F2):** per-task commit hashes cited below (e.g.
+> `a41a825`) were squashed by the primary into phase checkpoint `d8ce16c` and
+> are no longer reachable; use the checkpoint hash for audit.
 
 - **Track:** 20261021-lint-debt-cleanup
 - **Phase:** 1 — Translation Stack Typing (production)

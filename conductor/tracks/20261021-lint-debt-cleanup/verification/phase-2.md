@@ -1,4 +1,8 @@
-# Phase 2 Verification — App, Admin, and UI Correctness Fixes
+# Phase 2 Verification - App, Admin, and UI Correctness Fixes
+
+> **Note (review round 1, F2):** per-task commit hashes cited below (e.g.
+> `ca4a4df`) were squashed by the primary into phase checkpoint `852cdba` and
+> are no longer reachable; use the checkpoint hash for audit.
 
 ## Track & Phase
 

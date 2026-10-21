@@ -82,7 +82,9 @@
 - **Touches:** `src/hooks/__tests__/translateReview.test.ts`,
   `src/lib/__tests__/retranslate.test.ts`,
   `src/lib/__tests__/translate.test.ts`,
-  `src/hooks/__tests__/formatSlug.test.ts`
+  `src/hooks/__tests__/formatSlug.test.ts`,
+  `src/scripts/migrate-emails.ts` (dead eslint-disable removal, primary-executed),
+  `e2e/comments.spec.ts` (added by approved FR-5 scope amendment, 2026-10-21)
 - **Verification:** `bun run typecheck && bun run lint && bun test` followed by
   `bun run test:e2e` — pass criteria: exit 0 on all, `bunx biome check .
   --reporter=summary` reports 0 warnings (AC-1), all 236 unit tests pass, e2e
@@ -112,11 +114,15 @@
 - **Covers:** F1, F2, F3, F4
 - **Touches:** `src/app/(public)/reviews/[slug]/page.tsx`, `src/hooks/__tests__/translateReview.test.ts`, `conductor/tracks/20261021-lint-debt-cleanup/{spec.md,plan.md,verification/*.md}`
 - **Verification:** `bun run typecheck && bun run lint && bun test`, plus one repeated full e2e run in CI-equivalent mode recorded in `verification/integrated.md`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **R1.T1: Resolve F3 — replace unjustified `as Author` cast with sibling narrowing pattern** — covers: F3
-- [ ] **R1.T2: Resolve F4 — make mock `reviewContent` optional with undefined-guard at assertion site (or justify cast); document choice** — covers: F4
-- [ ] **R1.T3: Resolve F1 + F2 (primary-executed) — amend AC-6 wording to CI-equivalent mode, record repeated green e2e run, add squash notes to phase evidence files, add `e2e/comments.spec.ts` to Phase 3 Touches** — covers: F1, F2
+- [x] **R1.T1: Resolve F3 — replace unjustified `as Author` cast with sibling narrowing pattern** — covers: F3
+- [x] **R1.T2: Resolve F4 — make mock `reviewContent` optional with undefined-guard at assertion site (or justify cast); document choice** — covers: F4
+- [x] **R1.T3: Resolve F1 + F2 (primary-executed) — amend AC-6 wording to CI-equivalent mode, record repeated green e2e run, add squash notes to phase evidence files, add `e2e/comments.spec.ts` to Phase 3 Touches** — covers: F1, F2
+
+**Result:** verified
+**Checkpoint:** b043eab
+**Evidence:** conductor/tracks/20261021-lint-debt-cleanup/verification/phase-R1.md
 
 <!--
 Review fixes are appended by `conductor-review` (original template note retained for reference; Phase R1 above is the live fix phase).
