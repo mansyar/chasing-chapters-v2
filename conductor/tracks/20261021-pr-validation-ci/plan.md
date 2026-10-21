@@ -13,7 +13,7 @@
 - **Covers:** FR-1, FR-2, FR-3, FR-4, FR-5; NFR-1, NFR-2, NFR-3; AC-5
 - **Touches:** `biome.json`, `.github/workflows/ci.yml`
 - **Verification:** `bun run typecheck && bun run lint && bun test` — lint must report 0 errors and 0 warnings at the new severities; YAML validity confirmed
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P1.T1: Promote lint severities to error** — covers: FR-4, AC-5
   - Flip every `"warn"` value in `biome.json` linter rules to `"error"` (mechanical, no rule additions/removals).
