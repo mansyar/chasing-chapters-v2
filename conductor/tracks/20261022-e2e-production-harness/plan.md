@@ -7,22 +7,29 @@
 > Only the primary agent writes this file. Phase subagents report results and the
 > primary records them.
 
+> **Why the pure e2e helpers live under `src/`:** `bunfig.toml` sets
+> `[test] root = "./src"`, so `bun test` never collects a test file outside
+> `src/` - a unit test under `e2e/` would never run. The shared pure helpers
+> (worker count, port, dataset identifiers) therefore live in
+> `src/lib/e2e-harness.ts` with their unit test beside them, and the Playwright
+> configuration and the global setup import them. The Playwright config keeps
+> `testDir: "./e2e"`, so the two runners never see each other's files.
+
 ## Phase 1: Production-Build Harness and Bounded Workers
 
 - **Goal:** The e2e suite serves the app from a production build and runs with a bounded worker count.
 - **Depends on:** none
-- **Covers:** FR-1, FR-2, AC-1, AC-2
-- **Touches:** `playwright.config.ts`, `package.json`, `e2e/config/workers.ts` (new), `e2e/config/workers.test.ts` (new)
+- **Covers:** FR-1, FR-2, AC-1, AC-2, NFR-1, NFR-5
+- **Touches:** `playwright.config.ts`, `package.json`, `src/lib/e2e-harness.ts` (new), `src/lib/__tests__/e2e-harness.test.ts` (new)
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e e2e/feed.spec.ts`
 - **Status:** pending
 
 - [ ] **P1.T1: Serve the suite from a production build** — covers: FR-1
   - [ ] **P1.T1.1: Point the Playwright web server at a production server** — `next start` on a dedicated port (3100, overridable), with `baseURL` matching and no reuse of a foreign server on that port.
   - [ ] **P1.T1.2: Build before the suite** — `bun run test:e2e` runs `bun run build` and then `bunx playwright test`; raise the web server start timeout to cover a cold production start, and fail loudly when the build is missing or fails rather than serving stale code.
-  - [ ] **P1.T1.3: Narrow Playwright's file matching** — set `testMatch` to `**/*.spec.ts` so bun unit tests living under `e2e/` are not collected by Playwright.
 - [ ] **P1.T2: Bound the worker count** — covers: FR-2
-  - [ ] **P1.T2.1: Resolve the worker count in one place** — `e2e/config/workers.ts` exports `resolveWorkerCount(env)`: 3 by default, `PLAYWRIGHT_WORKERS` override, 1 when `CI` is set; wire it into `playwright.config.ts`.
-  - [ ] **P1.T2.2: Prove the resolution** — `e2e/config/workers.test.ts` (a bun unit test) asserts 3 by default, 1 in CI, and the env override.
+  - [ ] **P1.T2.1: Resolve the worker count in one place** — `src/lib/e2e-harness.ts` exports `resolveWorkerCount(env)`: 3 by default, `PLAYWRIGHT_WORKERS` override, 1 when `CI` is set; wire it into `playwright.config.ts` (import the module by relative path).
+  - [ ] **P1.T2.2: Prove the resolution** — `src/lib/__tests__/e2e-harness.test.ts` (a bun unit test) asserts 3 by default, 1 in CI, and the env override.
 
 <!--
 **Result:** verified
@@ -34,13 +41,13 @@
 
 - **Goal:** The public specs run against a known dataset and the whole public suite is green.
 - **Depends on:** Phase 1
-- **Covers:** FR-3, FR-4, FR-8, AC-3, AC-4, AC-8
-- **Touches:** `e2e/fixtures/dataset.ts` (new), `e2e/fixtures/dataset.test.ts` (new), `e2e/global-setup.ts` (new), `e2e/homepage.spec.ts`, `e2e/navigation.spec.ts`, `e2e/review-detail.spec.ts`, `e2e/comments.spec.ts`, `e2e/feed.spec.ts`, `e2e/sort.spec.ts`, `playwright.config.ts` (register the global setup - Phase 1's changes are already on the branch)
+- **Covers:** FR-3, FR-4, FR-8, AC-3, AC-4, AC-8, NFR-2, NFR-4
+- **Touches:** `src/lib/e2e-harness.ts` (extend with the dataset definition), `src/lib/__tests__/e2e-harness.test.ts` (extend with the dataset assertions), `e2e/global-setup.ts` (new), `e2e/homepage.spec.ts`, `e2e/navigation.spec.ts`, `e2e/review-detail.spec.ts`, `e2e/comments.spec.ts`, `e2e/feed.spec.ts`, `e2e/sort.spec.ts`, `playwright.config.ts` (register the global setup - Phase 1's changes are already on the branch)
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e && bun run test:e2e`
 - **Status:** pending
 
 - [ ] **P2.T1: Build the e2e dataset fixture** — covers: FR-3
-  - [ ] **P2.T1.1: Define the dataset as pure data** — `e2e/fixtures/dataset.ts` holds fixed identifiers (the author/admin with the fixed test-only credential, review slugs, a reading list, a featured review, and reviews in the `translated`, `failed` and `stale` states); `e2e/fixtures/dataset.test.ts` asserts the identifiers are stable across calls.
+  - [ ] **P2.T1.1: Define the dataset as pure data** — `src/lib/e2e-harness.ts` holds the fixed identifiers (the author/admin with the fixed test-only credential, review slugs, a reading list, a featured review, and reviews in the `translated`, `failed` and `stale` states); the unit test asserts the identifiers are stable across calls.
   - [ ] **P2.T1.2: Upsert the dataset** — `e2e/global-setup.ts` writes it through the Payload local API, matching on the fixed identifiers (create or update) and never deleting or altering rows it does not own.
   - [ ] **P2.T1.3: Run the fixture before the suite** — register the global setup in `playwright.config.ts`.
 - [ ] **P2.T2: Make the public specs deterministic** — covers: FR-4, FR-8
@@ -57,7 +64,7 @@
 
 - **Goal:** The three admin translation surfaces have browser coverage, and the pipeline completes under test without touching the external provider.
 - **Depends on:** Phase 2
-- **Covers:** FR-5, FR-6, AC-5, AC-6
+- **Covers:** FR-5, FR-6, AC-5, AC-6, NFR-2
 - **Touches:** `src/lib/translate.ts`, `src/lib/__tests__/translate-test-mode.test.ts` (new), `e2e/fixtures/admin-session.ts` (new), `e2e/admin/translation-poller.spec.ts` (new), `e2e/admin/attention-bell.spec.ts` (new), `e2e/admin/bulk-retranslate.spec.ts` (new)
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
 - **Status:** pending
@@ -82,7 +89,7 @@
 
 - **Goal:** The suite runs in CI alongside the existing required check, and the track is verified end to end.
 - **Depends on:** Phase 3
-- **Covers:** FR-7, AC-7
+- **Covers:** FR-7, AC-7, NFR-3
 - **Touches:** `.github/workflows/ci.yml`, `README.md`, `e2e/` (only if the CI runner needs a runner-specific adjustment)
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run build && bun run test:e2e`
 - **Status:** pending
