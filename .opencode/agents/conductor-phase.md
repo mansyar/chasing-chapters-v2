@@ -134,6 +134,12 @@ permissions:
   - action: shell
     resource: "docker compose up -d *"
     effect: allow
+  - action: shell
+    resource: "bunx payload generate:importmap"
+    effect: allow
+  - action: shell
+    resource: "bunx biome check --write *"
+    effect: allow
   # --- PROJECT COMMANDS END ---
 ---
 
@@ -151,7 +157,10 @@ Conductor track. The primary agent remains responsible for Conductor state.
 
 - Use the native `grep`, `glob`, and `read` tools for search and file reading.
   Never invoke `grep`, `rg`, `findstr`, `cat`, or `find` through shell; shell is
-  restricted to Git and the configured verification commands.
+  restricted to Git, the configured verification commands, and the import-map
+  generation commands (`bunx payload generate:importmap` plus
+  `bunx biome check --write` to format the generated file — never hand-edit
+  `src/app/(payload)/admin/importMap.js`).
 - Work only on the assigned phase. Do not start another phase.
 - Stay within the `Touches` paths in the brief.
 - If the phase goal requires touching a file outside `Touches`, make the
