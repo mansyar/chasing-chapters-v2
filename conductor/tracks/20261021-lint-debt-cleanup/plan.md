@@ -52,21 +52,25 @@
 - **Verification:** `bun run typecheck && bun run lint && bun test` — pass
   criteria: exit 0, zero tests failed, total warnings strictly below the
   Phase 1 result, no new rule introduced beyond the baseline.
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P2.T1: Type reviews pages (6 warnings in 2 files)** — covers: FR-1
-  - [ ] **P2.T1.1: `src/app/(public)/reviews/[slug]/page.tsx` (5) — Payload doc params via generated types; remove dead `eslint-disable` lines (FR-4)**
-  - [ ] **P2.T1.2: `src/app/(public)/reviews/page.tsx` (1) — same strategy**
-- [ ] **P2.T2: Type `ReviewCard.tsx` and `RetranslateButton.tsx` (2 warnings)** — covers: FR-1
-  - [ ] **P2.T2.1: Component props and Payload doc typing; remove dead `eslint-disable` lines (FR-4)**
-- [ ] **P2.T3: Type `AnalyticsDashboard.tsx` (3 warnings)** — covers: FR-1
-  - [ ] **P2.T3.1: Analytics row/aggregate typing; remove dead `eslint-disable` lines (FR-4)**
-- [ ] **P2.T4: Type `src/app/(payload)/layout.tsx` and `migrate-emails.ts` (2 warnings)** — covers: FR-1
-  - [ ] **P2.T4.1: Payload admin layout and one-off script typing**
-- [ ] **P2.T5: Fix `ModernBookCarousel` exhaustive dependencies (1 warning)** — covers: FR-2
-  - [ ] **P2.T5.1: Apply the `scrollTo` dependency correction manually — Biome's unsafe auto-fix is explicitly prohibited (spec Edge Cases)**
-- [ ] **P2.T6: Fix `marquee.tsx` ARIA role support (1 warning)** — covers: FR-3
-  - [ ] **P2.T6.1: Move `aria-label` to a role that supports it or add a supported role — no visual/UX change intended**
+- [x] **P2.T1: Type reviews pages (6 warnings in 2 files)** — covers: FR-1
+  - [x] **P2.T1.1: `src/app/(public)/reviews/[slug]/page.tsx` (5) — Payload doc params via generated types; remove dead `eslint-disable` lines (FR-4)**
+  - [x] **P2.T1.2: `src/app/(public)/reviews/page.tsx` (1) — same strategy**
+- [x] **P2.T2: Type `ReviewCard.tsx` and `RetranslateButton.tsx` (2 warnings)** — covers: FR-1
+  - [x] **P2.T2.1: Component props and Payload doc typing; remove dead `eslint-disable` lines (FR-4)**
+- [x] **P2.T3: Type `AnalyticsDashboard.tsx` (3 warnings)** — covers: FR-1
+  - [x] **P2.T3.1: Analytics row/aggregate typing; remove dead `eslint-disable` lines (FR-4)**
+- [x] **P2.T4: Type `src/app/(payload)/layout.tsx` and `migrate-emails.ts` (2 warnings)** — covers: FR-1
+  - [x] **P2.T4.1: Payload admin layout and one-off script typing**
+- [x] **P2.T5: Fix `ModernBookCarousel` exhaustive dependencies (1 warning)** — covers: FR-2
+  - [x] **P2.T5.1: Apply the `scrollTo` dependency correction manually — Biome's unsafe auto-fix is explicitly prohibited (spec Edge Cases)**
+- [x] **P2.T6: Fix `marquee.tsx` ARIA role support (1 warning)** — covers: FR-3
+  - [x] **P2.T6.1: Move `aria-label` to a role that supports it or add a supported role — no visual/UX change intended**
+
+**Result:** verified
+**Checkpoint:** 852cdba
+**Evidence:** conductor/tracks/20261021-lint-debt-cleanup/verification/phase-2.md
 
 ## Phase 3: Test Typing, Sweep, and Final Verification
 
