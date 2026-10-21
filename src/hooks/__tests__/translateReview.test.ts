@@ -77,6 +77,7 @@ type UpdateArgs = {
 		translationStatus?: string;
 		translationError?: string | null;
 		translationUpdatedAt?: string;
+		englishUpdatedAt?: string;
 		/** Optional: the "pending" status update sends no content fields. */
 		reviewContent?: RichText;
 		favoriteQuotes: { quote: string; page?: string | null }[];
@@ -108,12 +109,33 @@ function makeDoc(overrides: Partial<Review> = {}): Review {
 	};
 }
 
-/** Minimal mocked Payload Local API. */
+/**
+ * Minimal mocked Payload Local API. `findByID` answers with a published
+ * review: the delayed re-run re-reads the review and skips unpublished ones.
+ */
 function makePayload() {
 	return {
 		update: mock(async (_args: UpdateArgs) => ({})),
-		findByID: mock(async (_args: { collection: string; id: number }) => ({})),
+		findByID: mock(async (_args: { collection: string; id: number }) =>
+			makeDoc(),
+		),
 	};
+}
+
+/**
+ * A Payload mock whose stored document can be changed between runs — the
+ * delayed re-run reads the review again before translating it.
+ */
+function makeStatefulPayload(initial: Review) {
+	const state = { doc: initial };
+	const payload = {
+		update: mock(async (args: UpdateArgs) => {
+			state.doc = { ...state.doc, ...args.data } as Review;
+			return {};
+		}),
+		findByID: mock(async () => state.doc),
+	};
+	return { payload, state };
 }
 
 // ---------------------------------------------------------------------------
@@ -233,7 +255,7 @@ describe("decideTranslationAction", () => {
 		const result = decideTranslationAction({
 			doc: makeDoc({
 				autoTranslate: false,
-				updatedAt: "2026-01-02T00:00:00.000Z",
+				englishUpdatedAt: "2026-01-02T00:00:00.000Z",
 				translationUpdatedAt: "2026-01-01T00:00:00.000Z",
 			}),
 			previousDoc: makeDoc(),
@@ -246,7 +268,7 @@ describe("decideTranslationAction", () => {
 		const result = decideTranslationAction({
 			doc: makeDoc({
 				autoTranslate: false,
-				updatedAt: "2026-01-01T00:00:00.000Z",
+				englishUpdatedAt: "2026-01-01T00:00:00.000Z",
 				translationUpdatedAt: "2026-01-01T00:00:00.000Z",
 			}),
 			previousDoc: makeDoc(),
@@ -260,8 +282,39 @@ describe("decideTranslationAction", () => {
 			doc: makeDoc({
 				autoTranslate: false,
 				translationStatus: "failed",
-				updatedAt: "2026-01-02T00:00:00.000Z",
+				englishUpdatedAt: "2026-01-02T00:00:00.000Z",
 				translationUpdatedAt: "2026-01-01T00:00:00.000Z",
+			}),
+			previousDoc: makeDoc(),
+			context: {},
+		});
+		expect(result).toBe("none");
+	});
+
+	test("auto-translate OFF, document updatedAt newer than the translation → none (the document timestamp is not a staleness signal)", () => {
+		// The document's `updatedAt` is restamped by every write — including
+		// the pipeline's own translation write — so it must not decide
+		// staleness. The English content's change time does.
+		const result = decideTranslationAction({
+			doc: makeDoc({
+				autoTranslate: false,
+				updatedAt: "2026-01-05T00:00:00.000Z",
+				englishUpdatedAt: "2026-01-01T00:00:00.000Z",
+				translationUpdatedAt: "2026-01-02T00:00:00.000Z",
+			}),
+			previousDoc: makeDoc(),
+			context: {},
+		});
+		expect(result).toBe("none");
+	});
+
+	test("auto-translate OFF, legacy review without an English change time → none", () => {
+		// The English change time was never recorded for this review, so its
+		// staleness cannot be established: it keeps its current status.
+		const result = decideTranslationAction({
+			doc: makeDoc({
+				autoTranslate: false,
+				translationUpdatedAt: "2026-01-02T00:00:00.000Z",
 			}),
 			previousDoc: makeDoc(),
 			context: {},
@@ -518,5 +571,260 @@ describe("runTranslationPipeline", () => {
 		// No automatic re-run was scheduled.
 		await new Promise((resolve) => setTimeout(resolve, 50));
 		expect(payload.update.mock.calls.length).toBe(2);
+	});
+});
+
+describe("delayed re-run (F2)", () => {
+	let runTranslationPipeline: TranslateReviewModule["runTranslationPipeline"];
+
+	let translateRichTextSpy: TranslateRichTextSpy;
+	let translateTextSpy: TranslateTextSpy;
+	let redisSpy: ReturnType<typeof spyOn<typeof redisModule, "getRedisClient">>;
+
+	beforeEach(async () => {
+		const mod = await import("../translateReview");
+		runTranslationPipeline = mod.runTranslationPipeline;
+		redisSpy = spyOn(redisModule, "getRedisClient").mockReturnValue(null);
+	});
+
+	afterEach(() => {
+		translateRichTextSpy?.mockRestore();
+		translateTextSpy?.mockRestore();
+		redisSpy?.mockRestore();
+	});
+
+	/** Fail the first translation attempt, succeed on every later one. */
+	function failFirstAttempt(): void {
+		let attempts = 0;
+		translateRichTextSpy = spyOn(
+			translateModuleRef,
+			"translateRichText",
+		).mockImplementation(async () => {
+			attempts += 1;
+			if (attempts === 1) {
+				throw new translateModuleRef.TranslationError(
+					"Translation failed after 3 attempts",
+					{ attempts: 3, cause: new Error("quota exceeded") },
+				);
+			}
+			return makeRichText(para("ID:translated"));
+		});
+		translateTextSpy = spyOn(
+			translateModuleRef,
+			"translateText",
+		).mockImplementation(async (t: string) => `ID:${t}`);
+	}
+
+	// The translate module is imported lazily so the @google-cloud/translate
+	// stub is registered first (see the mock.module call at the top).
+	let translateModuleRef: TranslateModule;
+
+	beforeEach(async () => {
+		translateModuleRef = await import("../../lib/translate");
+	});
+
+	test("a newer translation survives the delayed re-run", async () => {
+		failFirstAttempt();
+		const { payload, state } = makeStatefulPayload(makeDoc());
+
+		await runTranslationPipeline(payload as unknown as Payload, state.doc, {
+			retryDelayMs: 1,
+		});
+
+		// A second run succeeds with changed content while the retry waits.
+		state.doc = {
+			...state.doc,
+			reviewContent: makeRichText(para("New text")),
+			translationStatus: "translated",
+			translationUpdatedAt: new Date(Date.now() + 1000).toISOString(),
+		};
+		const callsBeforeRetry = payload.update.mock.calls.length;
+
+		await new Promise((resolve) => setTimeout(resolve, 50));
+
+		// The re-run re-read the review, saw the newer translation, and
+		// skipped: nothing was overwritten and no second run happened.
+		expect(payload.update.mock.calls.length).toBe(callsBeforeRetry);
+		expect(translateRichTextSpy).toHaveBeenCalledTimes(1);
+		expect(state.doc.translationStatus).toBe("translated");
+		const freshContent = state.doc.reviewContent as unknown as RichText;
+		expect(freshContent.root.children[0].children[0].text).toBe("New text");
+	});
+
+	test("the delayed re-run translates the fresh content", async () => {
+		failFirstAttempt();
+		const { payload, state } = makeStatefulPayload(makeDoc());
+
+		await runTranslationPipeline(payload as unknown as Payload, state.doc, {
+			retryDelayMs: 1,
+		});
+
+		// The review was edited (but not re-translated) inside the retry
+		// window: the re-run must translate the new content, not the
+		// snapshot taken at failure time.
+		state.doc = {
+			...state.doc,
+			reviewContent: makeRichText(para("New text")),
+		};
+
+		await new Promise((resolve) => setTimeout(resolve, 50));
+
+		expect(translateRichTextSpy).toHaveBeenCalledTimes(2);
+		const retried = translateRichTextSpy.mock.calls[1][0] as RichText;
+		expect(retried.root.children[0].children[0].text).toBe("New text");
+	});
+
+	test("no re-run when the review was unpublished in the meantime", async () => {
+		failFirstAttempt();
+		const { payload, state } = makeStatefulPayload(makeDoc());
+
+		await runTranslationPipeline(payload as unknown as Payload, state.doc, {
+			retryDelayMs: 1,
+		});
+		expect(payload.update.mock.calls.length).toBe(2);
+
+		state.doc = { ...state.doc, _status: "draft" };
+
+		await new Promise((resolve) => setTimeout(resolve, 50));
+
+		// The unpublished review is not re-translated.
+		expect(payload.update.mock.calls.length).toBe(2);
+		expect(translateRichTextSpy).toHaveBeenCalledTimes(1);
+	});
+
+	test("no re-run when the review was deleted in the meantime", async () => {
+		failFirstAttempt();
+		const { payload, state } = makeStatefulPayload(makeDoc());
+
+		await runTranslationPipeline(payload as unknown as Payload, state.doc, {
+			retryDelayMs: 1,
+		});
+		expect(payload.update.mock.calls.length).toBe(2);
+
+		payload.findByID.mockImplementation(async () => {
+			throw Object.assign(new Error("Not Found"), {
+				status: 404,
+				name: "NotFound",
+			});
+		});
+
+		await new Promise((resolve) => setTimeout(resolve, 50));
+
+		expect(payload.update.mock.calls.length).toBe(2);
+		expect(translateRichTextSpy).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe("translateReview hook (F1: English change time)", () => {
+	let translateReview: TranslateReviewModule["translateReview"];
+	let redisSpy: ReturnType<typeof spyOn<typeof redisModule, "getRedisClient">>;
+	let translateRichTextSpy: TranslateRichTextSpy;
+	let translateTextSpy: TranslateTextSpy;
+
+	beforeEach(async () => {
+		const mod = await import("../translateReview");
+		translateReview = mod.translateReview;
+		redisSpy = spyOn(redisModule, "getRedisClient").mockReturnValue(null);
+		// Stub the translation layer: the real one would create the
+		// memoized Google client and bind it to this file's module mock.
+		const translateModule = await import("../../lib/translate");
+		translateRichTextSpy = spyOn(
+			translateModule,
+			"translateRichText",
+		).mockImplementation(async () => makeRichText(para("ID:translated")));
+		translateTextSpy = spyOn(
+			translateModule,
+			"translateText",
+		).mockImplementation(async (t: string) => `ID:${t}`);
+	});
+
+	afterEach(() => {
+		translateRichTextSpy?.mockRestore();
+		translateTextSpy?.mockRestore();
+		redisSpy?.mockRestore();
+	});
+
+	/** Run the afterChange hook with a mocked Payload. */
+	async function runHook({
+		doc,
+		previousDoc,
+		payload,
+	}: {
+		doc: Review;
+		previousDoc: Review;
+		payload: ReturnType<typeof makePayload>;
+	}): Promise<void> {
+		await translateReview({
+			doc,
+			previousDoc,
+			req: { payload },
+			context: {},
+		} as unknown as Parameters<typeof translateReview>[0]);
+		// Let the (deliberately non-blocking) pipeline writes land.
+		await new Promise((resolve) => setTimeout(resolve, 10));
+	}
+
+	test("a text change records the English change time before the pipeline runs", async () => {
+		const payload = makePayload();
+		await runHook({
+			doc: makeDoc({ reviewContent: makeRichText(para("Changed text")) }),
+			previousDoc: makeDoc(),
+			payload,
+		});
+
+		const firstCall = payload.update.mock.calls[0][0];
+		expect(firstCall.collection).toBe("reviews");
+		expect(firstCall.locale).toBe("en");
+		expect(firstCall.context.skipTranslation).toBe(true);
+		expect(typeof firstCall.data.englishUpdatedAt).toBe("string");
+	});
+
+	test("a text change with auto-translate off records the English change time", async () => {
+		const payload = makePayload();
+		await runHook({
+			doc: makeDoc({
+				autoTranslate: false,
+				reviewContent: makeRichText(para("Changed text")),
+			}),
+			previousDoc: makeDoc(),
+			payload,
+		});
+
+		const firstCall = payload.update.mock.calls[0][0];
+		expect(firstCall.locale).toBe("en");
+		expect(typeof firstCall.data.englishUpdatedAt).toBe("string");
+	});
+
+	test("a format-only change does not record the English change time", async () => {
+		const payload = makePayload();
+		await runHook({
+			doc: makeDoc({
+				reviewContent: makeRichText(para("Hello world", "bold")),
+			}),
+			previousDoc: makeDoc(),
+			payload,
+		});
+
+		for (const call of payload.update.mock.calls) {
+			expect(call[0].data.englishUpdatedAt).toBeUndefined();
+		}
+	});
+
+	test("re-marking a stale translation does not record the English change time", async () => {
+		const payload = makePayload();
+		await runHook({
+			doc: makeDoc({
+				autoTranslate: false,
+				translationStatus: "translated",
+				englishUpdatedAt: "2026-01-03T00:00:00.000Z",
+				translationUpdatedAt: "2026-01-02T00:00:00.000Z",
+			}),
+			previousDoc: makeDoc(),
+			payload,
+		});
+
+		for (const call of payload.update.mock.calls) {
+			expect(call[0].data.englishUpdatedAt).toBeUndefined();
+		}
 	});
 });

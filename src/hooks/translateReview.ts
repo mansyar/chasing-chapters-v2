@@ -34,6 +34,27 @@ export type TranslationAction =
 	| "none";
 
 /**
+ * Whether this save changed the English rich text: a text edit or the first
+ * publish. This is the only change that moves the English content's change
+ * time, so it decides both the translation trigger and the
+ * `englishUpdatedAt` write.
+ */
+export function isEnglishContentChanged({
+	doc,
+	previousDoc,
+}: {
+	doc: Review;
+	previousDoc: Review | null | undefined;
+}): boolean {
+	const firstPublish = previousDoc?._status !== "published";
+	const textChanged = richTextFields.some(
+		(field) =>
+			extractPlainText(doc[field]) !== extractPlainText(previousDoc?.[field]),
+	);
+	return firstPublish || textChanged;
+}
+
+/**
  * Pure decision logic: given the saved doc, the previous version and the
  * request context, decide which translation pipeline (if any) should run.
  */
@@ -53,19 +74,13 @@ export function decideTranslationAction({
 	if (doc._status !== "published") return "none";
 
 	// Check for text changes in any field (requires translation)
-	const textChanged = richTextFields.some(
-		(field) =>
-			extractPlainText(doc[field]) !== extractPlainText(previousDoc?.[field]),
-	);
+	const wantsTranslation = isEnglishContentChanged({ doc, previousDoc });
 
 	// Check for any changes including format in any field
 	const anyContentChanged = richTextFields.some(
 		(field) =>
 			JSON.stringify(doc[field]) !== JSON.stringify(previousDoc?.[field]),
 	);
-
-	const firstPublish = previousDoc?._status !== "published";
-	const wantsTranslation = firstPublish || textChanged;
 
 	// Manual-control mode: never auto-overwrite the Indonesian locale.
 	if (doc.autoTranslate === false) {
@@ -75,10 +90,18 @@ export function decideTranslationAction({
 		// than the English content, surface `stale`. Only marked from
 		// `translated` so the write always passes the transition map
 		// (untranslated/failed/pending cannot legally become stale).
+		//
+		// The comparison uses the English content's own change time, never
+		// the document's `updatedAt`: Payload restamps `updatedAt` on every
+		// write — including the pipeline's own translation write — so it
+		// would mark every translated review stale. Reviews that predate
+		// the field have no recorded English change time and are left as
+		// they are.
 		if (
 			doc.translationStatus === "translated" &&
+			doc.englishUpdatedAt &&
 			doc.translationUpdatedAt &&
-			isStale(doc.updatedAt, doc.translationUpdatedAt)
+			isStale(doc.englishUpdatedAt, doc.translationUpdatedAt)
 		) {
 			return "mark-stale";
 		}
@@ -200,6 +223,10 @@ export async function runTranslationPipeline(
 			);
 
 			const failed = createFailedStatus(error, attempts);
+			// The moment the failed run gave up. The delayed re-run compares
+			// the review's translation timestamp against it: a newer one
+			// means a later run already produced a translation.
+			const failedAt = new Date().toISOString();
 
 			try {
 				await payload.update({
@@ -208,7 +235,7 @@ export async function runTranslationPipeline(
 					data: {
 						translationStatus: failed.status,
 						translationError: formatTranslationError(error),
-						translationUpdatedAt: new Date().toISOString(),
+						translationUpdatedAt: failedAt,
 					},
 					context: { skipTranslation: true },
 				});
@@ -223,7 +250,12 @@ export async function runTranslationPipeline(
 			// stop here. The re-run goes through this same function, so it
 			// respects the per-review lock and cannot loop further.
 			if (!options.isRetry && classified.transient) {
-				scheduleTranslationRetry(payload, doc, options.retryDelayMs);
+				scheduleTranslationRetry(
+					payload,
+					doc.id,
+					failedAt,
+					options.retryDelayMs,
+				);
 			}
 		}
 	} finally {
@@ -239,20 +271,109 @@ export async function runTranslationPipeline(
  */
 function scheduleTranslationRetry(
 	payload: Payload,
-	doc: Review,
+	reviewId: number,
+	failedAt: string,
 	retryDelayMs: number = TRANSLATION_RETRY_DELAY_MS,
 ): void {
 	logger.warn(
-		`[Translation] Transient failure for review ${doc.id} ("${doc.title}"); scheduling one automatic pipeline re-run in ${retryDelayMs}ms.`,
+		`[Translation] Transient failure for review ${reviewId}; scheduling one automatic pipeline re-run in ${retryDelayMs}ms.`,
 	);
 	const timer = setTimeout(() => {
-		logger.info(
-			`[Translation] Automatic delayed re-run starting for review ${doc.id}.`,
-		);
-		void runTranslationPipeline(payload, doc, { isRetry: true });
+		void runDelayedTranslationRetry(payload, reviewId, failedAt);
 	}, retryDelayMs);
 	// Do not hold the process open just for the retry.
 	timer.unref?.();
+}
+
+/**
+ * The delayed re-run reads the review again before translating. The retry
+ * window is minutes long, so the review may have been edited, re-translated,
+ * unpublished, or deleted in the meantime — translating the snapshot taken
+ * at failure time would overwrite a newer translation with older content.
+ */
+async function runDelayedTranslationRetry(
+	payload: Payload,
+	reviewId: number,
+	failedAt: string,
+): Promise<void> {
+	let fresh: Review;
+	try {
+		fresh = await payload.findByID({
+			collection: "reviews",
+			id: reviewId,
+			locale: "en",
+			depth: 0,
+		});
+	} catch {
+		logger.info(
+			`[Translation] Delayed re-run skipped for review ${reviewId}: the review no longer exists.`,
+		);
+		return;
+	}
+
+	if (fresh._status !== "published") {
+		logger.info(
+			`[Translation] Delayed re-run skipped for review ${reviewId}: the review is no longer published.`,
+		);
+		return;
+	}
+
+	if (isNewerThan(fresh.translationUpdatedAt, failedAt)) {
+		logger.info(
+			`[Translation] Delayed re-run skipped for review ${reviewId}: a newer translation already exists.`,
+		);
+		return;
+	}
+
+	logger.info(
+		`[Translation] Automatic delayed re-run starting for review ${reviewId}.`,
+	);
+	await runTranslationPipeline(payload, fresh, { isRetry: true });
+}
+
+/**
+ * Whether a timestamp is strictly newer than a reference timestamp. The
+ * delayed re-run uses it to detect a translation that already succeeded
+ * after the failed run gave up.
+ */
+function isNewerThan(
+	candidate: string | null | undefined,
+	reference: string,
+): boolean {
+	if (!candidate) return false;
+	const candidateTime = new Date(candidate).getTime();
+	const referenceTime = new Date(reference).getTime();
+	if (Number.isNaN(candidateTime) || Number.isNaN(referenceTime)) return false;
+	return candidateTime > referenceTime;
+}
+
+/**
+ * Record when the English content last changed. This timestamp — not the
+ * document's `updatedAt`, which every write restamps — is what the
+ * staleness comparison uses. It is written on the English locale before the
+ * pipeline runs, so the pipeline's own translation timestamp is newer.
+ */
+export async function recordEnglishUpdatedAt(
+	payload: Payload,
+	docId: number,
+	timestamp: string = new Date().toISOString(),
+): Promise<void> {
+	try {
+		await payload.update({
+			collection: "reviews",
+			id: docId,
+			locale: "en",
+			data: { englishUpdatedAt: timestamp },
+			context: { skipTranslation: true },
+		});
+	} catch (error) {
+		// The pipeline must still run: a missing English change time only
+		// means the review can no longer be reported as stale.
+		logger.error(
+			`[Translation] Could not record the English content change time for review ${docId}`,
+			error,
+		);
+	}
 }
 
 /**
@@ -370,12 +491,22 @@ export const translateReview: CollectionAfterChangeHook<Review> = async ({
 
 	switch (action) {
 		case "translate":
+			// The English content changed: record when, before the pipeline
+			// writes its own (newer) translation timestamp.
+			await recordEnglishUpdatedAt(payload, doc.id);
 			void runTranslationPipeline(payload, doc);
 			break;
 		case "format-sync":
+			// A format-only change does not change the English content, so
+			// the English change time stays where it is.
 			void runFormatSyncPipeline(payload, doc);
 			break;
 		case "mark-stale":
+			// Only a real English content change moves the English change
+			// time; re-marking an already stale translation does not.
+			if (isEnglishContentChanged({ doc, previousDoc })) {
+				await recordEnglishUpdatedAt(payload, doc.id);
+			}
 			void markTranslationStale(payload, doc.id);
 			break;
 		case "none":
