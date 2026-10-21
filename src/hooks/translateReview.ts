@@ -8,6 +8,7 @@ import {
 	translateText,
 } from "../lib/translate";
 import { createFailedStatus, describeFailure } from "../lib/translation-status";
+import type { Review } from "../payload-types";
 
 // All localized rich text fields checked for text changes
 const richTextFields = [
@@ -33,10 +34,8 @@ export function decideTranslationAction({
 	previousDoc,
 	context,
 }: {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	doc: any;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	previousDoc: any;
+	doc: Review;
+	previousDoc: Review | null | undefined;
 	context?: Record<string, unknown> | null;
 }): TranslationAction {
 	// Prevent recursion: our own status/content updates re-enter this hook.
@@ -78,8 +77,7 @@ export function decideTranslationAction({
  */
 export async function runTranslationPipeline(
 	payload: Payload,
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	doc: any,
+	doc: Review,
 ): Promise<void> {
 	logger.debug(`[Translation] Starting translation for: ${doc.title}`);
 
@@ -109,8 +107,7 @@ export async function runTranslationPipeline(
 		// Translate favorite quotes (plain text array, not rich text)
 		const translatedQuotes = doc.favoriteQuotes
 			? await Promise.all(
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					doc.favoriteQuotes.map(async (item: any) => ({
+					doc.favoriteQuotes.map(async (item) => ({
 						quote: await translateText(item.quote),
 						page: item.page,
 					})),
@@ -174,8 +171,7 @@ export async function runTranslationPipeline(
  */
 export async function runFormatSyncPipeline(
 	payload: Payload,
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	doc: any,
+	doc: Review,
 ): Promise<void> {
 	logger.debug(`[Translation] Starting format sync for: ${doc.title}`);
 
@@ -190,23 +186,19 @@ export async function runFormatSyncPipeline(
 		// Sync format from new English version but keep translated text
 		const syncedReviewContent = syncRichTextFormat(
 			doc.reviewContent,
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			(existingDoc as any).reviewContent,
+			existingDoc.reviewContent,
 		);
 
 		const syncedWhatILoved = doc.whatILoved
-			? syncRichTextFormat(doc.whatILoved, (existingDoc as any).whatILoved)
+			? syncRichTextFormat(doc.whatILoved, existingDoc.whatILoved)
 			: null;
 
 		const syncedWhatCouldBeBetter = doc.whatCouldBeBetter
-			? syncRichTextFormat(
-					doc.whatCouldBeBetter,
-					(existingDoc as any).whatCouldBeBetter,
-				)
+			? syncRichTextFormat(doc.whatCouldBeBetter, existingDoc.whatCouldBeBetter)
 			: null;
 
 		const syncedPerfectFor = doc.perfectFor
-			? syncRichTextFormat(doc.perfectFor, (existingDoc as any).perfectFor)
+			? syncRichTextFormat(doc.perfectFor, existingDoc.perfectFor)
 			: null;
 
 		logger.debug("[Translation] Saving format sync...");
@@ -277,7 +269,7 @@ export async function markTranslationStale(
 	}
 }
 
-export const translateReview: CollectionAfterChangeHook = async ({
+export const translateReview: CollectionAfterChangeHook<Review> = async ({
 	doc,
 	previousDoc,
 	req,

@@ -7,6 +7,25 @@ import { getCachedTranslation, setCachedTranslation } from "./redis";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/**
+ * Minimal structural view of a node in a serialized Lexical rich text
+ * document as stored by Payload. Node payloads differ per node class, so
+ * everything the pipeline does not act on stays `unknown` behind the index
+ * signature and is narrowed at use sites (typeof / Array.isArray). Keeping
+ * the shape index-signature-only is what makes the generated `Review` rich
+ * text fields assignable in and the Payload local API `data` assignable out
+ * without casts.
+ */
+interface RichTextNode {
+	[key: string]: unknown;
+}
+
+/** Serialized Lexical editor state (the value of a Payload rich text field). */
+interface RichTextDocument {
+	root?: RichTextNode;
+	[key: string]: unknown;
+}
+
 // Initialize client - handles both file-based and inline credentials.
 // The client is memoized for the process lifetime: credential parsing is
 // expensive and the client is stateless, so it is safe to reuse.
@@ -264,24 +283,25 @@ export async function translateText(
 }
 
 // Extract plain text from Lexical editor JSON
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function extractPlainText(richText: any): string {
-	if (!richText?.root?.children) return "";
+export function extractPlainText(
+	richText: RichTextDocument | null | undefined,
+): string {
+	const children = richText?.root?.children;
+	if (!Array.isArray(children)) return "";
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const extractFromNode = (node: any): string => {
-		if (node.text) return node.text;
-		if (node.children) {
+	const extractFromNode = (node: RichTextNode): string => {
+		if (typeof node.text === "string") return node.text;
+		if (Array.isArray(node.children)) {
 			return node.children.map(extractFromNode).join("");
 		}
 		return "";
 	};
 
-	return richText.root.children.map(extractFromNode).join("\n").trim();
+	return children.map(extractFromNode).join("\n").trim();
 }
 
 // Create a simple Lexical rich text structure from plain text
-export function createRichTextFromPlain(text: string): object {
+export function createRichTextFromPlain(text: string): RichTextDocument {
 	return {
 		root: {
 			type: "root",
@@ -305,23 +325,30 @@ export function createRichTextFromPlain(text: string): object {
 // Collects every text node, translates them in batched API calls, then maps
 // results back onto the structure. Throws TranslationError on failure -
 // it never returns the original English rich text as a "translation".
+export function translateRichText(
+	richText: RichTextDocument,
+	targetLanguage?: string,
+	options?: TranslateBatchOptions,
+): Promise<RichTextDocument>;
+export function translateRichText(
+	richText: RichTextDocument | null | undefined,
+	targetLanguage?: string,
+	options?: TranslateBatchOptions,
+): Promise<RichTextDocument | null | undefined>;
 export async function translateRichText(
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	richText: any,
+	richText: RichTextDocument | null | undefined,
 	targetLanguage: string = "id",
 	options?: TranslateBatchOptions,
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-): Promise<any> {
+): Promise<RichTextDocument | null | undefined> {
 	if (!richText?.root) return richText;
 
 	// Collect all text nodes in document order.
 	const texts: string[] = [];
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const collect = (node: any): void => {
-		if (node.type === "text" && node.text) {
+	const collect = (node: RichTextNode): void => {
+		if (node.type === "text" && typeof node.text === "string" && node.text) {
 			texts.push(node.text);
 		}
-		if (node.children && Array.isArray(node.children)) {
+		if (Array.isArray(node.children)) {
 			node.children.forEach(collect);
 		}
 	};
@@ -333,15 +360,14 @@ export async function translateRichText(
 
 	// Map translations back onto the structure in the same order.
 	let textIndex = 0;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const apply = (node: any): any => {
-		if (node.type === "text" && node.text) {
+	const apply = (node: RichTextNode): RichTextNode => {
+		if (node.type === "text" && typeof node.text === "string" && node.text) {
 			return {
 				...node,
 				text: translations[textIndex++],
 			};
 		}
-		if (node.children && Array.isArray(node.children)) {
+		if (Array.isArray(node.children)) {
 			return {
 				...node,
 				children: node.children.map(apply),
@@ -356,21 +382,26 @@ export async function translateRichText(
 // Sync rich text format from source to target while preserving target's text content
 // Used when only formatting changed (not text) - avoids re-translation
 export function syncRichTextFormat(
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	sourceRichText: any, // New version (source of structure/format)
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	targetRichText: any, // Existing translated version (source of text)
-): object {
+	sourceRichText: RichTextDocument, // New version (source of structure/format)
+	targetRichText: RichTextDocument | null | undefined, // Existing translated version (source of text)
+): RichTextDocument;
+export function syncRichTextFormat(
+	sourceRichText: RichTextDocument | null | undefined, // New version (source of structure/format)
+	targetRichText: RichTextDocument | null | undefined, // Existing translated version (source of text)
+): RichTextDocument | null | undefined;
+export function syncRichTextFormat(
+	sourceRichText: RichTextDocument | null | undefined, // New version (source of structure/format)
+	targetRichText: RichTextDocument | null | undefined, // Existing translated version (source of text)
+): RichTextDocument | null | undefined {
 	if (!sourceRichText?.root) return sourceRichText;
 	if (!targetRichText?.root) return sourceRichText;
 
 	// Collect all text nodes from target in order
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const collectTextNodes = (node: any): string[] => {
-		if (node.type === "text" && node.text) {
+	const collectTextNodes = (node: RichTextNode): string[] => {
+		if (node.type === "text" && typeof node.text === "string" && node.text) {
 			return [node.text];
 		}
-		if (node.children && Array.isArray(node.children)) {
+		if (Array.isArray(node.children)) {
 			return node.children.flatMap(collectTextNodes);
 		}
 		return [];
@@ -380,9 +411,8 @@ export function syncRichTextFormat(
 	let textIndex = 0;
 
 	// Apply source structure but use target's text content
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const syncNode = (node: any): any => {
-		if (node.type === "text" && node.text) {
+	const syncNode = (node: RichTextNode): RichTextNode => {
+		if (node.type === "text" && typeof node.text === "string" && node.text) {
 			// Use translated text from target if available
 			const translatedText = targetTexts[textIndex] ?? node.text;
 			textIndex++;
@@ -392,7 +422,7 @@ export function syncRichTextFormat(
 			};
 		}
 
-		if (node.children && Array.isArray(node.children)) {
+		if (Array.isArray(node.children)) {
 			return {
 				...node,
 				children: node.children.map(syncNode),
