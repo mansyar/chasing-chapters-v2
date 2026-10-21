@@ -6,10 +6,9 @@ import React, { useEffect, useRef } from "react";
 import { TRANSLATION_POLL_INTERVAL_MS } from "./translation-attention";
 import {
 	resolveTranslationTransition,
+	shouldPollTranslationStatus,
 	type TranslationStatusSnapshot,
 } from "./translation-poll";
-
-const PENDING_STATUS = "pending";
 
 interface DetailResponse {
 	translationStatus?: string | null;
@@ -23,23 +22,39 @@ function readVisibleStatus(fields: FormState | undefined): string | undefined {
 }
 
 /**
- * Renders no UI of its own: while the visible translationStatus is `pending`,
- * polls the review's REST doc on a bounded interval and, on a transition out
- * of `pending`, refreshes the visible sidebar fields (FR-1) and toasts the
- * final status — success or the truncated, already-actionable error (FR-2).
- * Polling stops once the status leaves `pending`, when the document changes,
- * or on unmount (timers and the in-flight request are cleaned up).
+ * The saved document's own modification timestamp. `updatedAt` is the only
+ * reliable "last saved" signal on the client: the document info's
+ * `lastUpdateTime` is only set while another user holds the document lock.
+ */
+function readDocumentUpdatedAt(data: unknown): string | null {
+	if (typeof data !== "object" || data === null) return null;
+	const value = (data as { updatedAt?: unknown }).updatedAt;
+	return typeof value === "string" ? value : null;
+}
+
+/**
+ * Renders no UI of its own: while the visible translationStatus is `pending`
+ * — or while the document was just saved and a background pipeline may
+ * still be running for it — polls the review's REST doc on a bounded
+ * interval and, on a transition out of `pending`, refreshes the visible
+ * sidebar fields (FR-1) and toasts the final status — success or the
+ * truncated, already-actionable error (FR-2). Polling stops once neither
+ * condition holds, when the document changes, or on unmount (timers and the
+ * in-flight request are cleaned up).
  */
 export const TranslationStatusPoller: React.FC = () => {
-	const { id } = useDocumentInfo();
+	const { id, data } = useDocumentInfo();
 	const { dispatchFields, getFields } = useForm();
 	const inFlightRef = useRef(false);
 	const getFieldsRef = useRef(getFields);
 	const dispatchFieldsRef = useRef(dispatchFields);
-	// Read the freshest form handles inside the poll tick without re-running
-	// the polling effect on every form state change.
+	// Read the freshest form/document handles inside the poll tick without
+	// re-running the polling effect on every form state change.
 	getFieldsRef.current = getFields;
 	dispatchFieldsRef.current = dispatchFields;
+	const documentUpdatedAt = readDocumentUpdatedAt(data);
+	const documentUpdatedAtRef = useRef(documentUpdatedAt);
+	documentUpdatedAtRef.current = documentUpdatedAt;
 
 	useEffect(() => {
 		if (!id) return;
@@ -67,7 +82,19 @@ export const TranslationStatusPoller: React.FC = () => {
 			const getFieldsNow = getFieldsRef.current;
 			if (!getFieldsNow) return;
 			const shownStatus = readVisibleStatus(getFieldsNow());
-			if (shownStatus !== PENDING_STATUS) return;
+			// Poll while the status is pending and while the document was
+			// modified recently: the pipeline marks the review pending
+			// asynchronously, so right after a save the form still shows
+			// the pre-pipeline status.
+			if (
+				!shouldPollTranslationStatus({
+					shownStatus,
+					documentUpdatedAt: documentUpdatedAtRef.current,
+					now: Date.now(),
+				})
+			) {
+				return;
+			}
 			inFlightRef.current = true;
 			try {
 				const snapshot = await fetchSnapshot();

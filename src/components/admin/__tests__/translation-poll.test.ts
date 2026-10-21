@@ -2,7 +2,9 @@ import { describe, expect, it } from "bun:test";
 import {
 	buildTranslationStatusPatch,
 	resolveTranslationTransition,
+	shouldPollTranslationStatus,
 	TOAST_MAX_LENGTH,
+	TRANSLATION_POLL_ACTIVITY_WINDOW_MS,
 	truncateToastMessage,
 } from "../translation-poll";
 
@@ -214,6 +216,98 @@ describe("translation-poll", () => {
 			expect(result?.toast).toBeNull();
 			expect(result?.patch.translationStatus.value).toBe("stale");
 			expect(result?.patch.translationError).toBeUndefined();
+		});
+	});
+
+	describe("shouldPollTranslationStatus", () => {
+		const NOW = new Date("2026-10-22T12:00:00.000Z");
+		const justModified = new Date(NOW.getTime() - 60 * 1000).toISOString();
+		const longIdle = new Date(
+			NOW.getTime() - TRANSLATION_POLL_ACTIVITY_WINDOW_MS - 60 * 1000,
+		).toISOString();
+
+		it("polls while the visible status is pending", () => {
+			expect(
+				shouldPollTranslationStatus({
+					shownStatus: "pending",
+					documentUpdatedAt: longIdle,
+					now: NOW,
+				}),
+			).toBe(true);
+		});
+
+		it("polls a just-saved document whose status is not pending yet", () => {
+			// The pipeline marks the review pending asynchronously, so right
+			// after a save the form still shows the pre-pipeline status.
+			expect(
+				shouldPollTranslationStatus({
+					shownStatus: "translated",
+					documentUpdatedAt: justModified,
+					now: NOW,
+				}),
+			).toBe(true);
+		});
+
+		it("does not poll a long-idle document", () => {
+			expect(
+				shouldPollTranslationStatus({
+					shownStatus: "translated",
+					documentUpdatedAt: longIdle,
+					now: NOW,
+				}),
+			).toBe(false);
+		});
+
+		it("falls back to the status rule without a usable timestamp", () => {
+			expect(
+				shouldPollTranslationStatus({
+					shownStatus: "translated",
+					documentUpdatedAt: null,
+					now: NOW,
+				}),
+			).toBe(false);
+			expect(
+				shouldPollTranslationStatus({
+					shownStatus: "pending",
+					documentUpdatedAt: null,
+					now: NOW,
+				}),
+			).toBe(true);
+			expect(
+				shouldPollTranslationStatus({
+					shownStatus: "translated",
+					documentUpdatedAt: "not-a-date",
+					now: NOW,
+				}),
+			).toBe(false);
+		});
+
+		it("honors a custom window", () => {
+			expect(
+				shouldPollTranslationStatus({
+					shownStatus: "translated",
+					documentUpdatedAt: justModified,
+					now: NOW,
+					windowMs: 1000,
+				}),
+			).toBe(false);
+		});
+
+		it("accepts epoch milliseconds and Date instances", () => {
+			expect(
+				shouldPollTranslationStatus({
+					shownStatus: "translated",
+					documentUpdatedAt: NOW.getTime() - 1000,
+					now: NOW,
+				}),
+			).toBe(true);
+			expect(
+				shouldPollTranslationStatus({
+					shownStatus: "translated",
+					documentUpdatedAt: new Date(NOW.getTime() - 1000),
+					now: NOW.getTime(),
+				}),
+			).toBe(true);
 		});
 	});
 });
