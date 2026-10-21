@@ -105,25 +105,29 @@ The primary appends after acceptance:
 - **Covers:** F1, F2, F3, F4, F5, L1, L2, L4
 - **Touches:** `src/collections/Reviews.ts` (new `englishUpdatedAt` field — the only deliberate change to the root collection file in this track), `src/hooks/translateReview.ts`, `src/lib/translation-status.ts`, `src/lib/translation-lock.ts` (tests only), `src/lib/retranslate.ts`, `src/components/admin/*`, `src/migrations/*` (new migration + `index.ts`), test files under `src/**/__tests__/*`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **R1.T1: Accurate staleness signal (F1)** — covers: F1, FR-8, AC-8
+**Result:** verified
+**Checkpoint:** 8646729
+**Evidence:** conductor/tracks/20261021-translation-pipeline-reliability/verification/phase-R1.md
+
+- [x] **R1.T1: Accurate staleness signal (F1)** — covers: F1, FR-8, AC-8
   - [ ] **R1.T1.1: Add a non-localized `englishUpdatedAt` date field to the Reviews collection, plus a migration that adds the column**
   - [ ] **R1.T1.2: Record `englishUpdatedAt` when the English rich text changes (text change or first publish), independent of the autoTranslate toggle**
   - [ ] **R1.T1.3: Compare `englishUpdatedAt` against `translationUpdatedAt` in the hook's stale branch, in `shouldBackfillToStale`, and in the migration SQL; legacy rows (no `englishUpdatedAt`) are not backfilled and the migration says so**
   - [ ] **R1.T1.4: Tests — a freshly translated review is never stale; an English edit newer than the translation is stale; legacy rows are skipped**
-- [ ] **R1.T2: The delayed re-run reads fresh content (F2)** — covers: F2, FR-7, AC-7
+- [x] **R1.T2: The delayed re-run reads fresh content (F2)** — covers: F2, FR-7, AC-7
   - [ ] **R1.T2.1: In the retry, re-read the review (English locale) and skip the retry when it is gone, no longer published, or a newer translation already exists**
   - [ ] **R1.T2.2: Test — a failed run followed by a successful run with changed content keeps the newer translation when the delayed retry fires**
-- [ ] **R1.T3: The poller reacts to a just-saved document (F3)** — covers: F3, FR-1, FR-2, AC-1, AC-2
+- [x] **R1.T3: The poller reacts to a just-saved document (F3)** — covers: F3, FR-1, FR-2, AC-1, AC-2
   - [ ] **R1.T3.1: Extract a pure `shouldPollTranslationStatus` rule that also polls while the document was modified within a recent window, and use it in the poller**
   - [ ] **R1.T3.2: Tests — the save-triggered case polls; a long-idle document does not**
-- [ ] **R1.T4: Cover `isTranslationLocked` (F4)** — covers: F4, FR-4, AC-4
+- [x] **R1.T4: Cover `isTranslationLocked` (F4)** — covers: F4, FR-4, AC-4
   - [ ] **R1.T4.1: Tests — Redis hit, Redis miss, Redis error falling through to the memory map, and the memory-only path**
-- [ ] **R1.T5: Bound the bulk batch (F5)** — covers: F5, FR-4, AC-4
+- [x] **R1.T5: Bound the bulk batch (F5)** — covers: F5, FR-4, AC-4
   - [ ] **R1.T5.1: Stop the sequential loop at a wall-clock budget and report the unattempted ids as skipped with a reason**
   - [ ] **R1.T5.2: Test — the budget stops the loop and every id still reports an outcome**
-- [ ] **R1.T6: The bell badge shows the real backlog (L1)** — covers: L1, FR-3
+- [x] **R1.T6: The bell badge shows the real backlog (L1)** — covers: L1, FR-3
   - [ ] **R1.T6.1: Use `totalDocs` from the REST list response for the badge count, keeping the "+" suffix past the limit**
   - [ ] **R1.T6.2: Test the count/limit formatting**
 - [x] **R1.T7: Contract alignment (L2, L4)** — covers: L2, L4
