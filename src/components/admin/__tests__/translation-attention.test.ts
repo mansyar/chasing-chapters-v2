@@ -3,6 +3,7 @@ import {
 	buildAttentionWhere,
 	buildReviewEditURL,
 	extractAttentionDocs,
+	formatAttentionBadgeLabel,
 	needsTranslationAttention,
 	TRANSLATION_ATTENTION_LIMIT,
 	TRANSLATION_STUCK_PENDING_MS,
@@ -197,6 +198,30 @@ describe("translation-attention", () => {
 		it("links to the admin edit view for the review", () => {
 			expect(buildReviewEditURL(42)).toBe("/admin/collections/reviews/42");
 			expect(buildReviewEditURL("42")).toBe("/admin/collections/reviews/42");
+		});
+	});
+
+	describe("formatAttentionBadgeLabel", () => {
+		it("shows the exact count below the list limit", () => {
+			expect(formatAttentionBadgeLabel(0)).toBe("0");
+			expect(formatAttentionBadgeLabel(1)).toBe("1");
+			expect(formatAttentionBadgeLabel(TRANSLATION_ATTENTION_LIMIT)).toBe(
+				String(TRANSLATION_ATTENTION_LIMIT),
+			);
+		});
+
+		it("marks a truncated list with a plus suffix", () => {
+			expect(formatAttentionBadgeLabel(TRANSLATION_ATTENTION_LIMIT + 1)).toBe(
+				`${TRANSLATION_ATTENTION_LIMIT}+`,
+			);
+			expect(formatAttentionBadgeLabel(57)).toBe(
+				`${TRANSLATION_ATTENTION_LIMIT}+`,
+			);
+		});
+
+		it("honors a custom limit", () => {
+			expect(formatAttentionBadgeLabel(5, 3)).toBe("3+");
+			expect(formatAttentionBadgeLabel(3, 3)).toBe("3");
 		});
 	});
 

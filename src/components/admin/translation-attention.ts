@@ -85,6 +85,17 @@ export function buildReviewEditURL(id: string | number): string {
 	return `/admin/collections/reviews/${encodeURIComponent(String(id))}`;
 }
 
+/**
+ * Badge label for the attention count: the exact number while it fits the
+ * list limit, "<limit>+" once the list is truncated.
+ */
+export function formatAttentionBadgeLabel(
+	count: number,
+	limit: number = TRANSLATION_ATTENTION_LIMIT,
+): string {
+	return count > limit ? `${limit}+` : String(count);
+}
+
 export interface TranslationAttentionItem {
 	id: string;
 	title: string;

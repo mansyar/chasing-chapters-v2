@@ -5,6 +5,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
 	buildAttentionWhere,
 	extractAttentionDocs,
+	formatAttentionBadgeLabel,
 	TRANSLATION_ATTENTION_LIMIT,
 	TRANSLATION_POLL_INTERVAL_MS,
 	type TranslationAttentionItem,
@@ -12,6 +13,8 @@ import {
 
 interface RestListResponse {
 	docs?: unknown[];
+	/** Total number of matching documents, regardless of the list limit. */
+	totalDocs?: number;
 }
 
 function statusColor(status: string): string {
@@ -35,6 +38,7 @@ function statusColor(status: string): string {
  */
 export const TranslationAttentionBell: React.FC = () => {
 	const [items, setItems] = useState<TranslationAttentionItem[]>([]);
+	const [totalCount, setTotalCount] = useState(0);
 	const [open, setOpen] = useState(false);
 	const controllerRef = useRef<AbortController | null>(null);
 
@@ -53,7 +57,13 @@ export const TranslationAttentionBell: React.FC = () => {
 			});
 			if (!res.ok) return; // transient failure: keep the last known list
 			const data = (await res.json()) as RestListResponse;
-			setItems(extractAttentionDocs(data.docs ?? [], new Date()));
+			const docs = extractAttentionDocs(data.docs ?? [], new Date());
+			setItems(docs);
+			// The badge counts the whole backlog, not the rows the bounded
+			// list returned: `totalDocs` is the number of matching reviews.
+			setTotalCount(
+				typeof data.totalDocs === "number" ? data.totalDocs : docs.length,
+			);
 		} catch {
 			// Aborted or offline — retried on the next poll / open.
 		}
@@ -78,11 +88,8 @@ export const TranslationAttentionBell: React.FC = () => {
 		setOpen((previous) => !previous);
 	};
 
-	const count = items.length;
-	const badgeLabel =
-		count > TRANSLATION_ATTENTION_LIMIT
-			? `${TRANSLATION_ATTENTION_LIMIT}+`
-			: String(count);
+	const count = totalCount;
+	const badgeLabel = formatAttentionBadgeLabel(count);
 
 	return (
 		<div
