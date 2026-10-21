@@ -53,3 +53,7 @@ Scratch-branch commits (`ea76572`, `7cd7a63`, `deca60a`) are unreachable after `
 ## Deviations
 
 None outside the amended plan: Phase 2 `Touches` permits `ci.yml` fixes exposed by validation (the migrations step is exactly that), and evidence/conductor state files are primary-owned.
+
+## Addendum (R1 reconciliation — review F5)
+
+Round-1 review found that the cherry-pick from the scratch branch carried only the 7-line migrate step, dropping two fixes that the green runs depended on (bun `1.4.3` pin — `bun check` doesn't exist in 1.4.2, proven by run 39567563082; job-level env block — `env.ts` module-load validation breaks migrate/test without it, proven by run 39567897747). The validated scratch configuration (commit `ea76572`, recovered via the GitHub contents API) was restored to the committed file in `fa919c3` (R1.T1) and re-validated end-to-end from a branch containing the **committed** ci.yml: run [39571390778](https://github.com/mansyar/chasing-chapters-v2/actions/runs/39571390778) — success, **2m 53s**, all steps green without a `.env` file, `mergeStateStatus=CLEAN` under branch protection. The scratch-branch run table above is retained as history; the committed-config run is the durable green-path evidence.
