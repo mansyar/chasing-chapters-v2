@@ -47,7 +47,9 @@ silently read English fallback content.
 - A global admin notification indicator (bell) listing reviews whose
   translation needs attention: `failed`, `stale`, and reviews stuck in
   `pending` beyond a threshold; each entry links to the review document.
-- A list-view bulk action to re-translate all selected failed/stale reviews.
+- An admin bulk action on the reviews admin path to re-translate selected
+  failed/stale reviews (Payload 3.90 hardcodes list-view bulk actions; the
+  action is offered where the reviews are worked through).
 - Error classification: map underlying causes (Google API quota, network
   unreachability, timeout, invalid credentials, unexpected) to
   author-actionable messages, alongside the preserved raw detail.
@@ -55,10 +57,13 @@ silently read English fallback content.
   translation pipelines for the same review.
 - One automatic delayed re-run of the full pipeline after transient failure
   (single re-run after a few minutes) before the status becomes `failed`.
-- Real stale-status semantics: wire the existing `isStale()` date comparison
-  into pipeline status decisions and backfill existing reviews whose dates
-  indicate staleness (status transition only; the transition map already
-  permits `translated → stale` and `stale → pending/translated`).
+- Real stale-status semantics: staleness is decided by the English content's
+  change time (`englishUpdatedAt`, recorded when the English rich text
+  changes) against the translation's time (`translationUpdatedAt`) — not by
+  the document's modification time, which Payload restamps on every write.
+  The transition map already permits `translated → stale` and
+  `stale → pending/translated`; reviews predating the English-change
+  timestamp are not backfilled.
 - Tooling for both roles: admins see/fix all reviews, writers the same UX
   scoped to their own reviews (existing Payload access rules apply).
 
@@ -77,11 +82,11 @@ silently read English fallback content.
 | FR-1 | While a review document is open in the admin edit view, the displayed translation status refreshes automatically (polling) so a background pipeline's `pending → translated/failed` transition becomes visible without a manual refresh. | must |
 | FR-2 | When a background pipeline finishes, the author sees a success or failure toast in the open edit view reflecting the final status. | must |
 | FR-3 | The admin shell shows a global notification indicator with the count of reviews whose translation needs attention (`failed`, `stale`, or `pending` older than 24 hours); opening it lists those reviews with links to their documents. | must |
-| FR-4 | The reviews list view offers a bulk action that re-translates all selected reviews whose status is `failed` or `stale`, running the existing pipeline sequentially server-side. | must |
+| FR-4 | An admin action on the reviews admin path re-translates a selection of reviews whose status is `failed` or `stale`, running the existing pipeline sequentially server-side under a wall-clock budget; every selected review reports its own outcome (including reviews not attempted because the budget was reached). | must |
 | FR-5 | `translationError` distinguishes an author-actionable message (classified cause with next-step guidance) from the preserved raw technical detail. | must |
 | FR-6 | A per-review lock prevents two concurrent translation pipelines from running for the same review; a second trigger while one is active is a no-op (not an error). | must |
 | FR-7 | After a pipeline run fails with a transient-classified error, the system automatically re-runs the pipeline once after a delay (a few minutes) before recording `failed`. | should |
-| FR-8 | Staleness is a real status: when the English document is newer than the stored translation (per `isStale()` on `updatedAt` vs `translationUpdatedAt`), the review's status becomes `stale`; existing reviews matching that condition are backfilled. | should |
+| FR-8 | Staleness is a real status: when the English **content's** change time (`englishUpdatedAt`, recorded when the English rich text changes) is newer than the stored translation (`translationUpdatedAt`), the review's status becomes `stale`. The document's modification time is not a staleness signal — Payload restamps it on every write, including the pipeline's own translation write. Reviews whose English-change time was never recorded (pre-dating the field) are not backfilled and keep their current status. | should |
 
 ## Non-Functional Requirements
 
@@ -99,11 +104,11 @@ silently read English fallback content.
 | AC-1 | With an edit view open, a background pipeline completing transitions the visible status from `pending` to `translated` (or `failed`) without a manual refresh. | FR-1 |
 | AC-2 | A completed or failed background pipeline produces a toast reflecting the final status in the open edit view. | FR-2 |
 | AC-3 | The notification indicator count and list correctly include failed, stale, and stuck-pending reviews, and each entry links to its document; writers see only their own. | FR-3 |
-| AC-4 | Selecting multiple failed reviews in the list view and running the bulk action re-translates all of them (sequential), with a visible per-review outcome. | FR-4 |
+| AC-4 | Selecting multiple failed or stale reviews in the admin bulk action and running it re-translates them (sequential, bounded by a wall-clock budget), with a visible per-review outcome; reviews not attempted because the budget was reached are reported as skipped with a reason. | FR-4 |
 | AC-5 | A simulated quota failure produces an actionable message (wait/retry guidance) in `translationError` with raw detail preserved; a simulated network failure produces its own distinct message. | FR-5 |
 | AC-6 | Two rapid consecutive saves that both qualify for translation result in exactly one pipeline run for the review. | FR-6 |
 | AC-7 | A pipeline failing with a transient-classified error ends in `failed` only after the automatic delayed re-run has been attempted; a permanent-classified error (e.g. invalid credentials) fails immediately without the delayed re-run. | FR-7 |
-| AC-8 | After an English edit that leaves the translation behind (autoTranslate off), the review's status becomes `stale`, and a seeded legacy review with an older translation is backfilled to `stale`. | FR-8 |
+| AC-8 | After an English edit that leaves the translation behind (autoTranslate off), the review's status becomes `stale`; the staleness comparison uses the English content's change time rather than the document's modification time, so a freshly translated review is never reported as stale, and reviews predating the English-change timestamp are not backfilled. | FR-8 |
 
 ## Edge Cases
 
