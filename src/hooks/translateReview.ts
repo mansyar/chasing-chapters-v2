@@ -207,6 +207,14 @@ export interface RunPipelineOptions {
 	 * provider failure.
 	 */
 	deadline?: number;
+	/**
+	 * ISO timestamp of the moment a previous run gave up. When set, the run
+	 * re-reads the review after it has acquired the per-review lock and
+	 * aborts if a translation newer than this timestamp already exists — a
+	 * translation that landed while the run was waiting for the lock must
+	 * never be overwritten.
+	 */
+	abortIfTranslationNewerThan?: string;
 }
 
 /**
@@ -238,6 +246,30 @@ export async function runTranslationPipeline(
 
 	try {
 		logger.debug(`[Translation] Starting translation for: ${doc.title}`);
+
+		// The lock is held, so no other run can write for this review right
+		// now. Re-read the review: a translation that landed while this run
+		// was waiting for the lock must not be overwritten.
+		if (options.abortIfTranslationNewerThan !== undefined) {
+			const fresh = await readReviewForGuard(payload, doc.id);
+			if (fresh === null) {
+				logger.info(
+					`[Translation] Skipping the run for review ${doc.id}: the review no longer exists.`,
+				);
+				return;
+			}
+			if (
+				isNewerThan(
+					fresh.translationUpdatedAt,
+					options.abortIfTranslationNewerThan,
+				)
+			) {
+				logger.info(
+					`[Translation] Skipping the run for review ${doc.id}: a newer translation exists.`,
+				);
+				return;
+			}
+		}
 
 		try {
 			await payload.update({
@@ -446,7 +478,32 @@ async function runDelayedTranslationRetry(
 	logger.info(
 		`[Translation] Automatic delayed re-run starting for review ${reviewId}.`,
 	);
-	await runTranslationPipeline(payload, fresh, { isRetry: true });
+	// The guard closes the window between the read above and the lock this
+	// run acquires: a translation that completed in the meantime wins.
+	await runTranslationPipeline(payload, fresh, {
+		isRetry: true,
+		abortIfTranslationNewerThan: failedAt,
+	});
+}
+
+/**
+ * Read a review for the freshness guard. Returns null when the review is
+ * gone or cannot be read — the caller then skips the run.
+ */
+async function readReviewForGuard(
+	payload: Payload,
+	reviewId: number,
+): Promise<Review | null> {
+	try {
+		return await payload.findByID({
+			collection: "reviews",
+			id: reviewId,
+			locale: "en",
+			depth: 0,
+		});
+	} catch {
+		return null;
+	}
 }
 
 /**

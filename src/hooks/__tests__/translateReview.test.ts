@@ -766,6 +766,39 @@ describe("delayed re-run (F2)", () => {
 		expect(payload.update.mock.calls.length).toBe(2);
 		expect(translateRichTextSpy).toHaveBeenCalledTimes(1);
 	});
+
+	test("a translation that lands between the re-read and the write survives", async () => {
+		failFirstAttempt();
+		const { payload, state } = makeStatefulPayload(makeDoc());
+
+		await runTranslationPipeline(payload as unknown as Payload, state.doc, {
+			retryDelayMs: 1,
+		});
+		expect(payload.update.mock.calls.length).toBe(2);
+
+		// The first read — the delayed re-run's own check — sees no newer
+		// translation, so the re-run starts. The second read — the guard,
+		// taken after the lock — sees a translation that landed in between.
+		const newer: Review = {
+			...state.doc,
+			translationStatus: "translated",
+			translationUpdatedAt: new Date(Date.now() + 60_000).toISOString(),
+		};
+		let reads = 0;
+		payload.findByID.mockImplementation(async () => {
+			reads += 1;
+			return reads === 1 ? state.doc : newer;
+		});
+
+		await new Promise((resolve) => setTimeout(resolve, 50));
+
+		// The re-run re-read the review under the lock, saw the newer
+		// translation and stopped: nothing was overwritten, nothing was
+		// translated a second time.
+		expect(reads).toBe(2);
+		expect(payload.update.mock.calls.length).toBe(2);
+		expect(translateRichTextSpy).toHaveBeenCalledTimes(1);
+	});
 });
 
 describe("recordEnglishChangeTime (F1: English change time)", () => {
