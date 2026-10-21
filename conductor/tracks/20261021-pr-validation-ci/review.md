@@ -5,7 +5,9 @@
 **Branch:** `chore/20261021-pr-validation-ci`
 **Range:** `d15278f..HEAD`
 **Date:** 2026-10-21
-**Verdict:** BLOCK
+**Verdict:** PASS WITH FINDINGS
+
+**Round 2 verdict: PASS WITH FINDINGS.** All round-1 findings resolved and independently verified (committed ci.yml byte-equivalent to validated config; live run 39571390778 confirmed via API at head `fa919c3`, 2m 53s, all steps green); one new Low finding L1 (metadata phase-count inconsistency) fixed in the same round. No Critical/High findings.
 
 ## Summary
 
@@ -53,6 +55,11 @@ Branch protection applied with `enforce_admins: false`, exempting the repo owner
 *Requirement:* FR-6, AC-3
 
 ### Low
+**L1 — Low — conductor/tracks/20261021-pr-validation-ci/metadata.json:16-19** *(found round 2; fixed same round)*
+`phases_total`/`phases_verified` remain 2 while `tasks_total` grew 6→10 to include Phase R1's four tasks — the review-fixes phase is counted in tasks but not in phase totals.
+*Fix:* count Phase R1 — `phases_total: 3`, `phases_verified: 3`.
+*Requirement:* — (registry consistency)
+
 **F4 — Low — conductor/tracks/20261021-pr-validation-ci/spec.md:71**
 FR-2 enumerates exactly install → typecheck → lint → test → build, but the shipped workflow inserts "Run database migrations" between install and typecheck (required on a fresh CI postgres; justified and documented in phase-2.md notes).
 *Fix:* add the migrate step to FR-2's list.
@@ -87,4 +94,5 @@ Updated: `conductor/tech-stack.md` deploy line now mentions ci.yml and the requi
 
 | Round | Verdict | C / H / M / L | Fixed |
 |---|---|---|---|
-| 1 | BLOCK | 0 / 2 / 1 / 2 | — |
+| 1 | BLOCK | 0 / 2 / 1 / 2 | 5/5 in R1 (`fa919c3` + protection re-apply + evidence reconciliation) |
+| 2 | PASS WITH FINDINGS | 0 / 0 / 0 / 1 | 1/1 (L1 fixed same round) |
