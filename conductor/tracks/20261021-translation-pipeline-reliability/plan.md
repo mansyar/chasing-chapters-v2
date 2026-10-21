@@ -151,12 +151,12 @@ The primary appends after acceptance:
   - [x] **R2.T1.1: Add a `beforeChange` hook that stamps `englishUpdatedAt` into the incoming data — default locale only, plain-text comparison, no stamp for a format-only change or a write without rich text**
   - [x] **R2.T1.2: Register the hook in the Reviews collection's existing `beforeChange` array and remove the awaited nested write from the afterChange path**
   - [x] **R2.T1.3: Tests — the stamp rules, and that the hook performs no awaited nested update**
-- [ ] **R2.T2: Bound the in-flight work of a bulk batch (F2)** — covers: F2, FR-4, AC-4
+- [x] **R2.T2: Bound the in-flight work of a bulk batch (F2)** — covers: F2, FR-4, AC-4
   - [x] **R2.T2.1: Add `timeoutMs` and `deadline` to the translate options and honour them in the retry loop**
   - [x] **R2.T2.2: Give the pipeline a deadline and report a budget stop as its own outcome (no delayed retry)**
   - [x] **R2.T2.3: Lower the batch budget to 30s, give the in-flight review the same deadline, and correct the doc comment**
   - [x] **R2.T2.4: Tests — an exhausted budget, a review that hits the deadline, and the response returning within the budget**
-- [ ] **R2.T3: Close the TOCTOU window in the delayed re-run (F3)** — covers: F3, FR-7, AC-7
+- [x] **R2.T3: Close the TOCTOU window in the delayed re-run (F3)** — covers: F3, FR-7, AC-7
   - [x] **R2.T3.1: Re-check the stored translation timestamp after the lock is acquired and abort when a newer translation exists**
   - [x] **R2.T3.2: Test — a newer translation written between the re-read and the pipeline write survives**
 - [x] **R2.T4: Tick the Phase R1 sub-task boxes (L4)** — covers: L4
@@ -164,17 +164,34 @@ The primary appends after acceptance:
 - [x] **R2.T5: Apply the migration locally and re-run the build (L5)** — covers: L5
   - [x] **R2.T5.1: Apply `20261021_140330_add_english_updated_at` to the local dev DB and confirm `bun run build` is green** — applied by the primary
 
+## Phase R3: Review Fixes (round 3)
+
+- **Goal:** Resolve the round-3 review findings F1 (Medium — a provider failure arriving at/after the deadline was misreported as a budget stop, losing the actionable message and the automatic re-run) and F3 (Low — the guard's "review no longer exists" branch was untested). F2 (the unticked R2 parent boxes) was handled by the primary.
+- **Depends on:** Phase R2
+- **Covers:** F1, F2, F3
+- **Touches:** `src/lib/translate.ts`, `src/hooks/translateReview.ts`, test files under `src/**/__tests__/*`
+- **Verification:** `bun run typecheck && bun run lint && bun test` (plus a production build run by the primary)
+- **Status:** in_progress
+
+- [ ] **R3.T1: A provider failure stays a provider failure (F1)** — covers: F1, FR-5, FR-7, AC-5, AC-7
+  - [ ] **R3.T1.1: Rethrow the original provider error instead of converting every error into a budget stop; drop the `isDeadlineReached` clause from the pipeline's budget-stop detection**
+  - [ ] **R3.T1.2: Update the deadline test and add a test that a quota failure at/after the deadline stays a quota failure and still schedules the delayed re-run**
+- [ ] **R3.T2: Cover the guard's not-found branch (F3)** — covers: F3, FR-7, AC-7
+  - [ ] **R3.T2.1: Test — a delayed re-run for a review deleted between the failure and the re-run aborts without writing**
+- [x] **R3.T3: Tick the Phase R2 parent boxes (F2)** — covers: F2
+  - [x] **R3.T3.1: Tick R2.T2 and R2.T3** — applied by the primary
+
 <!--
 Review fixes are appended by `conductor-review` as:
 
-## Phase R3: Review Fixes
+## Phase R4: Review Fixes
 
 - **Goal:** Resolve review findings ...
-- **Depends on:** Phase R2
+- **Depends on:** Phase R3
 - **Covers:** review findings
 - **Touches:** ...
 - **Verification:** ...
 - **Status:** pending
 
-- [ ] **R3.T1: Resolve <finding ID>** — covers: <finding ID>
+- [ ] **R4.T1: Resolve <finding ID>** — covers: <finding ID>
 -->
