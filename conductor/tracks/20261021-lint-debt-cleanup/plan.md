@@ -112,7 +112,7 @@
 - **Covers:** F1, F2, F3, F4
 - **Touches:** `src/app/(public)/reviews/[slug]/page.tsx`, `src/hooks/__tests__/translateReview.test.ts`, `conductor/tracks/20261021-lint-debt-cleanup/{spec.md,plan.md,verification/*.md}`
 - **Verification:** `bun run typecheck && bun run lint && bun test`, plus one repeated full e2e run in CI-equivalent mode recorded in `verification/integrated.md`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **R1.T1: Resolve F3 — replace unjustified `as Author` cast with sibling narrowing pattern** — covers: F3
 - [ ] **R1.T2: Resolve F4 — make mock `reviewContent` optional with undefined-guard at assertion site (or justify cast); document choice** — covers: F4
