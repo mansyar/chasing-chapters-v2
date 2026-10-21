@@ -601,6 +601,56 @@ describe("runTranslationPipeline", () => {
 		expect(payload.update.mock.calls.length).toBe(2);
 	});
 
+	test("a quota failure that arrives after the deadline is still a quota failure and still schedules the re-run", async () => {
+		const payload = makePayload();
+		const translateModule = await import("../../lib/translate");
+		let calls = 0;
+		translateRichTextSpy = spyOn(
+			translateModule,
+			"translateRichText",
+		).mockImplementation(async () => {
+			calls += 1;
+			if (calls === 1) {
+				// The provider fails only after the deadline has passed.
+				await new Promise((resolve) => setTimeout(resolve, 400));
+			}
+			const { TranslationError } = await import("../../lib/translate");
+			throw new TranslationError("Quota exceeded for quota project", {
+				attempts: 1,
+				cause: new Error("Quota exceeded for quota project"),
+			});
+		});
+
+		const doc = makeDoc();
+		await runTranslationPipeline(payload as unknown as Payload, doc, {
+			deadline: Date.now() + 300,
+			retryDelayMs: 1,
+		});
+
+		// The provider failure is recorded as itself — the deadline must not
+		// turn it into a budget stop, which would lose the actionable message.
+		expect(payload.update.mock.calls.length).toBe(2);
+		const finalCall = payload.update.mock.calls[1][0];
+		expect(finalCall.data.translationStatus).toBe("failed");
+		expect(finalCall.data.translationError).toContain("quota");
+		expect(finalCall.data.translationError).toContain(
+			"(raw: Quota exceeded for quota project)",
+		);
+		expect(finalCall.data.translationError).not.toContain(
+			"translation time budget reached",
+		);
+
+		// The quota failure is transient: the single automatic delayed re-run
+		// is scheduled even though the deadline had passed.
+		await new Promise((resolve) => setTimeout(resolve, 50));
+		expect(payload.update.mock.calls.length).toBe(4);
+		expect(translateRichTextSpy).toHaveBeenCalledTimes(2);
+
+		// The re-run failed too, and it does not schedule a further re-run.
+		await new Promise((resolve) => setTimeout(resolve, 50));
+		expect(payload.update.mock.calls.length).toBe(4);
+	});
+
 	test("the remaining time is passed to the translation layer", async () => {
 		const payload = makePayload();
 		const translateModule = await import("../../lib/translate");

@@ -215,12 +215,31 @@ function withTimeout<T>(
 	});
 }
 
+/**
+ * The provider's own failure, rethrown as a TranslationError.
+ *
+ * A deadline can stop the run, but it is never the reason the translation
+ * failed: the provider error is. The original error is kept as the `cause`,
+ * so the raw detail is never lost and the classifier still sees the quota /
+ * credentials / network signal it needs to decide whether the failure is
+ * transient.
+ */
+function providerFailure(error: unknown, attempts: number): TranslationError {
+	const message =
+		error instanceof Error && error.message
+			? error.message
+			: "Translation failed";
+	return new TranslationError(message, { attempts, cause: error });
+}
+
 // Translate one chunk of texts with retries and exponential backoff.
 // Throws TranslationError after MAX_ATTEMPTS failed attempts.
 // When a deadline is set the run stops at the deadline: no further attempt is
 // started, the backoff never sleeps past it, and a request that would outlive
 // it is cut short. A deadline stop throws TranslationBudgetError — it is not a
-// provider failure.
+// provider failure. A provider failure stays a provider failure whatever the
+// remaining time is: the deadline only prevents the retry, it never hides the
+// reason the translation failed.
 async function translateChunkWithRetry(
 	texts: string[],
 	targetLanguage: string,
@@ -234,6 +253,13 @@ async function translateChunkWithRetry(
 
 	for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
 		if (deadline !== undefined && Date.now() >= deadline) {
+			// The deadline stopped the run before this attempt started. When
+			// an earlier attempt already failed, that provider failure is the
+			// real cause of the stop and is reported as such — the deadline
+			// only prevented the retry.
+			if (lastError !== undefined) {
+				throw providerFailure(lastError, attempt);
+			}
 			throw new TranslationBudgetError();
 		}
 
@@ -273,9 +299,6 @@ async function translateChunkWithRetry(
 			if (error instanceof TranslationRequestTimeoutError && budgetLimited) {
 				throw new TranslationBudgetError();
 			}
-			if (deadline !== undefined && Date.now() >= deadline) {
-				throw new TranslationBudgetError();
-			}
 			logger.error(
 				`[Translation] Attempt ${attempt + 1}/${MAX_ATTEMPTS} failed for batch of ${texts.length}:`,
 				error,
@@ -285,7 +308,10 @@ async function translateChunkWithRetry(
 				if (deadline !== undefined) {
 					const remaining = deadline - Date.now();
 					if (remaining <= 0) {
-						throw new TranslationBudgetError();
+						// No time left for another attempt: the provider
+						// failure is the real cause of the stop and is
+						// reported as such.
+						throw providerFailure(error, attempt + 1);
 					}
 					// Never sleep past the deadline.
 					delay = Math.min(delay, remaining);

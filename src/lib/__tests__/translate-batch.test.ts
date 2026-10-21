@@ -10,6 +10,7 @@ import {
 	spyOn,
 } from "bun:test";
 import * as redisModule from "../redis";
+import { classifyTranslationError } from "../translation-errors";
 
 // Shared mock for the Google Cloud Translate client. Defaults to an "echo"
 // translator that prefixes each input with "ID:" so any chunking strategy
@@ -148,10 +149,15 @@ describe("translateBatch", () => {
 		}
 
 		expect(caught).toBeInstanceOf(TranslationError);
+		// The run without a deadline keeps the provider's own failure: it is
+		// never turned into a budget stop.
+		expect(caught).not.toBeInstanceOf(TranslationBudgetError);
 		expect((caught as InstanceType<typeof TranslationError>).attempts).toBe(3);
 		// The failure must never masquerade as a successful translation.
 		expect((caught as Error).message).not.toBe("Hello");
 		expect(mockClientTranslate).toHaveBeenCalledTimes(3);
+		// The single-review path keeps the same classifier outcome.
+		expect(classifyTranslationError(caught).kind).toBe("quota");
 	});
 
 	it("uses cached translations without calling the API", async () => {
@@ -331,10 +337,40 @@ describe("translateBatch (time budget)", () => {
 		}
 		const elapsed = Date.now() - started;
 
-		expect(caught).toBeInstanceOf(TranslationBudgetError);
+		// The deadline stopped the retry, but the provider failure is the
+		// real cause: it must not be reported as a budget stop.
+		expect(caught).toBeInstanceOf(TranslationError);
+		expect(caught).not.toBeInstanceOf(TranslationBudgetError);
+		expect((caught as Error).message).toContain("API down");
 		// The backoff was cut at the deadline instead of sleeping 5 seconds.
 		expect(elapsed).toBeLessThan(2000);
 		expect(mockClientTranslate).toHaveBeenCalledTimes(1);
+	});
+
+	it("keeps a quota failure that reaches the deadline a quota failure", async () => {
+		mockClientTranslate.mockImplementation(() =>
+			Promise.reject(new Error("Quota exceeded for quota project")),
+		);
+
+		let caught: unknown;
+		try {
+			await translateBatch(["Hello"], "id", {
+				delays: [5000, 5000, 5000],
+				deadline: Date.now() + 50,
+			});
+		} catch (error) {
+			caught = error;
+		}
+
+		// Not a budget stop: the actionable provider message survives and the
+		// failure stays transient, so the delayed re-run is still scheduled.
+		expect(caught).toBeInstanceOf(TranslationError);
+		expect(caught).not.toBeInstanceOf(TranslationBudgetError);
+		expect((caught as Error).message).toContain("Quota exceeded");
+		const classified = classifyTranslationError(caught);
+		expect(classified.kind).toBe("quota");
+		expect(classified.transient).toBe(true);
+		expect(classified.raw).toContain("Quota exceeded");
 	});
 
 	it("cuts a hung request at the deadline", async () => {

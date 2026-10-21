@@ -361,9 +361,11 @@ export async function runTranslationPipeline(
 			const attempts = error instanceof TranslationError ? error.attempts : 0;
 			// A budget stop is not a provider failure: it must not be reported
 			// as a transient error and must not schedule the automatic re-run.
-			const budgetStop =
-				error instanceof TranslationBudgetError ||
-				isDeadlineReached(options.deadline);
+			// Only a real budget stop counts — the deadline must never turn a
+			// provider failure (a quota error, a credentials error) into a
+			// budget stop: that would lose the actionable message and the
+			// automatic re-run the failure deserves.
+			const budgetStop = error instanceof TranslationBudgetError;
 			const classified = classifyTranslationError(error);
 			logger.error(
 				`[Translation] Failed for: ${doc.title} (${budgetStop ? "budget" : classified.kind})`,
