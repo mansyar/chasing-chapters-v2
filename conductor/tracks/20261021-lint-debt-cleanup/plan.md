@@ -105,17 +105,19 @@
 **Checkpoint:** 81cb66b
 **Evidence:** conductor/tracks/20261021-lint-debt-cleanup/verification/phase-3.md
 
-<!--
-Review fixes are appended by `conductor-review` as:
-
 ## Phase R1: Review Fixes
 
-- **Goal:** Resolve review findings ...
+- **Goal:** Resolve review findings F1, F2, F3, F4 from review round 1.
 - **Depends on:** Phase 3
-- **Covers:** review findings
-- **Touches:** ...
-- **Verification:** ...
+- **Covers:** F1, F2, F3, F4
+- **Touches:** `src/app/(public)/reviews/[slug]/page.tsx`, `src/hooks/__tests__/translateReview.test.ts`, `conductor/tracks/20261021-lint-debt-cleanup/{spec.md,plan.md,verification/*.md}`
+- **Verification:** `bun run typecheck && bun run lint && bun test`, plus one repeated full e2e run in CI-equivalent mode recorded in `verification/integrated.md`
 - **Status:** pending
 
-- [ ] **R1.T1: Resolve <finding ID>** — covers: <finding ID>
+- [ ] **R1.T1: Resolve F3 — replace unjustified `as Author` cast with sibling narrowing pattern** — covers: F3
+- [ ] **R1.T2: Resolve F4 — make mock `reviewContent` optional with undefined-guard at assertion site (or justify cast); document choice** — covers: F4
+- [ ] **R1.T3: Resolve F1 + F2 (primary-executed) — amend AC-6 wording to CI-equivalent mode, record repeated green e2e run, add squash notes to phase evidence files, add `e2e/comments.spec.ts` to Phase 3 Touches** — covers: F1, F2
+
+<!--
+Review fixes are appended by `conductor-review` (original template note retained for reference; Phase R1 above is the live fix phase).
 -->
