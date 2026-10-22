@@ -86,17 +86,37 @@
 - **Covers:** FR-7, AC-7, NFR-3
 - **Touches:** `.github/workflows/ci.yml`, `README.md`, `e2e/` (only if the CI runner needs a runner-specific adjustment)
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run build && bun run test:e2e`
+- **Status:** verified
+
+- [x] **P4.T1: Add the e2e CI job** — covers: FR-7
+  - [x] **P4.T1.1: Wire the job** — in `.github/workflows/ci.yml`, a new job installs Chromium, starts the postgres and redis services, applies the schema, builds the app, and runs the same `bun run test:e2e` command. The existing `Typecheck, Lint, Test, Build` job and its name stay unchanged.
+  - [x] **P4.T1.2: Verify the workflow file** — the YAML parses, the job's steps are correct, and the required check name is untouched.
+- [x] **P4.T2: Document and close out** — covers: FR-7
+  - [x] **P4.T2.1: Document how to run the suite** — `README.md` gains the local e2e steps (services, build, credentials, worker cap).
+  - [x] **P4.T2.2: Run the full gate** — typecheck, lint, unit tests, production build and the e2e suite, recorded as the phase evidence.
+
+**Result:** verified
+**Checkpoint:** 4dd1ee3
+**Evidence:** conductor/tracks/20261022-e2e-production-harness/verification/phase-4.md
+
+## Phase 5: Fix the Admin Locale Preference Defect
+
+- **Goal:** The admin's locale preference is actually stored. The defect the suite surfaced is fixed in the app and covered by a regression test, so the suite proves the fix instead of logging a failure on every login.
+- **Depends on:** Phase 3
+- **Covers:** FR-8, AC-8
+- **Touches:** `src/collections/Authors.ts`, `src/collections/__tests__/Authors.test.ts` (new), `e2e/admin/locale-preference.spec.ts` (new), `e2e/fixtures/admin-session.ts`, `playwright.config.ts` (register the new admin spec's project)
+- **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
 - **Status:** in_progress
 
-- [ ] **P4.T1: Add the e2e CI job** — covers: FR-7
-  - [ ] **P4.T1.1: Wire the job** — in `.github/workflows/ci.yml`, a new job installs Chromium, starts the postgres and redis services, applies the schema, builds the app, and runs the same `bun run test:e2e` command. The existing `Typecheck, Lint, Test, Build` job and its name stay unchanged.
-  - [ ] **P4.T1.2: Verify the workflow file** — the YAML parses, the job's steps are correct, and the required check name is untouched.
-- [ ] **P4.T2: Document and close out** — covers: FR-7
-  - [ ] **P4.T2.1: Document how to run the suite** — `README.md` gains the local e2e steps (services, build, credentials, worker cap).
-  - [ ] **P4.T2.2: Run the full gate** — typecheck, lint, unit tests, production build and the e2e suite, recorded as the phase evidence.
+- [ ] **P5.T1: Fix the preference write** — covers: FR-8
+  - [ ] **P5.T1.1: Pass the authenticated user to the Local API call** — in `src/collections/Authors.ts`, the `setDefaultLocalePreference` afterLogin hook writes the `payload-preferences` document through the Local API without a user context. Payload's own `beforeValidate` hook on that field overwrites the submitted value from `req.user` and returns `null` when there is none, so the required field fails validation with "This field is required." (400) and the preference is never stored. Pass the authenticated user to the Local API call so `req.user` is set, and let Payload's hook fill the field.
+  - [ ] **P5.T1.2: Leave the read side alone** — the hook's `find` already runs with a request that carries the user and returns 0 documents correctly; only the create path is broken.
+- [ ] **P5.T2: Cover the fix** — covers: AC-8
+  - [ ] **P5.T2.1: Add the unit regression test** — a bun unit test asserts the afterLogin hook creates the preference with the authenticated user. The assertion fails against the pre-fix code, which omits it.
+  - [ ] **P5.T2.2: Add the browser regression test** — an admin spec logs in and asserts the preference is readable afterwards (`GET /api/payload-preferences/locale` returns the stored value), so the fix is proven end to end through the real login path.
 
 <!--
 **Result:** verified
 **Checkpoint:** <short-sha>
-**Evidence:** conductor/tracks/20261022-e2e-production-harness/verification/phase-4.md
+**Evidence:** conductor/tracks/20261022-e2e-production-harness/verification/phase-5.md
 -->
