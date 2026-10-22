@@ -42,28 +42,26 @@
 - **Covers:** FR-3, FR-4, FR-8, AC-3, AC-4, AC-8, NFR-2, NFR-4
 - **Touches:** `src/lib/e2e-harness.ts` (extend with the dataset definition), `src/lib/__tests__/e2e-harness.test.ts` (extend with the dataset assertions), `e2e/global-setup.ts` (new), `e2e/homepage.spec.ts`, `e2e/navigation.spec.ts`, `e2e/review-detail.spec.ts`, `e2e/comments.spec.ts`, `e2e/feed.spec.ts`, `e2e/sort.spec.ts`, `playwright.config.ts` (register the global setup - Phase 1's changes are already on the branch), `package.json` (add the `seed:e2e` script and order it **before** the build, so the prerendered pages carry the fixture's data)
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e && bun run test:e2e`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P2.T1: Build the e2e dataset fixture** — covers: FR-3
-  - [ ] **P2.T1.1: Define the dataset as pure data** — `src/lib/e2e-harness.ts` holds the fixed identifiers (the author/admin with the fixed test-only credential, review slugs, a reading list, a featured review, and reviews in the `translated`, `failed` and `stale` states); the unit test asserts the identifiers are stable across calls.
-  - [ ] **P2.T1.2: Upsert the dataset** — `e2e/global-setup.ts` writes it through the Payload local API, matching on the fixed identifiers (create or update) and never deleting or altering rows it does not own.
-  - [ ] **P2.T1.3: Run the fixture before the suite** — register the global setup in `playwright.config.ts`.
-- [ ] **P2.T2: Make the public specs deterministic** — covers: FR-4, FR-8
-  - [ ] **P2.T2.1: Replace the conditional assertions** — "when lists exist", "when featured reviews exist" and "when available" become unconditional assertions against the fixture's data.
-  - [ ] **P2.T2.2: Fix every remaining failure** — harness-side fixes stay in the harness; a genuine app defect is fixed in the app with a regression test.
+- [x] **P2.T1: Build the e2e dataset fixture** — covers: FR-3
+  - [x] **P2.T1.1: Define the dataset as pure data** — `src/lib/e2e-harness.ts` holds the fixed identifiers (the author/admin with the fixed test-only credential, review slugs, a reading list, a featured review, and reviews in the `translated`, `failed` and `stale` states); the unit test asserts the identifiers are stable across calls.
+  - [x] **P2.T1.2: Upsert the dataset** — `e2e/global-setup.ts` writes it through the Payload local API, matching on the fixed identifiers (create or update) and never deleting or altering rows it does not own.
+  - [x] **P2.T1.3: Run the fixture before the suite** — register the global setup in `playwright.config.ts`.
+- [x] **P2.T2: Make the public specs deterministic** — covers: FR-4, FR-8
+  - [x] **P2.T2.1: Replace the conditional assertions** — "when lists exist", "when featured reviews exist" and "when available" become unconditional assertions against the fixture's data.
+  - [x] **P2.T2.2: Fix every remaining failure** — harness-side fixes stay in the harness; a genuine app defect is fixed in the app with a regression test.
 
-<!--
 **Result:** verified
-**Checkpoint:** <short-sha>
+**Checkpoint:** fff8ab1
 **Evidence:** conductor/tracks/20261022-e2e-production-harness/verification/phase-2.md
--->
 
 ## Phase 3: Test-Mode Provider Stub and Admin DOM Specs
 
 - **Goal:** The three admin translation surfaces have browser coverage, and the pipeline completes under test without touching the external provider.
 - **Depends on:** Phase 2
 - **Covers:** FR-5, FR-6, AC-5, AC-6, NFR-2
-- **Touches:** `src/lib/translate.ts`, `src/lib/__tests__/translate-test-mode.test.ts` (new), `e2e/fixtures/admin-session.ts` (new), `e2e/admin/translation-poller.spec.ts` (new), `e2e/admin/attention-bell.spec.ts` (new), `e2e/admin/bulk-retranslate.spec.ts` (new)
+- **Touches:** `src/lib/translate.ts`, `src/lib/__tests__/translate-test-mode.test.ts` (new), `e2e/fixtures/admin-session.ts` (new), `e2e/admin/translation-poller.spec.ts` (new), `e2e/admin/attention-bell.spec.ts` (new), `e2e/admin/bulk-retranslate.spec.ts` (new), `playwright.config.ts` (set the test-mode environment for the web server)
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
 - **Status:** pending
 
