@@ -3,18 +3,32 @@ import type { CollectionAfterChangeHook } from "payload";
 import { logger } from "../lib/logger";
 
 /**
+ * The error `revalidatePath` throws when it runs outside a Next.js request
+ * scope. It is the one failure the guard tolerates.
+ */
+const OUT_OF_SCOPE_INVARIANT = "Invariant: static generation store missing";
+
+/**
  * Revalidates a path, tolerating a missing request scope.
  *
  * `revalidatePath` only works inside a Next.js request scope. Outside one - a
  * local-API seed script, for example - it throws, and an uncaught throw in an
  * `afterChange` hook rolls the write back. Cache invalidation is a side effect
- * of the write, not the write itself, so a failure here is logged instead of
+ * of the write, not the write itself, so that one failure is logged instead of
  * propagated.
+ *
+ * Every other failure is rethrown: a broken revalidation is a real error and
+ * hiding it behind a log line would let a broken write look like a healthy
+ * one.
  */
 function safeRevalidatePath(path: string): void {
 	try {
 		revalidatePath(path);
 	} catch (error) {
+		if (!String(error).includes(OUT_OF_SCOPE_INVARIANT)) {
+			throw error;
+		}
+
 		logger.warn(
 			`[Revalidation] Could not revalidate "${path}": ${String(error)}`,
 		);

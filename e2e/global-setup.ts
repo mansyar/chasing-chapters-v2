@@ -1,12 +1,19 @@
 import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import "dotenv/config";
 import type { getPayload } from "payload";
+import sharp from "sharp";
 import {
 	E2E_FIXTURE_AUTHOR,
+	E2E_FIXTURE_COVER,
+	E2E_FIXTURE_MOOD_TAG_DETAILS,
 	E2E_FIXTURE_READING_LIST,
 	E2E_FIXTURE_REVIEWS,
 	E2E_FIXTURE_TAXONOMY,
+	E2E_STORAGE_ADAPTER,
 	type E2EFixtureReview,
+	resolveE2EDatabaseUri,
 } from "../src/lib/e2e-harness";
 import {
 	canTransition,
@@ -18,18 +25,35 @@ import {
  * Seeds the deterministic e2e dataset.
  *
  * The fixture is an upsert: every row is matched on a fixed identifier (the
- * author by email, reviews and the reading list by slug, the cover by its
- * alt text), so running the fixture twice leaves the same rows with the same
+ * author by email, reviews and the reading list by slug, the cover by its alt
+ * text), so running the fixture twice leaves the same rows with the same
  * identifiers. Rows the fixture does not own are never touched, and nothing
  * is ever deleted.
  *
  * Every write runs with `skipTranslation`, so the reviews keep the
  * translation status the dataset asks for instead of being handed to the
  * real translation provider.
+ *
+ * The fixture writes into the e2e database - never into the database the
+ * developer works in - and stores its media on the local disk instead of in
+ * object storage.
  */
 
 /** Keeps the translation pipeline out of the fixture writes. */
 const FIXTURE_CONTEXT = { skipTranslation: true } as const;
+
+/**
+ * The directory Payload's own disk storage writes the media into. The
+ * collection resolves it against the working directory, which is the project
+ * root for the seed and for the server.
+ */
+const MEDIA_STATIC_DIR = "media";
+
+/**
+ * The color a mood tag gets when the fixture has to create one and the
+ * fixture data does not name a color for it.
+ */
+const DEFAULT_MOOD_TAG_COLOR = "#4C7A9E";
 
 type PayloadClient = Awaited<ReturnType<typeof getPayload>>;
 
@@ -57,6 +81,21 @@ let payloadClient: PayloadClient | null = null;
 
 async function getPayloadClient(): Promise<PayloadClient> {
 	if (!payloadClient) {
+		// The fixture never writes into the database the developer works in:
+		// the e2e database is derived from the ambient connection string and
+		// carries its own suffix.
+		const e2eUri = resolveE2EDatabaseUri(process.env);
+		if (!e2eUri) {
+			throw new Error(
+				"DATABASE_URI is missing or unusable, so the e2e database cannot be resolved.",
+			);
+		}
+		process.env.DATABASE_URI = e2eUri;
+
+		// The fixture stores its media on the local disk, so the run needs no
+		// object storage and writes nothing into the bucket.
+		process.env.STORAGE_ADAPTER = E2E_STORAGE_ADAPTER;
+
 		// The Payload config is imported lazily: the config pulls in the Next.js
 		// server code (through the collection hooks), which only resolves under
 		// the bundler or Bun - not inside Playwright's Node loader.
@@ -122,11 +161,15 @@ function statusPath(
 
 /**
  * Finds a single document by a field value, or creates it.
+ *
+ * The details are only used when the row has to be created: a mood tag needs
+ * a color, and the rows that already exist are reused as they are.
  */
 async function upsertByName(
 	payload: PayloadClient,
 	collection: "genres" | "tags" | "mood-tags",
 	name: string,
+	details: { color?: string; icon?: string } = {},
 ): Promise<TaxonomyItem> {
 	const existing = await payload.find({
 		collection,
@@ -142,7 +185,7 @@ async function upsertByName(
 
 	const created = await payload.create({
 		collection,
-		data: { name },
+		data: { name, ...details },
 		context: FIXTURE_CONTEXT,
 	});
 	return { id: toId(created.id) };
@@ -214,7 +257,13 @@ async function upsertTaxonomy(payload: PayloadClient): Promise<{
 
 	const moodTags: TaxonomyItem[] = [];
 	for (const name of E2E_FIXTURE_TAXONOMY.moodTags) {
-		moodTags.push(await upsertByName(payload, "mood-tags", name));
+		const details = E2E_FIXTURE_MOOD_TAG_DETAILS[name];
+		moodTags.push(
+			await upsertByName(payload, "mood-tags", name, {
+				color: details?.color ?? DEFAULT_MOOD_TAG_COLOR,
+				icon: details?.icon,
+			}),
+		);
 	}
 
 	return { genres, tags, moodTags };
@@ -253,6 +302,69 @@ async function alignTranslationStatus(
 }
 
 /**
+ * Draws the cover the fixture attaches to its reviews.
+ *
+ * The cover is a real image: the review pages render the cover-first layout,
+ * and a review without a cover would render an empty frame.
+ */
+async function drawFixtureCover(): Promise<Buffer> {
+	const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900">
+		<rect width="600" height="900" fill="#182a44" />
+		<rect x="80" y="120" width="440" height="8" fill="#e8c07d" />
+		<rect x="80" y="772" width="300" height="8" fill="#e8c07d" />
+		<circle cx="300" cy="450" r="150" fill="#2f4a73" />
+		<circle cx="300" cy="450" r="96" fill="#e8c07d" />
+		<circle cx="300" cy="450" r="44" fill="#182a44" />
+	</svg>`;
+
+	return sharp(Buffer.from(svg)).png().toBuffer();
+}
+
+/**
+ * Creates (or reuses) the cover the fixture reviews carry.
+ *
+ * The media document is matched on its alt text. The file on the disk is
+ * checked as well: a database that survived a fresh checkout has the
+ * document but not the file, and a cover that points at a missing file would
+ * render as a broken image.
+ */
+async function upsertCover(payload: PayloadClient): Promise<number> {
+	const existing = await payload.find({
+		collection: "media",
+		where: { alt: { equals: E2E_FIXTURE_COVER.alt } },
+		limit: 1,
+		depth: 0,
+	});
+
+	const found = existing.docs[0];
+	if (found) {
+		const filename = typeof found.filename === "string" ? found.filename : "";
+		const onDisk = filename
+			? existsSync(join(process.cwd(), MEDIA_STATIC_DIR, filename))
+			: false;
+
+		if (onDisk) {
+			return toId(found.id);
+		}
+	}
+
+	const data = await drawFixtureCover();
+	const created = await payload.create({
+		collection: "media",
+		data: { alt: E2E_FIXTURE_COVER.alt },
+		file: {
+			data,
+			mimetype: E2E_FIXTURE_COVER.mimeType,
+			name: E2E_FIXTURE_COVER.filename,
+			size: data.length,
+		},
+		context: FIXTURE_CONTEXT,
+	});
+
+	return toId(created.id);
+}
+
+/**
  * Creates (or refreshes) one review.
  */
 async function upsertReview(
@@ -260,6 +372,7 @@ async function upsertReview(
 	review: E2EFixtureReview,
 	ids: {
 		authorId: number;
+		coverId: number;
 		genreIds: number[];
 		tagIds: number[];
 		moodTagIds: number[];
@@ -277,9 +390,9 @@ async function upsertReview(
 		slug: review.slug,
 		bookAuthor: review.bookAuthor,
 		rating: review.rating,
-		// The fixture reviews carry no cover image: the public pages fall back
-		// to the coverless layout, and the fixture writes no object storage.
-		coverImage: null,
+		// Every review carries a cover: the cover is a required field, and the
+		// public pages render the cover-first layout.
+		coverImage: ids.coverId,
 		reviewContent: review.reviewContent,
 		whatILoved: review.whatILoved,
 		whatCouldBeBetter: review.whatCouldBeBetter,
@@ -304,29 +417,67 @@ async function upsertReview(
 	};
 
 	const found = existing.docs[0];
+	let reviewId: number;
+
 	if (!found) {
 		const created = await payload.create({
 			collection: "reviews",
 			data,
 			context: FIXTURE_CONTEXT,
 		});
-		return { id: toId(created.id), slug: created.slug ?? review.slug };
+		reviewId = toId(created.id);
+	} else {
+		await alignTranslationStatus(
+			payload,
+			toId(found.id),
+			found.translationStatus ?? "untranslated",
+			review.translationStatus,
+		);
+
+		const updated = await payload.update({
+			collection: "reviews",
+			id: found.id,
+			data,
+			context: FIXTURE_CONTEXT,
+		});
+		reviewId = toId(updated.id);
 	}
 
-	await alignTranslationStatus(
-		payload,
-		toId(found.id),
-		found.translationStatus ?? "untranslated",
-		review.translationStatus,
-	);
+	await writeIndonesianContent(payload, reviewId, review);
 
-	const updated = await payload.update({
+	return { id: reviewId, slug: review.slug };
+}
+
+/**
+ * Writes the Indonesian content of a review.
+ *
+ * The write names the `id` locale, the same way the translation pipeline
+ * writes it. A review whose translation status is not `translated` keeps its
+ * Indonesian content empty on purpose - that is the state a failed or stale
+ * translation leaves behind.
+ */
+async function writeIndonesianContent(
+	payload: PayloadClient,
+	reviewId: number,
+	review: E2EFixtureReview,
+): Promise<void> {
+	if (review.translationStatus !== "translated" || !review.id) {
+		return;
+	}
+
+	await payload.update({
 		collection: "reviews",
-		id: found.id,
-		data,
+		id: reviewId,
+		locale: "id",
+		data: {
+			reviewContent: review.id.reviewContent,
+			whatILoved: review.id.whatILoved,
+			whatCouldBeBetter: review.id.whatCouldBeBetter,
+			perfectFor: review.id.perfectFor,
+			favoriteQuotes: review.id.favoriteQuotes,
+		},
 		context: FIXTURE_CONTEXT,
 	});
-	return { id: toId(updated.id), slug: updated.slug ?? review.slug };
 }
 
 /**
@@ -401,12 +552,14 @@ export async function seedE2EDataset(): Promise<SeedSummary> {
 
 	const author = await upsertAuthor(payload);
 	const taxonomy = await upsertTaxonomy(payload);
+	const coverId = await upsertCover(payload);
 
 	const reviews: Array<{ id: number; slug: string }> = [];
 	for (const review of E2E_FIXTURE_REVIEWS) {
 		reviews.push(
 			await upsertReview(payload, review, {
 				authorId: author.id,
+				coverId,
 				genreIds: taxonomy.genres.map((genre) => genre.id),
 				tagIds: taxonomy.tags.map((tag) => tag.id),
 				moodTagIds: taxonomy.moodTags.map((moodTag) => moodTag.id),

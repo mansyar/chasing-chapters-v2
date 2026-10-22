@@ -3,7 +3,11 @@ import { Authors } from "../Authors";
 
 type CreateArgs = {
 	collection: string;
-	data: { key: string; value: string };
+	data: {
+		key: string;
+		value: string;
+		user: { relationTo: string; value: number };
+	};
 	user?: { id: number; collection: string };
 	req?: unknown;
 };
@@ -68,13 +72,20 @@ describe("Authors collection afterLogin hook", () => {
 		expect(args.req).toBe(req);
 	});
 
-	it("submits the key and the value of the preference", async () => {
+	it("submits the key, the value and the owner of the preference", async () => {
 		const payload = makePayload();
 
 		await afterLogin({ req: { payload }, user: author });
 
 		const [args] = payload.create.mock.calls[0] as [CreateArgs];
-		expect(args.data).toEqual({ key: "locale", value: "en" });
+		// The preferences collection marks `user` as required, so the write
+		// names the authenticated author instead of leaving the field to the
+		// collection's own hook.
+		expect(args.data).toEqual({
+			key: "locale",
+			value: "en",
+			user: { relationTo: "authors", value: 9 },
+		});
 	});
 
 	it("does not store a second preference when one already exists", async () => {

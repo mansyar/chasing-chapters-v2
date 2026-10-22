@@ -11,6 +11,7 @@ import {
 	E2E_FIXTURE_REVIEWS,
 	E2E_FIXTURE_TAXONOMY,
 	resolveE2EBaseURL,
+	resolveE2EDatabaseUri,
 	resolveE2EPort,
 	resolveWorkerCount,
 } from "../e2e-harness";
@@ -108,6 +109,60 @@ describe("e2e-harness", () => {
 		});
 	});
 
+	describe("resolveE2EDatabaseUri", () => {
+		it("suffixes the database name of the ambient connection string", () => {
+			expect(
+				resolveE2EDatabaseUri({
+					DATABASE_URI:
+						"postgresql://postgres:postgrespassword@localhost:5432/chasing-chapters",
+				}),
+			).toBe(
+				"postgresql://postgres:postgrespassword@localhost:5432/chasing-chapters_e2e",
+			);
+		});
+
+		it("keeps the host, the port and the credentials", () => {
+			const resolved = resolveE2EDatabaseUri({
+				DATABASE_URI:
+					"postgresql://someone:secret@db.internal:6543/chasing-chapters",
+			});
+			expect(resolved).toBe(
+				"postgresql://someone:secret@db.internal:6543/chasing-chapters_e2e",
+			);
+		});
+
+		it("does not suffix a connection string that already points at an e2e database", () => {
+			const e2eUri =
+				"postgresql://postgres:postgrespassword@localhost:5432/chasing-chapters_e2e";
+			expect(resolveE2EDatabaseUri({ DATABASE_URI: e2eUri })).toBe(e2eUri);
+		});
+
+		it("keeps the query string", () => {
+			expect(
+				resolveE2EDatabaseUri({
+					DATABASE_URI:
+						"postgresql://postgres:postgrespassword@localhost:5432/chasing-chapters?sslmode=require",
+				}),
+			).toBe(
+				"postgresql://postgres:postgrespassword@localhost:5432/chasing-chapters_e2e?sslmode=require",
+			);
+		});
+
+		it("resolves to undefined without a usable connection string", () => {
+			expect(resolveE2EDatabaseUri({})).toBeUndefined();
+			expect(resolveE2EDatabaseUri({ DATABASE_URI: "" })).toBeUndefined();
+			expect(resolveE2EDatabaseUri({ DATABASE_URI: "   " })).toBeUndefined();
+			expect(
+				resolveE2EDatabaseUri({ DATABASE_URI: "not-a-connection-string" }),
+			).toBeUndefined();
+			expect(
+				resolveE2EDatabaseUri({
+					DATABASE_URI: "postgresql://postgres:postgrespassword@localhost:5432",
+				}),
+			).toBeUndefined();
+		});
+	});
+
 	describe("e2e fixture dataset", () => {
 		it("keeps the review identifiers stable", () => {
 			expect(E2E_FIXTURE_REVIEWS.map((review) => review.slug)).toEqual([
@@ -170,6 +225,21 @@ describe("e2e-harness", () => {
 		it("seeds at least two featured reviews so the carousel renders", () => {
 			const featured = E2E_FIXTURE_REVIEWS.filter((review) => review.featured);
 			expect(featured.length).toBeGreaterThanOrEqual(2);
+		});
+
+		it("gives every translated review an Indonesian payload", () => {
+			const translated = E2E_FIXTURE_REVIEWS.filter(
+				(review) => review.translationStatus === "translated",
+			);
+			expect(translated.length).toBeGreaterThan(0);
+
+			for (const review of translated) {
+				expect(review.id).toBeDefined();
+				expect(review.id?.reviewContent).toBeDefined();
+				expect(review.id?.whatILoved).toBeDefined();
+				expect(review.id?.whatCouldBeBetter).toBeDefined();
+				expect(review.id?.perfectFor).toBeDefined();
+			}
 		});
 
 		it("references only taxonomy the fixture seeds", () => {

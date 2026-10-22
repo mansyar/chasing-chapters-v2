@@ -1,6 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 import {
+	E2E_STORAGE_ADAPTER,
 	resolveE2EBaseURL,
+	resolveE2EDatabaseUri,
 	resolveE2EPort,
 	resolveWorkerCount,
 } from "./src/lib/e2e-harness";
@@ -11,6 +13,21 @@ import {
  */
 const e2ePort = resolveE2EPort(process.env);
 const baseURL = resolveE2EBaseURL(process.env);
+
+/**
+ * The suite runs against its own database, never against the database the
+ * developer works in. The connection string is derived from the ambient one
+ * here as well, so a bare `playwright test` targets the e2e database too.
+ * Without a usable connection string there is no e2e database to talk to, and
+ * falling back to the ambient one would put the fixture back into the
+ * developer's rows.
+ */
+const e2eDatabaseUri = resolveE2EDatabaseUri(process.env);
+if (!e2eDatabaseUri) {
+	throw new Error(
+		"DATABASE_URI is missing or unusable, so the e2e database cannot be resolved.",
+	);
+}
 
 export default defineConfig({
 	// Test directory
@@ -92,8 +109,15 @@ export default defineConfig({
 	// Serve the production build. `bun run test:e2e` builds before the suite
 	// starts, so a missing or failed build fails the run loudly instead of
 	// serving stale code.
+	//
+	// The suite serves the standalone artifact - the same server the
+	// production deployment runs (`bun run start`), not `next start`, which
+	// Next.js refuses to run with `output: "standalone"`. The static assets
+	// and the media directory are copied into the standalone output first,
+	// exactly like the production start script does.
 	webServer: {
-		command: `bun --bun next start --port ${e2ePort}`,
+		command:
+			"bun run scripts/copy-standalone-assets.ts && bun --bun .next/standalone/server.js",
 		url: baseURL,
 		// A foreign server on this port must never be reused silently
 		reuseExistingServer: false,
@@ -105,6 +129,23 @@ export default defineConfig({
 		// variables to boot.
 		env: {
 			...process.env,
+			// The app server talks to the e2e database, so the suite never
+			// sees the developer's rows.
+			DATABASE_URI: e2eDatabaseUri,
+			// The e2e run stores its media on the local disk instead of in
+			// object storage.
+			STORAGE_ADAPTER: E2E_STORAGE_ADAPTER,
+			// The cover images keep pointing at the app's own media proxy
+			// instead of the public object storage domain.
+			NEXT_PUBLIC_R2_PUBLIC_URL: "",
+			// The standalone server takes the port and the host from the
+			// environment.
+			PORT: String(e2ePort),
+			HOSTNAME: "localhost",
+			// The offline translation stub replaces the provider for the e2e
+			// run: no credentials, no quota, no network. The rest of the
+			// environment is inherited - the app needs its database and cache
+			// variables to boot.
 			TRANSLATION_TEST_MODE: "1",
 		},
 	},

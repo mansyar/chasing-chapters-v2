@@ -256,7 +256,7 @@ export interface Review {
   title: string;
   bookAuthor: string;
   rating: number;
-  coverImage?: (number | null) | Media;
+  coverImage: number | Media;
   reviewContent: {
     root: {
       type: string;

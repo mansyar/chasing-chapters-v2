@@ -47,8 +47,11 @@ test.describe("Bulk re-translate action", () => {
 
 		await expect(page.getByText("0 of 2 selected")).toBeVisible();
 
-		// Select both candidates and run the bulk re-translate.
-		await page.getByRole("button", { name: "Select all" }).click();
+		// Select the two candidates one by one. "Select all" would pick up
+		// every failed or stale review in the database, so the spec names the
+		// two reviews it acts on.
+		await failedCheckbox.check();
+		await staleCheckbox.check();
 		await expect(page.getByText("2 of 2 selected")).toBeVisible();
 		await page.getByRole("button", { name: "Re-translate 2 reviews" }).click();
 

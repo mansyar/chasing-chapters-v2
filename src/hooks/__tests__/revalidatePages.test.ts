@@ -69,4 +69,44 @@ describe("revalidatePages", () => {
 		expect(revalidatePath).toHaveBeenCalled();
 		expect(warn).toHaveBeenCalled();
 	});
+
+	it("rethrows a failure that is not the out-of-scope invariant", async () => {
+		const warn = spyOn(logger, "warn").mockImplementation(() => {});
+		const warningsBefore = warn.mock.calls.length;
+		revalidatePath.mockImplementation(() => {
+			throw new Error("Something else went wrong");
+		});
+
+		const doc = {
+			id: 3,
+			title: "E2E Fixture Review",
+			slug: "e2e-fixture-review",
+			_status: "published",
+		};
+
+		try {
+			await expect(
+				revalidateReviewPages({
+					doc: doc as never,
+					previousDoc: doc as never,
+					operation: "create",
+					data: {} as never,
+					req: {} as never,
+					collection: {} as never,
+					context: {},
+				}),
+			).rejects.toThrow("Something else went wrong");
+			// A failure the guard does not tolerate is not downgraded to a
+			// log line.
+			expect(warn.mock.calls.length).toBe(warningsBefore);
+		} finally {
+			// The other cases rely on the original failure, so the mock goes
+			// back to throwing the out-of-scope invariant.
+			revalidatePath.mockImplementation(() => {
+				throw new Error(
+					'Invariant: static generation store missing in revalidatePath("/reviews")',
+				);
+			});
+		}
+	});
 });

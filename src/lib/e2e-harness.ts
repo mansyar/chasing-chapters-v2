@@ -98,6 +98,103 @@ export function resolveE2EBaseURL(env: E2EEnv): string {
 }
 
 /* -------------------------------------------------------------------------- *
+ * The e2e database
+ *
+ * The suite must never write into the database the developer works in: the
+ * fixture rows would then compete with the developer's own rows inside the
+ * fixed-size windows the public pages use (the featured carousel, the curated
+ * reading lists, the browse page), and the admin specs - which assert
+ * collection-wide counts - would turn red on every review the developer
+ * leaves in a failed or stale translation state.
+ *
+ * The e2e run therefore gets its own database, derived from the ambient
+ * `DATABASE_URI` by appending a suffix to the database name. The derivation
+ * is pure, so the Playwright configuration, the seed script and the unit
+ * tests all agree on the same connection string.
+ * -------------------------------------------------------------------------- */
+
+/** The suffix the e2e database name carries. */
+export const E2E_DATABASE_SUFFIX = "_e2e";
+
+/**
+ * The storage adapter the e2e run uses: Payload's own disk storage instead
+ * of the S3 plugin, so the run needs no object storage credentials.
+ */
+export const E2E_STORAGE_ADAPTER = "local";
+
+/**
+ * Reads the database name out of a PostgreSQL connection string.
+ */
+function readDatabaseName(uri: string): string | undefined {
+	let url: URL;
+	try {
+		url = new URL(uri);
+	} catch {
+		return undefined;
+	}
+
+	const segments = url.pathname.split("/").filter((segment) => segment !== "");
+	const last = segments.at(-1);
+	if (!last) {
+		return undefined;
+	}
+
+	try {
+		return decodeURIComponent(last);
+	} catch {
+		return undefined;
+	}
+}
+
+/**
+ * Resolves the name of the database the ambient connection string points at.
+ */
+export function resolveDatabaseName(env: E2EEnv): string | undefined {
+	const uri = env.DATABASE_URI?.trim();
+	if (!uri) {
+		return undefined;
+	}
+	return readDatabaseName(uri);
+}
+
+/**
+ * Resolves the connection string of the e2e database.
+ *
+ * The name of the ambient database is suffixed with {@link E2E_DATABASE_SUFFIX};
+ * a URI that already points at an e2e database is returned unchanged, so the
+ * resolution is idempotent and a run that already resolved the URI can resolve
+ * it again without ending up in `..._e2e_e2e`.
+ *
+ * Everything else - host, port, credentials, query parameters - is preserved.
+ * A missing or unparsable `DATABASE_URI` resolves to `undefined`: the caller
+ * decides how to report it.
+ */
+export function resolveE2EDatabaseUri(env: E2EEnv): string | undefined {
+	const uri = env.DATABASE_URI?.trim();
+	if (!uri) {
+		return undefined;
+	}
+
+	const name = readDatabaseName(uri);
+	if (!name) {
+		return undefined;
+	}
+
+	let url: URL;
+	try {
+		url = new URL(uri);
+	} catch {
+		return undefined;
+	}
+
+	if (!name.endsWith(E2E_DATABASE_SUFFIX)) {
+		url.pathname = `/${name}${E2E_DATABASE_SUFFIX}`;
+	}
+
+	return url.toString();
+}
+
+/* -------------------------------------------------------------------------- *
  * Deterministic fixture dataset
  *
  * The public specs assert against a known dataset instead of "whatever the
@@ -175,6 +272,21 @@ function richText(...paragraphs: string[]): E2EFixtureRichText {
 /** The translation states the fixture seeds reviews in. */
 export type E2EFixtureTranslationStatus = "translated" | "failed" | "stale";
 
+/**
+ * The localized content the fixture writes for the Indonesian locale.
+ *
+ * The admin surfaces only trust a review whose Indonesian content is really
+ * there: a review that claims to be translated but has no Indonesian text
+ * silently falls back to the English content on `?locale=id`.
+ */
+export type E2EFixtureLocalizedContent = {
+	reviewContent: E2EFixtureRichText;
+	whatILoved: E2EFixtureRichText;
+	whatCouldBeBetter: E2EFixtureRichText;
+	perfectFor: E2EFixtureRichText;
+	favoriteQuotes: Array<{ quote: string; page: string }>;
+};
+
 /** A review the fixture creates. */
 export type E2EFixtureReview = {
 	/** Title shown on the public pages. */
@@ -196,6 +308,12 @@ export type E2EFixtureReview = {
 	whatCouldBeBetter: E2EFixtureRichText;
 	perfectFor: E2EFixtureRichText;
 	favoriteQuotes: Array<{ quote: string; page: string }>;
+	/**
+	 * The Indonesian content. Only the reviews whose translation status is
+	 * `translated` carry one - the other two are seeded in a state where the
+	 * Indonesian content is missing on purpose.
+	 */
+	id?: E2EFixtureLocalizedContent;
 	/** Taxonomy names - resolved to ids by the fixture. */
 	genres: string[];
 	tags: string[];
@@ -227,6 +345,19 @@ export const E2E_FIXTURE_TAXONOMY = {
 	moodTags: ["Adventurous", "Cozy"],
 } as const;
 
+/**
+ * The details a mood tag needs when the fixture has to create it: the color
+ * is a required field, the icon is not. The values match the ones the seed
+ * script writes, so a fixture mood tag looks like any other one.
+ */
+export const E2E_FIXTURE_MOOD_TAG_DETAILS: Record<
+	string,
+	{ color: string; icon: string }
+> = {
+	Adventurous: { color: "#55EFC4", icon: "🗺️" },
+	Cozy: { color: "#FF9F43", icon: "☕" },
+};
+
 /** The reading list the fixture creates. */
 export const E2E_FIXTURE_READING_LIST = {
 	title: "E2E Fixture: Rainy Season Reading List",
@@ -234,6 +365,19 @@ export const E2E_FIXTURE_READING_LIST = {
 	description:
 		"Four fixture reviews for slow afternoons, collected by the end-to-end suite.",
 	featured: true,
+} as const;
+
+/**
+ * The cover the fixture attaches to its reviews.
+ *
+ * The fixture writes a small PNG into Payload's own disk storage - the e2e
+ * run does not talk to object storage - so the reviews render the same
+ * cover-first layout the production site does.
+ */
+export const E2E_FIXTURE_COVER = {
+	alt: "E2E fixture cover",
+	filename: "e2e-fixture-cover.png",
+	mimeType: "image/png",
 } as const;
 
 /**
@@ -272,6 +416,28 @@ export const E2E_FIXTURE_REVIEWS: E2EFixtureReview[] = [
 				page: "42",
 			},
 		],
+		id: {
+			reviewContent: richText(
+				"Buku Almanak Penjaga Mercusuar karya Wren Halloway adalah buku tentang Rye, yang selalu payah.",
+				"Penjaga itu menulis cuaca di sebuah buku besar, dan pembaca perlahan menyadari bahwa badai itu sebenarnya tentang desa di bawahnya.",
+			),
+			whatILoved: richText(
+				"Daftar pasang surutnya sekaligus berfungsi sebagai metafora, dan setiap barisnya terdengar seperti ditulis pukul empat pagi.",
+			),
+			whatCouldBeBetter: richText(
+				"Tiga bagian tengahnya mengulang dirinya sendiri, dan latar belakang penjaga baru muncul jauh terlalu lambat.",
+			),
+			perfectFor: richText(
+				"Pembaca yang menyukai buku sunyi dan atmosferis, tempat latar lokasi yang membawa cerita.",
+			),
+			favoriteQuotes: [
+				{
+					quote:
+						"Sebuah mercusuar hanyalah janji bahwa masih ada orang yang terbangun.",
+					page: "42",
+				},
+			],
+		},
 		genres: ["Sci-Fi"],
 		tags: ["Classic"],
 		moodTags: ["Adventurous"],
@@ -304,6 +470,28 @@ export const E2E_FIXTURE_REVIEWS: E2EFixtureReview[] = [
 				page: "118",
 			},
 		],
+		id: {
+			reviewContent: richText(
+				"Roman festival dalam tujuh malam, diceritakan melalui orang-orang yang membawa lampion.",
+				"Lebih hangat daripada dalam, dan itulah persis yang dibutuhkan musim hujan.",
+			),
+			whatILoved: richText(
+				"Bab yang ditulis sepenuhnya sebagai resep adalah halaman terbaik di buku ini.",
+			),
+			whatCouldBeBetter: richText(
+				"Seratus halaman terakhirnya terburu-buru melewati tiga akhir sekaligus.",
+			),
+			perfectFor: richText(
+				"Pembaca yang menginginkan sesuatu yang pendek, hangat, dan bisa diselesaikan dalam sekali duduk.",
+			),
+			favoriteQuotes: [
+				{
+					quote:
+						"Setiap festival adalah perdebatan tentang siapa yang berhak tetap tinggal.",
+					page: "118",
+				},
+			],
+		},
 		genres: ["Fantasy"],
 		tags: ["Hidden Gem"],
 		moodTags: ["Cozy"],
