@@ -3,9 +3,9 @@
 - **Track:** `20261022-e2e-production-harness`
 - **Type:** chore
 - **Branch:** `chore/20261022-e2e-production-harness`
-- **Range:** `9287be692520efb10254aac7b53b4c0620f69689..b48f219`
+- **Range:** `9287be692520efb10254aac7b53b4c0620f69689..1c19487`
 - **Date:** 2026-10-22
-- **Verdict:** `BLOCK`
+- **Verdict:** `PASS WITH FINDINGS` (round 2; five Low findings remain, all in scope)
 
 ## Summary
 
@@ -226,8 +226,81 @@ required cover with a local-disk storage adapter for the e2e run.
 post-review sync must cover the dedicated e2e database, the selectable storage adapter and the
 restored cover requirement.
 
+## Round 2
+
+- **Range:** `da4142d..1c19487` (the round-1 record to the end of the R1 fix phase)
+- **Verdict:** `PASS WITH FINDINGS` - all eight round-1 findings closed, five Low findings remain
+
+### The round-1 findings
+
+| Finding | Severity | Status | What the reviewer checked |
+| --- | --- | --- | --- |
+| F1 - the fixture shared the developer's database and the admin specs asserted collection-wide counts | High | closed | The e2e run creates and uses `chasing-chapters_e2e`; the reviewer's own run shows the build's prerendered output carrying the fixture's reviews and its cover - data that exists only in the e2e database - proving the build and the server both ran against it. The bulk spec ticks the two fixture candidates one by one. |
+| F2 - the browse page's window pushed the fixture review to page 2 | Medium | closed | The dedicated database: the window cannot overflow. |
+| F3 - the featured carousel and the featured reading lists dropped the fixture rows | Medium | closed | The dedicated database. |
+| F4 - the cover was optional and the fixture wrote no object storage | Medium | closed | `coverImage` is required again, `STORAGE_ADAPTER` selects the plugin (default `s3`), and the fixture uploads a real PNG rendered with `sharp`. |
+| F5 - the preference owner was hidden behind a type assertion | Low | closed | The owner is part of the data again; the assertion and the type import are gone. |
+| F6 - the revalidation guard swallowed every error | Low | closed | It tolerates exactly the static-generation invariant and rethrows the rest. |
+| F7 - the translated fixture reviews carried no Indonesian content | Low | closed | The fixture data carries an Indonesian payload, written with a locale-scoped update. |
+| F8 - the harness served `next start` while production runs the standalone server | Low | closed | The web server serves `.next/standalone/server.js`, the artifact the deployment runs. |
+
+The reviewer also confirmed independently that the `ci` job in `.github/workflows/ci.yml` is
+byte-identical to the state before the track's CI work, and that the copy-script test the primary
+moved under `src/` is now collected by `bun test`.
+
+### The remaining findings (all Low)
+
+- **F1 - `upsertCover` duplicates the media row instead of repairing it**
+  - **File:** `e2e/global-setup.ts:340-362`
+  - **What:** When the fixture's media document survives but its file is gone from disk, the fixture
+    creates a second media document instead of updating the existing one, so the media row count
+    grows by one per run in exactly the state the function's own comment names.
+  - **Why:** FR-3's idempotent upsert and AC-3's "same row count and the same identifiers" then no
+    longer hold in the suite's own database.
+  - **Fix:** Update the existing document with the file and keep its id.
+  - **Requirement:** FR-3
+  - **Test gap:** seed twice with the file removed in between; assert the row count and id are
+    unchanged.
+- **F2 - the README overstates what the e2e run does to the e2e database**
+  - **File:** `README.md:126-131`
+  - **What:** It says the database is never dropped and the fixture never deletes anything, while
+    the orchestrator answers Payload's dev-mode drift prompt on the migration step, so the e2e
+    database's contents are discarded and its schema rebuilt on every run.
+  - **Why:** The loss is confined to the dedicated e2e database, but the documented behaviour is
+    inaccurate.
+  - **Fix:** State the actual behaviour.
+  - **Requirement:** FR-3
+  - **Test gap:** none
+- **F3 - the spec was only partially amended**
+  - **File:** `conductor/tracks/20261022-e2e-production-harness/spec.md:107,126-128,151`
+  - **What:** The assumption about the fixture's database still said the fixture writes to the
+    database the app uses, NFR-5 still named only the Playwright configuration and the fixture as
+    the new moving parts, and the port edge case still described reusing a production `next start`.
+  - **Why:** The spec is the contract the track is reviewed against.
+  - **Fix:** Amend the three places. **Closed by the primary** before the R2 phase started.
+  - **Requirement:** FR-3
+  - **Test gap:** none
+- **F4 - `.env.example` does not list the new `STORAGE_ADAPTER`**
+  - **File:** `.env.example:5-10`
+  - **What:** The switch that decides whether the S3 storage plugin is registered at all is
+    documented in the README but missing from the environment template.
+  - **Why:** A deploy owner reading the template cannot learn the knob exists.
+  - **Fix:** Add it to the R2 block of the template.
+  - **Requirement:** FR-8
+  - **Test gap:** none
+- **F5 - the "Postgres or Redis unavailable" edge case is only half implemented**
+  - **File:** `conductor/tracks/20261022-e2e-production-harness/spec.md:134-135`
+  - **What:** The harness checks Postgres, but nothing checks Redis: with Redis down the app
+    degrades to no-cache and the suite runs on instead of failing fast.
+  - **Why:** A developer whose Redis is down gets a green run with connection errors in the output
+    rather than the documented clear failure.
+  - **Fix:** Add a Redis readiness probe to the orchestrator, before it seeds.
+  - **Requirement:** NFR-2
+  - **Test gap:** none
+
 ## History
 
 | Round | Verdict | Critical | High | Medium | Low | Fixed |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | BLOCK | 0 | 1 | 3 | 4 | 0 |
+| 1 | BLOCK | 0 | 1 | 3 | 4 | 8 |
+| 2 | PASS WITH FINDINGS | 0 | 0 | 0 | 5 | 0 |

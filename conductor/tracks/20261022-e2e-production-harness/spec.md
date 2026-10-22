@@ -104,7 +104,7 @@ none.
 | NFR-2 | The fixture and the test-mode provider stub touch only test environments: no production data is read or written, no real credentials are used, and no GitHub secrets are required. |
 | NFR-3 | The existing checks stay green: typecheck 0 errors, lint 0 errors/warnings, all unit tests pass, and the production build succeeds. |
 | NFR-4 | The suite is deterministic - the same commit and the same fixture produce the same result; no spec depends on wall-clock timing or on a background server's compile latency. |
-| NFR-5 | The harness change stays small and legible: the Playwright configuration and the fixture are the only new moving parts in the repo's test tooling. |
+| NFR-5 | The harness change stays small and legible: the Playwright configuration, the shared harness helpers, the database bootstrap and the run orchestrator are the only new moving parts in the repo's test tooling. |
 
 ## Acceptance Criteria
 
@@ -123,9 +123,9 @@ none.
 
 - **Stale build:** the harness must not serve an old `.next` build - the build is
   refreshed, or the run fails loudly rather than testing stale code.
-- **Port already in use:** a foreign server on port 3000 must not be silently
-  reused; only a production `next start` may be reused, otherwise the run
-  fails.
+- **Port already in use:** the suite serves on its own port (3100 by default) and never reuses
+  a server that is already listening on it, so a foreign process on that port fails the run
+  loudly instead of being tested against.
 - **Empty database:** the fixture provides everything the specs need; no spec
   depends on rows that pre-exist.
 - **Populated database:** the suite runs against its own database, so the
@@ -148,7 +148,8 @@ none.
 
 - **Assumption:** the CI e2e job is added and expected to work, but the track's completion gate is the green local run; if the CI runner cannot execute the job (browser install, service timing), that is recorded as a known gap rather than a blocker.
 - **Assumption:** the test-mode provider stub is an env-gated branch in the translation client (for example `TRANSLATION_TEST_MODE=1` selects a deterministic stub), inactive unless the env var is set.
-- **Assumption:** the fixture writes to the same database the app uses (the existing `DATABASE_URI`), upserting only its own rows.
+- **Assumption:** the fixture writes only its own rows, into the suite's own database derived from
+  the ambient `DATABASE_URI` (the same host and credentials, the database name suffixed `_e2e`).
 - **Question:** should the e2e job also run in the deploy pipeline? Assumed no - the CI job is the single place it runs.
 - **Assumption:** the fixed test credential is a throwaway value committed in the repo (for example `e2e-admin@example.test` with a fixed password), safe because the account exists only in test environments.
 - **Assumption:** the suite stays Chromium-only; no new browser projects.

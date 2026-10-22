@@ -152,3 +152,29 @@
 **Result:** verified
 **Checkpoint:** 3c46191
 **Evidence:** conductor/tracks/20261022-e2e-production-harness/verification/phase-R1.md
+
+## Phase R2: Review Fixes (round 2)
+
+- **Goal:** The five remaining findings of review round 2 are closed: the fixture repairs its cover instead of duplicating it, the documentation tells the truth about the e2e database, the environment template lists the new storage switch, and the harness fails fast when Redis is unreachable.
+- **Depends on:** Phase R1
+- **Covers:** FR-3, FR-8, NFR-2, AC-3
+- **Touches:** `e2e/global-setup.ts`, `src/scripts/e2e-run.ts`, `src/scripts/e2e-redis.ts` (new), `src/lib/e2e-harness.ts` (+ `src/lib/__tests__/e2e-harness.test.ts`), `README.md`, `.env.example`
+- **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
+- **Status:** in_progress
+
+- [ ] **R2.T1: Repair the fixture's cover instead of duplicating it** - covers: FR-3, AC-3
+  - [ ] **R2.T1.1: Update the media document in place** - when the fixture's media document exists but its file is missing on disk, the fixture updates that document with the file instead of creating a second one, so the media row count and id stay stable across runs.
+  - [ ] **R2.T1.2: Cover the repair path** - a test asserts that seeding twice with the file removed in between leaves the media row count and the id unchanged.
+- [ ] **R2.T2: Tell the truth about the e2e database** - covers: FR-3
+  - [ ] **R2.T2.1: Correct the README** - the e2e database paragraph states that the schema is rebuilt from the migrations on every run, so whatever the database held is discarded, while nothing outside it is read or written.
+- [ ] **R2.T3: List the storage switch in the environment template** - covers: FR-8
+  - [ ] **R2.T3.1: Add `STORAGE_ADAPTER` to `.env.example`** - the template names the two adapters and says which one is the default.
+- [ ] **R2.T4: Fail fast when Redis is unreachable** - covers: NFR-2
+  - [ ] **R2.T4.1: Add a Redis readiness probe** - the orchestrator pings Redis before it seeds, and exits with a clear message when Redis is not reachable, instead of letting the run continue with the app silently degraded to no cache.
+  - [ ] **R2.T4.2: Cover the probe** - a unit test asserts the message the probe produces when Redis is unreachable.
+
+<!--
+**Result:** verified
+**Checkpoint:** <short-sha>
+**Evidence:** conductor/tracks/20261022-e2e-production-harness/verification/phase-R2.md
+-->
