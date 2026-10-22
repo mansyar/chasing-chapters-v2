@@ -106,17 +106,15 @@
 - **Covers:** FR-8, AC-8
 - **Touches:** `src/collections/Authors.ts`, `src/collections/__tests__/Authors.test.ts` (new), `e2e/admin/locale-preference.spec.ts` (new), `e2e/fixtures/admin-session.ts`, `playwright.config.ts` (register the new admin spec's project)
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P5.T1: Fix the preference write** — covers: FR-8
-  - [ ] **P5.T1.1: Pass the authenticated user to the Local API call** — in `src/collections/Authors.ts`, the `setDefaultLocalePreference` afterLogin hook writes the `payload-preferences` document through the Local API without a user context. Payload's own `beforeValidate` hook on that field overwrites the submitted value from `req.user` and returns `null` when there is none, so the required field fails validation with "This field is required." (400) and the preference is never stored. Pass the authenticated user to the Local API call so `req.user` is set, and let Payload's hook fill the field.
-  - [ ] **P5.T1.2: Leave the read side alone** — the hook's `find` already runs with a request that carries the user and returns 0 documents correctly; only the create path is broken.
-- [ ] **P5.T2: Cover the fix** — covers: AC-8
-  - [ ] **P5.T2.1: Add the unit regression test** — a bun unit test asserts the afterLogin hook creates the preference with the authenticated user. The assertion fails against the pre-fix code, which omits it.
-  - [ ] **P5.T2.2: Add the browser regression test** — an admin spec logs in and asserts the preference is readable afterwards (`GET /api/payload-preferences/locale` returns the stored value), so the fix is proven end to end through the real login path.
+- [x] **P5.T1: Fix the preference write** - covers: FR-8
+  - [x] **P5.T1.1: Pass the authenticated user to the Local API call** - in `src/collections/Authors.ts`, the `setDefaultLocalePreference` afterLogin hook writes the `payload-preferences` document through the Local API without a user context. Payload's own `beforeValidate` hook on that field overwrites the submitted value from `req.user` and returns `null` when there is none, so the required field fails validation with "This field is required." (400) and the preference is never stored. Pass the authenticated user to the Local API call so `req.user` is set, and let Payload's hook fill the field. The shipped fix also passes the login's `req`: without it the write deadlocks against the login transaction, because the preferences collection stores its owner in `payload_preferences_rels` with a foreign key to the author, so the insert waits for the lock the login holds while the login waits for the insert. Passing `req` makes the write join the login's transaction.
+  - [x] **P5.T1.2: Leave the read side alone** - the hook's `find` already runs with a request that carries the user and returns 0 documents correctly; only the create path is broken.
+- [x] **P5.T2: Cover the fix** - covers: AC-8
+  - [x] **P5.T2.1: Add the unit regression test** - a bun unit test asserts the afterLogin hook creates the preference with the authenticated user. The assertion fails against the pre-fix code, which omits it.
+  - [x] **P5.T2.2: Add the browser regression test** - an admin spec logs in and asserts the preference is readable afterwards (`GET /api/payload-preferences/locale` returns the stored value), so the fix is proven end to end through the real login path.
 
-<!--
 **Result:** verified
-**Checkpoint:** <short-sha>
+**Checkpoint:** 4e726eb
 **Evidence:** conductor/tracks/20261022-e2e-production-harness/verification/phase-5.md
--->
