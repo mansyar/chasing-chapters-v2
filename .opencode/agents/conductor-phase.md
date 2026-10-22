@@ -126,6 +126,18 @@ permissions:
     resource: "bun run build *"
     effect: allow
   - action: shell
+    resource: "bun run test:e2e"
+    effect: allow
+  - action: shell
+    resource: "bun run test:e2e *"
+    effect: allow
+  - action: shell
+    resource: "bun run seed:e2e"
+    effect: allow
+  - action: shell
+    resource: "bun run seed:e2e *"
+    effect: allow
+  - action: shell
     resource: "bun run typecheck && bun run lint && bun test"
     effect: allow
   - action: shell
