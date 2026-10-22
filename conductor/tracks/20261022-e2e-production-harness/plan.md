@@ -86,7 +86,7 @@
 - **Covers:** FR-7, AC-7, NFR-3
 - **Touches:** `.github/workflows/ci.yml`, `README.md`, `e2e/` (only if the CI runner needs a runner-specific adjustment)
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run build && bun run test:e2e`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P4.T1: Add the e2e CI job** — covers: FR-7
   - [ ] **P4.T1.1: Wire the job** — in `.github/workflows/ci.yml`, a new job installs Chromium, starts the postgres and redis services, applies the schema, builds the app, and runs the same `bun run test:e2e` command. The existing `Typecheck, Lint, Test, Build` job and its name stay unchanged.
