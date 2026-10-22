@@ -14,6 +14,6 @@
 | Translation | Google Cloud Translation API v10 |
 | Monitoring | Sentry 11 (`withSentryConfig` from `@sentry/nextjs/config`, `dataCollection` replaces `sendDefaultPii`), Umami analytics |
 | Validation | Zod 4.6 |
-| Testing | Bun test (unit), Playwright (e2e, chromium) |
+| Testing | Bun test (unit), Playwright (e2e, chromium) — the e2e suite runs against a **production build** (`next start` on port 3100) with a deterministic, idempotent fixture, an offline translation stub and a bounded worker count (3 by default, `PLAYWRIGHT_WORKERS` override, 1 in CI); added 2026-10-22 |
 | Lint/Format | Biome 2.5 (migrated from ESLint), husky pre-commit (bun check + biome + bun test) |
-| Deploy | Docker (bun alpine, standalone, non-root) → Docker Hub → Coolify (GitHub Actions); PR validation CI via `.github/workflows/ci.yml` (typecheck, lint, test, build against Postgres service; required check on main, added 2026-10-21); boot warm-up via `src/instrumentation.ts` → `src/lib/warm-up.ts` (ISR pages warmed on start, added 2026-10-08) |
+| Deploy | Docker (bun alpine, standalone, non-root) → Docker Hub → Coolify (GitHub Actions); PR validation CI via `.github/workflows/ci.yml` (typecheck, lint, test, build against Postgres service; required check on main, added 2026-10-21; plus a sibling e2e job running the Playwright suite against a production build with Postgres + Redis services, added 2026-10-22); boot warm-up via `src/instrumentation.ts` → `src/lib/warm-up.ts` (ISR pages warmed on start, added 2026-10-08) |
