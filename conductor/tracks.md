@@ -1,6 +1,6 @@
 # Tracks Registry
 
-- [~] **Track: E2E Production Harness** - [20261022-e2e-production-harness](./tracks/20261022-e2e-production-harness/index.md) - chore - high
+- [x] **Track: E2E Production Harness** - [20261022-e2e-production-harness](./archive/20261022-e2e-production-harness/index.md) - chore - high
 - [x] **Track: Translation Pipeline Reliability** - [20261021-translation-pipeline-reliability](./archive/20261021-translation-pipeline-reliability/index.md) - feature - high
 - [x] **Track: PR Validation CI** — [20261021-pr-validation-ci](./archive/20261021-pr-validation-ci/index.md) — chore — high
 - [x] **Track: Lint Debt Cleanup** — [20261021-lint-debt-cleanup](./archive/20261021-lint-debt-cleanup/index.md) — refactor — medium
