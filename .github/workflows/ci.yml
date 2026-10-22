@@ -79,3 +79,88 @@ jobs:
 
       - name: Build
         run: bun run build
+
+  # The e2e suite runs as a sibling of the required check, not inside it: the
+  # branch protection rule still requires exactly `Typecheck, Lint, Test,
+  # Build`, and the browser suite is a separate, slower signal (FR-7).
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+
+    # Same placeholder stance as the `ci` job: src/lib/env.ts is zod-validated
+    # at module load, and the production build the suite serves needs these
+    # present. The build and the suite perform no real media operations, so
+    # dummy values satisfy validation while keeping the workflow secret-free
+    # (NFR-3).
+    env:
+      # Same variable name as deploy.yml and src/lib/env.ts (the app reads
+      # DATABASE_URI, not DATABASE_URL). Points at the postgres service
+      # container, which prerendering and the fixture both need.
+      DATABASE_URI: postgresql://postgres:postgrespassword@localhost:5432/chasing-chapters
+      PAYLOAD_SECRET: ci-build-only-placeholder-secret-32-chars-min
+      R2_BUCKET: ci-build-bucket
+      R2_ENDPOINT: https://ci-build-placeholder.invalid
+      R2_ACCESS_KEY_ID: ci-build-placeholder-access-key
+      R2_SECRET_ACCESS_KEY: ci-build-placeholder-secret-key
+      # Points at the redis service container. src/lib/redis.ts degrades to
+      # "no cache" when REDIS_URL is unset, and the rate limiter and the
+      # translation cache then behave differently than they do locally.
+      REDIS_URL: redis://localhost:6379
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          # Credentials and db name mirror docker-compose.yml so CI matches the
+          # local development database conventions.
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrespassword
+          POSTGRES_DB: chasing-chapters
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          # Same Bun version as the `ci` job, so both jobs build and run the
+          # app with the same toolchain.
+          bun-version: 1.4.3
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Chromium for Playwright
+        # The suite drives a real browser. `--with-deps` installs the system
+        # libraries the runner is missing as well.
+        run: bunx playwright install --with-deps chromium
+
+      - name: Run database migrations
+        # The fixture seeds through the Payload local API, so the schema has
+        # to exist before the suite starts. `echo y |` auto-accepts Payload's
+        # one-time dev-push drift prompt - same pattern as the `ci` job.
+        run: echo y | bun run payload migrate
+
+      - name: Run e2e tests
+        # `bun run test:e2e` seeds the fixture, builds the production bundle
+        # and runs the suite against `next start` on port 3100 - the build is
+        # part of the command, so the job needs no separate build step.
+        # GitHub Actions sets CI=true, so the worker cap resolves to 1.
+        run: bun run test:e2e

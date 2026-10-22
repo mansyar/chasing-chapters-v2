@@ -108,6 +108,44 @@ bun test              # Unit tests
 bun run test:e2e      # Playwright end-to-end tests
 ```
 
+#### End-to-End Tests
+
+`bun run test:e2e` runs the Playwright suite against a **production build**, not a dev server.
+The command seeds the fixture, builds the app with `next build`, and serves it with
+`next start` on port 3100 while the suite drives a Chromium browser against it.
+
+**Prerequisites**
+
+- PostgreSQL and Redis are running (`docker compose up -d`) and `.env` points at them.
+- The database schema is up to date (`bun run payload migrate`).
+- Chromium is installed (`bunx playwright install chromium`).
+
+**Worker cap**
+
+The suite never occupies the machine's full CPU: it runs with **3 workers** by default, which
+leaves headroom for Postgres, Redis and the app server.
+
+```bash
+PLAYWRIGHT_WORKERS=5 bun run test:e2e   # override the cap
+```
+
+In CI the cap is pinned to **1 worker** (GitHub Actions sets `CI=true`), and the suite runs in
+its own job next to the required `Typecheck, Lint, Test, Build` check.
+
+**The fixture**
+
+Every run seeds a fixed dataset through the Payload local API, so the specs assert against known
+rows instead of whatever the database happens to hold:
+
+- a throwaway test admin (`e2e-admin@example.test`, password `e2e-fixture-password`),
+- four published reviews with content and structured sections, two of them featured, covering
+  the `translated`, `failed` and `stale` translation states,
+- a reading list.
+
+The seed is an upsert keyed on the fixture's own identifiers, so it only ever writes its own
+rows and never touches your own reviews. The translation provider is replaced by an offline stub
+while the suite runs, so no external API is called and no provider credentials are needed.
+
 ## 📁 Project Structure
 
 ```
