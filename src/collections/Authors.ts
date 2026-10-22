@@ -1,4 +1,8 @@
-import type { CollectionAfterLoginHook, CollectionConfig } from "payload";
+import type {
+	CollectionAfterLoginHook,
+	CollectionConfig,
+	RequiredDataFromCollectionSlug,
+} from "payload";
 
 /**
  * Hook to set default locale preference to English on first login
@@ -25,14 +29,23 @@ const setDefaultLocalePreference: CollectionAfterLoginHook = async ({
 		if (existingPref.docs.length === 0) {
 			await req.payload.create({
 				collection: "payload-preferences",
+				// The preferences collection marks `user` as required, but its
+				// own `beforeValidate` hook fills the field from `req.user`.
+				// The write therefore carries the key and the value only; the
+				// cast is what the required field's type asks for.
 				data: {
 					key: "locale",
-					user: {
-						relationTo: "authors",
-						value: user.id,
-					},
 					value: "en",
-				},
+				} as RequiredDataFromCollectionSlug<"payload-preferences">,
+				// A Local API call runs without a request, so `req.user` would
+				// be empty and the hook would blank the field. The
+				// authenticated user has to travel with the write.
+				user,
+				// The write joins the login transaction. In its own
+				// transaction the preference's relationship row waits for
+				// the lock the login holds on the author row, while the
+				// login waits for the write - neither side ever finishes.
+				req,
 			});
 		}
 	} catch (error) {

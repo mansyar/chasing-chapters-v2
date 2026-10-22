@@ -61,7 +61,9 @@ export default defineConfig({
 		// re-translates exactly those reviews, and the edit-view poller
 		// watches one of them finish. Run in one project they would race
 		// over the same documents, so they are chained as dependent
-		// projects and run one after the other.
+		// projects and run one after the other. The locale preference spec
+		// logs in and reads the admin's stored preference, and it is chained
+		// last so the admin flow stays sequential.
 		{
 			name: "admin-attention-bell",
 			testMatch: "**/admin/attention-bell.spec.ts",
@@ -77,6 +79,12 @@ export default defineConfig({
 			name: "admin-translation-poller",
 			testMatch: "**/admin/translation-poller.spec.ts",
 			dependencies: ["admin-bulk-retranslate"],
+			use: { ...devices["Desktop Chrome"] },
+		},
+		{
+			name: "admin-locale-preference",
+			testMatch: "**/admin/locale-preference.spec.ts",
+			dependencies: ["admin-translation-poller"],
 			use: { ...devices["Desktop Chrome"] },
 		},
 	],

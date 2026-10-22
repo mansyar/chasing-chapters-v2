@@ -15,6 +15,9 @@ export const ADMIN_PATH = "/admin";
 /** The reviews collection in the admin panel. */
 export const REVIEWS_ADMIN_PATH = "/admin/collections/reviews";
 
+/** The preferences collection exposes one endpoint per key. */
+export const LOCALE_PREFERENCE_KEY = "locale";
+
 /**
  * The translation attention bell. It is an admin-shell action, so it is
  * present on every admin page - which makes it the marker for "the admin
@@ -82,4 +85,39 @@ export async function getReviewIdBySlug(
 		throw new Error(`Review "${slug}" was not found`);
 	}
 	return Number(id);
+}
+
+/**
+ * Reads the admin's stored locale preference through the REST API, using the
+ * admin session of the page. The preferences collection answers with the
+ * stored document, or with an empty value when nothing is stored.
+ */
+export async function getLocalePreference(
+	page: Page,
+): Promise<{ key?: string; value?: unknown }> {
+	const response = await page.request.get(
+		`/api/payload-preferences/${LOCALE_PREFERENCE_KEY}`,
+	);
+	if (!response.ok()) {
+		throw new Error(
+			`Could not read the locale preference: ${response.status()}`,
+		);
+	}
+	return (await response.json()) as { key?: string; value?: unknown };
+}
+
+/**
+ * Removes the admin's stored locale preference, so the next login has to
+ * store it again. A missing preference is not an error: there is nothing to
+ * remove.
+ */
+export async function deleteLocalePreference(page: Page): Promise<void> {
+	const response = await page.request.delete(
+		`/api/payload-preferences/${LOCALE_PREFERENCE_KEY}`,
+	);
+	if (!response.ok() && response.status() !== 404) {
+		throw new Error(
+			`Could not delete the locale preference: ${response.status()}`,
+		);
+	}
 }
