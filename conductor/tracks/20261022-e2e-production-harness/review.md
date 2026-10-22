@@ -3,9 +3,10 @@
 - **Track:** `20261022-e2e-production-harness`
 - **Type:** chore
 - **Branch:** `chore/20261022-e2e-production-harness`
-- **Range:** `9287be692520efb10254aac7b53b4c0620f69689..1c19487`
+- **Range:** `9287be692520efb10254aac7b53b4c0620f69689..7acef44`
 - **Date:** 2026-10-22
-- **Verdict:** `PASS WITH FINDINGS` (round 2; five Low findings remain, all in scope)
+- **Verdict:** `PASS WITH FINDINGS` (round 3; the four remaining findings are documentation and are
+  closed in the post-review sync)
 
 ## Summary
 
@@ -222,9 +223,78 @@ required cover with a local-disk storage adapter for the e2e run.
 
 ## Doc sync
 
-`pending` - the tech stack was updated before the review (the e2e harness and the CI job). The
-post-review sync must cover the dedicated e2e database, the selectable storage adapter and the
-restored cover requirement.
+`updated` - the tech stack was updated before the review (the e2e harness and the CI job), and
+the post-review sync covered the dedicated e2e database, the selectable storage adapter, the
+restored cover requirement and the four documentation findings of round 3.
+
+## Round 3
+
+- **Range:** `a456516..7acef44` (the round-2 record to the end of the R2 fix phase)
+- **Verdict:** `PASS WITH FINDINGS` - all five round-2 findings closed, four Low findings remain,
+  none of them blocking
+
+### The round-2 findings
+
+| Finding | Severity | Status | What the reviewer checked |
+| --- | --- | --- | --- |
+| F1 - the fixture duplicated its cover document | Low | closed | The surviving document is updated in place and keeps its id; the regression test drives the real `upsertCover` and fails against the pre-fix code. |
+| F2 - the README overstated what the e2e database goes through | Low | closed | The "never dropped" claim is gone. The remaining wording inaccuracy is the subject of round 3's F1. |
+| F3 - the spec was only partially amended | Low | closed | The assumption, NFR-5 and the port edge case read correctly. |
+| F4 - `.env.example` did not list `STORAGE_ADAPTER` | Low | closed | The switch is listed with both adapters and the default. |
+| F5 - nothing checked Redis | Low | closed | The probe is pure and unit tested, the connection never reconnects, the URL never reaches the message, and the check runs before the first step. |
+
+The reviewer also checked two decisions the phase made rather than taking them on trust: treating a
+missing `REDIS_URL` as a missing prerequisite is right, because the suite's own behaviour depends
+on the per-IP rate limit that Redis backs and the app fails open without it; and the migration
+step's behaviour is the one the phase recorded.
+
+### The remaining findings (all Low, all documentation)
+
+- **F1 - the README still misdescribes the e2e database**
+  - **File:** `README.md:137-141`
+  - **What:** It said the schema comes from the migrations and that the migrations rebuild the
+    schema and discard the contents, and that nothing outside the e2e database is written. On an
+    existing e2e database no migration runs at all - the applied ones are recorded and skipped -
+    and the schema the run uses is the one Payload syncs when the seed connects in development
+    mode. The fixture also writes its cover image into the repository's `media/` directory.
+  - **Why:** This is the developer-facing answer to "what does this run do to my data".
+  - **Fix:** Say what actually happens. **Closed in the post-review doc sync.**
+  - **Requirement:** FR-3
+  - **Test gap:** none
+- **F2 - the fixture's Indonesian-content comment states an invariant it does not keep**
+  - **File:** `e2e/global-setup.ts:475-482`
+  - **What:** The comment claimed a review that is not `translated` keeps its Indonesian content
+    empty, but the bulk re-translate spec translates the failed and stale fixture candidates and
+    the fixture never clears the `id` locale again.
+  - **Why:** The next reader of the fixture is misled about the state the suite runs against. No
+    assertion depends on it.
+  - **Fix:** Correct the comment. **Closed in the post-review doc sync.**
+  - **Requirement:** AC-3
+  - **Test gap:** none
+- **F3 - NFR-5's list of the harness's moving parts is still incomplete**
+  - **File:** `conductor/tracks/20261022-e2e-production-harness/spec.md:107`
+  - **What:** The list did not name `scripts/copy-standalone-assets.ts`, which the harness depends
+    on, and did not say that the fixture and its helpers are covered by FR-3 and FR-5.
+  - **Why:** The list is the requirement the track is reviewed against.
+  - **Fix:** Name the copy script and the scope. **Closed in the post-review doc sync.**
+  - **Requirement:** NFR-5
+  - **Test gap:** none
+- **F4 - the integrated verification is stale**
+  - **File:** `conductor/tracks/20261022-e2e-production-harness/verification/integrated.md`
+  - **What:** It was written before the two fix phases: the old head, the old test counts, `next
+    start` instead of the standalone artifact, and the cover described as optional.
+  - **Why:** It is the track's integrated evidence record, and the pull request body is built on it.
+  - **Fix:** Rewrite it at the current head. **Closed in the post-review verification update.**
+  - **Requirement:** none
+  - **Test gap:** none
+
+### The requirements, after round 3
+
+Everything the track set out to do is covered and verified. The two requirements the reviewer
+marked partial are partial for the same reason: NFR-4's "no wall-clock dependence" is met in
+substance - the poller spec asserts the outcome, not a threshold - but it waits out the
+application's 20-second poll tick; and NFR-5's list of moving parts was incomplete (F3, now
+closed). The complete table is in the reviewer's report.
 
 ## Round 2
 
@@ -303,4 +373,5 @@ moved under `src/` is now collected by `bun test`.
 | Round | Verdict | Critical | High | Medium | Low | Fixed |
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | BLOCK | 0 | 1 | 3 | 4 | 8 |
-| 2 | PASS WITH FINDINGS | 0 | 0 | 0 | 5 | 0 |
+| 2 | PASS WITH FINDINGS | 0 | 0 | 0 | 5 | 5 |
+| 3 | PASS WITH FINDINGS | 0 | 0 | 0 | 4 | 4 |
