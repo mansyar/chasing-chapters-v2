@@ -104,7 +104,7 @@ none.
 | NFR-2 | The fixture and the test-mode provider stub touch only test environments: no production data is read or written, no real credentials are used, and no GitHub secrets are required. |
 | NFR-3 | The existing checks stay green: typecheck 0 errors, lint 0 errors/warnings, all unit tests pass, and the production build succeeds. |
 | NFR-4 | The suite is deterministic - the same commit and the same fixture produce the same result; no spec depends on wall-clock timing or on a background server's compile latency. |
-| NFR-5 | The harness change stays small and legible: the Playwright configuration, the shared harness helpers, the database bootstrap, the service readiness probe and the run orchestrator are the only new moving parts in the repo's test tooling. |
+| NFR-5 | The harness change stays small and legible: the Playwright configuration, the shared harness helpers, the database bootstrap, the service readiness probe, the run orchestrator and the standalone-asset copy the harness depends on are the only new moving parts in the repo's test tooling. The e2e fixture and its helpers are covered by FR-3 and FR-5 rather than by this requirement. |
 
 ## Acceptance Criteria
 

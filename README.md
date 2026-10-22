@@ -134,11 +134,13 @@ when it does not exist yet. The schema is applied to that database, the fixture 
 it, and the production build is rendered against it, so the suite never competes with your own
 rows.
 
-The e2e database is dedicated to the run: the schema comes from the migrations, and the
-migration step answers Payload's drift prompt automatically, so the run never stops on it - and
-when the migrations do run, they rebuild the schema, and whatever the database held is discarded
-with it. Nothing outside the e2e database is read or written. The fixture is an upsert: it only
-ever writes its own rows and never deletes anything.
+The e2e database is dedicated to the run. The migration step answers Payload's drift prompt
+automatically, so the run never stops on it, and the migrations are applied only when the
+database is new - once they are recorded, drizzle skips them, so an existing e2e database keeps
+its rows. The schema the run uses is the one Payload syncs when the seed connects in development
+mode. Nothing outside the e2e database is read or written, apart from the fixture's own cover
+image, which lands in the gitignored `media/` directory. The fixture is an upsert: it only ever
+writes its own rows and never deletes anything.
 
 **Storage**
 

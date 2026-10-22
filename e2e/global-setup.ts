@@ -476,9 +476,11 @@ async function upsertReview(
  * Writes the Indonesian content of a review.
  *
  * The write names the `id` locale, the same way the translation pipeline
- * writes it. A review whose translation status is not `translated` keeps its
- * Indonesian content empty on purpose - that is the state a failed or stale
- * translation leaves behind.
+ * writes it, and it only runs for the fixture reviews whose translation
+ * status is `translated`. It never clears the `id` locale of the others: a
+ * previous run's translation - the bulk re-translate spec translates the
+ * failed and stale candidates - leaves its Indonesian content behind, and
+ * the fixture only resets the status.
  */
 async function writeIndonesianContent(
 	payload: PayloadClient,
