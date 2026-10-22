@@ -26,6 +26,44 @@ interface RichTextDocument {
 	[key: string]: unknown;
 }
 
+/**
+ * Marker wrapped around every string the offline test-mode stub produces.
+ *
+ * The marker is what lets a test prove that a translation really happened
+ * (and that it came from the stub, not from a cached provider answer):
+ * `src/lib/__tests__/translate-test-mode.test.ts` asserts the marker, and
+ * the browser specs look for it in the Indonesian locale of a re-translated
+ * review.
+ */
+export const TRANSLATION_TEST_MODE_PREFIX = "[stub-id] ";
+export const TRANSLATION_TEST_MODE_SUFFIX = " [/stub-id]";
+
+/**
+ * Whether the offline, deterministic translation stub is active.
+ *
+ * The only switch is the explicit `TRANSLATION_TEST_MODE=1` environment
+ * flag. It is deliberately NOT gated on `NODE_ENV`: the e2e harness serves a
+ * production build, so `NODE_ENV` is `production` there and cannot be used
+ * as the gate. The deploy workflow never sets the flag, so production
+ * traffic always reaches the real provider.
+ */
+export function isTranslationTestMode(): boolean {
+	return process.env.TRANSLATION_TEST_MODE === "1";
+}
+
+/**
+ * The offline stub: it wraps the source text in a marker instead of
+ * translating it. It creates no client, reads no credentials and sends no
+ * request.
+ */
+function translateWithTestModeStub(texts: string[]): string[] {
+	return texts.map((text) =>
+		text && text.trim() !== ""
+			? `${TRANSLATION_TEST_MODE_PREFIX}${text}${TRANSLATION_TEST_MODE_SUFFIX}`
+			: text,
+	);
+}
+
 // Initialize client - handles both file-based and inline credentials.
 // The client is memoized for the process lifetime: credential parsing is
 // expensive and the client is stateless, so it is safe to reuse.
@@ -331,12 +369,24 @@ async function translateChunkWithRetry(
 // retry with exponential backoff. Blank texts pass through untouched and
 // are never sent to the API. On total failure this throws TranslationError -
 // it never returns the source text as a "translation".
+//
+// With TRANSLATION_TEST_MODE=1 the provider path is replaced by the offline
+// stub (see isTranslationTestMode).
 export async function translateBatch(
 	texts: string[],
 	targetLanguage: string = "id",
 	options?: TranslateBatchOptions,
 ): Promise<string[]> {
 	if (texts.length === 0) return [];
+
+	// The offline stub replaces the whole provider path: no client is
+	// created, no credentials are read and no request is sent. It also
+	// bypasses the translation cache in both directions - caching stub
+	// output under the real cache key would poison a later genuine
+	// translation of the same text.
+	if (isTranslationTestMode()) {
+		return translateWithTestModeStub(texts);
+	}
 
 	const delays = options?.delays ?? RETRY_DELAYS_MS;
 	const batchSize = options?.batchSize ?? TRANSLATION_BATCH_SIZE;

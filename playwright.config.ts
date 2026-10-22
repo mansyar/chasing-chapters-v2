@@ -53,6 +53,30 @@ export default defineConfig({
 	projects: [
 		{
 			name: "chromium",
+			testIgnore: "**/admin/**",
+			use: { ...devices["Desktop Chrome"] },
+		},
+		// The three admin surfaces share the fixture's translation states:
+		// the bell counts the reviews that need attention, the bulk action
+		// re-translates exactly those reviews, and the edit-view poller
+		// watches one of them finish. Run in one project they would race
+		// over the same documents, so they are chained as dependent
+		// projects and run one after the other.
+		{
+			name: "admin-attention-bell",
+			testMatch: "**/admin/attention-bell.spec.ts",
+			use: { ...devices["Desktop Chrome"] },
+		},
+		{
+			name: "admin-bulk-retranslate",
+			testMatch: "**/admin/bulk-retranslate.spec.ts",
+			dependencies: ["admin-attention-bell"],
+			use: { ...devices["Desktop Chrome"] },
+		},
+		{
+			name: "admin-translation-poller",
+			testMatch: "**/admin/translation-poller.spec.ts",
+			dependencies: ["admin-bulk-retranslate"],
 			use: { ...devices["Desktop Chrome"] },
 		},
 	],
@@ -67,5 +91,13 @@ export default defineConfig({
 		reuseExistingServer: false,
 		// A cold production start plus the app warm-up can take a while
 		timeout: 300 * 1000,
+		// The offline translation stub replaces the provider for the e2e
+		// run: no credentials, no quota, no network. The rest of the
+		// environment is inherited - the app needs its database and cache
+		// variables to boot.
+		env: {
+			...process.env,
+			TRANSLATION_TEST_MODE: "1",
+		},
 	},
 });
