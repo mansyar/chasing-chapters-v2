@@ -63,23 +63,21 @@
 - **Covers:** FR-5, FR-6, AC-5, AC-6, NFR-2
 - **Touches:** `src/lib/translate.ts`, `src/lib/__tests__/translate-test-mode.test.ts` (new), `e2e/fixtures/admin-session.ts` (new), `e2e/admin/translation-poller.spec.ts` (new), `e2e/admin/attention-bell.spec.ts` (new), `e2e/admin/bulk-retranslate.spec.ts` (new), `playwright.config.ts` (set the test-mode environment for the web server)
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P3.T1: Add the env-gated provider stub** — covers: FR-6
-  - [ ] **P3.T1.1: Stub the provider under an env flag** — in `src/lib/translate.ts`, a test-mode branch (e.g. `TRANSLATION_TEST_MODE=1`) returns a deterministic translated payload without calling the external API: no credentials, no network, no quota.
-  - [ ] **P3.T1.2: Run the app under test in test mode** — set the variable in the Playwright web server environment.
-  - [ ] **P3.T1.3: Prove the flag's reach** — a bun unit test asserts the stub is active only when the variable is set and the normal path is untouched otherwise.
-- [ ] **P3.T2: Cover the three admin surfaces** — covers: FR-5
-  - [ ] **P3.T2.1: Provide an authenticated admin session** — `e2e/fixtures/admin-session.ts` logs in at `/admin` with the fixture's author/admin credentials and exposes the authenticated context.
-  - [ ] **P3.T2.2: Spec the edit view** — open a review, let the poller run, assert the status transitions and the success/failure toast appears.
-  - [ ] **P3.T2.3: Spec the attention bell** — open the indicator, assert the count and that each listed review links to its document.
-  - [ ] **P3.T2.4: Spec the bulk re-translate action** — assert the candidate list, select reviews, run, and assert the per-review outcome rows.
+- [x] **P3.T1: Add the env-gated provider stub** — covers: FR-6
+  - [x] **P3.T1.1: Stub the provider under an env flag** — in `src/lib/translate.ts`, a test-mode branch (e.g. `TRANSLATION_TEST_MODE=1`) returns a deterministic translated payload without calling the external API: no credentials, no network, no quota.
+  - [x] **P3.T1.2: Run the app under test in test mode** — set the variable in the Playwright web server environment.
+  - [x] **P3.T1.3: Prove the flag's reach** — a bun unit test asserts the stub is active only when the variable is set and the normal path is untouched otherwise.
+- [x] **P3.T2: Cover the three admin surfaces** — covers: FR-5
+  - [x] **P3.T2.1: Provide an authenticated admin session** — `e2e/fixtures/admin-session.ts` logs in at `/admin` with the fixture's author/admin credentials and exposes the authenticated context.
+  - [x] **P3.T2.2: Spec the edit view** — open a review, let the poller run, assert the status transitions and the success/failure toast appears.
+  - [x] **P3.T2.3: Spec the attention bell** — open the indicator, assert the count and that each listed review links to its document.
+  - [x] **P3.T2.4: Spec the bulk re-translate action** — assert the candidate list, select reviews, run, and assert the per-review outcome rows.
 
-<!--
 **Result:** verified
-**Checkpoint:** <short-sha>
+**Checkpoint:** 0712969
 **Evidence:** conductor/tracks/20261022-e2e-production-harness/verification/phase-3.md
--->
 
 ## Phase 4: CI Job and Final Verification
 
