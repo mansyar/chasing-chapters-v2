@@ -12,9 +12,14 @@
  *
  * Every step runs in its own child process with the resolved environment, so
  * a step that fails stops the run with the child's own output on screen.
+ *
+ * Before the first step, the run checks that Redis is reachable. Redis is a
+ * prerequisite of the suite, and the app would otherwise degrade to no cache
+ * and carry on - the run stops with a message that says what to start.
  */
 import { spawn } from "node:child_process";
 import { E2E_STORAGE_ADAPTER, resolveE2EDatabaseUri } from "../lib/e2e-harness";
+import { probeRedis } from "./e2e-redis";
 
 type Step = {
 	/** What the step does - printed before it starts. */
@@ -119,6 +124,17 @@ const steps: Step[] = [
 ];
 
 const env = resolveChildEnv();
+
+// Redis is a prerequisite: without it the app degrades to no cache and the
+// suite would run on in a silently degraded state. The run stops here, before
+// anything is written, with a message that names the variable and says how to
+// start Redis.
+console.log("[e2e] check that Redis is reachable...");
+const redis = await probeRedis(env);
+if (!redis.ok) {
+	console.error(`[e2e] ${redis.message}`);
+	process.exit(1);
+}
 
 for (const step of steps) {
 	console.log(`[e2e] ${step.name}...`);

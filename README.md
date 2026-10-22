@@ -121,6 +121,10 @@ while the suite drives a Chromium browser against it.
 - PostgreSQL and Redis are running (`docker compose up -d`) and `.env` points at them.
 - Chromium is installed (`bunx playwright install chromium`).
 
+The run checks that Redis is reachable before it starts and stops with a message that names
+`REDIS_URL` when it is not - the app would otherwise degrade to no cache and the suite would
+run on in a silently degraded state.
+
 **The e2e database**
 
 The suite never touches the database you work in. It derives its own database from the
@@ -128,7 +132,13 @@ The suite never touches the database you work in. It derives its own database fr
 name with a `_e2e` suffix (`chasing-chapters` becomes `chasing-chapters_e2e`) - and creates it
 when it does not exist yet. The schema is applied to that database, the fixture is seeded into
 it, and the production build is rendered against it, so the suite never competes with your own
-rows. The database is never dropped, and the fixture never deletes anything.
+rows.
+
+The e2e database is dedicated to the run: the schema comes from the migrations, and the
+migration step answers Payload's drift prompt automatically, so the run never stops on it - and
+when the migrations do run, they rebuild the schema, and whatever the database held is discarded
+with it. Nothing outside the e2e database is read or written. The fixture is an upsert: it only
+ever writes its own rows and never deletes anything.
 
 **Storage**
 

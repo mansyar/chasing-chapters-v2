@@ -1,10 +1,16 @@
 import { describe, expect, it } from "bun:test";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { upsertCover } from "../../../e2e/global-setup";
 import formatSlug from "../../hooks/formatSlug";
 import {
 	CI_WORKER_COUNT,
+	checkRedisReadiness,
 	DEFAULT_E2E_PORT,
 	DEFAULT_WORKER_COUNT,
 	E2E_FIXTURE_AUTHOR,
+	E2E_FIXTURE_COVER,
 	E2E_FIXTURE_READING_LIST,
 	E2E_FIXTURE_REVIEW_PATH,
 	E2E_FIXTURE_REVIEW_SLUG,
@@ -29,6 +35,63 @@ function deriveSlug(title: string): string {
 	return (
 		hook({ value: undefined, originalDoc: undefined, data: { title } }) ?? ""
 	);
+}
+
+/**
+ * A stand-in for the media collection that behaves the way the fixture needs
+ * it to: it keeps the documents in memory and writes every file into the
+ * directory the fixture reads it back from.
+ */
+class FakeMediaCollection {
+	docs: Array<{ id: number; alt: string; filename: string | null }> = [];
+	created = 0;
+	updated = 0;
+	staticDir: string;
+
+	constructor(staticDir: string) {
+		this.staticDir = staticDir;
+	}
+
+	async find(args: { where: { alt: { equals: string } } }) {
+		return {
+			docs: this.docs.filter((doc) => doc.alt === args.where.alt.equals),
+		};
+	}
+
+	async create(args: {
+		data: { alt: string };
+		file: { data: Buffer; name: string };
+	}) {
+		this.created += 1;
+		const doc = {
+			id: this.docs.length + 1,
+			alt: args.data.alt,
+			filename: args.file.name,
+		};
+		this.docs.push(doc);
+		this.writeFile(args.file);
+		return doc;
+	}
+
+	async update(args: {
+		id: number;
+		data: { alt: string };
+		file: { data: Buffer; name: string };
+	}) {
+		this.updated += 1;
+		const doc = this.docs.find((entry) => entry.id === args.id);
+		if (!doc) {
+			throw new Error(`No media document with the id ${args.id}.`);
+		}
+		doc.alt = args.data.alt;
+		doc.filename = args.file.name;
+		this.writeFile(args.file);
+		return doc;
+	}
+
+	writeFile(file: { data: Buffer; name: string }) {
+		writeFileSync(join(this.staticDir, file.name), file.data);
+	}
 }
 
 describe("e2e-harness", () => {
@@ -160,6 +223,75 @@ describe("e2e-harness", () => {
 					DATABASE_URI: "postgresql://postgres:postgrespassword@localhost:5432",
 				}),
 			).toBeUndefined();
+		});
+	});
+
+	describe("checkRedisReadiness", () => {
+		it("reports a clear message when Redis cannot be reached", async () => {
+			const result = await checkRedisReadiness(
+				{ REDIS_URL: "redis://localhost:6379" },
+				async () => {
+					throw new Error("connect ECONNREFUSED 127.0.0.1:6379");
+				},
+			);
+
+			expect(result.ok).toBe(false);
+			expect(result.message).toContain("not reachable");
+			expect(result.message).toContain("REDIS_URL");
+			expect(result.message).toContain("docker compose up redis");
+		});
+
+		it("reports a missing REDIS_URL as a missing prerequisite", async () => {
+			const result = await checkRedisReadiness({}, async () => {});
+
+			expect(result.ok).toBe(false);
+			expect(result.message).toContain("REDIS_URL");
+			expect(result.message).toContain("docker compose up redis");
+		});
+
+		it("pings the URL the app would use", async () => {
+			let pinged = "";
+			const result = await checkRedisReadiness(
+				{ REDIS_URL: " redis://localhost:6379 " },
+				async (url) => {
+					pinged = url;
+				},
+			);
+
+			expect(result.ok).toBe(true);
+			expect(pinged).toBe("redis://localhost:6379");
+		});
+	});
+
+	describe("the fixture's cover", () => {
+		it("repairs the document instead of creating a second one", async () => {
+			const staticDir = mkdtempSync(join(tmpdir(), "e2e-cover-"));
+			const collection = new FakeMediaCollection(staticDir);
+			const payload = collection as unknown as Parameters<
+				typeof upsertCover
+			>[0];
+
+			try {
+				const first = await upsertCover(payload, { staticDir });
+				expect(collection.docs).toHaveLength(1);
+				expect(collection.created).toBe(1);
+
+				// The database survived, the file did not: the next seed has to
+				// repair the document instead of creating a second one.
+				rmSync(join(staticDir, E2E_FIXTURE_COVER.filename), { force: true });
+
+				const second = await upsertCover(payload, { staticDir });
+
+				expect(collection.docs).toHaveLength(1);
+				expect(collection.created).toBe(1);
+				expect(collection.updated).toBe(1);
+				expect(second).toBe(first);
+				expect(existsSync(join(staticDir, E2E_FIXTURE_COVER.filename))).toBe(
+					true,
+				);
+			} finally {
+				rmSync(staticDir, { force: true, recursive: true });
+			}
 		});
 	});
 

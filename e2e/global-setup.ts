@@ -327,8 +327,16 @@ async function drawFixtureCover(): Promise<Buffer> {
  * checked as well: a database that survived a fresh checkout has the
  * document but not the file, and a cover that points at a missing file would
  * render as a broken image.
+ *
+ * A missing file is repaired: the document that is already there is updated
+ * with the file instead of a second document being created. The media row
+ * count and the id stay the same across runs, which is what the fixture's
+ * idempotent upsert promises - a second document would orphan the first one.
  */
-async function upsertCover(payload: PayloadClient): Promise<number> {
+export async function upsertCover(
+	payload: PayloadClient,
+	options: { staticDir?: string } = {},
+): Promise<number> {
 	const existing = await payload.find({
 		collection: "media",
 		where: { alt: { equals: E2E_FIXTURE_COVER.alt } },
@@ -336,16 +344,32 @@ async function upsertCover(payload: PayloadClient): Promise<number> {
 		depth: 0,
 	});
 
+	const staticDir = options.staticDir ?? join(process.cwd(), MEDIA_STATIC_DIR);
+
 	const found = existing.docs[0];
 	if (found) {
 		const filename = typeof found.filename === "string" ? found.filename : "";
-		const onDisk = filename
-			? existsSync(join(process.cwd(), MEDIA_STATIC_DIR, filename))
-			: false;
+		const onDisk = filename ? existsSync(join(staticDir, filename)) : false;
 
 		if (onDisk) {
 			return toId(found.id);
 		}
+
+		const data = await drawFixtureCover();
+		const updated = await payload.update({
+			collection: "media",
+			id: found.id,
+			data: { alt: E2E_FIXTURE_COVER.alt },
+			file: {
+				data,
+				mimetype: E2E_FIXTURE_COVER.mimeType,
+				name: E2E_FIXTURE_COVER.filename,
+				size: data.length,
+			},
+			context: FIXTURE_CONTEXT,
+		});
+
+		return toId(updated.id);
 	}
 
 	const data = await drawFixtureCover();

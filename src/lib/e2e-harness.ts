@@ -561,3 +561,66 @@ export const E2E_FIXTURE_REVIEW_PATH = `/reviews/${E2E_FIXTURE_REVIEW_SLUG}`;
 
 /** The path of the reading list the public specs navigate to. */
 export const E2E_FIXTURE_READING_LIST_PATH = `/reading-lists/${E2E_FIXTURE_READING_LIST.slug}`;
+
+/* -------------------------------------------------------------------------- *
+ * The Redis readiness probe
+ *
+ * Redis is a prerequisite of the e2e run: the README lists it as one, and
+ * the app uses it for the translation cache. Without Redis the app does not
+ * fail - it degrades to no cache - so a run started against a Redis that is
+ * not up would carry on in a silently degraded state instead of stopping.
+ *
+ * The probe pings the server the app itself would use and reports what it
+ * found. The decision is pure, so the unit tests can drive it with a stub
+ * ping and assert the message without a live Redis; the connection itself
+ * lives in `src/scripts/e2e-redis.ts`.
+ * -------------------------------------------------------------------------- */
+
+/** Pings a Redis server and resolves when it answered. */
+export type RedisPing = (url: string) => Promise<unknown>;
+
+/** What the readiness probe found. */
+export type RedisReadiness = {
+	/** Whether Redis answered the ping. */
+	ok: boolean;
+	/** The message the orchestrator prints. */
+	message: string;
+};
+
+/**
+ * The message the orchestrator prints when Redis cannot be reached.
+ */
+export const REDIS_UNREACHABLE_MESSAGE =
+	"Redis is not reachable. The e2e run needs Redis: point REDIS_URL at a running Redis server (for example `redis://localhost:6379`) or start one with `docker compose up redis`.";
+
+/**
+ * The message the orchestrator prints when `REDIS_URL` is not set at all.
+ */
+export const REDIS_UNSET_MESSAGE =
+	"REDIS_URL is not set. The e2e run needs Redis: point REDIS_URL at a running Redis server (for example `redis://localhost:6379`) or start one with `docker compose up redis`.";
+
+/**
+ * Checks that Redis answers a ping.
+ *
+ * `REDIS_URL` is resolved the way the app resolves it (`src/lib/redis.ts`
+ * treats a missing or empty value as "no cache configured"). The e2e run
+ * does not accept that state: the run is documented to need Redis, so a
+ * missing `REDIS_URL` is reported as a missing prerequisite rather than
+ * silently skipped.
+ */
+export async function checkRedisReadiness(
+	env: E2EEnv,
+	ping: RedisPing,
+): Promise<RedisReadiness> {
+	const url = env.REDIS_URL?.trim();
+	if (!url) {
+		return { ok: false, message: REDIS_UNSET_MESSAGE };
+	}
+
+	try {
+		await ping(url);
+		return { ok: true, message: "Redis is reachable." };
+	} catch {
+		return { ok: false, message: REDIS_UNREACHABLE_MESSAGE };
+	}
+}
