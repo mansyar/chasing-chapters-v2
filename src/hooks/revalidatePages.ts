@@ -3,6 +3,25 @@ import type { CollectionAfterChangeHook } from "payload";
 import { logger } from "../lib/logger";
 
 /**
+ * Revalidates a path, tolerating a missing request scope.
+ *
+ * `revalidatePath` only works inside a Next.js request scope. Outside one - a
+ * local-API seed script, for example - it throws, and an uncaught throw in an
+ * `afterChange` hook rolls the write back. Cache invalidation is a side effect
+ * of the write, not the write itself, so a failure here is logged instead of
+ * propagated.
+ */
+function safeRevalidatePath(path: string): void {
+	try {
+		revalidatePath(path);
+	} catch (error) {
+		logger.warn(
+			`[Revalidation] Could not revalidate "${path}": ${String(error)}`,
+		);
+	}
+}
+
+/**
  * Revalidates cached pages when a Review is published or updated.
  * This ensures that ISR-cached pages show new content immediately.
  */
@@ -31,18 +50,18 @@ export const revalidateReviewPages: CollectionAfterChangeHook = async ({
 		);
 
 		// Revalidate the browse page
-		revalidatePath("/reviews");
+		safeRevalidatePath("/reviews");
 
 		// Revalidate the individual review page
 		if (doc.slug) {
-			revalidatePath(`/reviews/${doc.slug}`);
+			safeRevalidatePath(`/reviews/${doc.slug}`);
 		}
 
 		// Revalidate homepage (featured reviews, latest reviews)
-		revalidatePath("/");
+		safeRevalidatePath("/");
 
 		// Revalidate the RSS feed (latest reviews)
-		revalidatePath("/feed.xml");
+		safeRevalidatePath("/feed.xml");
 
 		// If featured status changed, homepage needs update (already covered above)
 		// Reading lists that include this review will be revalidated by their own ISR
@@ -76,15 +95,15 @@ export const revalidateReadingListPages: CollectionAfterChangeHook = async ({
 		);
 
 		// Revalidate the reading lists index page
-		revalidatePath("/reading-lists");
+		safeRevalidatePath("/reading-lists");
 
 		// Revalidate the individual reading list page
 		if (doc.slug) {
-			revalidatePath(`/reading-lists/${doc.slug}`);
+			safeRevalidatePath(`/reading-lists/${doc.slug}`);
 		}
 
 		// Revalidate homepage (featured reading lists)
-		revalidatePath("/");
+		safeRevalidatePath("/");
 	}
 
 	return doc;

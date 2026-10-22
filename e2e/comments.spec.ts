@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { E2E_FIXTURE_REVIEW_PATH } from "../src/lib/e2e-harness";
 
 test.describe("Comments", () => {
 	// Run serially in one worker: parallel workers all submit comments from
@@ -7,17 +8,13 @@ test.describe("Comments", () => {
 	// flake under full-suite parallelism.
 	test.describe.configure({ mode: "serial" });
 
-	// Helper to navigate to a review page
-	async function goToFirstReview(page: import("@playwright/test").Page) {
-		await page.goto("/reviews");
-		const firstReviewLink = page.locator('a[href^="/reviews/"]').first();
-		await firstReviewLink.click();
-		await page.waitForURL(/\/reviews\/.+/);
-	}
+	// Every test opens the review the fixture seeds, so the comment form is
+	// always the one of a known review.
+	test.beforeEach(async ({ page }) => {
+		await page.goto(E2E_FIXTURE_REVIEW_PATH);
+	});
 
 	test("should display comment form", async ({ page }) => {
-		await goToFirstReview(page);
-
 		// Name input should be visible
 		const nameInput = page.getByPlaceholder("Your name");
 		await expect(nameInput).toBeVisible();
@@ -36,8 +33,6 @@ test.describe("Comments", () => {
 	});
 
 	test("should show validation error for empty fields", async ({ page }) => {
-		await goToFirstReview(page);
-
 		// Click submit without filling form
 		const submitButton = page.getByRole("button", { name: /Submit Comment/i });
 		await submitButton.click();
@@ -53,8 +48,6 @@ test.describe("Comments", () => {
 	});
 
 	test("should submit comment successfully", async ({ page }) => {
-		await goToFirstReview(page);
-
 		// Fill out the comment form with unique data
 		const timestamp = Date.now();
 		const nameInput = page.getByPlaceholder("Your name");
@@ -73,23 +66,14 @@ test.describe("Comments", () => {
 		// Wait for submission to complete - button should re-enable when done
 		await expect(submitButton).toBeEnabled({ timeout: 15000 });
 
-		// Wait a bit for React state to update
-		await page.waitForTimeout(500);
-
-		// Check for any success indicator (message appears or content field clears)
-		const successMessage = page.getByText(
-			/posted|submitted|pending|moderation/i,
-		);
-		const successExists = await successMessage.isVisible().catch(() => false);
-		const contentCleared = (await commentInput.inputValue()) === "";
-
-		// Either show success message or form was reset (content cleared)
-		expect(successExists || contentCleared).toBeTruthy();
+		// The action answers with "Your comment has been posted!" (approved) or
+		// "Your comment has been submitted and is pending moderation..."
+		await expect(page.getByText(/your comment has been/i).first()).toBeVisible({
+			timeout: 15000,
+		});
 	});
 
 	test("should display comments section container", async ({ page }) => {
-		await goToFirstReview(page);
-
 		// Scroll down to ensure page loads fully
 		await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
 

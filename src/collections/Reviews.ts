@@ -102,7 +102,8 @@ export const Reviews: CollectionConfig = {
 			name: "coverImage",
 			type: "upload",
 			relationTo: "media",
-			required: true,
+			// A cover is optional: every render site falls back to the
+			// coverless layout when the review has no cover image.
 		},
 		{
 			name: "reviewContent",

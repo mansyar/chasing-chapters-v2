@@ -16,6 +16,10 @@ export default defineConfig({
 	// Test directory
 	testDir: "./e2e",
 
+	// Seed the deterministic fixture before the suite runs. The seeding is an
+	// upsert, so this is safe to run against a populated database.
+	globalSetup: "./e2e/global-setup.ts",
+
 	// Run tests in parallel
 	fullyParallel: true,
 

@@ -96,3 +96,280 @@ export function resolveE2EPort(env: E2EEnv): number {
 export function resolveE2EBaseURL(env: E2EEnv): string {
 	return `http://localhost:${resolveE2EPort(env)}`;
 }
+
+/* -------------------------------------------------------------------------- *
+ * Deterministic fixture dataset
+ *
+ * The public specs assert against a known dataset instead of "whatever the
+ * database happens to contain". Everything below is static data: fixed
+ * identifiers, fixed titles, fixed dates. Nothing here reads the clock, the
+ * filesystem or the database, so the same commit always produces the same
+ * fixture (NFR-4).
+ * -------------------------------------------------------------------------- */
+
+/**
+ * Rich text in the shape the Lexical editor stores. The fixture writes the
+ * same structure the admin UI produces, so the public pages render it
+ * without a translation round-trip.
+ */
+export type E2EFixtureRichText = {
+	root: {
+		type: "root";
+		children: Array<{
+			type: string;
+			version: number;
+			[k: string]: unknown;
+		}>;
+		direction: "ltr" | "rtl" | null;
+		format: "" | "left" | "start" | "center" | "right" | "end" | "justify";
+		indent: number;
+		version: number;
+	};
+	[k: string]: unknown;
+};
+
+type E2EFixtureBlock = E2EFixtureRichText["root"]["children"][number];
+
+/**
+ * Builds one Lexical paragraph.
+ */
+function paragraph(text: string): E2EFixtureBlock {
+	return {
+		type: "paragraph",
+		format: "",
+		indent: 0,
+		version: 1,
+		direction: null,
+		textStyle: "",
+		textFormat: 0,
+		children: [
+			{
+				mode: "normal",
+				text,
+				type: "text",
+				style: "",
+				detail: 0,
+				format: 0,
+				version: 1,
+			},
+		],
+	};
+}
+
+/**
+ * Builds a Lexical document from plain paragraphs.
+ */
+function richText(...paragraphs: string[]): E2EFixtureRichText {
+	return {
+		root: {
+			type: "root",
+			format: "",
+			indent: 0,
+			version: 1,
+			direction: null,
+			children: paragraphs.map(paragraph),
+		},
+	};
+}
+
+/** The translation states the fixture seeds reviews in. */
+export type E2EFixtureTranslationStatus = "translated" | "failed" | "stale";
+
+/** A review the fixture creates. */
+export type E2EFixtureReview = {
+	/** Title shown on the public pages. */
+	title: string;
+	/** Stable slug - also the identifier the fixture upserts on. */
+	slug: string;
+	bookAuthor: string;
+	rating: number;
+	/** Fixed publication date - never `new Date()`. */
+	publishDate: string;
+	translationStatus: E2EFixtureTranslationStatus;
+	/** Set for reviews whose translation is considered up to date. */
+	translationUpdatedAt?: string;
+	/** Set for reviews whose translation failed. */
+	translationError?: string;
+	featured: boolean;
+	reviewContent: E2EFixtureRichText;
+	whatILoved: E2EFixtureRichText;
+	whatCouldBeBetter: E2EFixtureRichText;
+	perfectFor: E2EFixtureRichText;
+	favoriteQuotes: Array<{ quote: string; page: string }>;
+	/** Taxonomy names - resolved to ids by the fixture. */
+	genres: string[];
+	tags: string[];
+	moodTags: string[];
+};
+
+/**
+ * The fixture account.
+ *
+ * The credential is a throwaway value that only ever exists in a test
+ * database: the account is created by the fixture, it is not a real user and
+ * it grants nothing outside the local test environment.
+ */
+export const E2E_FIXTURE_AUTHOR = {
+	name: "E2E Fixture Admin",
+	email: "e2e-admin@example.test",
+	password: "e2e-fixture-password",
+	role: "admin",
+} as const;
+
+/**
+ * Taxonomy the fixture reviews reference by name. The names already exist in
+ * a seeded database; the fixture creates the missing ones and never rewrites
+ * the ones it does not own.
+ */
+export const E2E_FIXTURE_TAXONOMY = {
+	genres: ["Sci-Fi", "Fantasy"],
+	tags: ["Classic", "Hidden Gem"],
+	moodTags: ["Adventurous", "Cozy"],
+} as const;
+
+/** The reading list the fixture creates. */
+export const E2E_FIXTURE_READING_LIST = {
+	title: "E2E Fixture: Rainy Season Reading List",
+	slug: "e2e-fixture-rainy-season-reading-list",
+	description:
+		"Four fixture reviews for slow afternoons, collected by the end-to-end suite.",
+	featured: true,
+} as const;
+
+/**
+ * The seeded reviews.
+ *
+ * Two of them are featured so the homepage renders the carousel instead of
+ * the single-review hero, and the four of them cover the three translation
+ * states the admin surfaces care about.
+ */
+export const E2E_FIXTURE_REVIEWS: E2EFixtureReview[] = [
+	{
+		title: "E2E Fixture: The Lighthouse Keeper's Almanac",
+		slug: "e2e-fixture-the-lighthouse-keepers-almanac",
+		bookAuthor: "Wren Halloway",
+		rating: 5,
+		publishDate: "2026-04-18T00:00:00.000Z",
+		translationStatus: "translated",
+		translationUpdatedAt: "2026-04-19T00:00:00.000Z",
+		featured: true,
+		reviewContent: richText(
+			"Wren Halloway's almanac of tides, gulls and burnt sugar is a book about paying attention.",
+			"The keeper writes the weather into a ledger, and the reader slowly realises the storm is really about the town below.",
+		),
+		whatILoved: richText(
+			"The tide tables double as a metaphor, and every entry sounds like it was written at four in the morning.",
+		),
+		whatCouldBeBetter: richText(
+			"The middle third repeats itself, and the keeper's backstory arrives far too late to matter.",
+		),
+		perfectFor: richText(
+			"Readers who like quiet, atmospheric books where the setting carries the story.",
+		),
+		favoriteQuotes: [
+			{
+				quote: "A lighthouse is just a promise that someone is still awake.",
+				page: "42",
+			},
+		],
+		genres: ["Sci-Fi"],
+		tags: ["Classic"],
+		moodTags: ["Adventurous"],
+	},
+	{
+		title: "E2E Fixture: Salt and Paper Lanterns",
+		slug: "e2e-fixture-salt-and-paper-lanterns",
+		bookAuthor: "Ivo Marchetti",
+		rating: 4,
+		publishDate: "2026-04-11T00:00:00.000Z",
+		translationStatus: "translated",
+		translationUpdatedAt: "2026-04-12T00:00:00.000Z",
+		featured: true,
+		reviewContent: richText(
+			"A festival novel in seven evenings, told through the people who carry the lanterns.",
+			"It is warmer than it is profound, which is exactly what a rainy season asks for.",
+		),
+		whatILoved: richText(
+			"The chapter written entirely as a recipe is the best page in the book.",
+		),
+		whatCouldBeBetter: richText(
+			"The last hundred pages hurry through three endings at once.",
+		),
+		perfectFor: richText(
+			"Readers who want something short, warm and readable in a single sitting.",
+		),
+		favoriteQuotes: [
+			{
+				quote: "Every festival is an argument about who gets to stay.",
+				page: "118",
+			},
+		],
+		genres: ["Fantasy"],
+		tags: ["Hidden Gem"],
+		moodTags: ["Cozy"],
+	},
+	{
+		title: "E2E Fixture: The Cartographer's Error",
+		slug: "e2e-fixture-the-cartographers-error",
+		bookAuthor: "Noor Abadi",
+		rating: 3,
+		publishDate: "2026-03-28T00:00:00.000Z",
+		translationStatus: "failed",
+		translationError:
+			"Fixture state: the translation provider request failed for this review.",
+		featured: false,
+		reviewContent: richText(
+			"A mapmaker discovers a coastline that moves, and the book spends longer on the paperwork than on the mystery.",
+		),
+		whatILoved: richText(
+			"The maps themselves are described well enough to make you want to draw them.",
+		),
+		whatCouldBeBetter: richText(
+			"The coastline never stops moving long enough for the ending to land.",
+		),
+		perfectFor: richText(
+			"Readers who like the idea of a puzzle more than the solving of it.",
+		),
+		favoriteQuotes: [],
+		genres: ["Sci-Fi"],
+		tags: ["Hidden Gem"],
+		moodTags: ["Cozy"],
+	},
+	{
+		title: "E2E Fixture: Nine Kinds of Weather",
+		slug: "e2e-fixture-nine-kinds-of-weather",
+		bookAuthor: "Tomas Iverson",
+		rating: 4,
+		publishDate: "2026-03-21T00:00:00.000Z",
+		translationStatus: "stale",
+		featured: false,
+		reviewContent: richText(
+			"Nine short stories, one per season, told by the same house across nine weathers.",
+		),
+		whatILoved: richText(
+			"The winter chapter is the best of the nine, and the summer one is a close second.",
+		),
+		whatCouldBeBetter: richText(
+			"Two of the middle seasons blur into one another.",
+		),
+		perfectFor: richText(
+			"Readers who like linked short fiction and a house that changes slowly.",
+		),
+		favoriteQuotes: [],
+		genres: ["Fantasy"],
+		tags: ["Classic"],
+		moodTags: ["Adventurous"],
+	},
+];
+
+/** The review the public specs navigate to. */
+export const E2E_FIXTURE_REVIEW = E2E_FIXTURE_REVIEWS[0];
+
+/** The slug of the review the public specs navigate to. */
+export const E2E_FIXTURE_REVIEW_SLUG = E2E_FIXTURE_REVIEW.slug;
+
+/** The path of the review the public specs navigate to. */
+export const E2E_FIXTURE_REVIEW_PATH = `/reviews/${E2E_FIXTURE_REVIEW_SLUG}`;
+
+/** The path of the reading list the public specs navigate to. */
+export const E2E_FIXTURE_READING_LIST_PATH = `/reading-lists/${E2E_FIXTURE_READING_LIST.slug}`;
