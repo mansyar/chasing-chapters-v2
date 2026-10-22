@@ -126,31 +126,29 @@
 - **Covers:** FR-1, FR-3, FR-4, FR-5, FR-8, AC-1, AC-3, AC-4, AC-5, AC-8, NFR-2, NFR-4
 - **Touches:** `src/lib/e2e-harness.ts` (+ `src/lib/__tests__/e2e-harness.test.ts`), `src/scripts/e2e-run.ts` (new), `src/scripts/e2e-database.ts` (new), `src/lib/env.ts`, `src/payload.config.ts`, `src/collections/Reviews.ts`, `src/collections/__tests__/Reviews.test.ts`, `src/collections/Authors.ts`, `src/collections/__tests__/Authors.test.ts`, `src/hooks/revalidatePages.ts`, `src/hooks/__tests__/revalidatePages.test.ts`, `src/payload-types.ts` (regenerated), `e2e/global-setup.ts`, `e2e/admin/bulk-retranslate.spec.ts`, `e2e/fixtures/admin-session.ts`, `playwright.config.ts`, `package.json`, `.github/workflows/ci.yml`, `README.md`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **R1.T1: Give the e2e run its own database** - covers: FR-3, FR-4, AC-3, AC-4
-  - [ ] **R1.T1.1: Resolve the e2e database URI** - a pure helper in `src/lib/e2e-harness.ts` derives the e2e database name from `DATABASE_URI` (the same server, a database named `<name>_e2e`), with a unit test for the derivation, a missing URI and a URI that already points at the e2e database.
-  - [ ] **R1.T1.2: Create the e2e database** - a script creates it when it does not exist, using Bun's built-in Postgres client against the maintenance database. It is idempotent and never drops anything.
-  - [ ] **R1.T1.3: Orchestrate the whole run against the e2e database** - one script resolves the e2e URI and the storage adapter, creates the database, applies the schema, seeds the fixture, builds the app and runs Playwright, each step in a child process that inherits the resolved environment.
-  - [ ] **R1.T1.4: Point the web server at the e2e database** - the Playwright web server's environment carries the resolved e2e URI and the local storage adapter, so the app under test reads the same database the fixture wrote.
-  - [ ] **R1.T1.5: Wire the scripts** - `package.json` routes `test:e2e` (and its UI and headed variants) through the orchestrator, and the CI e2e job drops its separate migration step because the orchestrator applies the schema.
-- [ ] **R1.T2: Restore the cover requirement and store e2e media on local disk** - covers: FR-3, AC-8
-  - [ ] **R1.T2.1: Make the storage adapter selectable** - the S3 plugin is registered only when the adapter is `s3`; with the adapter set to `local` the upload collection falls back to Payload's own disk storage. The default stays `s3`, so production and local development are unchanged.
-  - [ ] **R1.T2.2: Give the fixture a real cover** - the fixture uploads a small generated image through the local API and attaches it, and `coverImage` on Reviews is required again.
-  - [ ] **R1.T2.3: Update the affected tests and types** - the generated types are regenerated and the collection test asserts the cover is required.
-- [ ] **R1.T3: Drop the unnecessary cast in the preference write** - covers: FR-8
-  - [ ] **R1.T3.1: Submit the owner in the data** - the preference write carries the owner in its data again, so the generated type is satisfied without an assertion, and the assertion is removed.
-- [ ] **R1.T4: Narrow the revalidation guard** - covers: FR-3
-  - [ ] **R1.T4.1: Rethrow what is not the out-of-scope invariant** - the guard swallows only the static-generation-store error that occurs outside a request scope and rethrows anything else, with a test for both branches.
-- [ ] **R1.T5: Give the translated fixture reviews Indonesian content** - covers: FR-3, NFR-4
-  - [ ] **R1.T5.1: Seed the Indonesian locale** - the two reviews the fixture declares as translated carry their Indonesian content, and a unit test asserts that a review declared translated always carries it.
-- [ ] **R1.T6: Select the fixture's own candidates in the bulk spec** - covers: FR-5, AC-5
-  - [ ] **R1.T6.1: Tick the fixture's rows** - the bulk action spec ticks the two fixture reviews individually instead of selecting everything, so it proves the selection is per review.
-- [ ] **R1.T7: Serve the production artifact, or record the divergence** - covers: FR-1, AC-1
-  - [ ] **R1.T7.1: Try the standalone server** - the web server runs the standalone build the Docker image runs, with the static assets copied. If it cannot be made to work within the phase's budget, keep `next start` and record the divergence in the evidence for the primary to amend the spec.
+- [x] **R1.T1: Give the e2e run its own database** - covers: FR-3, FR-4, AC-3, AC-4
+  - [x] **R1.T1.1: Resolve the e2e database URI** - a pure helper in `src/lib/e2e-harness.ts` derives the e2e database name from `DATABASE_URI` (the same server, a database named `<name>_e2e`), with a unit test for the derivation, a missing URI and a URI that already points at the e2e database.
+  - [x] **R1.T1.2: Create the e2e database** - a script creates it when it does not exist, using Bun's built-in Postgres client against the maintenance database. It is idempotent and never drops anything.
+  - [x] **R1.T1.3: Orchestrate the whole run against the e2e database** - one script resolves the e2e URI and the storage adapter, creates the database, applies the schema, seeds the fixture, builds the app and runs Playwright, each step in a child process that inherits the resolved environment.
+  - [x] **R1.T1.4: Point the web server at the e2e database** - the Playwright web server's environment carries the resolved e2e URI and the local storage adapter, so the app under test reads the same database the fixture wrote.
+  - [x] **R1.T1.5: Wire the scripts** - `package.json` routes `test:e2e` (and its UI and headed variants) through the orchestrator, and the CI e2e job drops its separate migration step because the orchestrator applies the schema.
+- [x] **R1.T2: Restore the cover requirement and store e2e media on local disk** - covers: FR-3, AC-8
+  - [x] **R1.T2.1: Make the storage adapter selectable** - the S3 plugin is registered only when the adapter is `s3`; with the adapter set to `local` the upload collection falls back to Payload's own disk storage. The default stays `s3`, so production and local development are unchanged.
+  - [x] **R1.T2.2: Give the fixture a real cover** - the fixture uploads a small generated image through the local API and attaches it, and `coverImage` on Reviews is required again.
+  - [x] **R1.T2.3: Update the affected tests and types** - the generated types are regenerated and the collection test asserts the cover is required.
+- [x] **R1.T3: Drop the unnecessary cast in the preference write** - covers: FR-8
+  - [x] **R1.T3.1: Submit the owner in the data** - the preference write carries the owner in its data again, so the generated type is satisfied without an assertion, and the assertion is removed.
+- [x] **R1.T4: Narrow the revalidation guard** - covers: FR-3
+  - [x] **R1.T4.1: Rethrow what is not the out-of-scope invariant** - the guard swallows only the static-generation-store error that occurs outside a request scope and rethrows anything else, with a test for both branches.
+- [x] **R1.T5: Give the translated fixture reviews Indonesian content** - covers: FR-3, NFR-4
+  - [x] **R1.T5.1: Seed the Indonesian locale** - the two reviews the fixture declares as translated carry their Indonesian content, and a unit test asserts that a review declared translated always carries it.
+- [x] **R1.T6: Select the fixture's own candidates in the bulk spec** - covers: FR-5, AC-5
+  - [x] **R1.T6.1: Tick the fixture's rows** - the bulk action spec ticks the two fixture reviews individually instead of selecting everything, so it proves the selection is per review.
+- [x] **R1.T7: Serve the production artifact, or record the divergence** - covers: FR-1, AC-1
+  - [x] **R1.T7.1: Try the standalone server** - the web server runs the standalone build the Docker image runs, with the static assets copied. If it cannot be made to work within the phase's budget, keep `next start` and record the divergence in the evidence for the primary to amend the spec.
 
-<!--
 **Result:** verified
-**Checkpoint:** <short-sha>
+**Checkpoint:** 3c46191
 **Evidence:** conductor/tracks/20261022-e2e-production-harness/verification/phase-R1.md
--->

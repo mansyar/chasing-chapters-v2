@@ -87,9 +87,9 @@ none.
 
 | ID | Requirement | Priority |
 | --- | --- | --- |
-| FR-1 | The e2e suite runs against a production build: `bun run test:e2e` builds the app (or reuses a current build) and serves it with `next start`. No spec runs against an on-demand compiling dev server. | must |
+| FR-1 | The e2e suite runs against a production build: `bun run test:e2e` builds the app (or reuses a current build) and serves it with the production server - the standalone artifact the deployment runs. No spec runs against an on-demand compiling dev server. | must |
 | FR-2 | The suite executes with a fixed worker cap of 3 by default on a developer machine, overridable with `PLAYWRIGHT_WORKERS`; CI runs with 1 worker. The suite never occupies the machine's full logical CPU count. | must |
-| FR-3 | A dedicated e2e fixture creates a known dataset - one test author/admin with a fixed test-only credential, published reviews with content and structured sections, a reading list, a featured review, and reviews in the `translated`, `failed` and `stale` translation states - by idempotent upsert, so it is safe against a populated database and deterministic against an empty one. | must |
+| FR-3 | A dedicated e2e fixture creates a known dataset - one test author/admin with a fixed test-only credential, published reviews with content and structured sections, a reading list, a featured review, and reviews in the `translated`, `failed` and `stale` translation states - by idempotent upsert **into the suite's own database**, derived from `DATABASE_URI`, so the developer's own data is never read or written and the dataset is deterministic against an empty one. | must |
 | FR-4 | The existing public specs assert against the fixture: a spec no longer skips because lists or featured reviews "exist" - the fixture guarantees the data, so the assertion is unconditional. | must |
 | FR-5 | The admin translation surfaces have browser coverage: the edit view polls the translation status and raises a success/failure toast; the attention bell lists the reviews that need attention and links to their document; the bulk re-translate action lists the failed/stale candidates, runs a selection, and reports a per-review outcome. | must |
 | FR-6 | Under test, the translation provider is a deterministic stub - the pipeline completes without calling the external translation API, consuming no quota, requiring no credentials, and touching no network. | must |
@@ -110,9 +110,9 @@ none.
 
 | ID | Criterion | Verifies |
 | --- | --- | --- |
-| AC-1 | `bun run test:e2e` serves the app from a production build (the Playwright `webServer` starts `next start`, not `next dev`) and the run completes with zero failures. | FR-1 |
+| AC-1 | `bun run test:e2e` serves the app from a production build (the Playwright `webServer` starts the production standalone server, not `next dev` and not a compiling dev server) and the run completes with zero failures. | FR-1 |
 | AC-2 | The resolved worker count is 3 locally and 1 in CI, and `PLAYWRIGHT_WORKERS=5 bun run test:e2e` resolves to 5. | FR-2 |
-| AC-3 | Running the fixture twice leaves the same row count and the same identifiers; it creates the test author with the fixed test credential plus reviews in the `translated`, `failed` and `stale` states. | FR-3 |
+| AC-3 | Running the fixture twice leaves the same row count and the same identifiers in the suite's own database; it creates the test author with the fixed test credential plus reviews in the `translated`, `failed` and `stale` states. | FR-3 |
 | AC-4 | No public spec reports itself skipped for missing data; the reading-lists, featured-hero and structured-sections assertions execute against the fixture's data. | FR-4 |
 | AC-5 | The three admin surfaces have specs that log in, act, and assert the visible outcome (a toast, a bell list, a per-review outcome row). | FR-5 |
 | AC-6 | The suite completes with no outbound request to the translation API and no provider credential present; the stubbed pipeline produces a `translated` outcome in the recorded state. | FR-6 |
@@ -128,8 +128,9 @@ none.
   fails.
 - **Empty database:** the fixture provides everything the specs need; no spec
   depends on rows that pre-exist.
-- **Populated database:** the fixture must not delete or alter the developer's
-  own reviews, and the specs must still pass.
+- **Populated database:** the suite runs against its own database, so the
+  developer's own reviews are never read, altered or deleted, and the specs
+  pass no matter what the developer's database holds.
 - **Postgres or Redis unavailable:** the run fails fast with a clear message
   instead of a timeout cascade.
 - **Leftover state between runs:** a spec that mutates fixture data (a bulk
