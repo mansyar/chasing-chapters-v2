@@ -63,7 +63,7 @@
 - **Covers:** FR-5, FR-6, AC-5, AC-6, NFR-2
 - **Touches:** `src/lib/translate.ts`, `src/lib/__tests__/translate-test-mode.test.ts` (new), `e2e/fixtures/admin-session.ts` (new), `e2e/admin/translation-poller.spec.ts` (new), `e2e/admin/attention-bell.spec.ts` (new), `e2e/admin/bulk-retranslate.spec.ts` (new), `playwright.config.ts` (set the test-mode environment for the web server)
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P3.T1: Add the env-gated provider stub** — covers: FR-6
   - [ ] **P3.T1.1: Stub the provider under an env flag** — in `src/lib/translate.ts`, a test-mode branch (e.g. `TRANSLATION_TEST_MODE=1`) returns a deterministic translated payload without calling the external API: no credentials, no network, no quota.
