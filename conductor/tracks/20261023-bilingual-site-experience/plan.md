@@ -136,7 +136,7 @@ Review fixes are appended by `conductor-review` as:
 - **Covers:** review findings
 - **Touches:** ...
 - **Verification:** ...
-- **Status:** in_progress
+- **Status:** pending
 
 - [ ] **R1.T1: Resolve <finding ID>** - covers: <finding ID>
 -->
