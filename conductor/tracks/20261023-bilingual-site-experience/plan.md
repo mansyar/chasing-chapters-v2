@@ -14,7 +14,7 @@
 - **Covers:** FR-1, FR-7, FR-11, AC-1, AC-7, NFR-4, NFR-5, NFR-6
 - **Touches:** `src/app/(public)/**`, `src/proxy.ts`, `src/lib/i18n/locale.ts`, `src/lib/i18n/__tests__/locale.test.ts`, `e2e/**`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P1.T1: Move the public tree under a locale segment** — covers: FR-1
   - [ ] **P1.T1.1: Make `(public)/layout.tsx` a metadata-only pass-through and let `(public)/[locale]/layout.tsx` own `<html lang>` and the providers, fonts, navbar, footer and skip link.**
