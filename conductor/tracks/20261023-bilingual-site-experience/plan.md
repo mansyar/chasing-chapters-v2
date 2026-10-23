@@ -190,3 +190,23 @@ Review fixes are appended by `conductor-review` as:
 **Checkpoint:** 6450256
 **Evidence:** conductor/tracks/20261023-bilingual-site-experience/verification/phase-R2.md
 
+## Phase R3: Review Fixes (round 3)
+
+- **Goal:** Restore the guard the body-requirement relaxation lost (a textless editor state must still count as no English body), bring the generated types back in line with the collection config, and heal every review the suite translates rather than only the one with a localized title.
+- **Depends on:** Phase R2
+- **Covers:** F1, F2, F3 (round 3)
+- **Touches:** `src/collections/requireDefaultLocaleValue.ts`, `src/collections/__tests__/localization.test.ts`, `src/payload-types.ts`, `src/app/(public)/[locale]/reviews/[slug]/page.tsx`, `e2e/global-setup.ts`, `e2e/content-localization.spec.ts`, `conductor/tracks/20261023-bilingual-site-experience/verification/phase-R3.md`
+- **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e && bun run build`
+- **Status:** pending
+
+- [ ] **R3.T1: Make the default-locale blank check rich-text aware** - covers: F1
+  - [ ] **R3.T1.1: Treat an editor state whose root carries no text as blank, keeping the non-default-locale short-circuit** - covers: F1
+  - [ ] **R3.T1.2: Add the textless-editor-state cases (rejected in `en`, accepted in `id`) to the contract test** - covers: F1
+- [ ] **R3.T2: Bring the generated types back in line** - covers: F2
+  - [ ] **R3.T2.1: Regenerate `src/payload-types.ts` and guard the one render that now needs a null check** - covers: F2
+  - [ ] **R3.T2.2: Assert in the contract test that the body is not `required`, and drop the fixture's cast if the type allows** - covers: F2
+- [ ] **R3.T3: Heal every review the suite translates** - covers: F3
+  - [ ] **R3.T3.1: Scope the clearing write on `translationStatus !== "translated"` instead of on a localized title** - covers: F3
+  - [ ] **R3.T3.2: Assert the marker is absent in the no-Indonesian-content case and run the suite twice from the same database** - covers: F3
+- [ ] **R3.T4: Record the phase evidence** - covers: F1, F2, F3
+

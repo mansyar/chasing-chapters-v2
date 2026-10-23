@@ -216,10 +216,57 @@ The reviewer could not run the checks itself (shell denied) and said so rather t
 the primary re-measured coverage at the reviewed head (`a5df8cc`): all files 79.91 % funcs /
 89.52 % lines, 520 pass, every new module still 100 %, so the new-code gate holds.
 
+## Round 3
+
+- **Range:** `a5df8cc..ee04f23` (delta: Phase R2, code `a342207..6450256`)
+- **Verdict:** `PASS WITH FINDINGS` - 0 Critical, 0 High, 1 Medium, 2 Low
+
+Both round-2 findings are closed in the code. `20261023_195302`'s `down()` is a documented no-op,
+and because it is registered after `20261023_193922` in `src/migrations/index.ts`, a batch rollback
+runs the no-op and then `193922`'s restore, which re-adds the columns, copies the English values
+back and drops the locale tables afterwards - so the batch reverses, and the no-op also leaves a
+database with no blank names consistent (the constrained tables are dropped by the next reverse
+step). `review_content` was already `notNull: false` in the committed snapshot, so the relaxation
+introduces no schema drift. The `[stub-id]` marker in the new assertion is the offline stub's own
+literal, so it discriminates.
+
+Every requirement is now `covered` - including NFR-5, which the rollback backs. Three findings
+remain, and `review.strict` requires they be fixed rather than deferred.
+
+### Medium
+
+- **F1 - Relaxing `required` on the body also threw away its rich-text validation**
+  - **File:** `src/collections/Reviews.ts:117-128`, `src/collections/requireDefaultLocaleValue.ts:3-6`
+  - **What:** Payload only installs a field type's own validator when `field.validate` is undefined (`sanitize.js`). Replacing `required: true` with `validate: requireDefaultLocaleValue("Review content")` therefore swapped the rich-text validator for a check whose `isBlank` rejects only `undefined`, `null` and `""`. A `richText` value is never a string: clearing the editor submits an editor state whose root carries no text - precisely the value the built-in validator treated as textless and rejected.
+  - **Why:** an author can now save and publish a review with no English body at all; the page then renders an empty body in both locales and FR-10's fallback has nothing to fall back to. It also contradicts the field's own comment ("a document is created with its English body") and the validator's docblock, and the unit case that is meant to hold the line passes a shape a rich-text field can never receive.
+  - **Fix:** make the check rich-text aware - treat an object value as blank when its root carries no text (no `root.children`, or only empty paragraphs/empty text nodes, mirroring `@payloadcms/richtext-lexical`'s `hasText`) while keeping the non-default-locale short-circuit so the `id` clear still passes.
+  - **Requirement:** FR-10
+  - **Test gap:** add a case passing a textless editor state in `en` (rejected) and in `id` (accepted).
+
+### Low
+
+- **F2 - The generated types are stale against the collection config**
+  - **File:** `src/payload-types.ts:260`
+  - **What:** Payload derives the schema's required list only from `field.required === true`, so with `required` gone `bun run payload generate:types` will make `Review.reviewContent` optional, while the committed file still declares it non-optional.
+  - **Why:** the next regeneration - the documented step after a collection change - turns `typecheck` red at `[locale]/reviews/[slug]/page.tsx:261`, where `<RichText data={review.reviewContent} />` needs a non-null editor state, and it is the reason the fixture needs `null as unknown as Review["reviewContent"]`.
+  - **Fix:** regenerate the types and guard the render (`{review.reviewContent ? <RichText … /> : null}`); drop the cast if the type becomes nullable.
+  - **Requirement:** FR-10
+  - **Test gap:** assert in the contract test that `reviewContent` is not `required`, so drift shows up in the suite rather than after a regeneration.
+
+- **F3 - The same non-discriminating shape survives one review over**
+  - **File:** `e2e/global-setup.ts:545-563`
+  - **What:** the healing clear is scoped to `review.localizedTitle`, so only the stale review is healed. The `failed` fixture review has no localized title but is translated by the admin bulk spec, leaving `[stub-id] …` text in its `id` locale; a re-seed resets its status but never clears that body.
+  - **Why:** on a second run, "renders the English body for a review with no Indonesian content" reads a stubbed translation - the stub echoes the source text, so the assertion still passes while its own premise is false. Same shape round 2 removed from the stale case.
+  - **Fix:** scope the clear on "no authored Indonesian body" - every review whose `translationStatus !== "translated"` - which is what the seed's own docblock already promises, and add the marker assertion to that case too.
+  - **Requirement:** AC-9
+  - **Test gap:** the marker assertion is the test; run the suite twice from the same database to prove both reviews heal.
+
 ## History
 
 | Round | Verdict | Critical | High | Medium | Low | Fixed |
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | BLOCK | 0 | 2 | 1 | 2 | 0 |
 | 2 | BLOCK | 0 | 1 | 0 | 1 | 5 |
+| 3 | PASS WITH FINDINGS | 0 | 0 | 1 | 2 | 2 |
+
 
