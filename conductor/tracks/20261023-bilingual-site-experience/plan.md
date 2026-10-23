@@ -14,27 +14,24 @@
 - **Covers:** FR-1, FR-7, FR-11, AC-1, AC-7, NFR-4, NFR-5, NFR-6
 - **Touches:** `src/app/(public)/**`, `src/proxy.ts`, `src/lib/i18n/locale.ts`, `src/lib/i18n/__tests__/locale.test.ts`, `src/components/reviews/LanguageToggle.tsx`, `e2e/**`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P1.T1: Move the public tree under a locale segment** — covers: FR-1
-  - [ ] **P1.T1.1: Make `(public)/layout.tsx` a metadata-only pass-through and let `(public)/[locale]/layout.tsx` own `<html lang>` and the providers, fonts, navbar, footer and skip link.**
-  - [ ] **P1.T1.2: Move every public page and its nested segments under `[locale]`, and generate both locale params so the segment is pre-renderable.**
-  - [ ] **P1.T1.3: Read the locale from `params` on every public page and pass the normalized value into Payload, removing the raw `locale as "en" | "id"` cast.**
-- [ ] **P1.T2: Resolve and redirect locale in `proxy.ts`** — covers: FR-1, FR-7
-  - [ ] **P1.T2.1: Add pure helpers — locale normalization, the supported-locale guard, locale-aware path building and the remembered-preference cookie name — with unit tests.**
-  - [ ] **P1.T2.2: Add `src/proxy.ts` redirecting unprefixed public paths to the remembered locale (English when absent) and permanently redirecting `?locale=` to the path form while preserving other query parameters.**
-  - [ ] **P1.T2.3: Leave `/admin`, `/api`, `/robots.txt`, `/sitemap.xml`, static assets and the feed untouched by the proxy, and return 404 for an unsupported locale segment.**
-- [ ] **P1.T3: Make the existing browser suite locale-explicit** — covers: AC-1
-  - [ ] **P1.T3.1: Point every spec and fixture at `/en/...` and fix the selectors that assumed unprefixed hrefs.**
-  - [ ] **P1.T3.2: Add a redirect spec covering bare path → locale path, `?locale=` → path, preserved query parameters and an unsupported locale returning 404.**
-  - [ ] **P1.T3.3: Rewire the language control to path navigation (swap the locale segment, keep the slug, depth and query) so the existing toggle spec keeps passing; the remembered preference and the accessible state land in Phase 2.**
+- [x] **P1.T1: Move the public tree under a locale segment** — covers: FR-1
+  - [x] **P1.T1.1: Make `(public)/layout.tsx` a metadata-only pass-through and let `(public)/[locale]/layout.tsx` own `<html lang>` and the providers, fonts, navbar, footer and skip link.**
+  - [x] **P1.T1.2: Move every public page and its nested segments under `[locale]`, and generate both locale params so the segment is pre-renderable.**
+  - [x] **P1.T1.3: Read the locale from `params` on every public page and pass the normalized value into Payload, removing the raw `locale as "en" | "id"` cast.**
+- [x] **P1.T2: Resolve and redirect locale in `proxy.ts`** — covers: FR-1, FR-7
+  - [x] **P1.T2.1: Add pure helpers — locale normalization, the supported-locale guard, locale-aware path building and the remembered-preference cookie name — with unit tests.**
+  - [x] **P1.T2.2: Add `src/proxy.ts` redirecting unprefixed public paths to the remembered locale (English when absent) and permanently redirecting `?locale=` to the path form while preserving other query parameters.**
+  - [x] **P1.T2.3: Leave `/admin`, `/api`, `/robots.txt`, `/sitemap.xml`, static assets and the feed untouched by the proxy, and return 404 for an unsupported locale segment.**
+- [x] **P1.T3: Make the existing browser suite locale-explicit** — covers: AC-1
+  - [x] **P1.T3.1: Point every spec and fixture at `/en/...` and fix the selectors that assumed unprefixed hrefs.**
+  - [x] **P1.T3.2: Add a redirect spec covering bare path → locale path, `?locale=` → path, preserved query parameters and an unsupported locale returning 404.**
+  - [x] **P1.T3.3: Rewire the language control to path navigation (swap the locale segment, keep the slug, depth and query) so the existing toggle spec keeps passing; the remembered preference and the accessible state land in Phase 2.**
 
-<!--
-The primary appends after acceptance:
 **Result:** verified
-**Checkpoint:** <short-sha>
-**Evidence:** conductor/tracks/<track-id>/verification/phase-1.md
--->
+**Checkpoint:** ea7832f
+**Evidence:** conductor/tracks/20261023-bilingual-site-experience/verification/phase-1.md
 
 ## Phase 2: Interface Dictionary and Language Control
 
