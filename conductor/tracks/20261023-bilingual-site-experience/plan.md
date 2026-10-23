@@ -87,9 +87,9 @@
 - **Goal:** Authors can supply Indonesian names and descriptions for genres, tags, mood tags, reading lists and review titles, and an empty Indonesian value renders the English one instead of a blank.
 - **Depends on:** Phase 3
 - **Covers:** FR-10, AC-9, NFR-5
-- **Touches:** `src/collections/Genres.ts`, `src/collections/Tags.ts`, `src/collections/MoodTags.ts`, `src/collections/ReadingLists.ts`, `src/collections/Reviews.ts`, `src/migrations/**`, `src/payload-types.ts`, `src/collections/__tests__/**`, `e2e/**`, `docs/ADMIN_GUIDE.md`
+- **Touches:** `src/collections/Genres.ts`, `src/collections/Tags.ts`, `src/collections/MoodTags.ts`, `src/collections/ReadingLists.ts`, `src/collections/Reviews.ts`, `src/migrations/**`, `src/migrations/index.ts`, `src/payload-types.ts`, `src/collections/__tests__/**`, `src/lib/e2e-harness.ts`, `e2e/**`, `src/components/reviews/RelatedReviews.tsx`, `docs/ADMIN_GUIDE.md`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P4.T1: Localize the content fields** — covers: FR-10
   - [ ] **P4.T1.1: Mark the taxonomy names, the reading-list title and description, and the review title localizable, and generate the migration through Payload rather than by hand.**
