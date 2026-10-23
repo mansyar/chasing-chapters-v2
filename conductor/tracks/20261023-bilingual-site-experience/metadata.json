@@ -6,7 +6,7 @@
 	"priority": "high",
 	"depends_on": [],
 	"created_at": "2026-10-23T06:00:00Z",
-	"updated_at": "2026-10-23T14:10:00Z",
+	"updated_at": "2026-10-24T07:10:00Z",
 	"spec": "spec.md",
 	"plan": "plan.md",
 	"branch": "feat/20261023-bilingual-site-experience",
@@ -14,11 +14,11 @@
 	"base_sha": "98351d54d692ea8842468df5705cc2c0be0a5c60",
 	"progress": {
 		"phases_total": 5,
-		"phases_verified": 2,
+		"phases_verified": 3,
 		"tasks_total": 15,
-		"tasks_done": 6
+		"tasks_done": 9
 	},
-	"last_checkpoint": "f3390e2",
+	"last_checkpoint": "c1b83e6",
 	"review_verdict": null,
 	"review_rounds": 0,
 	"doc_sync": "pending",

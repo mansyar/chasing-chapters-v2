@@ -66,24 +66,21 @@
 - **Covers:** FR-5, FR-6, FR-8, FR-9, AC-5, AC-6, AC-8, NFR-3
 - **Touches:** `src/app/(public)/**`, `src/app/layout.tsx`, `src/app/sitemap.ts`, `src/app/feed.xml/**`, `src/lib/feed.ts`, `src/lib/__tests__/feed.test.ts`, `src/lib/seo/**`, `src/lib/i18n/**`, `src/proxy.ts`, `e2e/**`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P3.T1: Make page metadata locale-aware** — covers: FR-5, NFR-3
-  - [ ] **P3.T1.1: Give `generateMetadata` the active locale on every public page and localize the titles and descriptions that are ours.**
-  - [ ] **P3.T1.2: Emit `og:locale` per locale with the alternate, and a self-referencing canonical for the active locale.**
-- [ ] **P3.T2: Emit reciprocal hreflang alternates** — covers: FR-6
-  - [ ] **P3.T2.1: Add `en`, `id` and `x-default` alternates to every public page, pointing at the path-based URLs.**
-- [ ] **P3.T3: Expose both locales in the sitemap and feed** — covers: FR-8, FR-9
-  - [ ] **P3.T3.1: List every public page in both locales in the sitemap with hreflang alternates and English as `x-default`.**
-  - [ ] **P3.T3.2: Serve `/en/feed.xml` and `/id/feed.xml` with a matching language and link, redirect `/feed.xml` permanently to the English feed, and advertise the active locale's feed in the layout.**
-  - [ ] **P3.T3.3: Add browser coverage for the document language, the alternates, the sitemap entries and the feed redirect.**
+- [x] **P3.T1: Make page metadata locale-aware** — covers: FR-5, NFR-3
+  - [x] **P3.T1.1: Give `generateMetadata` the active locale on every public page and localize the titles and descriptions that are ours.**
+  - [x] **P3.T1.2: Emit `og:locale` per locale with the alternate, and a self-referencing canonical for the active locale.**
+- [x] **P3.T2: Emit reciprocal hreflang alternates** — covers: FR-6
+  - [x] **P3.T2.1: Add `en`, `id` and `x-default` alternates to every public page, pointing at the path-based URLs.**
+- [x] **P3.T3: Expose both locales in the sitemap and feed** — covers: FR-8, FR-9
+  - [x] **P3.T3.1: List every public page in both locales in the sitemap with hreflang alternates and English as `x-default`.**
+  - [x] **P3.T3.2: Serve `/en/feed.xml` and `/id/feed.xml` with a matching language and link, redirect `/feed.xml` permanently to the English feed, and advertise the active locale's feed in the layout.**
+  - [x] **P3.T3.3: Add browser coverage for the document language, the alternates, the sitemap entries and the feed redirect.**
 
-<!--
-The primary appends after acceptance:
 **Result:** verified
-**Checkpoint:** <short-sha>
-**Evidence:** conductor/tracks/<track-id>/verification/phase-3.md
--->
+**Checkpoint:** c1b83e6
+**Evidence:** conductor/tracks/20261023-bilingual-site-experience/verification/phase-3.md
 
 ## Phase 4: Content Localization for Taxonomy and Reading Lists
 
