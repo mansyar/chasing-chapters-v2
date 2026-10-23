@@ -55,6 +55,12 @@ export function LanguageToggle({ dictionary }: LanguageToggleProps) {
 			{(Object.keys(LOCALE_LABELS) as Locale[]).map((locale, index) => {
 				const isActive = locale === currentLocale;
 
+				// The active pill keeps the brand fill, but takes the label colour
+				// that actually contrasts with it (`NFR-1`, WCAG 2.2 AA at 4.5:1 for
+				// this size): white on the light theme's `--primary` measures 3.66:1,
+				// while the near-black `--foreground` on it measures 4.95:1. The dark
+				// theme's `--foreground` would be too light on its teal (2.3:1), so
+				// it keeps `--primary-foreground`, which measures 7.77:1 there.
 				return (
 					<span key={locale} className="inline-flex items-center">
 						{index > 0 && <span className="w-px h-6 bg-border" />}
@@ -70,7 +76,7 @@ export function LanguageToggle({ dictionary }: LanguageToggleProps) {
 							onClick={() => selectLocale(locale)}
 							className={
 								isActive
-									? "px-3 py-1.5 rounded-sm bg-primary text-primary-foreground font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+									? "px-3 py-1.5 rounded-sm bg-primary text-foreground dark:text-primary-foreground font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 									: "px-3 py-1.5 rounded-sm hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 							}
 						>
