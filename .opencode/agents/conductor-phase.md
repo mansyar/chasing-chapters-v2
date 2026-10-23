@@ -87,6 +87,9 @@ permissions:
   - action: shell
     resource: "git rm *"
     effect: allow
+  - action: shell
+    resource: "git mv *"
+    effect: allow
   # --- PROJECT COMMANDS START ---
   # From conductor/workflow.md Workflow Config
   - action: shell
