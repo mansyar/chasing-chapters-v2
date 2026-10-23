@@ -138,5 +138,30 @@ Review fixes are appended by `conductor-review` as:
 - **Verification:** ...
 - **Status:** pending
 
-- [ ] **R1.T1: Resolve <finding ID>** — covers: <finding ID>
+- [ ] **R1.T1: Resolve <finding ID>** - covers: <finding ID>
 -->
+
+## Phase R1: Review Fixes
+
+- **Goal:** Resolve review findings F1 (unprefixed navbar links drop a shared-URL reader back to English), F2 (the localization migration's `down()` cannot run and would discard values), F3 (no end-to-end proof a localized review title wins), F4 (a dotted path is treated as a file while a slug can now be stored unformatted) and F5 (a docblock that contradicts its function).
+- **Depends on:** Phase 5
+- **Covers:** F1, F2, F3, F4, F5
+- **Touches:** `src/components/layout/Navbar.tsx`, `src/migrations/20261023_193922_localize_taxonomy_and_reading_list_content.ts`, `e2e/content-localization.spec.ts`, `e2e/global-setup.ts`, `e2e/locale-routing.spec.ts`, `src/lib/e2e-harness.ts`, `src/lib/__tests__/e2e-harness.test.ts`, `src/proxy.ts`, `src/lib/i18n/locale.ts`, `src/lib/i18n/__tests__/locale.test.ts`, `src/lib/i18n/format.ts`, `src/hooks/formatSlug.ts`, `src/collections/__tests__/localization.test.ts`, `conductor/tracks/20261023-bilingual-site-experience/verification/phase-R1.md`
+- **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e && bun run build`
+- **Status:** pending
+
+- [ ] **R1.T1: Prefix the navbar's public links so a page keeps its language in-app** - covers: F1
+  - [ ] **R1.T1.1: Give the logo and the four public nav links `/${locale}` in the desktop and mobile blocks, leaving `/admin` bare** - covers: F1
+  - [ ] **R1.T1.2: Add a browser case that a navbar click and a logo click from `/id/reviews` stay on `/id` while the cookie says English** - covers: F1
+- [ ] **R1.T2: Make the localization migration reversible without data loss** - covers: F2
+  - [ ] **R1.T2.1: Reorder `down()` to add the columns as nullable, copy the `en` values back from the locale tables, then drop the tables and indices** - covers: F2
+  - [ ] **R1.T2.2: Prove the pair by hand on a scratch database (migrate, down, count the restored values) and record the output** - covers: F2
+- [ ] **R1.T3: Prove a localized review title end to end** - covers: F3
+  - [ ] **R1.T3.1: Give one fixture review an Indonesian title through a locale-scoped update and export it** - covers: F3
+  - [ ] **R1.T3.2: Assert the Indonesian title on `/id` (heading and description) and the English one on `/en`** - covers: F3
+- [ ] **R1.T4: Treat only a file-looking path as a file, and normalise every stored slug** - covers: F4
+  - [ ] **R1.T4.1: Match the final segment in the proxy's file test and return `originalDoc?.slug ?? format(value)` on a non-default-locale write** - covers: F4
+  - [ ] **R1.T4.2: Unit-test the predicate and add a browser case that a bare `/reviews/<slug>` still redirects** - covers: F4
+- [ ] **R1.T5: Correct the `format.ts` docblock** - covers: F5
+- [ ] **R1.T6: Record the phase evidence** - covers: F1, F2, F3, F4, F5
+
