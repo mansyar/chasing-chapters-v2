@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { getPayload } from "payload";
 import { resolveCommentStatus } from "@/lib/comment-moderation";
+import { localizedPaths } from "@/lib/i18n/locale";
 import { getClientIP, rateLimit } from "@/lib/rate-limit";
 import {
 	commentSchema,
@@ -138,7 +139,9 @@ export async function submitComment(
 			id: reviewId,
 		});
 		if (review?.slug) {
-			revalidatePath(`/reviews/${review.slug}`);
+			for (const path of localizedPaths(`/reviews/${review.slug}`)) {
+				revalidatePath(path);
+			}
 		}
 
 		if (status === "approved") {

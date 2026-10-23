@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { getPayload } from "payload";
 import { ReviewCard } from "@/components/ReviewCard";
 import { ShareButton } from "@/components/ShareButton";
+import { normalizeLocale, SUPPORTED_LOCALES } from "@/lib/i18n/locale";
 import { resolveMediaUrl } from "@/lib/media-url";
 import { generateBreadcrumbSchema, SITE_URL } from "@/lib/seo/structured-data";
 import type { Media, Review } from "@/payload-types";
@@ -14,6 +15,7 @@ export const revalidate = 60;
 
 interface PageProps {
 	params: Promise<{
+		locale: string;
 		slug: string;
 	}>;
 }
@@ -21,7 +23,8 @@ interface PageProps {
 export async function generateMetadata({
 	params,
 }: PageProps): Promise<Metadata> {
-	const { slug } = await params;
+	const { locale, slug } = await params;
+	const appLocale = normalizeLocale(locale);
 	const payload = await getPayload({ config: configPromise });
 
 	const { docs: lists } = await payload.find({
@@ -36,6 +39,7 @@ export async function generateMetadata({
 		},
 		limit: 1,
 		depth: 1,
+		locale: appLocale,
 	});
 
 	const list = lists[0];
@@ -52,7 +56,7 @@ export async function generateMetadata({
 		title: list.title,
 		description,
 		alternates: {
-			canonical: `${SITE_URL}/reading-lists/${list.slug}`,
+			canonical: `${SITE_URL}/${appLocale}/reading-lists/${list.slug}`,
 		},
 		openGraph: {
 			title: list.title,
@@ -82,13 +86,17 @@ export async function generateStaticParams() {
 		},
 	});
 
-	return docs.map((doc) => ({
-		slug: doc.slug,
-	}));
+	return SUPPORTED_LOCALES.flatMap((locale) =>
+		docs.map((doc) => ({
+			locale,
+			slug: doc.slug,
+		})),
+	);
 }
 
 export default async function ReadingListDetailPage({ params }: PageProps) {
-	const { slug } = await params;
+	const { locale, slug } = await params;
+	const appLocale = normalizeLocale(locale);
 	const payload = await getPayload({ config: configPromise });
 
 	const { docs: lists } = await payload.find({
@@ -103,6 +111,7 @@ export default async function ReadingListDetailPage({ params }: PageProps) {
 		},
 		limit: 1,
 		depth: 2,
+		locale: appLocale,
 	});
 
 	const list = lists[0];
@@ -115,9 +124,12 @@ export default async function ReadingListDetailPage({ params }: PageProps) {
 	const reviews = (list.reviews as Review[]) || [];
 
 	const breadcrumbJsonLd = generateBreadcrumbSchema([
-		{ name: "Home", url: SITE_URL },
-		{ name: "Reading Lists", url: `${SITE_URL}/reading-lists` },
-		{ name: list.title, url: `${SITE_URL}/reading-lists/${list.slug}` },
+		{ name: "Home", url: `${SITE_URL}/${appLocale}` },
+		{ name: "Reading Lists", url: `${SITE_URL}/${appLocale}/reading-lists` },
+		{
+			name: list.title,
+			url: `${SITE_URL}/${appLocale}/reading-lists/${list.slug}`,
+		},
 	]);
 
 	return (
@@ -165,6 +177,7 @@ export default async function ReadingListDetailPage({ params }: PageProps) {
 							<ReviewCard
 								key={review.id}
 								review={review}
+								locale={appLocale}
 								priority={index < 2}
 							/>
 						))}

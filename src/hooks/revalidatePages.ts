@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 import type { CollectionAfterChangeHook } from "payload";
+import { localizedPaths } from "../lib/i18n/locale";
 import { logger } from "../lib/logger";
 
 /**
@@ -36,6 +37,18 @@ function safeRevalidatePath(path: string): void {
 }
 
 /**
+ * Revalidates a public page in every locale it is rendered in.
+ *
+ * Public pages live under a locale segment, so a logical path (`/reviews`) is
+ * two cached URLs (`/en/reviews`, `/id/reviews`) and both have to be named.
+ */
+function revalidatePublicPath(path: string): void {
+	for (const localized of localizedPaths(path)) {
+		safeRevalidatePath(localized);
+	}
+}
+
+/**
  * Revalidates cached pages when a Review is published or updated.
  * This ensures that ISR-cached pages show new content immediately.
  */
@@ -64,17 +77,18 @@ export const revalidateReviewPages: CollectionAfterChangeHook = async ({
 		);
 
 		// Revalidate the browse page
-		safeRevalidatePath("/reviews");
+		revalidatePublicPath("/reviews");
 
 		// Revalidate the individual review page
 		if (doc.slug) {
-			safeRevalidatePath(`/reviews/${doc.slug}`);
+			revalidatePublicPath(`/reviews/${doc.slug}`);
 		}
 
 		// Revalidate homepage (featured reviews, latest reviews)
-		safeRevalidatePath("/");
+		revalidatePublicPath("/");
 
-		// Revalidate the RSS feed (latest reviews)
+		// Revalidate the RSS feed (latest reviews). It is still served once,
+		// unprefixed, until the per-locale feeds land.
 		safeRevalidatePath("/feed.xml");
 
 		// If featured status changed, homepage needs update (already covered above)
@@ -109,15 +123,15 @@ export const revalidateReadingListPages: CollectionAfterChangeHook = async ({
 		);
 
 		// Revalidate the reading lists index page
-		safeRevalidatePath("/reading-lists");
+		revalidatePublicPath("/reading-lists");
 
 		// Revalidate the individual reading list page
 		if (doc.slug) {
-			safeRevalidatePath(`/reading-lists/${doc.slug}`);
+			revalidatePublicPath(`/reading-lists/${doc.slug}`);
 		}
 
 		// Revalidate homepage (featured reading lists)
-		safeRevalidatePath("/");
+		revalidatePublicPath("/");
 	}
 
 	return doc;

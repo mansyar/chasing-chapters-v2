@@ -8,11 +8,18 @@ import { ReadingListCard } from "@/components/ReadingListCard";
 import { ReviewCard } from "@/components/ReviewCard";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { normalizeLocale } from "@/lib/i18n/locale";
 
 // Enable ISR with 60 second revalidation for better caching
 export const revalidate = 60;
 
-export default async function Homepage() {
+export default async function Homepage({
+	params,
+}: {
+	params: Promise<{ locale: string }>;
+}) {
+	const { locale } = await params;
+	const appLocale = normalizeLocale(locale);
 	const payload = await getPayload({ config: configPromise });
 
 	// Fetch data in parallel for better performance
@@ -30,6 +37,7 @@ export default async function Homepage() {
 			},
 			limit: 5,
 			depth: 2,
+			locale: appLocale,
 		}),
 		payload.find({
 			collection: "reviews",
@@ -39,10 +47,12 @@ export default async function Homepage() {
 			sort: "-publishDate",
 			limit: 6,
 			depth: 1,
+			locale: appLocale,
 		}),
 		payload.find({
 			collection: "genres",
 			limit: 20,
+			locale: appLocale,
 		}),
 		payload.find({
 			collection: "reading-lists",
@@ -53,6 +63,7 @@ export default async function Homepage() {
 			sort: "-createdAt",
 			limit: 4,
 			depth: 1,
+			locale: appLocale,
 		}),
 	]);
 
@@ -69,7 +80,7 @@ export default async function Homepage() {
 							Curated Reading Lists
 						</h2>
 						<Button variant="ghost" asChild>
-							<Link href="/reading-lists">
+							<Link href={`/${appLocale}/reading-lists`}>
 								View All <ArrowRight className="ml-2 h-4 w-4" />
 							</Link>
 						</Button>
@@ -79,6 +90,7 @@ export default async function Homepage() {
 							<ReadingListCard
 								key={list.id}
 								readingList={list}
+								locale={appLocale}
 								priority={index < 2}
 							/>
 						))}
@@ -92,7 +104,7 @@ export default async function Homepage() {
 						Latest Reviews
 					</h2>
 					<Button variant="ghost" asChild>
-						<Link href="/reviews">
+						<Link href={`/${appLocale}/reviews`}>
 							View All <ArrowRight className="ml-2 h-4 w-4" />
 						</Link>
 					</Button>
@@ -104,6 +116,7 @@ export default async function Homepage() {
 							<ReviewCard
 								key={review.id}
 								review={review}
+								locale={appLocale}
 								priority={index < 2}
 							/>
 						))}

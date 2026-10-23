@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { E2E_FIXTURE_REVIEW } from "../src/lib/e2e-harness";
+import { localePath } from "./fixtures/locale";
 
 test.describe("RSS Feed", () => {
 	test("should serve a valid RSS 2.0 document", async ({ request }) => {
@@ -30,7 +31,7 @@ test.describe("RSS Feed", () => {
 	});
 
 	test("should expose feed discovery in the page head", async ({ page }) => {
-		await page.goto("/");
+		await page.goto(localePath("/"));
 
 		const discoveryLink = page.locator(
 			'link[rel="alternate"][type="application/rss+xml"]',
@@ -40,7 +41,7 @@ test.describe("RSS Feed", () => {
 	});
 
 	test("should link the feed from the site footer", async ({ page }) => {
-		await page.goto("/");
+		await page.goto(localePath("/"));
 
 		const footerLink = page
 			.getByRole("contentinfo")

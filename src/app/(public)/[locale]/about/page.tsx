@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { normalizeLocale } from "@/lib/i18n/locale";
 
 export const metadata: Metadata = {
 	title: "About",
@@ -9,7 +10,14 @@ export const metadata: Metadata = {
 		"Learn more about Chasing Chapters, a digital sanctuary for book lovers dedicated to the art of storytelling.",
 };
 
-export default function AboutPage() {
+export default async function AboutPage({
+	params,
+}: {
+	params: Promise<{ locale: string }>;
+}) {
+	const { locale } = await params;
+	const appLocale = normalizeLocale(locale);
+
 	return (
 		<div className="min-h-screen pb-20">
 			{/* Hero Section */}
@@ -54,7 +62,7 @@ export default function AboutPage() {
 						</div>
 						<div className="pt-4">
 							<Button asChild size="lg">
-								<Link href="/reviews">Explore Reviews</Link>
+								<Link href={`/${appLocale}/reviews`}>Explore Reviews</Link>
 							</Button>
 						</div>
 					</div>

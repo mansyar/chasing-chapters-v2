@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import type { AppLocale } from "@/lib/date-format";
 import { resolveMediaUrl } from "@/lib/media-url";
 import { cn } from "@/lib/utils";
 import type { Media, ReadingList } from "@/payload-types";
@@ -11,12 +12,15 @@ interface ReadingListCardProps {
 	readingList: ReadingList;
 	className?: string;
 	priority?: boolean;
+	/** The locale segment of the link; defaults to English. */
+	locale?: AppLocale;
 }
 
 export function ReadingListCard({
 	readingList,
 	className,
 	priority = false,
+	locale = "en",
 }: ReadingListCardProps) {
 	const coverImage = readingList.coverImage as Media;
 	const bookCount = Array.isArray(readingList.reviews)
@@ -25,7 +29,7 @@ export function ReadingListCard({
 
 	return (
 		<Link
-			href={`/reading-lists/${readingList.slug}`}
+			href={`/${locale}/reading-lists/${readingList.slug}`}
 			className={cn("group block h-full", className)}
 		>
 			<Card className="h-full overflow-hidden border-none shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-card">

@@ -3,12 +3,16 @@ import {
 	E2E_FIXTURE_REVIEW,
 	E2E_FIXTURE_REVIEW_PATH,
 } from "../src/lib/e2e-harness";
+import { localePath } from "./fixtures/locale";
+
+const FIXTURE_REVIEW_URL = localePath(E2E_FIXTURE_REVIEW_PATH);
+const FIXTURE_REVIEW_URL_ID = localePath(E2E_FIXTURE_REVIEW_PATH, "id");
 
 test.describe("Review Detail Page", () => {
 	// Every test opens the review the fixture seeds, so the assertions run
 	// against a known document instead of whichever review happens to be first.
 	test.beforeEach(async ({ page }) => {
-		await page.goto(E2E_FIXTURE_REVIEW_PATH);
+		await page.goto(FIXTURE_REVIEW_URL);
 	});
 
 	test("should display review content", async ({ page }) => {
@@ -54,10 +58,11 @@ test.describe("Review Detail Page", () => {
 		await idButton.click();
 
 		// Wait for navigation to complete
-		await page.waitForURL(/locale=id/);
+		await page.waitForURL(FIXTURE_REVIEW_URL_ID);
 
-		// URL should include locale=id
-		expect(page.url()).toContain("locale=id");
+		// The locale moved into the path, so the query string stays clean
+		expect(new URL(page.url()).pathname).toBe(FIXTURE_REVIEW_URL_ID);
+		expect(page.url()).not.toContain("locale=");
 		expect(page.url()).not.toBe(initialUrl);
 	});
 

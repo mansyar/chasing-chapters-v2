@@ -1,22 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-	formatDate,
-	formatRelativeTime,
-	normalizeLocale,
-} from "@/lib/date-format";
-
-describe("normalizeLocale", () => {
-	test("maps 'id' to id locale", () => {
-		expect(normalizeLocale("id")).toBe("id");
-	});
-
-	test("maps undefined/null/unknown to en default", () => {
-		expect(normalizeLocale(undefined)).toBe("en");
-		expect(normalizeLocale(null)).toBe("en");
-		expect(normalizeLocale("fr")).toBe("en");
-		expect(normalizeLocale("en")).toBe("en");
-	});
-});
+import { formatDate, formatRelativeTime } from "@/lib/date-format";
 
 describe("formatDate", () => {
 	const date = new Date("2026-01-15T00:00:00Z");

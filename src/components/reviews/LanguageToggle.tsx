@@ -1,16 +1,27 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { type Locale, localizePath, pathLocale } from "@/lib/i18n/locale";
 
+/**
+ * Switches the page to the other locale by swapping the locale segment.
+ *
+ * The locale lives in the path, so the rest of the URL — slug, depth and the
+ * query string — is carried over untouched (`FR-3`). The remembered
+ * preference and the accessible state of the control arrive with the interface
+ * dictionary.
+ */
 export function LanguageToggle() {
 	const router = useRouter();
+	const pathname = usePathname();
 	const searchParams = useSearchParams();
-	const currentLocale = searchParams.get("locale") || "en";
+	const currentLocale = pathLocale(pathname) ?? "en";
 
-	const setLocale = (locale: "en" | "id") => {
-		const params = new URLSearchParams(searchParams);
-		params.set("locale", locale);
-		router.push(`?${params.toString()}`);
+	const setLocale = (locale: Locale) => {
+		const query = searchParams.toString();
+		const target = localizePath(pathname, locale);
+
+		router.push(query ? `${target}?${query}` : target);
 	};
 
 	return (

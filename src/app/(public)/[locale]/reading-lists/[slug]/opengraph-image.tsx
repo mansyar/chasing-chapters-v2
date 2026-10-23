@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ImageResponse } from "next/og";
 import { getPayload } from "payload";
 import { OgImageFrame } from "@/components/og/OgImageFrame";
+import { normalizeLocale } from "@/lib/i18n/locale";
 import { buildReadingListOgProps } from "@/lib/og-image";
 
 export const revalidate = 60;
@@ -14,9 +15,10 @@ export const contentType = "image/png";
 export default async function Image({
 	params,
 }: {
-	params: Promise<{ slug: string }>;
+	params: Promise<{ locale: string; slug: string }>;
 }) {
-	const { slug } = await params;
+	const { locale, slug } = await params;
+	const appLocale = normalizeLocale(locale);
 	const payload = await getPayload({ config: configPromise });
 
 	const { docs } = await payload.find({
@@ -27,6 +29,7 @@ export default async function Image({
 		},
 		limit: 1,
 		depth: 1,
+		locale: appLocale,
 	});
 
 	const list = docs[0];

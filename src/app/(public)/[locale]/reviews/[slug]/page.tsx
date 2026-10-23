@@ -14,7 +14,8 @@ import { RelatedReviews } from "@/components/reviews/RelatedReviews";
 import { ShareButton } from "@/components/ShareButton";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { formatDate, normalizeLocale } from "@/lib/date-format";
+import { formatDate } from "@/lib/date-format";
+import { normalizeLocale, SUPPORTED_LOCALES } from "@/lib/i18n/locale";
 import { resolveMediaUrl } from "@/lib/media-url";
 import {
 	generateBreadcrumbSchema,
@@ -28,15 +29,16 @@ export const revalidate = 60;
 
 interface PageProps {
 	params: Promise<{
+		locale: string;
 		slug: string;
 	}>;
-	searchParams: Promise<{ locale?: string }>;
 }
 
 export async function generateMetadata({
 	params,
 }: PageProps): Promise<Metadata> {
-	const { slug } = await params;
+	const { locale, slug } = await params;
+	const appLocale = normalizeLocale(locale);
 	const payload = await getPayload({ config: configPromise });
 
 	const { docs: reviews } = await payload.find({
@@ -51,6 +53,7 @@ export async function generateMetadata({
 		},
 		limit: 1,
 		depth: 1,
+		locale: appLocale,
 	});
 
 	const review = reviews[0];
@@ -67,10 +70,10 @@ export async function generateMetadata({
 		title: review.title,
 		description,
 		alternates: {
-			canonical: `${SITE_URL}/reviews/${review.slug}`,
+			canonical: `${SITE_URL}/${appLocale}/reviews/${review.slug}`,
 			languages: {
-				en: `${SITE_URL}/reviews/${review.slug}`,
-				id: `${SITE_URL}/reviews/${review.slug}?locale=id`,
+				en: `${SITE_URL}/en/reviews/${review.slug}`,
+				id: `${SITE_URL}/id/reviews/${review.slug}`,
 			},
 		},
 		openGraph: {
@@ -101,20 +104,22 @@ export async function generateStaticParams() {
 		},
 	});
 
-	return docs.map((doc) => ({
-		slug: doc.slug,
-	}));
+	return SUPPORTED_LOCALES.flatMap((locale) =>
+		docs.map((doc) => ({
+			locale,
+			slug: doc.slug,
+		})),
+	);
 }
 
-export default async function ReviewPage({ params, searchParams }: PageProps) {
-	const { slug } = await params;
-	const { locale = "en" } = await searchParams;
+export default async function ReviewPage({ params }: PageProps) {
+	const { locale, slug } = await params;
 	const appLocale = normalizeLocale(locale);
 	const payload = await getPayload({ config: configPromise });
 
 	const { docs: reviews } = await payload.find({
 		collection: "reviews",
-		locale: locale as "en" | "id",
+		locale: appLocale,
 		where: {
 			slug: {
 				equals: slug,
@@ -136,9 +141,12 @@ export default async function ReviewPage({ params, searchParams }: PageProps) {
 	const coverImage = review.coverImage as Media;
 	const jsonLd = generateReviewSchema(review, coverImage);
 	const breadcrumbJsonLd = generateBreadcrumbSchema([
-		{ name: "Home", url: SITE_URL },
-		{ name: "Reviews", url: `${SITE_URL}/reviews` },
-		{ name: review.title, url: `${SITE_URL}/reviews/${review.slug}` },
+		{ name: "Home", url: `${SITE_URL}/${appLocale}` },
+		{ name: "Reviews", url: `${SITE_URL}/${appLocale}/reviews` },
+		{
+			name: review.title,
+			url: `${SITE_URL}/${appLocale}/reviews/${review.slug}`,
+		},
 	]);
 
 	return (

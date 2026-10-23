@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getPayload } from "payload";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { normalizeLocale } from "@/lib/i18n/locale";
 import { resolveMediaUrl } from "@/lib/media-url";
 import { generateItemListSchema, SITE_URL } from "@/lib/seo/structured-data";
 import type { Media } from "@/payload-types";
@@ -18,7 +19,13 @@ export const metadata: Metadata = {
 // Enable ISR with 60 second revalidation for better caching
 export const revalidate = 60;
 
-export default async function ReadingListsPage() {
+export default async function ReadingListsPage({
+	params,
+}: {
+	params: Promise<{ locale: string }>;
+}) {
+	const { locale } = await params;
+	const appLocale = normalizeLocale(locale);
 	const payload = await getPayload({ config: configPromise });
 
 	const { docs: readingLists } = await payload.find({
@@ -29,12 +36,13 @@ export default async function ReadingListsPage() {
 			},
 		},
 		sort: "-createdAt",
+		locale: appLocale,
 	});
 
 	const itemListJsonLd = generateItemListSchema(
 		readingLists.map((list) => ({
 			name: list.title,
-			url: `${SITE_URL}/reading-lists/${list.slug}`,
+			url: `${SITE_URL}/${appLocale}/reading-lists/${list.slug}`,
 			image: (list.coverImage as Media)?.url || undefined,
 		})),
 		"Reading Lists",
@@ -62,7 +70,7 @@ export default async function ReadingListsPage() {
 					return (
 						<Link
 							key={list.id}
-							href={`/reading-lists/${list.slug}`}
+							href={`/${appLocale}/reading-lists/${list.slug}`}
 							className="group block h-full"
 						>
 							<Card className="h-full overflow-hidden border-none shadow-none bg-transparent hover:bg-muted/30 transition-colors">
