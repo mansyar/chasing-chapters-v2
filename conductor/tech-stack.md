@@ -4,6 +4,7 @@
 |---|---|
 | Framework | Next.js 16.4 (stable) App Router, standalone build (webpack), server-rendered hero (no `ssr:false` above the fold), next/image optimizer cache 24h |
 | CMS | Payload CMS 3.90 (local API, Postgres adapter, drafts/versions, localization en/id) |
+| i18n | Hand-rolled path-based locales (`/en`, `/id`) - typed dictionaries in `src/lib/i18n/` (`en` is the key source of truth, `id` typed over it; key-parity and source-scan tests), `src/proxy.ts` redirects unprefixed paths (307) and legacy `?locale=` (308), per-page canonical/hreflang/`og:locale` in `src/lib/seo/metadata.ts`, sitemap alternates (`src/lib/seo/sitemap.ts`), a feed per locale, and a remembered `NEXT_LOCALE` cookie written only by the language control; no i18n dependency (added 2026-10-24) |
 | Language | TypeScript 7 (`bun check` — Bun-native type checker, TS7 behavior) |
 | Runtime/Package Manager | Bun (runtime, package manager, test runner, type checking) |
 | Database | PostgreSQL 16 (drizzle-orm 0.45, schema managed via migrations) |
