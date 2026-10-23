@@ -5,6 +5,7 @@ import { MessageCircle } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { getApprovedComments } from "@/app/actions/comments";
 import type { AppLocale } from "@/lib/date-format";
+import type { Dictionary } from "@/lib/i18n/dictionary";
 import { CommentForm } from "./CommentForm";
 import { CommentList } from "./CommentList";
 
@@ -19,11 +20,13 @@ interface CommentSectionProps {
 	reviewId: number;
 	/** UI language for relative timestamps; defaults to English. */
 	locale?: AppLocale;
+	dictionary: Dictionary;
 }
 
 export function CommentSection({
 	reviewId,
 	locale = "en",
+	dictionary,
 }: CommentSectionProps) {
 	const [comments, setComments] = useState<Comment[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
@@ -50,7 +53,7 @@ export function CommentSection({
 			<div className="flex items-center gap-2 mb-8">
 				<MessageCircle className="h-6 w-6 text-primary" />
 				<h2 className="font-serif text-2xl font-bold">
-					Comments {!isLoading && `(${comments.length})`}
+					{dictionary.commentsTitle} {!isLoading && `(${comments.length})`}
 				</h2>
 			</div>
 
@@ -60,16 +63,21 @@ export function CommentSection({
 					<CommentForm
 						reviewId={reviewId}
 						onCommentSubmitted={handleCommentSubmitted}
+						dictionary={dictionary}
 					/>
 				</div>
 
 				{/* Comments List */}
 				{isLoading ? (
 					<div className="text-center py-8 text-muted-foreground">
-						Loading comments...
+						{dictionary.commentsLoading}
 					</div>
 				) : (
-					<CommentList comments={comments} locale={locale} />
+					<CommentList
+						comments={comments}
+						locale={locale}
+						dictionary={dictionary}
+					/>
 				)}
 			</div>
 		</section>

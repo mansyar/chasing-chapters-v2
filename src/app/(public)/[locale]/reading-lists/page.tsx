@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getPayload } from "payload";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { getDictionary } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locale";
 import { resolveMediaUrl } from "@/lib/media-url";
 import { generateItemListSchema, SITE_URL } from "@/lib/seo/structured-data";
@@ -26,6 +27,7 @@ export default async function ReadingListsPage({
 }) {
 	const { locale } = await params;
 	const appLocale = normalizeLocale(locale);
+	const dictionary = getDictionary(appLocale);
 	const payload = await getPayload({ config: configPromise });
 
 	const { docs: readingLists } = await payload.find({
@@ -56,10 +58,10 @@ export default async function ReadingListsPage({
 			/>
 			<div className="space-y-4 mb-12 text-center">
 				<h1 className="font-serif text-4xl font-bold tracking-tight">
-					Reading Lists
+					{dictionary.readingListsTitle}
 				</h1>
 				<p className="text-muted-foreground max-w-[600px] mx-auto">
-					Curated collections of books for every mood and occasion.
+					{dictionary.readingListsDescription}
 				</p>
 			</div>
 
@@ -85,7 +87,7 @@ export default async function ReadingListsPage({
 										/>
 									) : (
 										<div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground">
-											No Image
+											{dictionary.readingListsNoImage}
 										</div>
 									)}
 									<div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
@@ -107,8 +109,8 @@ export default async function ReadingListsPage({
 			{readingLists.length === 0 && (
 				<EmptyState
 					icon={Library}
-					title="No reading lists yet"
-					description="Curated collections of reviews are on the way — check back soon."
+					title={dictionary.readingListsEmptyTitle}
+					description={dictionary.readingListsEmptyDescription}
 				/>
 			)}
 		</div>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { AppLocale } from "@/lib/date-format";
+import { getDictionary } from "@/lib/i18n/dictionary";
 import { resolveMediaUrl } from "@/lib/media-url";
 import { cn } from "@/lib/utils";
 import type { Media, ReadingList } from "@/payload-types";
@@ -23,6 +24,7 @@ export function ReadingListCard({
 	locale = "en",
 }: ReadingListCardProps) {
 	const coverImage = readingList.coverImage as Media;
+	const dictionary = getDictionary(locale);
 	const bookCount = Array.isArray(readingList.reviews)
 		? readingList.reviews.length
 		: 0;
@@ -57,7 +59,10 @@ export function ReadingListCard({
 						className="absolute bottom-3 right-3 bg-background/90 backdrop-blur-sm"
 					>
 						<BookOpen className="h-3 w-3 mr-1" />
-						{bookCount} {bookCount === 1 ? "book" : "books"}
+						{bookCount}{" "}
+						{bookCount === 1
+							? dictionary.readingListBookSingular
+							: dictionary.readingListBookPlural}
 					</Badge>
 				</div>
 				<CardContent className="pt-4 pb-5">

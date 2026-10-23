@@ -99,6 +99,26 @@ export function localizePath(pathname: string, locale: Locale): string {
 	return segments.join("/");
 }
 
+/**
+ * The href that shows `pathname` in `locale`, query string included.
+ *
+ * The language control has to keep `?q=`, `?genre=`, `?sort=` and `?page=`
+ * while it swaps the segment (`FR-3`), so the query is carried separately:
+ * `search` is what `URLSearchParams.toString()` or `window.location.search`
+ * gives, with or without the leading `?`. An empty query yields a clean URL
+ * with no dangling `?`.
+ */
+export function localeSwitchHref(
+	pathname: string,
+	locale: Locale,
+	search = "",
+): string {
+	const target = localizePath(pathname, locale);
+	const query = search.replace(/^\?/, "");
+
+	return query ? `${target}?${query}` : target;
+}
+
 /** The locale segment of a pathname, when it has a supported one. */
 export function pathLocale(pathname: string): Locale | null {
 	const segment = pathname.split("/")[1];

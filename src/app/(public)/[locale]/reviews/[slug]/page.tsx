@@ -15,6 +15,8 @@ import { ShareButton } from "@/components/ShareButton";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatDate } from "@/lib/date-format";
+import { getDictionary } from "@/lib/i18n/dictionary";
+import { formatMessage } from "@/lib/i18n/format";
 import { normalizeLocale, SUPPORTED_LOCALES } from "@/lib/i18n/locale";
 import { resolveMediaUrl } from "@/lib/media-url";
 import {
@@ -139,6 +141,7 @@ export default async function ReviewPage({ params }: PageProps) {
 	}
 
 	const coverImage = review.coverImage as Media;
+	const dictionary = getDictionary(appLocale);
 	const jsonLd = generateReviewSchema(review, coverImage);
 	const breadcrumbJsonLd = generateBreadcrumbSchema([
 		{ name: "Home", url: `${SITE_URL}/${appLocale}` },
@@ -200,7 +203,9 @@ export default async function ReviewPage({ params }: PageProps) {
 									{review.title}
 								</h1>
 								<p className="text-xl text-muted-foreground font-medium">
-									by {review.bookAuthor}
+									{formatMessage(dictionary.cardByAuthor, {
+										author: review.bookAuthor,
+									})}
 								</p>
 							</div>
 							<div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 text-sm text-muted-foreground">
@@ -235,15 +240,19 @@ export default async function ReviewPage({ params }: PageProps) {
 										),
 									)}
 
-								<LanguageToggle />
+								<LanguageToggle dictionary={dictionary} />
 								<ShareButton
-									title={`Read this review of ${review.title}`}
+									title={formatMessage(dictionary.reviewShareTitle, {
+										title: review.title,
+									})}
 									className="ml-2"
+									dictionary={dictionary}
 								/>
 								<LikeButton
 									reviewId={String(review.id)}
 									initialLikes={review.likes || 0}
 									className="ml-2"
+									dictionary={dictionary}
 								/>
 							</div>
 						</div>
@@ -264,7 +273,7 @@ export default async function ReviewPage({ params }: PageProps) {
 						{review.whatILoved && (
 							<div className="bg-green-50 dark:bg-green-950/20 p-6 rounded-xl border border-green-100 dark:border-green-900">
 								<h3 className="font-serif text-xl font-bold mb-4 flex items-center gap-2 text-green-800 dark:text-green-300">
-									What I Loved
+									{dictionary.reviewWhatILoved}
 								</h3>
 								<div className="prose prose-sm dark:prose-invert">
 									<RichText data={review.whatILoved} />
@@ -275,7 +284,7 @@ export default async function ReviewPage({ params }: PageProps) {
 						{review.whatCouldBeBetter && (
 							<div className="bg-orange-50 dark:bg-orange-950/20 p-6 rounded-xl border border-orange-100 dark:border-orange-900">
 								<h3 className="font-serif text-xl font-bold mb-4 flex items-center gap-2 text-orange-800 dark:text-orange-300">
-									What Could Be Better
+									{dictionary.reviewWhatCouldBeBetter}
 								</h3>
 								<div className="prose prose-sm dark:prose-invert">
 									<RichText data={review.whatCouldBeBetter} />
@@ -286,7 +295,7 @@ export default async function ReviewPage({ params }: PageProps) {
 						{review.perfectFor && (
 							<div className="bg-blue-50 dark:bg-blue-950/20 p-6 rounded-xl border border-blue-100 dark:border-blue-900 md:col-span-2">
 								<h3 className="font-serif text-xl font-bold mb-4 flex items-center gap-2 text-blue-800 dark:text-blue-300">
-									Perfect For
+									{dictionary.reviewPerfectFor}
 								</h3>
 								<div className="prose prose-sm dark:prose-invert">
 									<RichText data={review.perfectFor} />
@@ -299,7 +308,7 @@ export default async function ReviewPage({ params }: PageProps) {
 					{review.favoriteQuotes && review.favoriteQuotes.length > 0 && (
 						<div className="space-y-6">
 							<h3 className="font-serif text-2xl font-bold border-b pb-2">
-								Favorite Quotes
+								{dictionary.reviewFavoriteQuotes}
 							</h3>
 							<div className="grid gap-6">
 								{review.favoriteQuotes.map((item, i) => (
@@ -310,7 +319,10 @@ export default async function ReviewPage({ params }: PageProps) {
 										"{item.quote}"
 										{item.page && (
 											<footer className="text-sm not-italic mt-2 text-muted-foreground/60">
-												— Page {item.page}
+												—{" "}
+												{formatMessage(dictionary.reviewPage, {
+													page: item.page,
+												})}
 											</footer>
 										)}
 									</blockquote>
@@ -327,7 +339,7 @@ export default async function ReviewPage({ params }: PageProps) {
 						Array.isArray(review.tags) &&
 						review.tags.length > 0 && (
 							<div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
-								<h3 className="font-semibold mb-4">Tags</h3>
+								<h3 className="font-semibold mb-4">{dictionary.reviewTags}</h3>
 								<div className="flex flex-wrap gap-2">
 									{review.tags.map((tag) =>
 										typeof tag === "number" ? null : (
@@ -345,7 +357,7 @@ export default async function ReviewPage({ params }: PageProps) {
 						Array.isArray(review.moodTags) &&
 						review.moodTags.length > 0 && (
 							<div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
-								<h3 className="font-semibold mb-4">Mood</h3>
+								<h3 className="font-semibold mb-4">{dictionary.reviewMood}</h3>
 								<div className="flex flex-wrap gap-2">
 									{review.moodTags.map((mood) =>
 										typeof mood === "number" ? null : (
@@ -370,11 +382,15 @@ export default async function ReviewPage({ params }: PageProps) {
 					{/* Reading Log */}
 					{(review.readingStartDate || review.readingFinishDate) && (
 						<div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
-							<h3 className="font-semibold mb-4">Reading Log</h3>
+							<h3 className="font-semibold mb-4">
+								{dictionary.reviewReadingLog}
+							</h3>
 							<div className="space-y-3 text-sm">
 								{review.readingStartDate && (
 									<div className="flex justify-between items-center">
-										<span className="text-muted-foreground">Started</span>
+										<span className="text-muted-foreground">
+											{dictionary.reviewStarted}
+										</span>
 										<span className="font-medium">
 											{formatDate(review.readingStartDate, appLocale, {
 												month: "short",
@@ -384,7 +400,9 @@ export default async function ReviewPage({ params }: PageProps) {
 								)}
 								{review.readingFinishDate && (
 									<div className="flex justify-between items-center">
-										<span className="text-muted-foreground">Finished</span>
+										<span className="text-muted-foreground">
+											{dictionary.reviewFinished}
+										</span>
 										<span className="font-medium">
 											{formatDate(review.readingFinishDate, appLocale, {
 												month: "short",
@@ -412,7 +430,11 @@ export default async function ReviewPage({ params }: PageProps) {
 			{/* Comments Section */}
 			<Separator className="my-8" />
 			<div className="[content-visibility:auto] [contain-intrinsic-size:auto_600px]">
-				<CommentSection reviewId={review.id} locale={appLocale} />
+				<CommentSection
+					reviewId={review.id}
+					locale={appLocale}
+					dictionary={dictionary}
+				/>
 			</div>
 		</article>
 	);

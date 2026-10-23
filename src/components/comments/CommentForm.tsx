@@ -8,15 +8,18 @@ import { submitComment } from "@/app/actions/comments";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import type { Dictionary } from "@/lib/i18n/dictionary";
 
 interface CommentFormProps {
 	reviewId: number;
 	onCommentSubmitted?: () => void;
+	dictionary: Dictionary;
 }
 
 export function CommentForm({
 	reviewId,
 	onCommentSubmitted,
+	dictionary,
 }: CommentFormProps) {
 	const [name, setName] = useState("");
 	const [email, setEmail] = useState("");
@@ -62,7 +65,7 @@ export function CommentForm({
 
 			// Show appropriate toast (sonner auto-dismisses; 5s keeps prior timing)
 			const status = result.data?.status;
-			const text = result.message || "Comment submitted!";
+			const text = result.message || dictionary.commentsSubmitted;
 			if (status === "approved") {
 				toast.success(text, { duration: 5000 });
 			} else {
@@ -80,16 +83,18 @@ export function CommentForm({
 
 	return (
 		<form onSubmit={handleSubmit} className="space-y-4">
-			<h3 className="font-serif text-xl font-bold">Leave a Comment</h3>
+			<h3 className="font-serif text-xl font-bold">
+				{dictionary.commentsFormTitle}
+			</h3>
 
 			<div className="grid gap-4 sm:grid-cols-2">
 				<div className="space-y-2">
 					<label htmlFor="name" className="text-sm font-medium">
-						Name
+						{dictionary.commentsName}
 					</label>
 					<Input
 						id="name"
-						placeholder="Your name"
+						placeholder={dictionary.commentsNamePlaceholder}
 						value={name}
 						onChange={(e) => setName(e.target.value)}
 						required
@@ -99,12 +104,12 @@ export function CommentForm({
 				</div>
 				<div className="space-y-2">
 					<label htmlFor="email" className="text-sm font-medium">
-						Email
+						{dictionary.commentsEmail}
 					</label>
 					<Input
 						id="email"
 						type="email"
-						placeholder="your@email.com"
+						placeholder={dictionary.commentsEmailPlaceholder}
 						value={email}
 						onChange={(e) => setEmail(e.target.value)}
 						required
@@ -112,18 +117,18 @@ export function CommentForm({
 						aria-describedby="email-help"
 					/>
 					<p id="email-help" className="text-xs text-muted-foreground">
-						Your email won&apos;t be published
+						{dictionary.commentsEmailHelp}
 					</p>
 				</div>
 			</div>
 
 			<div className="space-y-2">
 				<label htmlFor="content" className="text-sm font-medium">
-					Comment
+					{dictionary.commentsComment}
 				</label>
 				<Textarea
 					id="content"
-					placeholder="Share your thoughts..."
+					placeholder={dictionary.commentsCommentPlaceholder}
 					value={content}
 					onChange={(e) => setContent(e.target.value)}
 					required
@@ -149,12 +154,12 @@ export function CommentForm({
 				{isSubmitting ? (
 					<>
 						<Loader2 className="h-4 w-4 mr-2 animate-spin" />
-						Submitting...
+						{dictionary.commentsSubmitting}
 					</>
 				) : (
 					<>
 						<Send className="h-4 w-4 mr-2" />
-						Submit Comment
+						{dictionary.commentsSubmit}
 					</>
 				)}
 			</Button>

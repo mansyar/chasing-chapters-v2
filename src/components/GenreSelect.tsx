@@ -8,6 +8,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import type { Dictionary } from "@/lib/i18n/dictionary";
+import type { Locale } from "@/lib/i18n/locale";
 
 interface Genre {
 	id: number | string;
@@ -18,16 +20,23 @@ interface Genre {
 interface GenreSelectProps {
 	genres: Genre[];
 	currentGenre?: string;
+	dictionary: Dictionary;
+	locale: Locale;
 }
 
-export function GenreSelect({ genres, currentGenre }: GenreSelectProps) {
+export function GenreSelect({
+	genres,
+	currentGenre,
+	dictionary,
+	locale,
+}: GenreSelectProps) {
 	const router = useRouter();
 
 	const handleValueChange = (value: string) => {
 		if (value === "all") {
-			router.push("/reviews");
+			router.push(`/${locale}/reviews`);
 		} else {
-			router.push(`/reviews?genre=${value}`);
+			router.push(`/${locale}/reviews?genre=${value}`);
 		}
 	};
 
@@ -42,10 +51,10 @@ export function GenreSelect({ genres, currentGenre }: GenreSelectProps) {
 			onValueChange={handleValueChange}
 		>
 			<SelectTrigger className="w-full">
-				<SelectValue placeholder="Select a genre" />
+				<SelectValue placeholder={dictionary.browseSelectGenre} />
 			</SelectTrigger>
 			<SelectContent>
-				<SelectItem value="all">All Genres</SelectItem>
+				<SelectItem value="all">{dictionary.browseAllGenres}</SelectItem>
 				{validGenres.map((g) => (
 					<SelectItem key={g.id} value={g.slug}>
 						{g.name}

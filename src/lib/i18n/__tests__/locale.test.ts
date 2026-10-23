@@ -5,6 +5,7 @@ import {
 	isUnprefixedPublicPath,
 	LOCALE_COOKIE_NAME,
 	Locale,
+	localeSwitchHref,
 	localizedPaths,
 	localizePath,
 	normalizeLocale,
@@ -124,6 +125,29 @@ describe("isUnprefixedPublicPath", () => {
 		expect(isUnprefixedPublicPath("/api/reviews")).toBe(false);
 		expect(isUnprefixedPublicPath("/feed.xml")).toBe(false);
 		expect(isUnprefixedPublicPath("/sitemap.xml")).toBe(false);
+	});
+});
+
+describe("localeSwitchHref", () => {
+	test("swaps the segment and keeps the slug and depth", () => {
+		expect(localeSwitchHref("/en/reviews/salt-and-paper", "id")).toBe(
+			"/id/reviews/salt-and-paper",
+		);
+		expect(localeSwitchHref("/id", "en")).toBe("/en");
+	});
+
+	test("carries the query string with or without its leading question mark", () => {
+		expect(localeSwitchHref("/en/reviews", "id", "sort=title&page=2")).toBe(
+			"/id/reviews?sort=title&page=2",
+		);
+		expect(localeSwitchHref("/en/reviews", "id", "?q=dune")).toBe(
+			"/id/reviews?q=dune",
+		);
+	});
+
+	test("leaves no dangling question mark when there is no query", () => {
+		expect(localeSwitchHref("/en/about", "id", "")).toBe("/id/about");
+		expect(localeSwitchHref("/en/about", "id", "?")).toBe("/id/about");
 	});
 });
 

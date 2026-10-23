@@ -5,6 +5,8 @@ import { notFound } from "next/navigation";
 import { getPayload } from "payload";
 import { ReviewCard } from "@/components/ReviewCard";
 import { ShareButton } from "@/components/ShareButton";
+import { getDictionary } from "@/lib/i18n/dictionary";
+import { formatMessage } from "@/lib/i18n/format";
 import { normalizeLocale, SUPPORTED_LOCALES } from "@/lib/i18n/locale";
 import { resolveMediaUrl } from "@/lib/media-url";
 import { generateBreadcrumbSchema, SITE_URL } from "@/lib/seo/structured-data";
@@ -97,6 +99,7 @@ export async function generateStaticParams() {
 export default async function ReadingListDetailPage({ params }: PageProps) {
 	const { locale, slug } = await params;
 	const appLocale = normalizeLocale(locale);
+	const dictionary = getDictionary(appLocale);
 	const payload = await getPayload({ config: configPromise });
 
 	const { docs: lists } = await payload.find({
@@ -148,7 +151,12 @@ export default async function ReadingListDetailPage({ params }: PageProps) {
 						{list.description}
 					</p>
 					<div className="flex justify-center">
-						<ShareButton title={`Check out this reading list: ${list.title}`} />
+						<ShareButton
+							title={formatMessage(dictionary.readingListShareTitle, {
+								title: list.title,
+							})}
+							dictionary={dictionary}
+						/>
 					</div>
 				</div>
 
@@ -184,7 +192,7 @@ export default async function ReadingListDetailPage({ params }: PageProps) {
 					</div>
 				) : (
 					<div className="text-center py-12 text-muted-foreground">
-						<p>No reviews added to this list yet.</p>
+						<p>{dictionary.readingListNoReviews}</p>
 					</div>
 				)}
 			</div>

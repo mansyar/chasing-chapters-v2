@@ -1,6 +1,7 @@
 import configPromise from "@payload-config";
 import { getPayload, Where } from "payload";
 import type { AppLocale } from "@/lib/date-format";
+import { getDictionary } from "@/lib/i18n/dictionary";
 import { Genre, MoodTag, Tag } from "@/payload-types";
 import { ReviewCard } from "../ReviewCard";
 
@@ -93,14 +94,16 @@ export async function RelatedReviews({
 		return null;
 	}
 
+	const dictionary = getDictionary(locale);
+
 	return (
 		<section className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
 			<div className="text-center md:text-left">
 				<h2 className="text-3xl font-serif font-bold text-foreground">
-					More Like This
+					{dictionary.relatedMoreLikeThis}
 				</h2>
 				<p className="text-muted-foreground mt-2">
-					Based on genres, tags, and moods you might enjoy.
+					{dictionary.relatedDescription}
 				</p>
 			</div>
 

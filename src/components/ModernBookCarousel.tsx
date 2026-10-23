@@ -6,16 +6,25 @@ import Link from "next/link";
 import React, { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import type { Dictionary } from "@/lib/i18n/dictionary";
+import { formatMessage } from "@/lib/i18n/format";
+import type { Locale } from "@/lib/i18n/locale";
 import { resolveMediaUrl } from "@/lib/media-url";
 import { cn, extractTextFromRichText } from "@/lib/utils";
 import type { Media, Review } from "@/payload-types";
 
 interface ModernBookCarouselProps {
 	reviews: Review[];
+	/** Server-resolved interface copy. */
+	dictionary: Dictionary;
+	/** The locale this page is rendered in. */
+	locale: Locale;
 }
 
 export default function ModernBookCarousel({
 	reviews,
+	dictionary,
+	locale,
 }: ModernBookCarouselProps) {
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const [activeSlide, setActiveSlide] = useState(0);
@@ -75,7 +84,7 @@ export default function ModernBookCarousel({
 				ref={scrollRef}
 				onScroll={handleScroll}
 				role="region"
-				aria-label="Featured reviews carousel"
+				aria-label={dictionary.heroCarouselLabel}
 				tabIndex={0}
 				className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar gap-0 scroll-smooth focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
 				style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
@@ -98,7 +107,7 @@ export default function ModernBookCarousel({
 											variant="default"
 											className="bg-primary text-primary-foreground"
 										>
-											Featured Review
+											{dictionary.heroFeaturedReview}
 										</Badge>
 										<div className="flex gap-0.5">
 											{Array.from({ length: 5 }).map((_, i) => (
@@ -118,7 +127,9 @@ export default function ModernBookCarousel({
 										{review.title}
 									</h2>
 									<p className="text-xl text-muted-foreground font-medium">
-										by {review.bookAuthor}
+										{formatMessage(dictionary.cardByAuthor, {
+											author: review.bookAuthor,
+										})}
 									</p>
 								</div>
 
@@ -132,8 +143,8 @@ export default function ModernBookCarousel({
 										size="lg"
 										className="font-medium group/btn shadow-lg"
 									>
-										<Link href={`/reviews/${review.slug}`}>
-											Read Full Review{" "}
+										<Link href={`/${locale}/reviews/${review.slug}`}>
+											{dictionary.heroReadFullReview}{" "}
 											<ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
 										</Link>
 									</Button>
@@ -174,7 +185,7 @@ export default function ModernBookCarousel({
 					variant="outline"
 					size="icon"
 					onClick={prev}
-					aria-label="Previous review"
+					aria-label={dictionary.heroPreviousReview}
 					className="rounded-full bg-background/80 backdrop-blur-sm pointer-events-auto h-12 w-12 border-none shadow-xl hover:bg-primary hover:text-white transition-all transform -translate-x-4 group-hover:translate-x-0"
 				>
 					<ChevronLeft className="h-6 w-6" />
@@ -183,7 +194,7 @@ export default function ModernBookCarousel({
 					variant="outline"
 					size="icon"
 					onClick={next}
-					aria-label="Next review"
+					aria-label={dictionary.heroNextReview}
 					className="rounded-full bg-background/80 backdrop-blur-sm pointer-events-auto h-12 w-12 border-none shadow-xl hover:bg-primary hover:text-white transition-all transform translate-x-4 group-hover:translate-x-0"
 				>
 					<ChevronRight className="h-6 w-6" />
@@ -200,7 +211,9 @@ export default function ModernBookCarousel({
 							"group/dot grid h-11 min-w-11 place-items-center",
 							activeSlide === i && "cursor-default",
 						)}
-						aria-label={`Go to slide ${i + 1}`}
+						aria-label={formatMessage(dictionary.heroGoToSlide, {
+							slide: i + 1,
+						})}
 						aria-current={activeSlide === i || undefined}
 					>
 						<span

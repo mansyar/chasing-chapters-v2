@@ -8,6 +8,7 @@ import { ReadingListCard } from "@/components/ReadingListCard";
 import { ReviewCard } from "@/components/ReviewCard";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { getDictionary } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locale";
 
 // Enable ISR with 60 second revalidation for better caching
@@ -20,6 +21,7 @@ export default async function Homepage({
 }) {
 	const { locale } = await params;
 	const appLocale = normalizeLocale(locale);
+	const dictionary = getDictionary(appLocale);
 	const payload = await getPayload({ config: configPromise });
 
 	// Fetch data in parallel for better performance
@@ -69,19 +71,25 @@ export default async function Homepage({
 
 	return (
 		<div className="flex flex-col min-h-screen">
-			{featuredReviews.length > 0 && <FeaturedHero reviews={featuredReviews} />}
-			<GenreMarquee genres={genres} />
+			{featuredReviews.length > 0 && (
+				<FeaturedHero
+					reviews={featuredReviews}
+					dictionary={dictionary}
+					locale={appLocale}
+				/>
+			)}
+			<GenreMarquee genres={genres} locale={appLocale} />
 
 			{/* Reading Lists Showcase */}
 			{readingLists.length > 0 && (
 				<section className="py-16 container mx-auto px-6 md:px-12 lg:px-24 max-w-7xl">
 					<div className="flex items-center justify-between mb-8">
 						<h2 className="font-serif text-3xl font-bold tracking-tight">
-							Curated Reading Lists
+							{dictionary.homeCuratedReadingLists}
 						</h2>
 						<Button variant="ghost" asChild>
 							<Link href={`/${appLocale}/reading-lists`}>
-								View All <ArrowRight className="ml-2 h-4 w-4" />
+								{dictionary.homeViewAll} <ArrowRight className="ml-2 h-4 w-4" />
 							</Link>
 						</Button>
 					</div>
@@ -101,11 +109,11 @@ export default async function Homepage({
 			<section className="py-16 container mx-auto px-6 md:px-12 lg:px-24 max-w-7xl">
 				<div className="flex items-center justify-between mb-8">
 					<h2 className="font-serif text-3xl font-bold tracking-tight">
-						Latest Reviews
+						{dictionary.homeLatestReviews}
 					</h2>
 					<Button variant="ghost" asChild>
 						<Link href={`/${appLocale}/reviews`}>
-							View All <ArrowRight className="ml-2 h-4 w-4" />
+							{dictionary.homeViewAll} <ArrowRight className="ml-2 h-4 w-4" />
 						</Link>
 					</Button>
 				</div>
@@ -124,8 +132,8 @@ export default async function Homepage({
 				) : (
 					<EmptyState
 						icon={BookOpen}
-						title="No reviews yet"
-						description="The first reviews are being written — check back soon."
+						title={dictionary.homeNoReviewsTitle}
+						description={dictionary.homeNoReviewsDescription}
 						className="py-12"
 					/>
 				)}

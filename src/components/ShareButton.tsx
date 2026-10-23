@@ -4,15 +4,22 @@ import { Check, Share2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import type { Dictionary } from "@/lib/i18n/dictionary";
 import { cn } from "@/lib/utils";
 
 interface ShareButtonProps {
 	title: string;
 	url?: string;
 	className?: string;
+	dictionary: Dictionary;
 }
 
-export function ShareButton({ title, url, className }: ShareButtonProps) {
+export function ShareButton({
+	title,
+	url,
+	className,
+	dictionary,
+}: ShareButtonProps) {
 	const [copied, setCopied] = useState(false);
 
 	const handleShare = async () => {
@@ -33,11 +40,11 @@ export function ShareButton({ title, url, className }: ShareButtonProps) {
 		try {
 			await navigator.clipboard.writeText(shareUrl);
 			setCopied(true);
-			toast.success("Link copied to clipboard");
+			toast.success(dictionary.shareLinkCopied);
 			setTimeout(() => setCopied(false), 2000);
 		} catch (err) {
 			console.error("Failed to copy:", err);
-			toast.error("Failed to copy link");
+			toast.error(dictionary.shareCopyFailed);
 		}
 	};
 
@@ -52,12 +59,12 @@ export function ShareButton({ title, url, className }: ShareButtonProps) {
 			{copied ? (
 				<>
 					<Check className="h-4 w-4 text-green-600" />
-					<span className="text-green-600">Copied</span>
+					<span className="text-green-600">{dictionary.shareCopied}</span>
 				</>
 			) : (
 				<>
 					<Share2 className="h-4 w-4" />
-					<span>Share</span>
+					<span>{dictionary.shareShare}</span>
 				</>
 			)}
 		</Button>

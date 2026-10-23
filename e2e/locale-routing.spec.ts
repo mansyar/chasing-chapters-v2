@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { E2E_FIXTURE_REVIEW, resolveE2EBaseURL } from "../src/lib/e2e-harness";
+import { LOCALE_COOKIE_NAME } from "../src/lib/i18n/locale";
 import { localePath } from "./fixtures/locale";
 
 const BASE_URL = resolveE2EBaseURL(process.env);
@@ -153,5 +154,69 @@ test.describe("Locale routing", () => {
 
 		expect(url.pathname).toBe(localePath(FIXTURE_REVIEW_PATH, "id"));
 		expect(url.searchParams.get("sort")).toBe("title");
+	});
+
+	// `FR-2`/`AC-2`: the control stores the choice for a year, and the stored
+	// choice — not the URL — decides where a bare path lands next session.
+	test("the language control remembers the choice across a reload", async ({
+		page,
+		context,
+	}) => {
+		await page.goto(localePath(FIXTURE_REVIEW_PATH));
+
+		await page.getByRole("button", { name: "ID" }).first().click();
+		await page.waitForURL(/\/id\/reviews\//);
+
+		const stored = (await context.cookies()).find(
+			(cookie) => cookie.name === LOCALE_COOKIE_NAME,
+		);
+
+		expect(stored?.value).toBe("id");
+		expect(stored?.sameSite).toBe("Lax");
+		// Roughly a year, in seconds — the preference outlives the session.
+		expect(stored?.expires).toBeGreaterThan(Date.now() / 1000 + 86_400);
+
+		// A shared English URL is still English, and reloading it does not
+		// rewrite the preference.
+		await page.goto(localePath("/about", "en"));
+		await page.reload();
+
+		const afterEnglishUrl = (await context.cookies()).find(
+			(cookie) => cookie.name === LOCALE_COOKIE_NAME,
+		);
+
+		expect(afterEnglishUrl?.value).toBe("id");
+		expect(new URL(page.url()).pathname).toBe("/en/about");
+
+		// …but a bare path now follows the remembered choice.
+		await page.goto("/about");
+		await expect(page).toHaveURL(/\/id\/about$/);
+	});
+
+	// `FR-2`: only the control writes the cookie. Following a shared Indonesian
+	// link must not silently change an English reader's preference.
+	test("a direct Indonesian URL leaves the stored preference alone", async ({
+		page,
+		context,
+	}) => {
+		await context.addCookies([
+			{
+				name: LOCALE_COOKIE_NAME,
+				value: "en",
+				url: BASE_URL,
+			},
+		]);
+
+		await page.goto(localePath("/about", "id"));
+
+		await expect(
+			page.getByRole("heading", { name: /Tentang Chasing Chapters/i }),
+		).toBeVisible();
+
+		const stored = (await context.cookies()).find(
+			(cookie) => cookie.name === LOCALE_COOKIE_NAME,
+		);
+
+		expect(stored?.value).toBe("en");
 	});
 });

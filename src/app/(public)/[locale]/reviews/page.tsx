@@ -23,6 +23,8 @@ import {
 	PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Separator } from "@/components/ui/separator";
+import { getDictionary } from "@/lib/i18n/dictionary";
+import { formatMessage } from "@/lib/i18n/format";
 import { normalizeLocale } from "@/lib/i18n/locale";
 import { parseSortParam, sortToPayloadSort } from "@/lib/reviews-sort";
 import { generateItemListSchema, SITE_URL } from "@/lib/seo/structured-data";
@@ -58,6 +60,7 @@ export default async function BrowsePage({ params, searchParams }: PageProps) {
 	const currentSort = parseSortParam(sort);
 	const limit = 9;
 	const payload = await getPayload({ config: configPromise });
+	const dictionary = getDictionary(appLocale);
 
 	const browsePath = `/${appLocale}/reviews`;
 
@@ -147,13 +150,15 @@ export default async function BrowsePage({ params, searchParams }: PageProps) {
 				{/* Sidebar */}
 				<aside className="w-full md:w-[240px] space-y-8 shrink-0">
 					<div>
-						<h3 className="font-serif text-lg font-bold mb-4">Search</h3>
+						<h3 className="font-serif text-lg font-bold mb-4">
+							{dictionary.browseSearch}
+						</h3>
 						<form action={searchAction} className="relative">
 							<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
 							<Input
 								name="q"
 								type="search"
-								placeholder="Search..."
+								placeholder={dictionary.browseSearchPlaceholder}
 								className="pl-9"
 								defaultValue={q}
 							/>
@@ -161,10 +166,17 @@ export default async function BrowsePage({ params, searchParams }: PageProps) {
 					</div>
 
 					<div>
-						<h3 className="font-serif text-lg font-bold mb-4">Genres</h3>
+						<h3 className="font-serif text-lg font-bold mb-4">
+							{dictionary.browseGenres}
+						</h3>
 						{/* Mobile Dropdown */}
 						<div className="md:hidden">
-							<GenreSelect genres={genres} currentGenre={genre} />
+							<GenreSelect
+								genres={genres}
+								currentGenre={genre}
+								dictionary={dictionary}
+								locale={appLocale}
+							/>
 						</div>
 						{/* Desktop List */}
 						<div className="hidden md:flex flex-col gap-2">
@@ -174,7 +186,7 @@ export default async function BrowsePage({ params, searchParams }: PageProps) {
 									!genre ? "font-bold text-primary" : "text-muted-foreground"
 								}`}
 							>
-								All Genres
+								{dictionary.browseAllGenres}
 							</Link>
 							{genres.map((g) => (
 								<Link
@@ -193,7 +205,9 @@ export default async function BrowsePage({ params, searchParams }: PageProps) {
 					</div>
 
 					<div>
-						<h3 className="font-serif text-lg font-bold mb-4">Tags</h3>
+						<h3 className="font-serif text-lg font-bold mb-4">
+							{dictionary.browseTags}
+						</h3>
 						<div className="flex flex-wrap gap-2">
 							{tags.map((t) => (
 								<Link key={t.id} href={`${browsePath}?tag=${t.slug}`}>
@@ -215,23 +229,29 @@ export default async function BrowsePage({ params, searchParams }: PageProps) {
 						<div className="flex items-center gap-4 min-w-0">
 							<h1 className="font-serif text-3xl font-bold">
 								{q
-									? `Search Results for "${q}"`
+									? formatMessage(dictionary.browseSearchResultsFor, {
+											query: q,
+										})
 									: genre
-										? `Genre: ${genres.find((g) => g.slug === genre)?.name}`
+										? formatMessage(dictionary.browseGenreHeading, {
+												genre: genres.find((g) => g.slug === genre)?.name ?? "",
+											})
 										: tag
-											? `Tag: ${tags.find((t) => t.slug === tag)?.name}`
-											: "All Reviews"}
+											? formatMessage(dictionary.browseTagHeading, {
+													tag: tags.find((t) => t.slug === tag)?.name ?? "",
+												})
+											: dictionary.browseAllReviews}
 							</h1>
 							{(q || genre || tag) && (
 								<Button variant="ghost" size="sm" asChild>
 									<Link href={browsePath}>
 										<X className="mr-2 h-4 w-4" />
-										Clear Filters
+										{dictionary.browseClearFilters}
 									</Link>
 								</Button>
 							)}
 						</div>
-						<SortSelect currentSort={currentSort} />
+						<SortSelect currentSort={currentSort} dictionary={dictionary} />
 					</div>
 					<Separator />
 
@@ -251,11 +271,13 @@ export default async function BrowsePage({ params, searchParams }: PageProps) {
 					) : (
 						<EmptyState
 							icon={BookOpen}
-							title="No reviews found"
-							description="Try a different search term, or clear the filters to browse everything."
+							title={dictionary.browseNoResultsTitle}
+							description={dictionary.browseNoResultsDescription}
 							action={
 								<Button variant="outline" asChild>
-									<Link href={browsePath}>Clear all filters</Link>
+									<Link href={browsePath}>
+										{dictionary.browseClearAllFilters}
+									</Link>
 								</Button>
 							}
 						/>
@@ -265,11 +287,13 @@ export default async function BrowsePage({ params, searchParams }: PageProps) {
 
 			{totalPages > 1 && (
 				<div className="mt-12">
-					<Pagination>
+					<Pagination label={dictionary.paginationLabel}>
 						<PaginationContent>
 							{currentPage > 1 && (
 								<PaginationItem>
 									<PaginationPrevious
+										label={dictionary.paginationPreviousLabel}
+										text={dictionary.paginationPrevious}
 										href={`${browsePath}?${new URLSearchParams({
 											...(q && { q }),
 											...(genre && { genre }),
@@ -298,7 +322,9 @@ export default async function BrowsePage({ params, searchParams }: PageProps) {
 										</PaginationLink>
 									</PaginationItem>
 									<PaginationItem>
-										<PaginationEllipsis />
+										<PaginationEllipsis
+											label={dictionary.paginationMorePages}
+										/>
 									</PaginationItem>
 								</>
 							)}
@@ -356,7 +382,9 @@ export default async function BrowsePage({ params, searchParams }: PageProps) {
 								return pages.map((p, i) => (
 									<PaginationItem key={i}>
 										{p === "..." ? (
-											<PaginationEllipsis />
+											<PaginationEllipsis
+												label={dictionary.paginationMorePages}
+											/>
 										) : (
 											<PaginationLink
 												isActive={p === currentPage}
@@ -380,6 +408,8 @@ export default async function BrowsePage({ params, searchParams }: PageProps) {
 							{currentPage < totalPages && (
 								<PaginationItem>
 									<PaginationNext
+										label={dictionary.paginationNextLabel}
+										text={dictionary.paginationNext}
 										href={`${browsePath}?${new URLSearchParams({
 											...(q && { q }),
 											...(genre && { genre }),
