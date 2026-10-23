@@ -136,7 +136,7 @@ Review fixes are appended by `conductor-review` as:
 - **Covers:** review findings
 - **Touches:** ...
 - **Verification:** ...
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **R1.T1: Resolve <finding ID>** - covers: <finding ID>
 -->
@@ -148,7 +148,7 @@ Review fixes are appended by `conductor-review` as:
 - **Covers:** F1, F2, F3, F4, F5
 - **Touches:** `src/components/layout/Navbar.tsx`, `src/migrations/20261023_193922_localize_taxonomy_and_reading_list_content.ts`, `e2e/content-localization.spec.ts`, `e2e/global-setup.ts`, `e2e/locale-routing.spec.ts`, `src/lib/e2e-harness.ts`, `src/lib/__tests__/e2e-harness.test.ts`, `src/proxy.ts`, `src/lib/i18n/locale.ts`, `src/lib/i18n/__tests__/locale.test.ts`, `src/lib/i18n/format.ts`, `src/hooks/formatSlug.ts`, `src/collections/__tests__/localization.test.ts`, `conductor/tracks/20261023-bilingual-site-experience/verification/phase-R1.md`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e && bun run build`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **R1.T1: Prefix the navbar's public links so a page keeps its language in-app** - covers: F1
   - [ ] **R1.T1.1: Give the logo and the four public nav links `/${locale}` in the desktop and mobile blocks, leaving `/admin` bare** - covers: F1
