@@ -64,7 +64,7 @@
 - **Goal:** Every public page declares the right language in its document and metadata, advertises reciprocal hreflang alternates, and the sitemap and RSS expose both locales.
 - **Depends on:** Phase 2
 - **Covers:** FR-5, FR-6, FR-8, FR-9, AC-5, AC-6, AC-8, NFR-3
-- **Touches:** `src/app/(public)/**`, `src/app/layout.tsx`, `src/app/sitemap.ts`, `src/app/feed.xml/**`, `src/lib/seo/**`, `src/lib/i18n/**`, `src/proxy.ts`, `e2e/**`
+- **Touches:** `src/app/(public)/**`, `src/app/layout.tsx`, `src/app/sitemap.ts`, `src/app/feed.xml/**`, `src/lib/feed.ts`, `src/lib/__tests__/feed.test.ts`, `src/lib/seo/**`, `src/lib/i18n/**`, `src/proxy.ts`, `e2e/**`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
 - **Status:** in_progress
 
