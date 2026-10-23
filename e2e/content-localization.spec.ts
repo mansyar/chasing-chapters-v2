@@ -175,12 +175,15 @@ test.describe("Content localization", () => {
 			"content",
 			new RegExp(E2E_FIXTURE_STALE_REVIEW_LOCALIZED.title),
 		);
-		// A translated title is not a translated review: the body stays English.
-		await expect(
-			page
-				.getByText(englishBodyOpening(STALE_REVIEW), { exact: false })
-				.first(),
-		).toBeVisible();
+		// A translated title is not a translated review: the body stays
+		// English. The assertion has to discriminate - the offline stub echoes
+		// the source text inside a `[stub-id]` marker, and the admin bulk
+		// re-translate spec translates this same review - so the English text
+		// alone would also appear in a stubbed translation. The marker must be
+		// absent for the English body to be the fallback it claims to be.
+		const article = page.locator("article");
+		await expect(article).toContainText(englishBodyOpening(STALE_REVIEW));
+		await expect(article).not.toContainText("[stub-id]");
 
 		// The English page is unaffected.
 		await page.goto(localePath(`/reviews/${STALE_REVIEW.slug}`, "en"));

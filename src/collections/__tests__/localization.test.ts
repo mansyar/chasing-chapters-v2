@@ -120,6 +120,9 @@ const REQUIRED_DEFAULT_LOCALE: Array<[CollectionConfig, string]> = [
 	[MoodTags, "name"],
 	[ReadingLists, "title"],
 	[Reviews, "title"],
+	// The body joins the list because the `id` locale may clear it and fall
+	// back to the English one; the default locale is still enforced.
+	[Reviews, "reviewContent"],
 ];
 
 describe("content localization (FR-10)", () => {

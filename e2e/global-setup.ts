@@ -22,6 +22,7 @@ import {
 	TRANSLATION_STATUSES,
 	type TranslationStatus,
 } from "../src/lib/translation-status";
+import type { Review } from "../src/payload-types";
 
 /**
  * Seeds the deterministic e2e dataset.
@@ -513,14 +514,19 @@ async function upsertReview(
  * Writes the Indonesian content of a review.
  *
  * The writes name the `id` locale, the same way the translation pipeline
- * writes it. The title is written whenever the fixture defines one - the stale
- * review carries a translated title with an untranslated body, which is what
- * lets the public specs prove the title localizes on its own (`FR-10`). The
- * bodies are written only for the fixture reviews whose translation status is
- * `translated`; the write never clears the `id` locale of the others, because
- * a previous run's translation - the bulk re-translate spec translates the
- * failed and stale candidates - leaves its Indonesian content behind, and the
- * fixture only resets the status.
+ * writes it. Two cases, and the seed has to land both of them on every run:
+ *
+ * - A review whose translation status is `translated` gets the Indonesian
+ *   bodies the fixture authored. They are always written, so a re-seed
+ *   restores whatever a previous run left behind.
+ * - A review the fixture gives a localized title, whose status is not
+ *   `translated`, carries a translated heading over an English body - the
+ *   stale review is the one fixture that proves the title localizes on its own
+ *   (`FR-10`). Its `id` body is cleared on every seed: the admin bulk
+ *   re-translate spec translates that same review with the offline stub, which
+ *   leaves `[stub-id]` text in the `id` locale, and a seed that only reset the
+ *   status would let the next run read that stub instead of the English
+ *   fallback the public spec is asserting.
  */
 async function writeIndonesianContent(
 	payload: PayloadClient,
@@ -535,6 +541,26 @@ async function writeIndonesianContent(
 			data: { title: review.localizedTitle },
 			context: FIXTURE_CONTEXT,
 		});
+
+		if (review.translationStatus !== "translated") {
+			// `null` is how Payload removes a localized value: the `id` row of
+			// these fields goes away and the read falls back to English. The
+			// generated type has no nullable `reviewContent` - the default
+			// locale always has one - so only that one needs the assertion.
+			await payload.update({
+				collection: "reviews",
+				id: reviewId,
+				locale: "id",
+				data: {
+					favoriteQuotes: null,
+					perfectFor: null,
+					reviewContent: null as unknown as Review["reviewContent"],
+					whatCouldBeBetter: null,
+					whatILoved: null,
+				},
+				context: FIXTURE_CONTEXT,
+			});
+		}
 	}
 
 	if (review.translationStatus !== "translated" || !review.id) {

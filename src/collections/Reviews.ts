@@ -117,8 +117,14 @@ export const Reviews: CollectionConfig = {
 		{
 			name: "reviewContent",
 			type: "richText",
-			required: true,
+			// Required in the default locale only, for the same reason as the
+			// title: a document is created with its English body, and the
+			// `id` locale may leave the body out and fall back to it. Payload
+			// reads `required` on a localized field as "required in every
+			// locale", which would reject a locale-scoped clear of an
+			// Indonesian body (FR-10).
 			localized: true,
+			validate: requireDefaultLocaleValue("Review content"),
 		},
 		{
 			name: "whatILoved",
