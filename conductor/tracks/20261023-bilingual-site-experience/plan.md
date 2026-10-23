@@ -176,7 +176,7 @@ Review fixes are appended by `conductor-review` as:
 - **Covers:** F1, F2 (round 2)
 - **Touches:** `src/migrations/20261023_195302_relax_localized_name_columns.ts`, `e2e/global-setup.ts`, `src/lib/e2e-harness.ts`, `e2e/content-localization.spec.ts`, `src/lib/__tests__/e2e-harness.test.ts`, `conductor/tracks/20261023-bilingual-site-experience/verification/phase-R2.md`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e && bun run build`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **R2.T1: Make the relaxation migration reversible** - covers: F1
   - [ ] **R2.T1.1: Delete the three `SET NOT NULL` statements from `down()` and record why the constraint cannot be restored without inventing translations** - covers: F1
