@@ -87,9 +87,8 @@ export const revalidateReviewPages: CollectionAfterChangeHook = async ({
 		// Revalidate homepage (featured reviews, latest reviews)
 		revalidatePublicPath("/");
 
-		// Revalidate the RSS feed (latest reviews). It is still served once,
-		// unprefixed, until the per-locale feeds land.
-		safeRevalidatePath("/feed.xml");
+		// Revalidate the RSS feeds (latest reviews), which exist once per locale.
+		revalidatePublicPath("/feed.xml");
 
 		// If featured status changed, homepage needs update (already covered above)
 		// Reading lists that include this review will be revalidated by their own ISR

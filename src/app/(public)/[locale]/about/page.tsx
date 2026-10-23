@@ -4,12 +4,24 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locale";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
-	title: "About",
-	description:
-		"Learn more about Chasing Chapters, a digital sanctuary for book lovers dedicated to the art of storytelling.",
-};
+export async function generateMetadata({
+	params,
+}: {
+	params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+	const { locale } = await params;
+	const appLocale = normalizeLocale(locale);
+	const dictionary = getDictionary(appLocale);
+
+	return buildPageMetadata({
+		locale: appLocale,
+		path: "/about",
+		title: dictionary.metaAboutTitle,
+		description: dictionary.metaAboutDescription,
+	});
+}
 
 export default async function AboutPage({
 	params,

@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 		"A digital sanctuary for book lovers, dedicated to the art of storytelling and the joy of getting lost in a good book.",
 	alternates: {
 		types: {
-			"application/rss+xml": "/feed.xml",
+			"application/rss+xml": "/en/feed.xml",
 		},
 	},
 	openGraph: {

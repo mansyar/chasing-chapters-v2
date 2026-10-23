@@ -1,5 +1,6 @@
 import configPromise from "@payload-config";
 import { ArrowRight, BookOpen } from "lucide-react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { getPayload } from "payload";
 import { FeaturedHero } from "@/components/FeaturedHero";
@@ -10,9 +11,27 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locale";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 
 // Enable ISR with 60 second revalidation for better caching
 export const revalidate = 60;
+
+export async function generateMetadata({
+	params,
+}: {
+	params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+	const { locale } = await params;
+	const appLocale = normalizeLocale(locale);
+	const dictionary = getDictionary(appLocale);
+
+	return buildPageMetadata({
+		locale: appLocale,
+		path: "/",
+		title: dictionary.metaHomeTitle,
+		description: dictionary.metaHomeDescription,
+	});
+}
 
 export default async function Homepage({
 	params,

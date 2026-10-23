@@ -9,13 +9,26 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locale";
 import { resolveMediaUrl } from "@/lib/media-url";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 import { generateItemListSchema, SITE_URL } from "@/lib/seo/structured-data";
 import type { Media } from "@/payload-types";
 
-export const metadata: Metadata = {
-	title: "Reading Lists",
-	description: "Curated collections of books for every mood and occasion.",
-};
+export async function generateMetadata({
+	params,
+}: {
+	params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+	const { locale } = await params;
+	const appLocale = normalizeLocale(locale);
+	const dictionary = getDictionary(appLocale);
+
+	return buildPageMetadata({
+		locale: appLocale,
+		path: "/reading-lists",
+		title: dictionary.readingListsTitle,
+		description: dictionary.readingListsDescription,
+	});
+}
 
 // Enable ISR with 60 second revalidation for better caching
 export const revalidate = 60;
@@ -47,7 +60,8 @@ export default async function ReadingListsPage({
 			url: `${SITE_URL}/${appLocale}/reading-lists/${list.slug}`,
 			image: (list.coverImage as Media)?.url || undefined,
 		})),
-		"Reading Lists",
+		dictionary.readingListsTitle,
+		appLocale,
 	);
 
 	return (

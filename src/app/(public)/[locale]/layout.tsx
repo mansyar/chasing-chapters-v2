@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -12,6 +13,7 @@ import {
 	normalizeLocale,
 	SUPPORTED_LOCALES,
 } from "@/lib/i18n/locale";
+import { buildLocaleShellMetadata } from "@/lib/seo/metadata";
 import { generateWebSiteSchema } from "@/lib/seo/structured-data";
 
 const inter = Inter({
@@ -47,6 +49,27 @@ export function generateStaticParams() {
 }
 
 /**
+ * The shell's own metadata: which locale it advertises, and which feed.
+ *
+ * A page's metadata replaces the Open Graph block wholesale, so the locale
+ * values here only survive on pages that set none (the 404s). The feed link
+ * is per locale and every page repeats it for the same reason.
+ */
+export async function generateMetadata({
+	params,
+}: {
+	params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+	const { locale } = await params;
+
+	if (!hasLocale(locale)) {
+		return {};
+	}
+
+	return buildLocaleShellMetadata(normalizeLocale(locale));
+}
+
+/**
  * The public document shell.
  *
  * It lives under the locale segment so `<html lang>` can follow the route; the
@@ -69,7 +92,7 @@ export default async function LocaleLayout({
 
 	const appLocale = normalizeLocale(locale);
 	const dictionary = getDictionary(appLocale);
-	const websiteJsonLd = generateWebSiteSchema();
+	const websiteJsonLd = generateWebSiteSchema(appLocale);
 
 	return (
 		<html lang={appLocale} suppressHydrationWarning>
@@ -107,7 +130,7 @@ export default async function LocaleLayout({
 						<main id="main-content" tabIndex={-1} className="flex-1">
 							{children}
 						</main>
-						<Footer dictionary={dictionary} />
+						<Footer dictionary={dictionary} locale={appLocale} />
 					</div>
 					<Toaster />
 				</ThemeProvider>

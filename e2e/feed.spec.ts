@@ -37,16 +37,18 @@ test.describe("RSS Feed", () => {
 			'link[rel="alternate"][type="application/rss+xml"]',
 		);
 		await expect(discoveryLink).toHaveCount(1);
-		await expect(discoveryLink).toHaveAttribute("href", /\/feed\.xml$/);
+		await expect(discoveryLink).toHaveAttribute("href", /\/en\/feed\.xml$/);
 	});
 
-	test("should link the feed from the site footer", async ({ page }) => {
+	test("should link the locale's feed from the site footer", async ({
+		page,
+	}) => {
 		await page.goto(localePath("/"));
 
 		const footerLink = page
 			.getByRole("contentinfo")
 			.getByRole("link", { name: /rss/i });
 		await expect(footerLink).toBeVisible();
-		await expect(footerLink).toHaveAttribute("href", "/feed.xml");
+		await expect(footerLink).toHaveAttribute("href", "/en/feed.xml");
 	});
 });

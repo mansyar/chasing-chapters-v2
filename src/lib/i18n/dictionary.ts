@@ -183,6 +183,28 @@ const en = {
 		"It seems you've turned to a page that doesn't exist yet. The story continues elsewhere.",
 	notFoundReturnHome: "Return Home",
 	notFoundBrowseReadingLists: "Browse Reading Lists",
+
+	// Document metadata and feeds
+	metaSiteName: "Chasing Chapters",
+	metaHomeTitle: "Book Reviews and Reading Lists",
+	metaHomeDescription:
+		"A digital sanctuary for book lovers, dedicated to the art of storytelling and the joy of getting lost in a good book.",
+	metaBrowseTitle: "Browse Reviews",
+	metaBrowseDescription:
+		"Explore our collection of book reviews. Filter by genre, tag, or search for specific titles and authors.",
+	metaReviewDescription:
+		"Read our review of {title} by {author}. Rating: {rating}/5 stars.",
+	metaReviewNotFound: "Review Not Found",
+	metaReadingListDescription: "Curated reading list: {title}",
+	metaReadingListNotFound: "Reading List Not Found",
+	metaAboutTitle: "About",
+	metaAboutDescription:
+		"Learn more about Chasing Chapters, a digital sanctuary for book lovers dedicated to the art of storytelling.",
+	metaOgImageAlt: "Chasing Chapters — book reviews and reading lists",
+	metaFeedDescription:
+		"Book reviews, reading lists, and literary notes from Chasing Chapters.",
+	browseItemListName: "Book Reviews",
+	breadcrumbHome: "Home",
 } as const;
 
 /** Every key the interface dictionary defines. */
@@ -342,6 +364,27 @@ const id: Dictionary = {
 		"Sepertinya Anda membuka halaman yang belum ada. Kisahnya berlanjut di tempat lain.",
 	notFoundReturnHome: "Kembali ke Beranda",
 	notFoundBrowseReadingLists: "Jelajahi Daftar Bacaan",
+
+	metaSiteName: "Chasing Chapters",
+	metaHomeTitle: "Ulasan Buku dan Daftar Bacaan",
+	metaHomeDescription:
+		"Ruang digital bagi para pencinta buku, didedikasikan untuk seni bercerita dan kegembiraan tenggelam dalam buku yang baik.",
+	metaBrowseTitle: "Jelajahi Ulasan",
+	metaBrowseDescription:
+		"Telusuri koleksi ulasan buku kami. Saring berdasarkan genre, tag, atau cari judul dan penulis tertentu.",
+	metaReviewDescription:
+		"Baca ulasan {title} karya {author}. Rating: {rating}/5 bintang.",
+	metaReviewNotFound: "Ulasan Tidak Ditemukan",
+	metaReadingListDescription: "Daftar bacaan pilihan: {title}",
+	metaReadingListNotFound: "Daftar Bacaan Tidak Ditemukan",
+	metaAboutTitle: "Tentang",
+	metaAboutDescription:
+		"Pelajari lebih lanjut tentang Chasing Chapters, ruang digital bagi para pencinta buku yang didedikasikan untuk seni bercerita.",
+	metaOgImageAlt: "Chasing Chapters — ulasan buku dan daftar bacaan",
+	metaFeedDescription:
+		"Ulasan buku, daftar bacaan, dan catatan sastra dari Chasing Chapters.",
+	browseItemListName: "Ulasan Buku",
+	breadcrumbHome: "Beranda",
 };
 
 /** The dictionary for each supported locale. */

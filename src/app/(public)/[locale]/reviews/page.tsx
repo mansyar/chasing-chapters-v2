@@ -27,14 +27,24 @@ import { getDictionary } from "@/lib/i18n/dictionary";
 import { formatMessage } from "@/lib/i18n/format";
 import { normalizeLocale } from "@/lib/i18n/locale";
 import { parseSortParam, sortToPayloadSort } from "@/lib/reviews-sort";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 import { generateItemListSchema, SITE_URL } from "@/lib/seo/structured-data";
 import type { Media } from "@/payload-types";
 
-export const metadata: Metadata = {
-	title: "Browse Reviews",
-	description:
-		"Explore our collection of book reviews. Filter by genre, tag, or search for specific titles and authors.",
-};
+export async function generateMetadata({
+	params,
+}: PageProps): Promise<Metadata> {
+	const { locale } = await params;
+	const appLocale = normalizeLocale(locale);
+	const dictionary = getDictionary(appLocale);
+
+	return buildPageMetadata({
+		locale: appLocale,
+		path: "/reviews",
+		title: dictionary.metaBrowseTitle,
+		description: dictionary.metaBrowseDescription,
+	});
+}
 
 // Enable ISR with 60 second revalidation for better caching
 export const revalidate = 60;
@@ -137,7 +147,8 @@ export default async function BrowsePage({ params, searchParams }: PageProps) {
 			url: `${SITE_URL}/${appLocale}/reviews/${review.slug}`,
 			image: (review.coverImage as Media)?.url || undefined,
 		})),
-		"Book Reviews",
+		dictionary.browseItemListName,
+		appLocale,
 	);
 
 	return (

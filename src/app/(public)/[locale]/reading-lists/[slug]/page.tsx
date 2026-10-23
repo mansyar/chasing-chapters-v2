@@ -9,6 +9,7 @@ import { getDictionary } from "@/lib/i18n/dictionary";
 import { formatMessage } from "@/lib/i18n/format";
 import { normalizeLocale, SUPPORTED_LOCALES } from "@/lib/i18n/locale";
 import { resolveMediaUrl } from "@/lib/media-url";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 import { generateBreadcrumbSchema, SITE_URL } from "@/lib/seo/structured-data";
 import type { Media, Review } from "@/payload-types";
 
@@ -27,6 +28,7 @@ export async function generateMetadata({
 }: PageProps): Promise<Metadata> {
 	const { locale, slug } = await params;
 	const appLocale = normalizeLocale(locale);
+	const dictionary = getDictionary(appLocale);
 	const payload = await getPayload({ config: configPromise });
 
 	const { docs: lists } = await payload.find({
@@ -48,29 +50,20 @@ export async function generateMetadata({
 
 	if (!list) {
 		return {
-			title: "Reading List Not Found",
+			title: dictionary.metaReadingListNotFound,
 		};
 	}
 
-	const description = list.description || `Curated reading list: ${list.title}`;
-
-	return {
+	return buildPageMetadata({
+		locale: appLocale,
+		path: `/reading-lists/${list.slug}`,
 		title: list.title,
-		description,
-		alternates: {
-			canonical: `${SITE_URL}/${appLocale}/reading-lists/${list.slug}`,
-		},
-		openGraph: {
-			title: list.title,
-			description,
-			type: "website",
-		},
-		twitter: {
-			card: "summary_large_image",
-			title: list.title,
-			description,
-		},
-	};
+		description:
+			list.description ||
+			formatMessage(dictionary.metaReadingListDescription, {
+				title: list.title,
+			}),
+	});
 }
 
 export async function generateStaticParams() {
@@ -126,14 +119,20 @@ export default async function ReadingListDetailPage({ params }: PageProps) {
 	const coverImage = list.coverImage as Media;
 	const reviews = (list.reviews as Review[]) || [];
 
-	const breadcrumbJsonLd = generateBreadcrumbSchema([
-		{ name: "Home", url: `${SITE_URL}/${appLocale}` },
-		{ name: "Reading Lists", url: `${SITE_URL}/${appLocale}/reading-lists` },
-		{
-			name: list.title,
-			url: `${SITE_URL}/${appLocale}/reading-lists/${list.slug}`,
-		},
-	]);
+	const breadcrumbJsonLd = generateBreadcrumbSchema(
+		[
+			{ name: dictionary.breadcrumbHome, url: `${SITE_URL}/${appLocale}` },
+			{
+				name: dictionary.navReadingLists,
+				url: `${SITE_URL}/${appLocale}/reading-lists`,
+			},
+			{
+				name: list.title,
+				url: `${SITE_URL}/${appLocale}/reading-lists/${list.slug}`,
+			},
+		],
+		appLocale,
+	);
 
 	return (
 		<div className="min-h-screen pb-20">

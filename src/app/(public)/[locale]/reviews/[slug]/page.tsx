@@ -19,6 +19,7 @@ import { getDictionary } from "@/lib/i18n/dictionary";
 import { formatMessage } from "@/lib/i18n/format";
 import { normalizeLocale, SUPPORTED_LOCALES } from "@/lib/i18n/locale";
 import { resolveMediaUrl } from "@/lib/media-url";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 import {
 	generateBreadcrumbSchema,
 	generateReviewSchema,
@@ -41,6 +42,7 @@ export async function generateMetadata({
 }: PageProps): Promise<Metadata> {
 	const { locale, slug } = await params;
 	const appLocale = normalizeLocale(locale);
+	const dictionary = getDictionary(appLocale);
 	const payload = await getPayload({ config: configPromise });
 
 	const { docs: reviews } = await payload.find({
@@ -62,33 +64,21 @@ export async function generateMetadata({
 
 	if (!review) {
 		return {
-			title: "Review Not Found",
+			title: dictionary.metaReviewNotFound,
 		};
 	}
 
-	const description = `Read our review of ${review.title} by ${review.bookAuthor}. Rating: ${review.rating}/5 stars.`;
-
-	return {
+	return buildPageMetadata({
+		locale: appLocale,
+		path: `/reviews/${review.slug}`,
 		title: review.title,
-		description,
-		alternates: {
-			canonical: `${SITE_URL}/${appLocale}/reviews/${review.slug}`,
-			languages: {
-				en: `${SITE_URL}/en/reviews/${review.slug}`,
-				id: `${SITE_URL}/id/reviews/${review.slug}`,
-			},
-		},
-		openGraph: {
+		description: formatMessage(dictionary.metaReviewDescription, {
 			title: review.title,
-			description,
-			type: "article",
-		},
-		twitter: {
-			card: "summary_large_image",
-			title: review.title,
-			description,
-		},
-	};
+			author: review.bookAuthor,
+			rating: review.rating,
+		}),
+		openGraphType: "article",
+	});
 }
 
 export async function generateStaticParams() {
@@ -142,15 +132,18 @@ export default async function ReviewPage({ params }: PageProps) {
 
 	const coverImage = review.coverImage as Media;
 	const dictionary = getDictionary(appLocale);
-	const jsonLd = generateReviewSchema(review, coverImage);
-	const breadcrumbJsonLd = generateBreadcrumbSchema([
-		{ name: "Home", url: `${SITE_URL}/${appLocale}` },
-		{ name: "Reviews", url: `${SITE_URL}/${appLocale}/reviews` },
-		{
-			name: review.title,
-			url: `${SITE_URL}/${appLocale}/reviews/${review.slug}`,
-		},
-	]);
+	const jsonLd = generateReviewSchema(review, appLocale, coverImage);
+	const breadcrumbJsonLd = generateBreadcrumbSchema(
+		[
+			{ name: dictionary.breadcrumbHome, url: `${SITE_URL}/${appLocale}` },
+			{ name: dictionary.navReviews, url: `${SITE_URL}/${appLocale}/reviews` },
+			{
+				name: review.title,
+				url: `${SITE_URL}/${appLocale}/reviews/${review.slug}`,
+			},
+		],
+		appLocale,
+	);
 
 	return (
 		<article className="min-h-screen pb-20">

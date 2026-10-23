@@ -65,7 +65,7 @@ export default function NotFound() {
 							</Button>
 						</div>
 					</main>
-					<Footer dictionary={dictionary} />
+					<Footer dictionary={dictionary} locale={DEFAULT_LOCALE} />
 				</div>
 			</body>
 		</html>

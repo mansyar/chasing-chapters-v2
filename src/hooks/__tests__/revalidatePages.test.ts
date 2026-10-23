@@ -43,8 +43,8 @@ describe("revalidatePages", () => {
 		});
 
 		expect(result).toBe(doc);
-		// The browse page, the detail page and the homepage each exist once per
-		// locale; the feed is still a single unprefixed route.
+		// The browse page, the detail page, the homepage and the feed each exist
+		// once per locale.
 		expect(revalidatePath.mock.calls.map(([path]) => path)).toEqual([
 			"/en/reviews",
 			"/id/reviews",
@@ -52,7 +52,8 @@ describe("revalidatePages", () => {
 			"/id/reviews/e2e-fixture-review",
 			"/en",
 			"/id",
-			"/feed.xml",
+			"/en/feed.xml",
+			"/id/feed.xml",
 		]);
 		expect(warn).toHaveBeenCalled();
 	});
