@@ -40,25 +40,23 @@
 - **Covers:** FR-2, FR-3, FR-4, AC-2, AC-3, AC-4, NFR-1, NFR-2, NFR-4
 - **Touches:** `src/lib/i18n/**`, `src/components/**`, `src/app/(public)/**`, `src/app/not-found.tsx`, `e2e/**`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P2.T1: Build the typed dictionary** — covers: FR-4, NFR-4
-  - [ ] **P2.T1.1: Add the `en` and `id` dictionaries and a server-side accessor, with a test asserting both expose an identical key set.**
-  - [ ] **P2.T1.2: Add a test asserting no public page or component still contains a hardcoded user-facing English literal.**
-- [ ] **P2.T2: Translate the public interface** — covers: FR-4, NFR-2
-  - [ ] **P2.T2.1: Move the shell (navbar, footer, skip link, search field, mobile menu) onto the dictionary.**
-  - [ ] **P2.T2.2: Move the page copy onto the dictionary — home sections, browse filters/sort/pagination/empty states, review detail labels, reading lists, comments, not-found and the About page.**
-  - [ ] **P2.T2.3: Keep the resolved strings server-side so the dictionary adds nothing to the client bundle.**
-- [ ] **P2.T3: Rebuild the language control** — covers: FR-2, FR-3, NFR-1
-  - [ ] **P2.T3.1: Switch the current path to the other locale, preserving the slug, path depth and all query parameters.**
-  - [ ] **P2.T3.2: Write the remembered preference cookie, and prove a direct `/id/...` visit does not overwrite it.**
-  - [ ] **P2.T3.3: Expose state and target to assistive technology, including `lang` on the locale labels, and cover it with a browser spec for persistence across navigation.**
+- [x] **P2.T1: Build the typed dictionary** — covers: FR-4, NFR-4
+  - [x] **P2.T1.1: Add the `en` and `id` dictionaries and a server-side accessor, with a test asserting both expose an identical key set.**
+  - [x] **P2.T1.2: Add a test asserting no public page or component still contains a hardcoded user-facing English literal.**
+- [x] **P2.T2: Translate the public interface** — covers: FR-4, NFR-2
+  - [x] **P2.T2.1: Move the shell (navbar, footer, skip link, search field, mobile menu) onto the dictionary.**
+  - [x] **P2.T2.2: Move the page copy onto the dictionary — home sections, browse filters/sort/pagination/empty states, review detail labels, reading lists, comments, not-found and the About page.**
+  - [x] **P2.T2.3: Keep the resolved strings server-side so the dictionary adds nothing to the client bundle.**
+- [x] **P2.T3: Rebuild the language control** — covers: FR-2, FR-3, NFR-1
+  - [x] **P2.T3.1: Switch the current path to the other locale, preserving the slug, path depth and all query parameters.**
+  - [x] **P2.T3.2: Write the remembered preference cookie, and prove a direct `/id/...` visit does not overwrite it.**
+  - [x] **P2.T3.3: Expose state and target to assistive technology, including `lang` on the locale labels, and cover it with a browser spec for persistence across navigation.**
 
-<!--
-The primary appends after acceptance:
 **Result:** verified
-**Checkpoint:** <short-sha>
-**Evidence:** conductor/tracks/<track-id>/verification/phase-2.md
+**Checkpoint:** f3390e2
+**Evidence:** conductor/tracks/20261023-bilingual-site-experience/verification/phase-2.md
 -->
 
 ## Phase 3: Locale Metadata, Alternates and Feed
