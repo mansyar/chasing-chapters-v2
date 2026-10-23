@@ -9,7 +9,15 @@
 // input with "ID:" - the same shape the provider mock in
 // translate-batch.test.ts uses - so the provider path is observable through
 // the returned text alone.
-import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
+import {
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	mock,
+	spyOn,
+} from "bun:test";
 import * as loggerModule from "../logger";
 import * as redisModule from "../redis";
 
@@ -39,6 +47,7 @@ const {
 	TRANSLATION_TEST_MODE_PREFIX,
 	TRANSLATION_TEST_MODE_SUFFIX,
 	isTranslationTestMode,
+	resetTranslateClientForTest,
 	translateBatch,
 	translateText,
 } = await import("../translate");
@@ -46,6 +55,11 @@ const {
 const originalFlag = process.env.TRANSLATION_TEST_MODE;
 
 let spies: Array<ReturnType<typeof spyOn>> = [];
+
+beforeEach(() => {
+	// A client memoized by another test file would defeat these assertions.
+	resetTranslateClientForTest();
+});
 
 function spyOnRedisCache(cached: string | null = null): {
 	getCachedTranslation: ReturnType<typeof spyOn>;
