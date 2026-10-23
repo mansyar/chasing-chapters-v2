@@ -14,7 +14,9 @@ import type { Locale } from "@/lib/i18n/locale";
 interface Genre {
 	id: number | string;
 	slug?: string | null;
-	name: string;
+	// A localized name is empty in this locale until an author writes one, in
+	// which case Payload falls back to the default-locale value (FR-10).
+	name?: string | null;
 }
 
 interface GenreSelectProps {

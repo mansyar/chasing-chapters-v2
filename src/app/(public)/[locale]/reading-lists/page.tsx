@@ -56,7 +56,7 @@ export default async function ReadingListsPage({
 
 	const itemListJsonLd = generateItemListSchema(
 		readingLists.map((list) => ({
-			name: list.title,
+			name: list.title ?? "",
 			url: `${SITE_URL}/${appLocale}/reading-lists/${list.slug}`,
 			image: (list.coverImage as Media)?.url || undefined,
 		})),
@@ -94,7 +94,7 @@ export default async function ReadingListsPage({
 									{coverImage?.url ? (
 										<Image
 											src={resolveMediaUrl(coverImage.url)}
-											alt={coverImage.alt || list.title}
+											alt={coverImage.alt || list.title || ""}
 											fill
 											className="object-cover transition-transform duration-500 group-hover:scale-105"
 											sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

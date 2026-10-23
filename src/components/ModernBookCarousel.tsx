@@ -160,7 +160,7 @@ export default function ModernBookCarousel({
 									{coverImage?.url && (
 										<Image
 											src={resolveMediaUrl(coverImage.url)}
-											alt={coverImage.alt || review.title}
+											alt={coverImage.alt || review.title || ""}
 											fill
 											className="object-cover rounded-lg shadow-2xl"
 											priority={index === 0}

@@ -36,7 +36,7 @@ export default async function Image({
 	if (!list) notFound();
 	const bookCount = Array.isArray(list?.reviews) ? list.reviews.length : 0;
 	const props = buildReadingListOgProps({
-		title: list?.title,
+		title: list?.title ?? undefined,
 		bookCount,
 	});
 

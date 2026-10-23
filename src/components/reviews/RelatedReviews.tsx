@@ -88,6 +88,11 @@ export async function RelatedReviews({
 		},
 		limit: 3,
 		depth: 1,
+		// The cards print the review title and the taxonomy names, so the read
+		// has to happen in the locale the page is rendering (FR-11). Without
+		// it every related review comes back in the default locale and the
+		// Indonesian page shows English titles next to Indonesian ones.
+		locale,
 	});
 
 	if (!relatedReviews || relatedReviews.length === 0) {

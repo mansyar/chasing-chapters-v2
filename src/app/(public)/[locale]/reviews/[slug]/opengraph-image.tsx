@@ -35,7 +35,7 @@ export default async function Image({
 	const review = docs[0];
 	if (!review) notFound();
 	const props = buildReviewOgProps({
-		title: review?.title,
+		title: review?.title ?? undefined,
 		bookAuthor: review?.bookAuthor,
 		rating: review?.rating,
 	});

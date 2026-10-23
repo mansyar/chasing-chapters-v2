@@ -176,6 +176,30 @@ Translation API.
   **skipped — not attempted, batch time budget reached**; run the action again
   to pick them up.
 
+### Names, titles and descriptions
+
+The review body is translated for you. The labels and the lists around it are
+not — you write those in Indonesian yourself, because a genre name or a
+reading-list title is an editorial choice, not something to machine-translate.
+
+- **Genres**, **Tags** and **Mood Tags**: open the entry, switch the edit screen
+  to **Indonesia** and fill in the name. Tags also have a description, which
+  works the same way. A mood tag's color and icon are shared by both languages,
+  so they are not translated.
+- **Reading Lists**: the same switch applies to the **Title** and the
+  **Description**.
+- **Reviews**: the **Title** is the book title. It has the same switch, and it
+  is **not** auto-translated — editing it never starts a translation and never
+  marks the review stale. Type the Indonesian book title if you want one.
+
+Anything you leave empty in Indonesian falls back to the English value: the
+Indonesian page shows the English name, title or description instead of a blank
+space. Nothing has to be translated for a page to work — a half-translated site
+is a valid site.
+
+A slug is never localized, so the URL of a genre, a tag or a reading list is the
+same in both languages.
+
 ---
 
 ## Tips

@@ -9,8 +9,10 @@ import {
 	E2E_FIXTURE_COVER,
 	E2E_FIXTURE_MOOD_TAG_DETAILS,
 	E2E_FIXTURE_READING_LIST,
+	E2E_FIXTURE_READING_LIST_LOCALIZED,
 	E2E_FIXTURE_REVIEWS,
 	E2E_FIXTURE_TAXONOMY,
+	E2E_FIXTURE_TAXONOMY_LOCALIZED,
 	E2E_STORAGE_ADAPTER,
 	type E2EFixtureReview,
 	resolveE2EDatabaseUri,
@@ -163,13 +165,19 @@ function statusPath(
  * Finds a single document by a field value, or creates it.
  *
  * The details are only used when the row has to be created: a mood tag needs
- * a color, and the rows that already exist are reused as they are.
+ * a color, and the rows that already exist are reused as they are. The
+ * Indonesian name, when the fixture declares one, is written into the `id`
+ * locale - on both paths, so a re-run of the seed lands the same values.
  */
 async function upsertByName(
 	payload: PayloadClient,
 	collection: "genres" | "tags" | "mood-tags",
 	name: string,
-	details: { color?: string; icon?: string } = {},
+	details: {
+		color?: string;
+		icon?: string;
+		localizedName?: string;
+	} = {},
 ): Promise<TaxonomyItem> {
 	const existing = await payload.find({
 		collection,
@@ -179,16 +187,34 @@ async function upsertByName(
 	});
 
 	const found = existing.docs[0];
+	let id: number;
+
 	if (found) {
-		return { id: toId(found.id) };
+		id = toId(found.id);
+	} else {
+		const created = await payload.create({
+			collection,
+			data: {
+				name,
+				...(details.color ? { color: details.color } : {}),
+				...(details.icon ? { icon: details.icon } : {}),
+			},
+			context: FIXTURE_CONTEXT,
+		});
+		id = toId(created.id);
 	}
 
-	const created = await payload.create({
-		collection,
-		data: { name, ...details },
-		context: FIXTURE_CONTEXT,
-	});
-	return { id: toId(created.id) };
+	if (details.localizedName) {
+		await payload.update({
+			collection,
+			id,
+			locale: "id",
+			data: { name: details.localizedName },
+			context: FIXTURE_CONTEXT,
+		});
+	}
+
+	return { id };
 }
 
 /**
@@ -238,7 +264,9 @@ async function upsertAuthor(
 /**
  * Resolves the taxonomy the fixture reviews reference, creating the missing
  * ones. Existing rows are reused as they are - the fixture does not rewrite
- * rows it does not own.
+ * rows it does not own. The Indonesian names the dataset declares are written
+ * into the `id` locale; the names it leaves out keep no Indonesian value, which
+ * is what the fallback assertion depends on (FR-10, AC-9).
  */
 async function upsertTaxonomy(payload: PayloadClient): Promise<{
 	genres: TaxonomyItem[];
@@ -247,12 +275,20 @@ async function upsertTaxonomy(payload: PayloadClient): Promise<{
 }> {
 	const genres: TaxonomyItem[] = [];
 	for (const name of E2E_FIXTURE_TAXONOMY.genres) {
-		genres.push(await upsertByName(payload, "genres", name));
+		genres.push(
+			await upsertByName(payload, "genres", name, {
+				localizedName: E2E_FIXTURE_TAXONOMY_LOCALIZED.genres[name],
+			}),
+		);
 	}
 
 	const tags: TaxonomyItem[] = [];
 	for (const name of E2E_FIXTURE_TAXONOMY.tags) {
-		tags.push(await upsertByName(payload, "tags", name));
+		tags.push(
+			await upsertByName(payload, "tags", name, {
+				localizedName: E2E_FIXTURE_TAXONOMY_LOCALIZED.tags[name],
+			}),
+		);
 	}
 
 	const moodTags: TaxonomyItem[] = [];
@@ -262,6 +298,7 @@ async function upsertTaxonomy(payload: PayloadClient): Promise<{
 			await upsertByName(payload, "mood-tags", name, {
 				color: details?.color ?? DEFAULT_MOOD_TAG_COLOR,
 				icon: details?.icon,
+				localizedName: E2E_FIXTURE_TAXONOMY_LOCALIZED.moodTags[name],
 			}),
 		);
 	}
@@ -544,29 +581,40 @@ async function upsertReadingList(
 	};
 
 	const found = existing.docs[0];
-	if (!found) {
-		const created = await payload.create({
-			collection: "reading-lists",
-			data,
-			user,
-			context: FIXTURE_CONTEXT,
-		});
-		return {
-			id: toId(created.id),
-			slug: created.slug ?? E2E_FIXTURE_READING_LIST.slug,
-		};
-	}
+	const written = found
+		? await payload.update({
+				collection: "reading-lists",
+				id: found.id,
+				data,
+				user,
+				context: FIXTURE_CONTEXT,
+			})
+		: await payload.create({
+				collection: "reading-lists",
+				data,
+				user,
+				context: FIXTURE_CONTEXT,
+			});
 
-	const updated = await payload.update({
+	const id = toId(written.id);
+
+	// The Indonesian title and description are the optional values an author
+	// supplies by hand; the English ones above stay the default-locale values.
+	await payload.update({
 		collection: "reading-lists",
-		id: found.id,
-		data,
+		id,
+		locale: "id",
+		data: {
+			title: E2E_FIXTURE_READING_LIST_LOCALIZED.title,
+			description: E2E_FIXTURE_READING_LIST_LOCALIZED.description,
+		},
 		user,
 		context: FIXTURE_CONTEXT,
 	});
+
 	return {
-		id: toId(updated.id),
-		slug: updated.slug ?? E2E_FIXTURE_READING_LIST.slug,
+		id,
+		slug: written.slug ?? E2E_FIXTURE_READING_LIST.slug,
 	};
 }
 

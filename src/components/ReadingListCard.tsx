@@ -39,7 +39,7 @@ export function ReadingListCard({
 					{coverImage?.url ? (
 						<Image
 							src={resolveMediaUrl(coverImage.url)}
-							alt={coverImage.alt || readingList.title}
+							alt={coverImage.alt || readingList.title || ""}
 							fill
 							className="object-cover transition-transform duration-500 group-hover:scale-105"
 							sizes="(max-width: 768px) 50vw, 25vw"

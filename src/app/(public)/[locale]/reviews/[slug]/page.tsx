@@ -71,9 +71,9 @@ export async function generateMetadata({
 	return buildPageMetadata({
 		locale: appLocale,
 		path: `/reviews/${review.slug}`,
-		title: review.title,
+		title: review.title ?? "",
 		description: formatMessage(dictionary.metaReviewDescription, {
-			title: review.title,
+			title: review.title ?? "",
 			author: review.bookAuthor,
 			rating: review.rating,
 		}),
@@ -138,7 +138,7 @@ export default async function ReviewPage({ params }: PageProps) {
 			{ name: dictionary.breadcrumbHome, url: `${SITE_URL}/${appLocale}` },
 			{ name: dictionary.navReviews, url: `${SITE_URL}/${appLocale}/reviews` },
 			{
-				name: review.title,
+				name: review.title ?? "",
 				url: `${SITE_URL}/${appLocale}/reviews/${review.slug}`,
 			},
 		],
@@ -166,7 +166,7 @@ export default async function ReviewPage({ params }: PageProps) {
 							{coverImage?.url && (
 								<Image
 									src={resolveMediaUrl(coverImage.url)}
-									alt={coverImage.alt || review.title}
+									alt={coverImage.alt || review.title || ""}
 									fill
 									className="object-cover rounded-lg"
 									priority
@@ -236,7 +236,7 @@ export default async function ReviewPage({ params }: PageProps) {
 								<LanguageToggle dictionary={dictionary} />
 								<ShareButton
 									title={formatMessage(dictionary.reviewShareTitle, {
-										title: review.title,
+										title: review.title ?? "",
 									})}
 									className="ml-2"
 									dictionary={dictionary}

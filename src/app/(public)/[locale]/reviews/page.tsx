@@ -143,7 +143,7 @@ export default async function BrowsePage({ params, searchParams }: PageProps) {
 
 	const itemListJsonLd = generateItemListSchema(
 		reviews.map((review) => ({
-			name: review.title,
+			name: review.title ?? "",
 			url: `${SITE_URL}/${appLocale}/reviews/${review.slug}`,
 			image: (review.coverImage as Media)?.url || undefined,
 		})),

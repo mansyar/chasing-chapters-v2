@@ -57,11 +57,11 @@ export async function generateMetadata({
 	return buildPageMetadata({
 		locale: appLocale,
 		path: `/reading-lists/${list.slug}`,
-		title: list.title,
+		title: list.title ?? "",
 		description:
 			list.description ||
 			formatMessage(dictionary.metaReadingListDescription, {
-				title: list.title,
+				title: list.title ?? "",
 			}),
 	});
 }
@@ -127,7 +127,7 @@ export default async function ReadingListDetailPage({ params }: PageProps) {
 				url: `${SITE_URL}/${appLocale}/reading-lists`,
 			},
 			{
-				name: list.title,
+				name: list.title ?? "",
 				url: `${SITE_URL}/${appLocale}/reading-lists/${list.slug}`,
 			},
 		],
@@ -152,7 +152,7 @@ export default async function ReadingListDetailPage({ params }: PageProps) {
 					<div className="flex justify-center">
 						<ShareButton
 							title={formatMessage(dictionary.readingListShareTitle, {
-								title: list.title,
+								title: list.title ?? "",
 							})}
 							dictionary={dictionary}
 						/>

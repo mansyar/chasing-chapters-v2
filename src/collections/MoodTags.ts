@@ -1,5 +1,6 @@
 import type { CollectionConfig } from "payload";
 import formatSlug from "../hooks/formatSlug";
+import { requireDefaultLocaleValue } from "./requireDefaultLocaleValue";
 
 export const MoodTags: CollectionConfig = {
 	slug: "mood-tags",
@@ -16,7 +17,11 @@ export const MoodTags: CollectionConfig = {
 		{
 			name: "name",
 			type: "text",
-			required: true,
+			// Only the name is language; the color and the icon are not.
+			// Required in the default locale by the validator, not by
+			// `required`, which Payload applies to every locale (FR-10).
+			localized: true,
+			validate: requireDefaultLocaleValue("Name"),
 		},
 		{
 			name: "color",

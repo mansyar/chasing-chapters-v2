@@ -1,5 +1,6 @@
 import type { CollectionConfig } from "payload";
 import formatSlug from "../hooks/formatSlug";
+import { requireDefaultLocaleValue } from "./requireDefaultLocaleValue";
 
 export const Genres: CollectionConfig = {
 	slug: "genres",
@@ -16,7 +17,13 @@ export const Genres: CollectionConfig = {
 		{
 			name: "name",
 			type: "text",
-			required: true,
+			// The English name is the default-locale value; an empty
+			// Indonesian name falls back to it (FR-10). Payload would treat
+			// `required` as required in every locale, which a hand-authored
+			// translation could never satisfy, so the rule lives in the
+			// validator instead.
+			localized: true,
+			validate: requireDefaultLocaleValue("Name"),
 		},
 		{
 			name: "slug",

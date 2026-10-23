@@ -99,7 +99,7 @@ function SingleReviewHero({
 					{coverImage?.url && (
 						<Image
 							src={resolveMediaUrl(coverImage.url)}
-							alt={coverImage.alt || review.title}
+							alt={coverImage.alt || review.title || ""}
 							fill
 							className="object-cover rounded-lg"
 							priority
