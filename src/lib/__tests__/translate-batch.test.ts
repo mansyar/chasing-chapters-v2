@@ -43,6 +43,7 @@ const {
 	TRANSLATION_BATCH_SIZE,
 	TranslationBudgetError,
 	TranslationError,
+	resetTranslateClientForTest,
 	translateBatch,
 	translateRichText,
 	translateText,
@@ -52,6 +53,9 @@ const {
 let defaultCacheSpies: Array<ReturnType<typeof spyOn>>;
 
 beforeEach(() => {
+	// Rebuild the client under this file's mock: another test file may have
+	// memoized one under its own.
+	resetTranslateClientForTest();
 	mockClientTranslate.mockClear();
 	defaultCacheSpies = [
 		spyOn(redisModule, "getCachedTranslation").mockReturnValue(

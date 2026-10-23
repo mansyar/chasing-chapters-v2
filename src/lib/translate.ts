@@ -76,6 +76,19 @@ const getTranslateClient = () => {
 	return cachedTranslateClient;
 };
 
+/**
+ * Drops the memoized client.
+ *
+ * The memoization is per process, which is right at runtime but wrong for
+ * tests: a test file that mocks the provider would otherwise reuse a client
+ * another file built under its own mock, and its assertions would observe zero
+ * calls on a client nobody uses. Test-only, same shape as
+ * `clearTranslationLocksForTest`.
+ */
+export function resetTranslateClientForTest(): void {
+	cachedTranslateClient = undefined;
+}
+
 const createTranslateClient = (): v2.Translate => {
 	logger.info("[Translation] Initializing Google Cloud client...");
 
