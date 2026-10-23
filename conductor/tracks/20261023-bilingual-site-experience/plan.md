@@ -109,9 +109,9 @@
 - **Goal:** Detail pages pre-render per locale, the language control meets the accessibility bar, and the whole track's acceptance criteria hold in one integrated run.
 - **Depends on:** Phase 4
 - **Covers:** FR-12, AC-10, AC-11, NFR-1, NFR-2
-- **Touches:** `src/app/(public)/**`, `src/components/reviews/**`, `e2e/**`
+- **Touches:** `src/app/(public)/**`, `src/components/reviews/**`, `src/app/not-found.tsx`, `src/lib/__tests__/**`, `e2e/**`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e && bun run build`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P5.T1: Restore pre-rendering** — covers: FR-12, AC-10
   - [ ] **P5.T1.1: Confirm review and reading-list detail routes build as pre-rendered per locale, and remove any remaining dynamic trigger.**
