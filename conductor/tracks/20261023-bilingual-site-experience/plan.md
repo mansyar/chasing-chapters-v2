@@ -197,7 +197,7 @@ Review fixes are appended by `conductor-review` as:
 - **Covers:** F1, F2, F3 (round 3)
 - **Touches:** `src/collections/requireDefaultLocaleValue.ts`, `src/collections/__tests__/localization.test.ts`, `src/payload-types.ts`, `src/app/(public)/[locale]/reviews/[slug]/page.tsx`, `e2e/global-setup.ts`, `e2e/content-localization.spec.ts`, `conductor/tracks/20261023-bilingual-site-experience/verification/phase-R3.md`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e && bun run build`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **R3.T1: Make the default-locale blank check rich-text aware** - covers: F1
   - [ ] **R3.T1.1: Treat an editor state whose root carries no text as blank, keeping the non-default-locale short-circuit** - covers: F1
