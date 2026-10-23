@@ -89,23 +89,20 @@
 - **Covers:** FR-10, AC-9, NFR-5
 - **Touches:** `src/collections/Genres.ts`, `src/collections/Tags.ts`, `src/collections/MoodTags.ts`, `src/collections/ReadingLists.ts`, `src/collections/Reviews.ts`, `src/migrations/**`, `src/migrations/index.ts`, `src/payload-types.ts`, `src/collections/__tests__/**`, `src/lib/e2e-harness.ts`, `e2e/**`, `src/components/reviews/RelatedReviews.tsx`, `docs/ADMIN_GUIDE.md`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P4.T1: Localize the content fields** — covers: FR-10
-  - [ ] **P4.T1.1: Mark the taxonomy names, the reading-list title and description, and the review title localizable, and generate the migration through Payload rather than by hand.**
-  - [ ] **P4.T1.2: Confirm the review body pipeline is unaffected and that an untranslated review body still falls back to English.**
-- [ ] **P4.T2: Prove the fallback behaviour** — covers: FR-10, AC-9
-  - [ ] **P4.T2.1: Add unit coverage that an empty Indonesian value renders the English value and a set one wins.**
-  - [ ] **P4.T2.2: Seed Indonesian taxonomy and reading-list values for the browser specs and assert them on `/id/...`, plus one fallback assertion.**
-- [ ] **P4.T3: Document the authoring workflow** — covers: FR-10
-  - [ ] **P4.T3.1: Add the Indonesian-entry step to the admin guide, including that titles may stay English and that empty falls back.**
+- [x] **P4.T1: Localize the content fields** — covers: FR-10
+  - [x] **P4.T1.1: Mark the taxonomy names, the reading-list title and description, and the review title localizable, and generate the migration through Payload rather than by hand.**
+  - [x] **P4.T1.2: Confirm the review body pipeline is unaffected and that an untranslated review body still falls back to English.**
+- [x] **P4.T2: Prove the fallback behaviour** — covers: FR-10, AC-9
+  - [x] **P4.T2.1: Add unit coverage that an empty Indonesian value renders the English value and a set one wins.**
+  - [x] **P4.T2.2: Seed Indonesian taxonomy and reading-list values for the browser specs and assert them on `/id/...`, plus one fallback assertion.**
+- [x] **P4.T3: Document the authoring workflow** — covers: FR-10
+  - [x] **P4.T3.1: Add the Indonesian-entry step to the admin guide, including that titles may stay English and that empty falls back.**
 
-<!--
-The primary appends after acceptance:
 **Result:** verified
-**Checkpoint:** <short-sha>
-**Evidence:** conductor/tracks/<track-id>/verification/phase-4.md
--->
+**Checkpoint:** dfcede1
+**Evidence:** conductor/tracks/20261023-bilingual-site-experience/verification/phase-4.md
 
 ## Phase 5: Pre-rendering and Track Verification
 
