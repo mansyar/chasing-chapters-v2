@@ -3,7 +3,7 @@
 - **Track:** `20261023-bilingual-site-experience`
 - **Type:** `feature`
 - **Branch:** `feat/20261023-bilingual-site-experience`
-- **Range:** `98351d54d692ea8842468df5705cc2c0be0a5c60..f2cc0ae`
+- **Range:** `98351d54d692ea8842468df5705cc2c0be0a5c60..a5df8cc`
 - **Date:** `2026-10-24`
 - **Verdict:** `BLOCK`
 
@@ -177,8 +177,49 @@ lines), `conductor/product.md` (the bilingual pillar) and `conductor/tech-stack.
 (an i18n row). The post-review sync must cover whatever the fix phase changes and
 `docs/PRD.md`, which still describes the toggle as a per-review feature.
 
+## Round 2
+
+- **Range:** `661e6c5..a5df8cc` (delta: the review-fix phase, code `578a0ab..a5df8cc`)
+- **Verdict:** `BLOCK` - 0 Critical, 1 High, 0 Medium, 1 Low
+
+All five round-1 findings are closed in the code, not just on report: the navbar prefixes the
+logo and the three section links in both blocks with `/admin` left bare (a repo-wide `href="/…"`
+sweep now returns only `/admin`); the rewritten `down()` copies the **English** values back and
+restores the pre-`up()` nullability; the Indonesian title is proven on the `h1` and the meta
+description for `/id` with the English page unchanged, and it survives the pipeline by construction
+(`translateReview` writes the `id` locale without `title`); `isStaticAssetPath` re-admits
+`/reviews/my.book` while `/og-image.jpg` still passes; `formatSlug` prefers the document's own slug.
+
+Two findings remain.
+
+### High
+
+- **F1 - The sibling migration's `down()` cannot run either**
+  - **File:** `src/migrations/20261023_195302_relax_localized_name_columns.ts:16-21`
+  - **What:** `down()` re-applies `NOT NULL` to `genres_locales.name`, `tags_locales.name` and `mood_tags_locales.name` — the constraint its own `up()` removed because a non-default locale may legitimately leave the name empty (`:3-8`, and `requireDefaultLocaleValue` allows it). On any database holding one such row it raises `column "name" of relation "genres_locales" contains null values`, and Payload wraps the batch in a transaction, so `payload migrate:down` aborts at this migration and never reaches `20261023_193922`'s now-correct `down()`.
+  - **Why:** a migration this track added cannot be reversed on a database in the state its own `up()` creates and documents as normal, which is the workflow's "migrations reviewed and reversible" gate. It is also why the F2 fix could only be proven by direct invocation rather than by the supported command, and it leaves a revert of this track with no rollback path. No data is lost (the transaction aborts), so it is not Critical.
+  - **Fix:** delete the three `SET NOT NULL` statements and say why — the constraint cannot be restored without inventing translations, and those tables are dropped by `20261023_193922`'s `down`, the next step of the same batch. Do not backfill English values into non-default rows.
+  - **Requirement:** NFR-5
+  - **Test gap:** nothing guards either migration's `down()` and the probe script was deleted. Prove the whole batch rolls back once on a scratch database (create, migrate, insert an `id`-locale row with a NULL name, `payload migrate:down`, assert exit 0 and the restored values, drop) and record the output.
+
+### Low
+
+- **F2 - The new "body stays English" clause cannot fail**
+  - **File:** `e2e/content-localization.spec.ts:178-183`
+  - **What:** the clause asserts a prefix of the English body is visible, but the offline stub echoes the source text wrapped in `[stub-id] … [/stub-id]` and the admin bulk-re-translate spec translates that same stale review, while the seed never clears a previous run's `id` content. On a second run against the same database the assertion passes against a stubbed translation rather than the English fallback.
+  - **Why:** it reads as proof of the FR-10 fallback but does not discriminate, and the fixture's state depends on what an earlier run wrote.
+  - **Fix:** in the fixture's `writeIndonesianContent`, clear the `id` rich text when a review carries a localized title but is not `translated`, so each run starts from the true fallback state; then assert the body carries no test-mode marker as well as the English text.
+  - **Requirement:** FR-10
+  - **Test gap:** this is the test; re-run the suite twice to prove the second run agrees.
+
+The reviewer could not run the checks itself (shell denied) and said so rather than assuming a pass;
+the primary re-measured coverage at the reviewed head (`a5df8cc`): all files 79.91 % funcs /
+89.52 % lines, 520 pass, every new module still 100 %, so the new-code gate holds.
+
 ## History
 
 | Round | Verdict | Critical | High | Medium | Low | Fixed |
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | BLOCK | 0 | 2 | 1 | 2 | 0 |
+| 2 | BLOCK | 0 | 1 | 0 | 1 | 5 |
+
