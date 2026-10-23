@@ -176,13 +176,17 @@ Review fixes are appended by `conductor-review` as:
 - **Covers:** F1, F2 (round 2)
 - **Touches:** `src/migrations/20261023_195302_relax_localized_name_columns.ts`, `e2e/global-setup.ts`, `src/lib/e2e-harness.ts`, `e2e/content-localization.spec.ts`, `src/lib/__tests__/e2e-harness.test.ts`, `conductor/tracks/20261023-bilingual-site-experience/verification/phase-R2.md`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e && bun run build`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **R2.T1: Make the relaxation migration reversible** - covers: F1
-  - [ ] **R2.T1.1: Delete the three `SET NOT NULL` statements from `down()` and record why the constraint cannot be restored without inventing translations** - covers: F1
-  - [ ] **R2.T1.2: Prove the whole batch rolls back once on a scratch database and record the commands and output** - covers: F1
-- [ ] **R2.T2: Make the body-fallback assertion discriminating** - covers: F2
-  - [ ] **R2.T2.1: Clear the `id` rich text on re-seed for the localized-title review so every run starts from the true fallback** - covers: F2
-  - [ ] **R2.T2.2: Assert the body carries no test-mode marker as well as the English text, and run the suite twice** - covers: F2
-- [ ] **R2.T3: Record the phase evidence** - covers: F1, F2
+- [x] **R2.T1: Make the relaxation migration reversible** - covers: F1
+  - [x] **R2.T1.1: Delete the three `SET NOT NULL` statements from `down()` and record why the constraint cannot be restored without inventing translations** - covers: F1
+  - [x] **R2.T1.2: Prove the whole batch rolls back once on a scratch database and record the commands and output** - covers: F1
+- [x] **R2.T2: Make the body-fallback assertion discriminating** - covers: F2
+  - [x] **R2.T2.1: Clear the `id` rich text on re-seed for the localized-title review so every run starts from the true fallback** - covers: F2
+  - [x] **R2.T2.2: Assert the body carries no test-mode marker as well as the English text, and run the suite twice** - covers: F2
+- [x] **R2.T3: Record the phase evidence** - covers: F1, F2
+
+**Result:** verified
+**Checkpoint:** 6450256
+**Evidence:** conductor/tracks/20261023-bilingual-site-experience/verification/phase-R2.md
 
