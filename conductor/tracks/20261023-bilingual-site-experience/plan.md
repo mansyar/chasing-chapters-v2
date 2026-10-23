@@ -38,9 +38,9 @@
 - **Goal:** Every public page renders its interface in the active locale from one typed dictionary, and the language control switches locale on any page while remembering the choice.
 - **Depends on:** Phase 1
 - **Covers:** FR-2, FR-3, FR-4, AC-2, AC-3, AC-4, NFR-1, NFR-2, NFR-4
-- **Touches:** `src/lib/i18n/**`, `src/components/**`, `src/app/(public)/**`
+- **Touches:** `src/lib/i18n/**`, `src/components/**`, `src/app/(public)/**`, `src/app/not-found.tsx`, `e2e/**`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P2.T1: Build the typed dictionary** — covers: FR-4, NFR-4
   - [ ] **P2.T1.1: Add the `en` and `id` dictionaries and a server-side accessor, with a test asserting both expose an identical key set.**
