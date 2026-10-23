@@ -219,4 +219,69 @@ test.describe("Locale routing", () => {
 
 		expect(stored?.value).toBe("en");
 	});
+
+	// `F1`: every public link the navbar renders carries the locale segment, so
+	// a reader who followed a shared Indonesian link stays in Indonesian on the
+	// first click. The stored preference is English here, and `AC-2` says a
+	// direct `/id/...` visit must not rewrite it - a bare `href` would resolve
+	// through the cookie and quietly turn the shared link English.
+	test("keeps the page's language when the navbar is used", async ({
+		page,
+		context,
+	}) => {
+		await context.addCookies([
+			{ name: LOCALE_COOKIE_NAME, value: "en", url: BASE_URL },
+		]);
+
+		await page.goto(localePath("/reviews", "id"));
+		await expect(
+			page.getByRole("heading", { name: "Semua Ulasan" }),
+		).toBeVisible();
+
+		await page.getByRole("link", { name: "Ulasan" }).first().click();
+		await expect(page).toHaveURL(/\/id\/reviews$/);
+		await expect(
+			page.getByRole("heading", { name: "Semua Ulasan" }),
+		).toBeVisible();
+
+		await page.getByRole("link", { name: "Chasing Chapters" }).click();
+		await expect(page).toHaveURL(/\/id$/);
+
+		// The English side keeps its own segment the same way.
+		await page.goto(localePath("/reviews", "en"));
+		await page.getByRole("link", { name: "Reviews" }).first().click();
+		await expect(page).toHaveURL(/\/en\/reviews$/);
+		await page.getByRole("link", { name: "Chasing Chapters" }).click();
+		await expect(page).toHaveURL(/\/en$/);
+
+		// Using the navbar never rewrote the stored preference.
+		const stored = (await context.cookies()).find(
+			(cookie) => cookie.name === LOCALE_COOKIE_NAME,
+		);
+
+		expect(stored?.value).toBe("en");
+	});
+
+	// `F4`: the proxy decides "this is a file, leave it alone" from the last
+	// path segment, not from any dot in the URL. A slug may contain one, and a
+	// page addressed that way still has to be localized.
+	test("keeps a dotted slug on the page path instead of treating it as a file", async ({
+		request,
+	}) => {
+		const response = await request.get("/reviews/my.book", {
+			maxRedirects: 0,
+		});
+
+		expect(response.status()).toBe(307);
+		expect(pathnameOf(response.headers().location)).toBe("/en/reviews/my.book");
+	});
+
+	test("does not localize a static asset", async ({ request }) => {
+		// `/og-image.jpg` is not on disk here, but the proxy's job is to leave it
+		// alone: a locale segment in front of a file would 404 at the CDN.
+		const response = await request.get("/og-image.jpg", { maxRedirects: 0 });
+
+		expect(response.status()).not.toBe(307);
+		expect(response.headers().location).toBeUndefined();
+	});
 });

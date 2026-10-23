@@ -67,25 +67,33 @@ export function Navbar({ dictionary, locale }: NavbarProps) {
 	return (
 		<nav className="border-b bg-background/80 backdrop-blur-md sticky top-0 z-50 transition-all duration-300">
 			<div className="container mx-auto px-6 md:px-12 lg:px-24 h-16 flex items-center justify-between max-w-7xl">
-				<Link href="/" className="font-serif text-2xl font-bold tracking-tight">
+				{/* The public links carry the locale the page was rendered in: the
+				    proxy resolves a bare path from the cookie, and a reader who
+				    followed a shared `/id/...` link has no Indonesian preference
+				    stored (`FR-2`), so a bare href would drop them back to English
+				    on the first click. `/admin` stays bare — it is not localized. */}
+				<Link
+					href={`/${locale}`}
+					className="font-serif text-2xl font-bold tracking-tight"
+				>
 					Chasing Chapters
 				</Link>
 
 				<div className="hidden md:flex items-center gap-6">
 					<Link
-						href="/reviews"
+						href={`/${locale}/reviews`}
 						className="text-sm font-medium hover:text-primary transition-colors"
 					>
 						{dictionary.navReviews}
 					</Link>
 					<Link
-						href="/reading-lists"
+						href={`/${locale}/reading-lists`}
 						className="text-sm font-medium hover:text-primary transition-colors"
 					>
 						{dictionary.navReadingLists}
 					</Link>
 					<Link
-						href="/about"
+						href={`/${locale}/about`}
 						className="text-sm font-medium hover:text-primary transition-colors"
 					>
 						{dictionary.navAbout}
@@ -142,21 +150,21 @@ export function Navbar({ dictionary, locale }: NavbarProps) {
 							</SheetHeader>
 							<div className="flex flex-col gap-4 mt-6 px-4">
 								<Link
-									href="/reviews"
+									href={`/${locale}/reviews`}
 									className="text-lg font-medium hover:text-primary transition-colors"
 									onClick={() => setIsOpen(false)}
 								>
 									{dictionary.navReviews}
 								</Link>
 								<Link
-									href="/reading-lists"
+									href={`/${locale}/reading-lists`}
 									className="text-lg font-medium hover:text-primary transition-colors"
 									onClick={() => setIsOpen(false)}
 								>
 									{dictionary.navReadingLists}
 								</Link>
 								<Link
-									href="/about"
+									href={`/${locale}/about`}
 									className="text-lg font-medium hover:text-primary transition-colors"
 									onClick={() => setIsOpen(false)}
 								>

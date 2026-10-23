@@ -512,18 +512,31 @@ async function upsertReview(
 /**
  * Writes the Indonesian content of a review.
  *
- * The write names the `id` locale, the same way the translation pipeline
- * writes it, and it only runs for the fixture reviews whose translation
- * status is `translated`. It never clears the `id` locale of the others: a
- * previous run's translation - the bulk re-translate spec translates the
- * failed and stale candidates - leaves its Indonesian content behind, and
- * the fixture only resets the status.
+ * The writes name the `id` locale, the same way the translation pipeline
+ * writes it. The title is written whenever the fixture defines one - the stale
+ * review carries a translated title with an untranslated body, which is what
+ * lets the public specs prove the title localizes on its own (`FR-10`). The
+ * bodies are written only for the fixture reviews whose translation status is
+ * `translated`; the write never clears the `id` locale of the others, because
+ * a previous run's translation - the bulk re-translate spec translates the
+ * failed and stale candidates - leaves its Indonesian content behind, and the
+ * fixture only resets the status.
  */
 async function writeIndonesianContent(
 	payload: PayloadClient,
 	reviewId: number,
 	review: E2EFixtureReview,
 ): Promise<void> {
+	if (review.localizedTitle) {
+		await payload.update({
+			collection: "reviews",
+			id: reviewId,
+			locale: "id",
+			data: { title: review.localizedTitle },
+			context: FIXTURE_CONTEXT,
+		});
+	}
+
 	if (review.translationStatus !== "translated" || !review.id) {
 		return;
 	}

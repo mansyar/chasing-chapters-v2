@@ -10,9 +10,8 @@
 /**
  * Fills `{placeholder}` holes in a dictionary string.
  *
- * An unknown placeholder is left as written — visible in a test rather than
- * swallowed — and a missing value renders an empty string instead of
- * `undefined`.
+ * A placeholder with no corresponding value is left as written, so the miss is
+ * visible rather than silently blank.
  */
 export function formatMessage(
 	template: string,

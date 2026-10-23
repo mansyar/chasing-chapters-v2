@@ -158,3 +158,32 @@ export function isUnprefixedPublicPath(pathname: string): boolean {
 		(PUBLIC_PATH_ROOTS as readonly string[]).includes(first)
 	);
 }
+
+/** A final path segment that looks like a file name: `og-image.jpg`, `a.png`. */
+const FILE_SEGMENT = /\.[a-z0-9]+$/i;
+
+/**
+ * Whether a pathname addresses a static asset rather than a page.
+ *
+ * A file is served from the root, so the locale segment is never prefixed to
+ * one: `/og-image.jpg` and `/img/a.png` stay as they are. A dot in a page's
+ * own address is not a file extension, though - a slug may contain one, and
+ * `/reviews/my.book` still needs its locale - so the check also requires the
+ * first segment to be neither a locale nor a public root. A path already
+ * carrying a locale is a page by construction.
+ */
+export function isStaticAssetPath(pathname: string): boolean {
+	const segments = pathname.split("/").filter(Boolean);
+	const last = segments.at(-1);
+
+	if (last === undefined || !FILE_SEGMENT.test(last)) {
+		return false;
+	}
+
+	const first = segments[0] as string;
+
+	return (
+		!hasLocale(first) &&
+		!(PUBLIC_PATH_ROOTS as readonly string[]).includes(first)
+	);
+}

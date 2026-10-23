@@ -283,11 +283,25 @@ describe("slug generation on a locale write (FR-10)", () => {
 		expect(hook(args("en", { name: "Fiksi Ilmiah" }))).toBe("fiksi-ilmiah");
 	});
 
-	it("lets an explicit slug through untouched in either locale", () => {
+	it("keeps the derived slug even when the write carries an explicit one", () => {
+		// An explicit slug on a translation would re-point the published URL,
+		// so the document's own slug wins (FR-10).
 		expect(
 			hook({
 				...(args("id", { name: "Fiksi Ilmiah" }) as object),
 				value: "science-fiction",
+			} as HookArgs),
+		).toBe("sci-fi");
+	});
+
+	it("formats an explicit slug for a document that has none yet", () => {
+		// Nothing to protect, so the write's own value is normalized rather
+		// than stored as the author typed it.
+		expect(
+			hook({
+				...args("id", { name: "Fiksi Ilmiah" }),
+				value: "Science Fiction",
+				originalDoc: {},
 			} as HookArgs),
 		).toBe("science-fiction");
 	});

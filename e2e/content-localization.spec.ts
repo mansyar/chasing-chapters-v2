@@ -5,6 +5,7 @@ import {
 	E2E_FIXTURE_READING_LIST_PATH,
 	E2E_FIXTURE_REVIEW,
 	E2E_FIXTURE_REVIEWS,
+	E2E_FIXTURE_STALE_REVIEW_LOCALIZED,
 	E2E_FIXTURE_TAXONOMY_LOCALIZED,
 	type E2EFixtureReview,
 	type E2EFixtureRichText,
@@ -55,6 +56,9 @@ const SECOND_REVIEW = E2E_FIXTURE_REVIEWS[1];
 
 /** One of the reviews seeded with no Indonesian content at all. */
 const UNTRANSLATED_REVIEW = E2E_FIXTURE_REVIEWS[2];
+
+/** The review the fixture gives an Indonesian title but no Indonesian body. */
+const STALE_REVIEW = E2E_FIXTURE_REVIEWS[3];
 
 test.describe("Content localization", () => {
 	test("renders the Indonesian genre name on the Indonesian review page", async ({
@@ -145,7 +149,7 @@ test.describe("Content localization", () => {
 	test("renders the English review title while the body is Indonesian", async ({
 		page,
 	}) => {
-		// No fixture review has an Indonesian title, so the title falls back to
+		// This review carries no Indonesian title, so the title falls back to
 		// the English book title even though the body is Indonesian.
 		await page.goto(localePath(TRANSLATED_REVIEW_PATH, "id"));
 
@@ -154,6 +158,38 @@ test.describe("Content localization", () => {
 		await expect(
 			page.getByText(INDONESIAN_BODY_OPENING, { exact: false }).first(),
 		).toBeVisible();
+	});
+
+	test("renders the Indonesian review title over the English body", async ({
+		page,
+	}) => {
+		// The title is a localized field of its own (FR-10), so a review whose
+		// body is still English can carry a translated heading - and the
+		// metadata is built from the same locale-resolved title.
+		await page.goto(localePath(`/reviews/${STALE_REVIEW.slug}`, "id"));
+
+		await expect(page.locator("h1")).toHaveText(
+			E2E_FIXTURE_STALE_REVIEW_LOCALIZED.title,
+		);
+		await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+			"content",
+			new RegExp(E2E_FIXTURE_STALE_REVIEW_LOCALIZED.title),
+		);
+		// A translated title is not a translated review: the body stays English.
+		await expect(
+			page
+				.getByText(englishBodyOpening(STALE_REVIEW), { exact: false })
+				.first(),
+		).toBeVisible();
+
+		// The English page is unaffected.
+		await page.goto(localePath(`/reviews/${STALE_REVIEW.slug}`, "en"));
+
+		await expect(page.locator("h1")).toHaveText(STALE_REVIEW.title);
+		await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+			"content",
+			new RegExp(STALE_REVIEW.title),
+		);
 	});
 
 	test("renders the English body for a review with no Indonesian content", async ({

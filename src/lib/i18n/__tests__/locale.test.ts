@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
 	DEFAULT_LOCALE,
 	hasLocale,
+	isStaticAssetPath,
 	isUnprefixedPublicPath,
 	LOCALE_COOKIE_NAME,
 	Locale,
@@ -125,6 +126,30 @@ describe("isUnprefixedPublicPath", () => {
 		expect(isUnprefixedPublicPath("/api/reviews")).toBe(false);
 		expect(isUnprefixedPublicPath("/feed.xml")).toBe(false);
 		expect(isUnprefixedPublicPath("/sitemap.xml")).toBe(false);
+	});
+});
+
+describe("isStaticAssetPath", () => {
+	test("recognises a file at the root or under an asset directory", () => {
+		expect(isStaticAssetPath("/og-image.jpg")).toBe(true);
+		expect(isStaticAssetPath("/img/a.png")).toBe(true);
+		expect(isStaticAssetPath("/favicon.ico")).toBe(true);
+		expect(isStaticAssetPath("/fonts/inter.woff2")).toBe(true);
+	});
+
+	test("keeps a dotted slug on the page path", () => {
+		// A dot in a page's address is not a file extension: the locale still
+		// has to be prefixed, or the shared link serves the wrong language.
+		expect(isStaticAssetPath("/reviews/my.book")).toBe(false);
+		expect(isStaticAssetPath("/en/reviews/my.book")).toBe(false);
+		expect(isStaticAssetPath("/id/reading-lists/a.b")).toBe(false);
+	});
+
+	test("ignores paths with no file extension and the root itself", () => {
+		expect(isStaticAssetPath("/")).toBe(false);
+		expect(isStaticAssetPath("/reviews")).toBe(false);
+		expect(isStaticAssetPath("/en")).toBe(false);
+		expect(isStaticAssetPath("/img/logo")).toBe(false);
 	});
 });
 

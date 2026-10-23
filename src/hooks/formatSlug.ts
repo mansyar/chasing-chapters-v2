@@ -32,7 +32,15 @@ const formatSlug =
 	(fallback: string): FieldHook =>
 	({ value, originalDoc, data, req }) => {
 		if (writesNonDefaultLocale(req)) {
-			return value ?? originalDoc?.slug;
+			// A document that already has a slug keeps it: a translation must not
+			// move a published URL. A value the write does carry is formatted like
+			// any other slug, so a localized write cannot store a raw one.
+			const slug =
+				typeof value === "string" && value.length > 0
+					? format(value)
+					: undefined;
+
+			return originalDoc?.slug ?? slug ?? value;
 		}
 
 		if (typeof value === "string" && value.length > 0) {

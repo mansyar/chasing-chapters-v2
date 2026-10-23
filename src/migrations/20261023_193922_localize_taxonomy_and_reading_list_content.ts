@@ -99,23 +99,63 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   ALTER TABLE "_reading_lists_v" DROP COLUMN "version_description";`)
 }
 
+// The reverse of `up`, in the same order and for the same reason: add the
+// columns back nullable, copy the default-locale values into them, and only
+// then enforce `NOT NULL` and drop the locale tables. Adding a `NOT NULL`
+// column to a table that already holds rows fails, and Payload rolls the whole
+// migration back when a statement fails - so the earlier shape of this function
+// could never complete on a populated database, and the text it needed was
+// already gone by the time it tried (NFR-5). `20251214_135240` unwinds the
+// review body the same way.
 export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
-   DROP TABLE "genres_locales" CASCADE;
-  DROP TABLE "tags_locales" CASCADE;
-  DROP TABLE "mood_tags_locales" CASCADE;
-  DROP TABLE "reading_lists_locales" CASCADE;
-  DROP TABLE "_reading_lists_v_locales" CASCADE;
-  ALTER TABLE "genres" ADD COLUMN "name" varchar NOT NULL;
-  ALTER TABLE "tags" ADD COLUMN "name" varchar NOT NULL;
+   ALTER TABLE "genres" ADD COLUMN "name" varchar;
+  ALTER TABLE "tags" ADD COLUMN "name" varchar;
   ALTER TABLE "tags" ADD COLUMN "description" varchar;
-  ALTER TABLE "mood_tags" ADD COLUMN "name" varchar NOT NULL;
+  ALTER TABLE "mood_tags" ADD COLUMN "name" varchar;
   ALTER TABLE "reviews" ADD COLUMN "title" varchar;
   ALTER TABLE "_reviews_v" ADD COLUMN "version_title" varchar;
   ALTER TABLE "reading_lists" ADD COLUMN "title" varchar;
   ALTER TABLE "reading_lists" ADD COLUMN "description" varchar;
   ALTER TABLE "_reading_lists_v" ADD COLUMN "version_title" varchar;
-  ALTER TABLE "_reading_lists_v" ADD COLUMN "version_description" varchar;
+  ALTER TABLE "_reading_lists_v" ADD COLUMN "version_description" varchar;`)
+
+  // The English values go back to the columns they came from. A document with
+  // no English row of its own keeps `NULL`, which is why the three names are
+  // the only columns that were `NOT NULL` before `up` and the only ones that
+  // are made `NOT NULL` again below.
+  await db.execute(sql`
+   UPDATE "genres" g SET "name" = gl."name"
+     FROM "genres_locales" gl
+     WHERE g."id" = gl."_parent_id" AND gl."_locale" = 'en';
+  UPDATE "tags" t SET "name" = tl."name", "description" = tl."description"
+     FROM "tags_locales" tl
+     WHERE t."id" = tl."_parent_id" AND tl."_locale" = 'en';
+  UPDATE "mood_tags" m SET "name" = ml."name"
+     FROM "mood_tags_locales" ml
+     WHERE m."id" = ml."_parent_id" AND ml."_locale" = 'en';
+  UPDATE "reading_lists" l SET "title" = ll."title", "description" = ll."description"
+     FROM "reading_lists_locales" ll
+     WHERE l."id" = ll."_parent_id" AND ll."_locale" = 'en';
+  UPDATE "_reading_lists_v" v SET "version_title" = vl."version_title", "version_description" = vl."version_description"
+     FROM "_reading_lists_v_locales" vl
+     WHERE v."id" = vl."_parent_id" AND vl."_locale" = 'en';
+  UPDATE "reviews" r SET "title" = rl."title"
+     FROM "reviews_locales" rl
+     WHERE r."id" = rl."_parent_id" AND rl."_locale" = 'en';
+  UPDATE "_reviews_v" rv SET "version_title" = rvl."version_title"
+     FROM "_reviews_v_locales" rvl
+     WHERE rv."id" = rvl."_parent_id" AND rvl."_locale" = 'en';`)
+
+  await db.execute(sql`
+   ALTER TABLE "genres" ALTER COLUMN "name" SET NOT NULL;
+  ALTER TABLE "tags" ALTER COLUMN "name" SET NOT NULL;
+  ALTER TABLE "mood_tags" ALTER COLUMN "name" SET NOT NULL;
+  DROP TABLE "genres_locales" CASCADE;
+  DROP TABLE "tags_locales" CASCADE;
+  DROP TABLE "mood_tags_locales" CASCADE;
+  DROP TABLE "reading_lists_locales" CASCADE;
+  DROP TABLE "_reading_lists_v_locales" CASCADE;
   ALTER TABLE "reviews_locales" DROP COLUMN "title";
   ALTER TABLE "_reviews_v_locales" DROP COLUMN "version_title";`)
 }

@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import {
 	hasLocale,
+	isStaticAssetPath,
 	isUnprefixedPublicPath,
 	LOCALE_COOKIE_NAME,
 	localizePath,
@@ -12,8 +13,8 @@ import {
  *
  * `/admin` and `/api` are Payload's, `/robots.txt` and `/sitemap.xml` belong at
  * the root, and `/feed.xml` keeps serving English until the per-locale feed
- * exists. Static assets are covered by the matcher below and by the file
- * extension check, because a locale segment in front of a font or an image
+ * exists. Static assets are covered by the matcher below and by
+ * `isStaticAssetPath`, because a locale segment in front of a font or an image
  * would 404.
  */
 const UNLOCALIZED_PREFIXES = ["/_next", "/api", "/admin"];
@@ -31,8 +32,10 @@ function isUnlocalizedPath(pathname: string): boolean {
 		return true;
 	}
 
-	// A file request (a font, an image, a favicon) never carries a locale.
-	if (pathname.includes(".")) {
+	// A file request (a font, an image, a favicon) never carries a locale. A
+	// dot inside a page's own URL - `/reviews/my.book` - is not a file, so the
+	// predicate looks at the first segment as well.
+	if (isStaticAssetPath(pathname)) {
 		return true;
 	}
 
