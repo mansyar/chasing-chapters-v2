@@ -102,6 +102,9 @@ export const Reviews: CollectionConfig = {
 			name: "coverImage",
 			type: "upload",
 			relationTo: "media",
+			// A review is published with its cover: the render sites fall back
+			// to an empty frame when the cover is missing, and a published
+			// review without a cover is a broken entry.
 			required: true,
 		},
 		{

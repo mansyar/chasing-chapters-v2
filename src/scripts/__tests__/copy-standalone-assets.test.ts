@@ -8,7 +8,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { copyStandaloneAssets } from "../copy-standalone-assets";
+import { copyStandaloneAssets } from "../../../scripts/copy-standalone-assets";
 
 describe("copyStandaloneAssets", () => {
 	let root: string;
@@ -45,6 +45,23 @@ describe("copyStandaloneAssets", () => {
 		).toBe(true);
 		expect(
 			existsSync(join(root, ".next", "standalone", "public", "og-image.jpg")),
+		).toBe(true);
+	});
+
+	test("copies the media directory when the app stores its media on the local disk", () => {
+		root = mkdtempSync(join(tmpdir(), "standalone-test-"));
+		mkdirSync(join(root, ".next", "static"), { recursive: true });
+		mkdirSync(join(root, ".next", "standalone"), { recursive: true });
+		mkdirSync(join(root, "public"), { recursive: true });
+		mkdirSync(join(root, "media"), { recursive: true });
+		writeFileSync(join(root, ".next", "standalone", "server.js"), "server");
+		writeFileSync(join(root, "media", "cover.png"), "png");
+
+		const result = copyStandaloneAssets(root);
+
+		expect(result.copied).toContain(join(root, "media"));
+		expect(
+			existsSync(join(root, ".next", "standalone", "media", "cover.png")),
 		).toBe(true);
 	});
 

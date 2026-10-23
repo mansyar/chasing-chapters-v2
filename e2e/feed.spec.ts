@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { E2E_FIXTURE_REVIEW } from "../src/lib/e2e-harness";
 
 test.describe("RSS Feed", () => {
 	test("should serve a valid RSS 2.0 document", async ({ request }) => {
@@ -15,14 +16,16 @@ test.describe("RSS Feed", () => {
 		expect(body).toContain("<language>en</language>");
 	});
 
-	test("should include published reviews as items", async ({ request }) => {
+	test("should include the fixture review as an item", async ({ request }) => {
 		const response = await request.get("/feed.xml");
 		const body = await response.text();
 
-		// The fixture review is the only published review in the dev database
+		// The fixture review is published, so the feed has to list it. XML
+		// escapes the apostrophe in the title.
+		const escapedTitle = E2E_FIXTURE_REVIEW.title.replaceAll("'", "&apos;");
 		expect(body).toContain("<item>");
-		expect(body).toContain("<title>The Fixture: A Test Review</title>");
-		expect(body).toContain("/reviews/");
+		expect(body).toContain(`<title>${escapedTitle}</title>`);
+		expect(body).toContain(`/reviews/${E2E_FIXTURE_REVIEW.slug}`);
 		expect(body).toContain("<pubDate>");
 	});
 

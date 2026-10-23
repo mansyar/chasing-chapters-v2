@@ -1,4 +1,9 @@
 import { expect, test } from "@playwright/test";
+import {
+	E2E_FIXTURE_READING_LIST,
+	E2E_FIXTURE_READING_LIST_PATH,
+	E2E_FIXTURE_REVIEWS,
+} from "../src/lib/e2e-harness";
 
 test.describe("Homepage", () => {
 	test("should load successfully", async ({ page }) => {
@@ -42,37 +47,40 @@ test.describe("Homepage", () => {
 		await expect(genreSection).toBeVisible();
 	});
 
-	test("should display featured hero when featured reviews exist", async ({
+	// The fixture seeds two featured reviews, so the homepage always renders
+	// the carousel - there is no "maybe there is a hero" branch any more.
+	test("should display the featured reviews in the hero carousel", async ({
 		page,
 	}) => {
 		await page.goto("/");
 
-		// Check if featured hero section exists (may not exist if no featured reviews)
-		const heroSection = page.locator("article").first();
-		const heroExists = await heroSection.isVisible().catch(() => false);
+		const carousel = page.locator(
+			'[role="region"][aria-label="Featured reviews carousel"]',
+		);
+		await expect(carousel).toBeVisible();
 
-		if (heroExists) {
-			// Hero should have review content
-			await expect(heroSection).toBeVisible();
+		for (const review of E2E_FIXTURE_REVIEWS.filter(
+			(entry) => entry.featured,
+		)) {
+			await expect(
+				carousel.getByRole("heading", { name: review.title }),
+			).toBeVisible();
 		}
-		// If no hero, that's okay - just means no featured reviews in database
 	});
 
-	test("should display reading lists section when lists exist", async ({
-		page,
-	}) => {
+	test("should display the fixture reading list", async ({ page }) => {
 		await page.goto("/");
 
-		// Check if reading lists section exists
 		const readingListsHeading = page.getByRole("heading", {
 			name: /Curated Reading Lists/i,
 		});
-		const exists = await readingListsHeading.isVisible().catch(() => false);
+		await expect(readingListsHeading).toBeVisible();
 
-		if (exists) {
-			await expect(readingListsHeading).toBeVisible();
-		}
-		// If no section, that's okay - means no reading lists published
+		const listLink = page.locator(`a[href="${E2E_FIXTURE_READING_LIST_PATH}"]`);
+		await expect(listLink).toBeVisible();
+		await expect(
+			listLink.getByRole("heading", { name: E2E_FIXTURE_READING_LIST.title }),
+		).toBeVisible();
 	});
 
 	// The hero carousel is server-rendered (no `ssr: false`) so its LCP cover ships
@@ -93,13 +101,6 @@ test.describe("Homepage", () => {
 		const carousel = page.locator(
 			'[role="region"][aria-label="Featured reviews carousel"]',
 		);
-		// A single featured review renders SingleReviewHero instead, so the carousel
-		// path is unreachable — skip rather than assert something the page never shows.
-		test.skip(
-			(await carousel.count()) === 0,
-			"carousel requires two or more published featured reviews",
-		);
-
 		await expect(carousel).toBeVisible();
 		expect(errors).toEqual([]);
 	});

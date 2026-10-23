@@ -27,12 +27,25 @@ const setDefaultLocalePreference: CollectionAfterLoginHook = async ({
 				collection: "payload-preferences",
 				data: {
 					key: "locale",
+					value: "en",
+					// The preferences collection marks `user` as required. The
+					// write names the authenticated author explicitly, so the
+					// preference is stored for that author and not for
+					// whoever the collection's own hook would default to.
 					user: {
 						relationTo: "authors",
 						value: user.id,
 					},
-					value: "en",
 				},
+				// A Local API call runs without a request, so `req.user` would
+				// be empty and the hook would blank the field. The
+				// authenticated user has to travel with the write.
+				user,
+				// The write joins the login transaction. In its own
+				// transaction the preference's relationship row waits for
+				// the lock the login holds on the author row, while the
+				// login waits for the write - neither side ever finishes.
+				req,
 			});
 		}
 	} catch (error) {

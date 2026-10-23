@@ -108,6 +108,72 @@ bun test              # Unit tests
 bun run test:e2e      # Playwright end-to-end tests
 ```
 
+#### End-to-End Tests
+
+`bun run test:e2e` runs the Playwright suite against a **production build**, not a dev server.
+The command runs the whole pipeline: it creates the e2e database, applies the schema to it,
+seeds the fixture, builds the app with `next build`, and serves it with the standalone server
+(`.next/standalone/server.js` - the same artifact the production deployment runs) on port 3100
+while the suite drives a Chromium browser against it.
+
+**Prerequisites**
+
+- PostgreSQL and Redis are running (`docker compose up -d`) and `.env` points at them.
+- Chromium is installed (`bunx playwright install chromium`).
+
+The run checks that Redis is reachable before it starts and stops with a message that names
+`REDIS_URL` when it is not - the app would otherwise degrade to no cache and the suite would
+run on in a silently degraded state.
+
+**The e2e database**
+
+The suite never touches the database you work in. It derives its own database from the
+`DATABASE_URI` in your environment - the same host, the same credentials, the same database
+name with a `_e2e` suffix (`chasing-chapters` becomes `chasing-chapters_e2e`) - and creates it
+when it does not exist yet. The schema is applied to that database, the fixture is seeded into
+it, and the production build is rendered against it, so the suite never competes with your own
+rows.
+
+The e2e database is dedicated to the run. The migration step answers Payload's drift prompt
+automatically, so the run never stops on it, and the migrations are applied only when the
+database is new - once they are recorded, drizzle skips them, so an existing e2e database keeps
+its rows. The schema the run uses is the one Payload syncs when the seed connects in development
+mode. Nothing outside the e2e database is read or written, apart from the fixture's own cover
+image, which lands in the gitignored `media/` directory. The fixture is an upsert: it only ever
+writes its own rows and never deletes anything.
+
+**Storage**
+
+The e2e run stores its media on the local disk instead of in object storage, so the suite needs
+no bucket and no object storage credentials. `STORAGE_ADAPTER` selects the adapter (`s3` is the
+default, `local` uses Payload's own disk storage); the e2e run sets it to `local`.
+
+**Worker cap**
+
+The suite never occupies the machine's full CPU: it runs with **3 workers** by default, which
+leaves headroom for Postgres, Redis and the app server.
+
+```bash
+PLAYWRIGHT_WORKERS=5 bun run test:e2e   # override the cap
+```
+
+In CI the cap is pinned to **1 worker** (GitHub Actions sets `CI=true`), and the suite runs in
+its own job next to the required `Typecheck, Lint, Test, Build` check.
+
+**The fixture**
+
+Every run seeds a fixed dataset through the Payload local API, so the specs assert against known
+rows instead of whatever the database happens to hold:
+
+- a throwaway test admin (`e2e-admin@example.test`, password `e2e-fixture-password`),
+- four published reviews with a cover image, content and structured sections, two of them
+  featured, covering the `translated`, `failed` and `stale` translation states,
+- a reading list.
+
+The seed is an upsert keyed on the fixture's own identifiers, so it only ever writes its own
+rows and never touches your own reviews. The translation provider is replaced by an offline stub
+while the suite runs, so no external API is called and no provider credentials are needed.
+
 ## 📁 Project Structure
 
 ```

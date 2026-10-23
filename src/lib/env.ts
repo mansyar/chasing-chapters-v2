@@ -21,6 +21,13 @@ const envSchema = z.object({
 	R2_SECRET_ACCESS_KEY: z.string().min(1, "R2_SECRET_ACCESS_KEY is required"),
 	R2_PUBLIC_URL: z.string().url().optional(),
 
+	// Storage adapter (optional - defaults to object storage)
+	//
+	// "s3" registers the R2 plugin, "local" falls back to Payload's own disk
+	// storage. The e2e run uses "local": it writes its fixture media to disk
+	// instead of talking to object storage.
+	STORAGE_ADAPTER: z.enum(["s3", "local"]).default("s3"),
+
 	// Site URL (optional - has fallback defaults)
 	NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
 	NEXT_PUBLIC_APP_URL: z.string().url().optional(),

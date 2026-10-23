@@ -1,4 +1,8 @@
 import { expect, test } from "@playwright/test";
+import {
+	E2E_FIXTURE_REVIEW,
+	E2E_FIXTURE_REVIEW_PATH,
+} from "../src/lib/e2e-harness";
 
 test.describe("Reviews sorting", () => {
 	test("should show the sort dropdown with default selection", async ({
@@ -40,6 +44,18 @@ test.describe("Reviews sorting", () => {
 		).toContainText(/Title A–Z/i);
 	});
 
+	test("should keep the fixture review in the list for every sort", async ({
+		page,
+	}) => {
+		for (const sort of ["recent", "rating", "title"]) {
+			await page.goto(`/reviews?sort=${sort}`);
+
+			await expect(
+				page.locator(`a[href="${E2E_FIXTURE_REVIEW_PATH}"]`).first(),
+			).toBeVisible();
+		}
+	});
+
 	test("should fall back to recent for invalid sort values", async ({
 		page,
 	}) => {
@@ -51,5 +67,8 @@ test.describe("Reviews sorting", () => {
 		// Review list still renders
 		const heading = page.getByRole("heading", { name: /All Reviews/i });
 		await expect(heading).toBeVisible();
+		await expect(
+			page.getByText(E2E_FIXTURE_REVIEW.title).first(),
+		).toBeVisible();
 	});
 });

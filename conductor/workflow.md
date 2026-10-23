@@ -35,6 +35,7 @@ commands:
   setup: "bun install && cp .env.example .env && docker compose up -d && bun run seed"
   dev: "bun run dev"
   test: "bun test"
+  test:e2e: "bun run test:e2e"
   coverage: "bun test --coverage"
   lint: "bun run lint"
   format: "bun run format"

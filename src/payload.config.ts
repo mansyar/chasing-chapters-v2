@@ -81,20 +81,26 @@ export default buildConfig({
 		},
 	}),
 	sharp,
-	plugins: [
-		s3Storage({
-			collections: {
-				media: true,
-			},
-			bucket: env.R2_BUCKET,
-			config: {
-				endpoint: env.R2_ENDPOINT,
-				region: "auto",
-				credentials: {
-					accessKeyId: env.R2_ACCESS_KEY_ID,
-					secretAccessKey: env.R2_SECRET_ACCESS_KEY,
-				},
-			},
-		}),
-	],
+	// The storage adapter decides where the media files live: "s3" writes to
+	// the R2 bucket, "local" falls back to Payload's own disk storage (the
+	// e2e run uses it, so the suite needs no object storage).
+	plugins:
+		env.STORAGE_ADAPTER === "s3"
+			? [
+					s3Storage({
+						collections: {
+							media: true,
+						},
+						bucket: env.R2_BUCKET,
+						config: {
+							endpoint: env.R2_ENDPOINT,
+							region: "auto",
+							credentials: {
+								accessKeyId: env.R2_ACCESS_KEY_ID,
+								secretAccessKey: env.R2_SECRET_ACCESS_KEY,
+							},
+						},
+					}),
+				]
+			: [],
 });

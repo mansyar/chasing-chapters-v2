@@ -126,6 +126,36 @@ permissions:
     resource: "bun run build *"
     effect: allow
   - action: shell
+    resource: "bun run test:e2e"
+    effect: allow
+  - action: shell
+    resource: "bun run test:e2e *"
+    effect: allow
+  - action: shell
+    resource: "bun run seed:e2e"
+    effect: allow
+  - action: shell
+    resource: "bun run seed:e2e *"
+    effect: allow
+  - action: shell
+    resource: "bun run payload migrate"
+    effect: allow
+  - action: shell
+    resource: "bun run payload migrate *"
+    effect: allow
+  - action: shell
+    resource: "bun run scripts/*"
+    effect: allow
+  - action: shell
+    resource: "bun run src/scripts/*"
+    effect: allow
+  - action: shell
+    resource: "bun run e2e:*"
+    effect: allow
+  - action: shell
+    resource: "bun run e2e:* *"
+    effect: allow
+  - action: shell
     resource: "bun run typecheck && bun run lint && bun test"
     effect: allow
   - action: shell

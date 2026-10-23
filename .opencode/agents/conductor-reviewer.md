@@ -77,6 +77,12 @@ permissions:
   - action: shell
     resource: "bun run build *"
     effect: allow
+  - action: shell
+    resource: "bun run test:e2e"
+    effect: allow
+  - action: shell
+    resource: "bun run test:e2e *"
+    effect: allow
   # --- PROJECT CHECKS END ---
 ---
 
