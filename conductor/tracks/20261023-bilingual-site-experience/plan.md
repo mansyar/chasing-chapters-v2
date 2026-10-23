@@ -111,16 +111,20 @@
 - **Covers:** FR-12, AC-10, AC-11, NFR-1, NFR-2
 - **Touches:** `src/app/(public)/**`, `src/components/reviews/**`, `src/app/not-found.tsx`, `src/lib/__tests__/**`, `e2e/**`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e && bun run build`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P5.T1: Restore pre-rendering** — covers: FR-12, AC-10
-  - [ ] **P5.T1.1: Confirm review and reading-list detail routes build as pre-rendered per locale, and remove any remaining dynamic trigger.**
-- [ ] **P5.T2: Close the accessibility and bundle checks** — covers: NFR-1, NFR-2
-  - [ ] **P5.T2.1: Verify the language control's focus, contrast, announced state and locale labels meet the bar.**
-  - [ ] **P5.T2.2: Compare the public client bundle against the pre-track baseline and record the difference.**
-- [ ] **P5.T3: Run the integrated acceptance sweep** — covers: AC-11
-  - [ ] **P5.T3.1: Walk AC-1 to AC-11 in both locales against the production build and record the evidence.**
-  - [ ] **P5.T3.2: Record every deviation and the follow-ups this track deliberately leaves behind.**
+- [x] **P5.T1: Restore pre-rendering** — covers: FR-12, AC-10
+  - [x] **P5.T1.1: Confirm review and reading-list detail routes build as pre-rendered per locale, and remove any remaining dynamic trigger.**
+- [x] **P5.T2: Close the accessibility and bundle checks** — covers: NFR-1, NFR-2
+  - [x] **P5.T2.1: Verify the language control's focus, contrast, announced state and locale labels meet the bar.**
+  - [x] **P5.T2.2: Compare the public client bundle against the pre-track baseline and record the difference.**
+- [x] **P5.T3: Run the integrated acceptance sweep** — covers: AC-11
+  - [x] **P5.T3.1: Walk AC-1 to AC-11 in both locales against the production build and record the evidence.**
+  - [x] **P5.T3.2: Record every deviation and the follow-ups this track deliberately leaves behind.**
+
+**Result:** verified
+**Checkpoint:** 5a5031a
+**Evidence:** conductor/tracks/20261023-bilingual-site-experience/verification/phase-5.md
 
 <!--
 Review fixes are appended by `conductor-review` as:
