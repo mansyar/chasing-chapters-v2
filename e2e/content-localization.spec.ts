@@ -208,6 +208,11 @@ test.describe("Content localization", () => {
 				.getByText(englishBodyOpening(UNTRANSLATED_REVIEW), { exact: false })
 				.first(),
 		).toBeVisible();
+		// The admin bulk re-translate spec translates this review too, and the
+		// offline stub echoes the English text inside a `[stub-id]` marker - so
+		// the text above would also be visible through a stubbed translation.
+		// The absent marker is what makes the English body a fallback.
+		await expect(page.locator("article")).not.toContainText("[stub-id]");
 	});
 
 	test("renders the Indonesian reading-list title and description", async ({

@@ -40,14 +40,16 @@ function localizedNames(config: CollectionConfig): string[] {
 /**
  * Runs the field's own validator the way Payload would, with a fake request.
  *
- * `required` is not asserted anywhere: Payload reads it on a localized field as
- * "required in every locale", which rejects the partial translation writes the
- * collection configs now allow (`requireDefaultLocaleValue` documents why).
+ * `required` is not what enforces the rule: Payload reads it on a localized
+ * field as "required in every locale", which rejects the partial translation
+ * writes the collection configs now allow (`requireDefaultLocaleValue`
+ * documents why). The review body's `required` is asserted on its own, because
+ * the generated type follows that flag.
  */
 function validate(
 	config: CollectionConfig,
 	name: string,
-	value: string | undefined,
+	value: unknown,
 	locale: string | undefined,
 	operation: "create" | "update" = "update",
 ): unknown {
@@ -145,6 +147,59 @@ describe("content localization (FR-10)", () => {
 		}
 	});
 
+	it("treats a textless editor state as a blank default-locale value", () => {
+		// A `richText` field never receives a string: clearing the editor
+		// submits an editor state whose root carries no text, which Payload's
+		// own rich-text validator rejects. A body saved that way in the
+		// default locale leaves both languages with nothing to render (FR-10).
+		const textless = {
+			root: {
+				type: "root",
+				children: [{ children: [], type: "paragraph", version: 1 }],
+			},
+		};
+		const whitespaceOnly = {
+			root: {
+				type: "root",
+				children: [
+					{
+						children: [{ text: "   ", type: "text" }],
+						type: "paragraph",
+						version: 1,
+					},
+				],
+			},
+		};
+
+		expect(isRejected(validate(Reviews, "reviewContent", textless, "en"))).toBe(
+			true,
+		);
+		expect(
+			isRejected(validate(Reviews, "reviewContent", whitespaceOnly, "en")),
+		).toBe(true);
+		// The `id` locale may still clear the body and fall back to English.
+		expect(validate(Reviews, "reviewContent", textless, "id")).toBe(true);
+	});
+
+	it("accepts an editor state that carries text", () => {
+		// The shape a saved body actually has, so the case above cannot pass by
+		// rejecting every rich-text value.
+		const written = {
+			root: {
+				type: "root",
+				children: [
+					{
+						children: [{ text: "The English body.", type: "text" }],
+						type: "paragraph",
+						version: 1,
+					},
+				],
+			},
+		};
+
+		expect(validate(Reviews, "reviewContent", written, "en")).toBe(true);
+	});
+
 	it("accepts an empty translation so the fallback can fill it", () => {
 		// `payload.update({ locale: "id", data: {...} })` - the translation
 		// pipeline and an author's partial write - must not be rejected for
@@ -164,6 +219,17 @@ describe("content localization (FR-10)", () => {
 			);
 			expect(validate(config, name, "A value", "en", "create")).toBe(true);
 		}
+	});
+
+	it("leaves the review body out of `required` so its generated type stays nullable", () => {
+		// Payload builds the generated type's nullability from `required`, so
+		// marking the body required would make `reviewContent` non-nullable
+		// again - and the `id` locale may clear it. The default locale is held
+		// by the validator instead, and this assertion is what catches a drift
+		// before the next regeneration does.
+		const body = field(Reviews, "reviewContent") as { required?: boolean };
+
+		expect(body.required).not.toBe(true);
 	});
 
 	it("leaves the slugs, the colors and the icons single-valued", () => {

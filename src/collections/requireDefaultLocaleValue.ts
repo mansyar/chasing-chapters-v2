@@ -1,9 +1,76 @@
 import type { Validate } from "payload";
 
-const isBlank = (value: unknown): boolean =>
-	value === undefined ||
-	value === null ||
-	(typeof value === "string" && value.trim().length === 0);
+/** A node of a serialized Lexical editor state, as far as this check reads it. */
+interface EditorNode {
+	children?: unknown;
+	text?: unknown;
+	type?: unknown;
+}
+
+/** Whether a single node carries no text, including everything beneath it. */
+const isTextlessNode = (node: unknown): boolean => {
+	if (typeof node !== "object" || node === null) {
+		return true;
+	}
+
+	const { children, text, type } = node as EditorNode;
+
+	if (type === "text") {
+		return typeof text !== "string" || text.trim().length === 0;
+	}
+
+	if (!Array.isArray(children)) {
+		return true;
+	}
+
+	return children.every(isTextlessNode);
+};
+
+/**
+ * Whether a serialized Lexical editor state carries any text.
+ *
+ * Mirrors `hasText` from `@payloadcms/richtext-lexical`, which Payload's own
+ * rich-text validator runs: a value whose root has no children, or whose nodes
+ * are only empty paragraphs and empty text nodes, is textless. It is
+ * reimplemented rather than imported because the package entry pulls the
+ * editor's client code into a module that is loaded on the server. Whitespace
+ * counts as empty here, the same way it does for the string branch below.
+ */
+const hasText = (value: unknown): boolean => {
+	if (typeof value !== "object" || value === null) {
+		return false;
+	}
+
+	const { children } = (value as { root?: EditorNode }).root ?? {};
+
+	if (!Array.isArray(children) || children.length === 0) {
+		return false;
+	}
+
+	return !children.every(isTextlessNode);
+};
+
+/**
+ * Whether a localized value counts as absent.
+ *
+ * A `text` and a `richText` field reach this validator with different shapes:
+ * a string, or a serialized editor state whose text lives in its nodes.
+ */
+const isBlank = (value: unknown): boolean => {
+	if (value === undefined || value === null) {
+		return true;
+	}
+
+	if (typeof value === "string") {
+		return value.trim().length === 0;
+	}
+
+	if (typeof value === "object") {
+		return !hasText(value);
+	}
+
+	return false;
+};
 
 /**
  * Requires a localized field's value in the default locale only (`FR-10`).

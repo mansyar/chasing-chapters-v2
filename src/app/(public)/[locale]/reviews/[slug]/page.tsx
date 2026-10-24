@@ -258,7 +258,9 @@ export default async function ReviewPage({ params }: PageProps) {
 				<div className="space-y-12">
 					{/* Review Content */}
 					<div className="prose prose-lg prose-gray dark:prose-invert max-w-3xl font-serif">
-						<RichText data={review.reviewContent} />
+						{review.reviewContent ? (
+							<RichText data={review.reviewContent} />
+						) : null}
 					</div>
 
 					{/* Structured Sections */}

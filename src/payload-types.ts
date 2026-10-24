@@ -257,7 +257,7 @@ export interface Review {
   bookAuthor: string;
   rating: number;
   coverImage: number | Media;
-  reviewContent: {
+  reviewContent?: {
     root: {
       type: string;
       children: {
@@ -271,7 +271,7 @@ export interface Review {
       version: number;
     };
     [k: string]: unknown;
-  };
+  } | null;
   whatILoved?: {
     root: {
       type: string;
