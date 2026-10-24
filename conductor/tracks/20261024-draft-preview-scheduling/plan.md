@@ -38,18 +38,21 @@
 - **Verification:** 'bun run typecheck && bun run lint && bun test && bun run test:e2e'
 - **Status:** in_progress
 
-- [ ] **P2.T1: Build the preview entry and exit** — covers: FR-1
-  - [ ] **P2.T1.1: Add an admin API route that validates the session, enables draft mode for one review and locale, and redirects to that review's public URL, refusing an anonymous request with 401**
-  - [ ] **P2.T1.2: Add the exit action that disables draft mode and returns to the same URL**
-  - [ ] **P2.T1.3: Wire Payload's native Preview button for reviews to that entry, using the document's slug and the locale being edited**
-- [ ] **P2.T2: Render drafts on the real route** — covers: FR-2
-  - [ ] **P2.T2.1: Read draft mode on the review route and fetch the newest version only when the request also carries a valid session**
-  - [ ] **P2.T2.2: Keep the public behaviour exact when draft mode is off or the session is missing, including the 404 for a hidden review**
-- [ ] **P2.T3: Add the banner and suppress the SEO surface** — covers: FR-3, FR-4, NFR-1, NFR-3
-  - [ ] **P2.T3.1: Add a preview banner with dictionary copy in both locales, a link to the same review in the other locale, and the exit action**
-  - [ ] **P2.T3.2: Suppress canonical, hreflang and the Open Graph image while previewing, and emit `noindex, nofollow` with `Cache-Control: private, no-store`**
-  - [ ] **P2.T3.3: Prove a previewed review stays out of the sitemap, the feeds and the translation cache**
-  - [ ] **P2.T3.4: Confirm the build still reports both review detail routes as pre-rendered, and stop and report if draft mode flips them to dynamic**
+- [x] **P2.T1: Build the preview entry and exit** — covers: FR-1
+  - [x] **P2.T1.1: Add an admin API route that validates the session, enables draft mode for one review and locale, and redirects to that review's public URL, refusing an anonymous request with 401**
+  - [x] **P2.T1.2: Add the exit action that disables draft mode and returns to the same URL**
+  - [x] **P2.T1.3: Wire Payload's native Preview button for reviews to that entry, using the document's slug and the locale being edited**
+- [x] **P2.T2: Render drafts on the real route** — covers: FR-2
+  - [x] **P2.T2.1: Read draft mode on the review route and fetch the newest version only when the request also carries a valid session**
+  - [x] **P2.T2.2: Keep the public behaviour exact when draft mode is off or the session is missing, including the 404 for a hidden review**
+- [x] **P2.T3: Add the banner and suppress the SEO surface** — covers: FR-3, FR-4, NFR-1, NFR-3
+  - [x] **P2.T3.1: Add a preview banner with dictionary copy in both locales, a link to the same review in the other locale, and the exit action**
+  - [x] **P2.T3.2: Suppress canonical, hreflang and the Open Graph image while previewing, and emit `noindex, nofollow` with `Cache-Control: private, no-store`**
+  - [x] **P2.T3.3: Prove a previewed review stays out of the sitemap, the feeds and the translation cache**
+  - [x] **P2.T3.4: Confirm the build still reports both review detail routes as pre-rendered, and stop and report if draft mode flips them to dynamic**
+**Result:** verified
+**Checkpoint:** ba97843
+**Evidence:** conductor/tracks/20261024-draft-preview-scheduling/verification/phase-2.md
 
 ## Phase 3: Admin Surface, Fixture and Proof
 
