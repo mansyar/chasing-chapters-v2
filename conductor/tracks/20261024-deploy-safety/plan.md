@@ -36,17 +36,21 @@
 - **Covers:** FR-4, FR-5, NFR-3, AC-5, AC-6
 - **Touches:** `src/lib/deploy-smoke.ts`, `src/lib/__tests__/deploy-smoke.test.ts`, `src/scripts/deploy-smoke.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** verified
 
-- [ ] **P2.T1: Pure smoke module** - covers: FR-5
-  - [ ] **P2.T1.1: Poll the fixed endpoint set with injectable `fetch` and sleep, returning a per-endpoint report**
-  - [ ] **P2.T1.2: Discover one published review slug from the reviews API and probe its locale detail route; skip cleanly when there is none**
-- [ ] **P2.T2: Unit tests** - covers: FR-5
-  - [ ] **P2.T2.1: Succeeds after a run of 500s**
-  - [ ] **P2.T2.2: Fails when the retry budget is exhausted, naming the endpoint**
-  - [ ] **P2.T2.3: Passes with no published review**
-- [ ] **P2.T3: Script wrapper** - covers: FR-4
-  - [ ] **P2.T3.1: Take the base URL from argv, print each attempt, exit non-zero on failure**
+- [x] **P2.T1: Pure smoke module** - covers: FR-5
+  - [x] **P2.T1.1: Poll the fixed endpoint set with injectable `fetch` and sleep, returning a per-endpoint report**
+  - [x] **P2.T1.2: Discover one published review slug from the reviews API and probe its locale detail route; skip cleanly when there is none**
+- [x] **P2.T2: Unit tests** - covers: FR-5
+  - [x] **P2.T2.1: Succeeds after a run of 500s**
+  - [x] **P2.T2.2: Fails when the retry budget is exhausted, naming the endpoint**
+  - [x] **P2.T2.3: Passes with no published review**
+- [x] **P2.T3: Script wrapper** - covers: FR-4
+  - [x] **P2.T3.1: Read the base URL from `process.argv`, print per-attempt status, exit non-zero on failure**
+
+**Result:** verified
+**Checkpoint:** (recorded after squash)
+**Evidence:** conductor/tracks/20261024-deploy-safety/verification/phase-2.md
 
 ## Phase 3: CI Image Build
 
