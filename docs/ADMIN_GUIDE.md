@@ -100,13 +100,51 @@ The **Comment Moderation** panel on the author analytics dashboard shows pending
 | **Draft**     | Work in progress, not visible |
 | **Published** | Live on the website           |
 
-Scheduled publishing is not available.
+Scheduled publishing is available through the **Publish At** field (see below).
 
 ### To Publish a Review
 
 1. Set status to **Published**
 2. Click **Save**
 3. Review is immediately live
+
+### To Schedule a Review
+
+**Publish At** (sidebar) holds the moment a published review becomes visible to
+readers. Leave it empty to publish immediately.
+
+1. Set status to **Published**
+2. Pick a date and time in **Publish At**
+3. Click **Save**
+
+The review stays hidden - its own page returns "not found", and it is left out of
+the home page, the reviews list, the RSS feeds and the sitemap - until that moment,
+then appears on its own within a minute or two. No scheduler, deploy or second save
+is needed. The moment is stored and displayed in UTC.
+
+The reviews list shows a **Publish At** column that reads **Scheduled**, **Live** or
+**Draft**, and the edit view states the exact moment under the field. Hovering over
+the column shows the stored timestamp.
+
+If **Publish Date** is empty when you set **Publish At**, it is filled from the
+schedule so the review shows a date. A **Publish Date** you typed yourself is never
+overwritten.
+
+### Preview a Review Before It Is Public
+
+Every review has a **Preview** button in the edit view that opens the review's real
+public page in a new tab:
+
+- It works for a draft that was never published, and for a review scheduled for
+  later.
+- The page is the real one, with a preview banner across the top, in the language
+  you were editing. The banner's language link switches to the other language and
+  stays in preview.
+- **Exit preview** in the banner returns you to the same page as a normal reader
+  would see it - for a draft or a scheduled review that page says "not found".
+- Preview pages are never indexed by search engines and are not visible to anyone
+  else: only a signed-in author or admin can preview, using their existing login.
+
 
 ---
 

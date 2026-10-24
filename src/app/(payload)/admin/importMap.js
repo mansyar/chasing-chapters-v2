@@ -32,6 +32,8 @@ import { AdminStyleProvider as AdminStyleProvider_28a320d35397731301b152c32111b4
 import { AnalyticsDashboard as AnalyticsDashboard_d8816c4bca290ed5b5596bb3533c3751 } from "@/components/admin/AnalyticsDashboard";
 import { BulkRetranslateAction as BulkRetranslateAction_708c1e8afd07e71504f16fd3ad23a526 } from "@/components/admin/BulkRetranslateAction";
 import { TranslationAttentionBell as TranslationAttentionBell_4614064c5a55676044bf5957b5262af2 } from "@/components/admin/TranslationAttentionBell";
+import { PublishScheduleNotice as PublishScheduleNotice_3294f466aab46297292e72cfe69737ef } from "../../../collections/Reviews/admin/PublishScheduleNotice";
+import { PublishStateCell as PublishStateCell_3a83d8d534ba258ba9f87e20a0ebfd0b } from "../../../collections/Reviews/admin/PublishStateCell";
 import { RetranslateButton as RetranslateButton_8e2b4cee1966104759db58c9db42cd22 } from "../../../collections/Reviews/admin/RetranslateButton";
 
 /** @type import('payload').ImportMap */
@@ -84,6 +86,10 @@ export const importMap = {
 		ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
 	"/collections/Reviews/admin/RetranslateButton#RetranslateButton":
 		RetranslateButton_8e2b4cee1966104759db58c9db42cd22,
+	"/collections/Reviews/admin/PublishStateCell#PublishStateCell":
+		PublishStateCell_3a83d8d534ba258ba9f87e20a0ebfd0b,
+	"/collections/Reviews/admin/PublishScheduleNotice#PublishScheduleNotice":
+		PublishScheduleNotice_3294f466aab46297292e72cfe69737ef,
 	"@/components/admin/TranslationAttentionBell#TranslationAttentionBell":
 		TranslationAttentionBell_4614064c5a55676044bf5957b5262af2,
 	"@/components/admin/BulkRetranslateAction#BulkRetranslateAction":

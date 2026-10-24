@@ -5,6 +5,8 @@ import {
 	recordEnglishChangeTime,
 	translateReview,
 } from "../hooks/translateReview";
+import { normalizeLocale } from "../lib/i18n/locale";
+import { publishedAndVisibleWhere } from "../lib/publish-visibility";
 import { retranslateReview } from "../lib/retranslate";
 import {
 	canTransition,
@@ -24,7 +26,39 @@ export const Reviews: CollectionConfig = {
 			"status",
 			"translationStatus",
 			"publishDate",
+			// The schedule is the field an author checks most often while a
+			// review is waiting to go out, so it earns a column of its own
+			// rather than living behind the edit view (`FR-7`).
+			"publishAt",
 		],
+		/**
+		 * Payload's native Preview button (`FR-1`).
+		 *
+		 * It opens the draft-preview entry point with the document's slug and the
+		 * locale being edited, so an author previewing the Indonesian version
+		 * lands on the Indonesian page. The URL is root-relative because the admin
+		 * panel and the public site share an origin, and Payload uses the returned
+		 * string verbatim as the link's `href`.
+		 *
+		 * The entry route re-checks the session, so this button is a convenience
+		 * and never the authority. A document with no slug yet - a new, unsaved
+		 * review - has no public URL to preview, so it gets no button rather than
+		 * a broken one.
+		 */
+		preview: (doc, { locale }) => {
+			const slug = doc.slug;
+
+			if (typeof slug !== "string" || slug === "") {
+				return null;
+			}
+
+			const params = new URLSearchParams({
+				slug,
+				locale: normalizeLocale(locale),
+			});
+
+			return `/api/preview?${params.toString()}`;
+		},
 	},
 	versions: {
 		drafts: true,
@@ -52,12 +86,11 @@ export const Reviews: CollectionConfig = {
 					},
 				} as Where;
 			}
-			// Public can only see published reviews
-			return {
-				_status: {
-					equals: "published",
-				},
-			};
+			// Public reads use the same visibility rule every public page
+			// uses (`FR-5`, `NFR-4`): the public REST API is a public surface,
+			// so a published review with a future `publishAt` must not be
+			// served there either.
+			return publishedAndVisibleWhere(new Date());
 		},
 		create: ({ req: { user } }) => Boolean(user),
 		update: ({ req: { user } }) => {
@@ -308,6 +341,45 @@ export const Reviews: CollectionConfig = {
 			},
 		},
 		{
+			name: "publishAt",
+			type: "date",
+			label: "Publish At",
+			// The schedule the public gate reads (FR-5, FR-6). An empty value
+			// means "no schedule", which keeps every existing review visible
+			// without a backfill; a value in the future hides the review from
+			// every public read until that moment. Storage is UTC: Payload's
+			// `date` field stores an instant, and the admin reads it back in
+			// the browser's own zone.
+			admin: {
+				position: "sidebar",
+				date: {
+					pickerAppearance: "dayAndTime",
+				},
+				description:
+					"Hides the review from every public page until this moment. Leave empty to publish immediately.",
+				// The list says which state the row is in rather than echoing
+				// the raw date, and the cell is where "scheduled" and "live"
+				// become distinguishable at a glance (`FR-7`, `AC-7`).
+				components: {
+					Cell: "/collections/Reviews/admin/PublishStateCell#PublishStateCell",
+				},
+			},
+		},
+		{
+			// The sentence that goes with the field above: when this review will
+			// publish, or that it already is (`FR-7`, `AC-7`). A `ui` field, so
+			// it holds no data - it reads the document through the form state.
+			name: "publishScheduleNotice",
+			type: "ui",
+			admin: {
+				position: "sidebar",
+				components: {
+					Field:
+						"/collections/Reviews/admin/PublishScheduleNotice#PublishScheduleNotice",
+				},
+			},
+		},
+		{
 			name: "author",
 			type: "relationship",
 			relationTo: "authors",
@@ -390,10 +462,41 @@ export const Reviews: CollectionConfig = {
 	],
 	hooks: {
 		beforeChange: [
-			({ data, operation }) => {
+			({ data, operation, originalDoc }) => {
 				if (operation === "create" || operation === "update") {
-					if (data._status === "published" && !data.publishDate) {
-						data.publishDate = new Date();
+					// A scheduled review is meant to publish at its schedule, so
+					// an empty `publishDate` starts there instead of at the
+					// moment the author happened to save (FR-8). An author's own
+					// value is never overwritten, and clearing `publishAt`
+					// changes nothing here: with no schedule to copy, the date
+					// the row already carries stays.
+					//
+					// A partial update carries only the fields it changes, so the
+					// stored date has to be read alongside it: an update that
+					// touches `publishAt` alone must not overwrite the author's
+					// date with the schedule. Only an absent key falls back to
+					// the stored value - an explicit `null` is the author
+					// clearing the field, and the fill below has to run for it.
+					//
+					// The schedule is read the same way, for the same reason: an
+					// update that clears `publishDate` alone carries no
+					// `publishAt` key, so the schedule it can refill from only
+					// exists on the stored row. A body that clears both is the
+					// author saying "no schedule, no date", and stays empty.
+					const schedule =
+						data.publishAt !== undefined
+							? data.publishAt
+							: originalDoc?.publishAt;
+					const publishDate =
+						data.publishDate !== undefined
+							? data.publishDate
+							: originalDoc?.publishDate;
+					if (!publishDate) {
+						if (schedule) {
+							data.publishDate = schedule;
+						} else if (data._status === "published") {
+							data.publishDate = new Date();
+						}
 					}
 				}
 				return data;

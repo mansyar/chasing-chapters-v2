@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { getPayload } from "payload";
 import { resolveCommentStatus } from "@/lib/comment-moderation";
 import { localizedPaths } from "@/lib/i18n/locale";
+import { canAcceptPublicWrite } from "@/lib/publish-visibility";
 import { getClientIP, rateLimit } from "@/lib/rate-limit";
 import {
 	commentSchema,
@@ -58,8 +59,11 @@ export async function submitComment(
 			return { success: false, error: "Review not found" };
 		}
 
-		// Check if review is published (handle both draft system and legacy)
-		if (targetReview._status && targetReview._status !== "published") {
+		// A comment is a public write, so it is gated by the same visibility
+		// rule every public read uses (`FR-5`, `NFR-4`). A review that is
+		// scheduled for later answers exactly like a missing one: a distinct
+		// reply would tell a reader the review exists.
+		if (!canAcceptPublicWrite(targetReview, new Date())) {
 			return { success: false, error: "Review not found" };
 		}
 

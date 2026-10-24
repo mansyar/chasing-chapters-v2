@@ -26,6 +26,7 @@ import { Separator } from "@/components/ui/separator";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { formatMessage } from "@/lib/i18n/format";
 import { normalizeLocale } from "@/lib/i18n/locale";
+import { publishedAndVisibleWhere } from "@/lib/publish-visibility";
 import { parseSortParam, sortToPayloadSort } from "@/lib/reviews-sort";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { generateItemListSchema, SITE_URL } from "@/lib/seo/structured-data";
@@ -74,38 +75,44 @@ export default async function BrowsePage({ params, searchParams }: PageProps) {
 
 	const browsePath = `/${appLocale}/reviews`;
 
-	const where: Where = {
-		_status: {
-			equals: "published",
-		},
-	};
+	// Every constraint joins the shared visibility rule through `and`, so a
+	// scheduled review cannot slip in through the search, genre or tag branch.
+	const conditions: Where[] = [publishedAndVisibleWhere(new Date())];
 
 	if (q) {
-		where.or = [
-			{
-				title: {
-					like: q,
+		conditions.push({
+			or: [
+				{
+					title: {
+						like: q,
+					},
 				},
-			},
-			{
-				bookAuthor: {
-					like: q,
+				{
+					bookAuthor: {
+						like: q,
+					},
 				},
-			},
-		];
+			],
+		});
 	}
 
 	if (genre) {
-		where["genres.slug"] = {
-			equals: genre,
-		};
+		conditions.push({
+			"genres.slug": {
+				equals: genre,
+			},
+		});
 	}
 
 	if (tag) {
-		where["tags.slug"] = {
-			equals: tag,
-		};
+		conditions.push({
+			"tags.slug": {
+				equals: tag,
+			},
+		});
 	}
+
+	const where: Where = { and: conditions };
 
 	const { docs: reviews, totalPages } = await payload.find({
 		collection: "reviews",

@@ -10,8 +10,9 @@ import {
 const REVIEW = E2E_FIXTURE_REVIEWS[2];
 
 test.describe("Translation status poller", () => {
-	// The poller ticks every 20 seconds, so the spec has to outlast a tick.
-	test.setTimeout(90_000);
+	// The poller ticks every 20 seconds, so the spec has to outlast a tick; the
+	// rest is the same login-and-hydration room the other admin specs take.
+	test.setTimeout(120_000);
 
 	test("reports the finished translation and refreshes the visible status", async ({
 		page,

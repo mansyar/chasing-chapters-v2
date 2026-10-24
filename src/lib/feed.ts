@@ -1,6 +1,7 @@
 import { getDictionary } from "./i18n/dictionary";
 import { type Locale, normalizeLocale } from "./i18n/locale";
 import { resolveMediaUrl } from "./media-url";
+import { isPubliclyVisible } from "./publish-visibility";
 import { extractTextFromRichText, type RichTextDocument } from "./utils";
 
 /**
@@ -23,6 +24,7 @@ export interface FeedReview {
 	title?: string | null;
 	slug?: string | null;
 	publishDate?: string | null;
+	publishAt?: string | null;
 	createdAt?: string | null;
 	_status?: string | null;
 	reviewContent?: RichTextDocument | null;
@@ -34,6 +36,8 @@ export interface RssFeedOptions {
 	siteUrl: string;
 	/** The locale the feed is written for; defaults to English. */
 	locale?: Locale | string | null;
+	/** The moment the feed is built, for the shared visibility rule. */
+	now: Date;
 }
 
 /** Escape a string for safe inclusion in XML text nodes and attributes. */
@@ -109,15 +113,18 @@ export function buildRssFeed({
 	reviews,
 	siteUrl,
 	locale,
+	now,
 }: RssFeedOptions): string {
 	const appLocale = normalizeLocale(locale);
 	const dictionary = getDictionary(appLocale);
 	const homeUrl = `${siteUrl}/${appLocale}`;
 	const feedUrl = `${homeUrl}/feed.xml`;
 
+	// The same rule every public page reads with (`FR-5`, `NFR-4`): a
+	// published review whose `publishAt` has not arrived is not public yet,
+	// so it must not reach the feed either.
 	const published = reviews.filter(
-		(review) =>
-			(!review._status || review._status === "published") && review.slug,
+		(review) => review.slug && isPubliclyVisible(review, now),
 	);
 	const latest = published
 		.toSorted((a, b) => {

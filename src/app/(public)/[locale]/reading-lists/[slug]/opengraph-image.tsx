@@ -5,6 +5,7 @@ import { getPayload } from "payload";
 import { OgImageFrame } from "@/components/og/OgImageFrame";
 import { normalizeLocale } from "@/lib/i18n/locale";
 import { buildReadingListOgProps } from "@/lib/og-image";
+import { isPubliclyVisible } from "@/lib/publish-visibility";
 
 export const revalidate = 60;
 
@@ -34,7 +35,15 @@ export default async function Image({
 
 	const list = docs[0];
 	if (!list) notFound();
-	const bookCount = Array.isArray(list?.reviews) ? list.reviews.length : 0;
+	// The list is read at `depth: 1`, so `reviews` arrives populated and the
+	// shared rule can judge each document. Counting through the same rule the
+	// detail page renders with keeps the image's "N books" equal to the cards
+	// on that page; an unpopulated id cannot be judged, so it is kept rather
+	// than dropped (`FR-5`).
+	const now = new Date();
+	const bookCount = (Array.isArray(list.reviews) ? list.reviews : []).filter(
+		(review) => typeof review === "number" || isPubliclyVisible(review, now),
+	).length;
 	const props = buildReadingListOgProps({
 		title: list?.title ?? undefined,
 		bookCount,

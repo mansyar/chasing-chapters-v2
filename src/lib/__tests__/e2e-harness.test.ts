@@ -11,10 +11,14 @@ import {
 	DEFAULT_WORKER_COUNT,
 	E2E_FIXTURE_AUTHOR,
 	E2E_FIXTURE_COVER,
+	E2E_FIXTURE_DRAFT_REVIEW,
+	E2E_FIXTURE_DRAFT_REVIEW_PATH,
 	E2E_FIXTURE_READING_LIST,
 	E2E_FIXTURE_REVIEW_PATH,
 	E2E_FIXTURE_REVIEW_SLUG,
 	E2E_FIXTURE_REVIEWS,
+	E2E_FIXTURE_SCHEDULED_REVIEW,
+	E2E_FIXTURE_SCHEDULED_REVIEW_PATH,
 	E2E_FIXTURE_STALE_REVIEW_LOCALIZED,
 	E2E_FIXTURE_TAXONOMY,
 	resolveE2EBaseURL,
@@ -303,12 +307,14 @@ describe("e2e-harness", () => {
 				"e2e-fixture-salt-and-paper-lanterns",
 				"e2e-fixture-the-cartographers-error",
 				"e2e-fixture-nine-kinds-of-weather",
+				"e2e-fixture-the-slow-orbit",
 			]);
 			expect(E2E_FIXTURE_REVIEWS.map((review) => review.publishDate)).toEqual([
 				"2026-04-18T00:00:00.000Z",
 				"2026-04-11T00:00:00.000Z",
 				"2026-03-28T00:00:00.000Z",
 				"2026-03-21T00:00:00.000Z",
+				"2026-02-14T00:00:00.000Z",
 			]);
 			expect(E2E_FIXTURE_REVIEW_SLUG).toBe(
 				"e2e-fixture-the-lighthouse-keepers-almanac",
@@ -322,12 +328,42 @@ describe("e2e-harness", () => {
 			expect(E2E_FIXTURE_AUTHOR.email).toBe("e2e-admin@example.test");
 		});
 
+		it("schedules exactly one review into the far future", () => {
+			const scheduled = E2E_FIXTURE_REVIEWS.filter(
+				(review) => review.publishAt !== undefined,
+			);
+
+			expect(scheduled).toHaveLength(1);
+			expect(scheduled[0]).toBe(E2E_FIXTURE_SCHEDULED_REVIEW);
+			expect(E2E_FIXTURE_SCHEDULED_REVIEW.publishAt).toBe(
+				"2030-01-01T00:00:00.000Z",
+			);
+			expect(E2E_FIXTURE_SCHEDULED_REVIEW_PATH).toBe(
+				"/reviews/e2e-fixture-the-slow-orbit",
+			);
+			// Published, so it is the schedule alone that hides it.
+			expect(E2E_FIXTURE_SCHEDULED_REVIEW.translationStatus).toBe("translated");
+		});
+
 		it("derives every slug from its title the way the collection does", () => {
 			for (const review of E2E_FIXTURE_REVIEWS) {
 				expect(review.slug).toBe(deriveSlug(review.title));
 			}
 			expect(deriveSlug(E2E_FIXTURE_READING_LIST.title)).toBe(
 				E2E_FIXTURE_READING_LIST.slug,
+			);
+			expect(deriveSlug(E2E_FIXTURE_DRAFT_REVIEW.title)).toBe(
+				E2E_FIXTURE_DRAFT_REVIEW.slug,
+			);
+		});
+
+		it("keeps the never-published draft out of the seeded reviews", () => {
+			// The draft is its own row on purpose: every spec that walks the
+			// seeded reviews expects published documents, and the sitemap spec
+			// expects the ones without a schedule to be listed.
+			expect(E2E_FIXTURE_REVIEWS).not.toContain(E2E_FIXTURE_DRAFT_REVIEW);
+			expect(E2E_FIXTURE_DRAFT_REVIEW_PATH).toBe(
+				"/reviews/e2e-fixture-the-unwritten-letter",
 			);
 		});
 

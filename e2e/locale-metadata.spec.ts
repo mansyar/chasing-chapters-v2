@@ -3,6 +3,7 @@ import {
 	E2E_FIXTURE_READING_LIST,
 	E2E_FIXTURE_REVIEW,
 	E2E_FIXTURE_REVIEWS,
+	E2E_FIXTURE_SCHEDULED_REVIEW,
 } from "../src/lib/e2e-harness";
 import { localePath } from "./fixtures/locale";
 
@@ -11,15 +12,18 @@ import { localePath } from "./fixtures/locale";
  * (`FR-5`, `FR-6`, `FR-8`, `FR-9`, `AC-5`, `AC-6`, `AC-8`).
  *
  * The fixture set is asserted by slug, not by "whatever the database returned":
- * two reviews carry Indonesian content, one is `failed` and one is `stale`, and
- * every one of them is published, so every one belongs in both locales of the
- * sitemap.
+ * three reviews carry Indonesian content, one is `failed` and one is `stale`,
+ * and every one of them is published. The fifth is published too but scheduled,
+ * so it belongs in neither locale of the sitemap - its absence is asserted
+ * alongside the others' presence.
  */
 
 const REVIEW_PATH = `/reviews/${E2E_FIXTURE_REVIEW.slug}`;
 
-/** The four fixture slugs, in the order the harness declares them. */
-const FIXTURE_SLUGS = E2E_FIXTURE_REVIEWS.map((review) => review.slug);
+/** The fixture slugs that are public: every review except the scheduled one. */
+const VISIBLE_FIXTURE_SLUGS = E2E_FIXTURE_REVIEWS.filter(
+	(review) => review.publishAt === undefined,
+).map((review) => review.slug);
 
 function escapeXmlTitle(title: string): string {
 	return title.replaceAll("'", "&apos;");
@@ -227,7 +231,7 @@ test.describe("Sitemap", () => {
 		expect(response.status()).toBe(200);
 
 		const body = await response.text();
-		for (const slug of FIXTURE_SLUGS) {
+		for (const slug of VISIBLE_FIXTURE_SLUGS) {
 			expect(body).toContain(`/en/reviews/${slug}</loc>`);
 			expect(body).toContain(`/id/reviews/${slug}</loc>`);
 			expect(body).toContain(
@@ -240,6 +244,13 @@ test.describe("Sitemap", () => {
 				`hreflang="x-default" href="https://chasing-chapters.com/en/reviews/${slug}"`,
 			);
 		}
+
+		// The scheduled review is published but not public, so neither of its
+		// URLs may appear - a sitemap entry is an invitation to crawl.
+		const scheduledSlug = E2E_FIXTURE_SCHEDULED_REVIEW.slug;
+		expect(body).not.toContain(`/en/reviews/${scheduledSlug}</loc>`);
+		expect(body).not.toContain(`/id/reviews/${scheduledSlug}</loc>`);
+		expect(body).not.toContain(`/reviews/${scheduledSlug}"`);
 	});
 
 	test("lists both locales of the static pages and the reading list", async ({

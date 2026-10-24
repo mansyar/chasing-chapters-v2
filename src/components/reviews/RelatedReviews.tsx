@@ -2,6 +2,7 @@ import configPromise from "@payload-config";
 import { getPayload, Where } from "payload";
 import type { AppLocale } from "@/lib/date-format";
 import { getDictionary } from "@/lib/i18n/dictionary";
+import { publishedAndVisibleWhere } from "@/lib/publish-visibility";
 import { Genre, MoodTag, Tag } from "@/payload-types";
 import { ReviewCard } from "../ReviewCard";
 
@@ -76,11 +77,9 @@ export async function RelatedReviews({
 						not_equals: currentReviewId,
 					},
 				},
-				{
-					_status: {
-						equals: "published",
-					},
-				},
+				// A review scheduled for the future is not public, so it must not
+				// surface here either: these cards are shown on a public page.
+				publishedAndVisibleWhere(new Date()),
 				{
 					or: orConditions,
 				},

@@ -7,6 +7,7 @@ import sharp from "sharp";
 import {
 	E2E_FIXTURE_AUTHOR,
 	E2E_FIXTURE_COVER,
+	E2E_FIXTURE_DRAFT_REVIEW,
 	E2E_FIXTURE_MOOD_TAG_DETAILS,
 	E2E_FIXTURE_READING_LIST,
 	E2E_FIXTURE_READING_LIST_LOCALIZED,
@@ -14,6 +15,7 @@ import {
 	E2E_FIXTURE_TAXONOMY,
 	E2E_FIXTURE_TAXONOMY_LOCALIZED,
 	E2E_STORAGE_ADAPTER,
+	type E2EFixtureDraftReview,
 	type E2EFixtureReview,
 	resolveE2EDatabaseUri,
 } from "../src/lib/e2e-harness";
@@ -460,6 +462,9 @@ async function upsertReview(
 		perfectFor: review.perfectFor,
 		favoriteQuotes: review.favoriteQuotes,
 		publishDate: review.publishDate,
+		// The one scheduled review carries it; every other review stays
+		// unscheduled, which is the state that must remain visible.
+		...(review.publishAt ? { publishAt: review.publishAt } : {}),
 		featured: review.featured,
 		// The fixture never calls the real translation provider.
 		autoTranslate: false,
@@ -546,21 +551,7 @@ async function writeIndonesianContent(
 	}
 
 	if (review.translationStatus !== "translated") {
-		// `null` is how Payload removes a localized value: the `id` row of
-		// these fields goes away and the read falls back to English.
-		await payload.update({
-			collection: "reviews",
-			id: reviewId,
-			locale: "id",
-			data: {
-				favoriteQuotes: null,
-				perfectFor: null,
-				reviewContent: null,
-				whatCouldBeBetter: null,
-				whatILoved: null,
-			},
-			context: FIXTURE_CONTEXT,
-		});
+		await clearIndonesianContent(payload, reviewId);
 
 		return;
 	}
@@ -582,6 +573,121 @@ async function writeIndonesianContent(
 		},
 		context: FIXTURE_CONTEXT,
 	});
+}
+
+/**
+ * Removes the Indonesian body of a review, so the `id` read falls back to the
+ * English content.
+ *
+ * `null` is how Payload removes a localized value: the `id` row of these fields
+ * goes away. The seed clears them on every run for every review it does not
+ * consider translated, because the bulk re-translate spec leaves `[stub-id]`
+ * text in the `id` locale of exactly those reviews.
+ */
+async function clearIndonesianContent(
+	payload: PayloadClient,
+	reviewId: number,
+): Promise<void> {
+	await payload.update({
+		collection: "reviews",
+		id: reviewId,
+		locale: "id",
+		data: {
+			favoriteQuotes: null,
+			perfectFor: null,
+			reviewContent: null,
+			whatCouldBeBetter: null,
+			whatILoved: null,
+		},
+		context: FIXTURE_CONTEXT,
+	});
+}
+
+/**
+ * Creates (or refreshes) the never-published draft the preview spec opens.
+ *
+ * The draft is the one fixture document that is not a published review: it has
+ * no `publishDate` and no `publishAt`, it never claims to be translated, and
+ * its `id` body is empty. That is what lets a spec prove that draft mode
+ * renders a document no reader could ever reach (`FR-2`, `AC-2`).
+ *
+ * The lookup passes `draft: true`, because the published view of the collection
+ * does not contain this document - without it the seed would create a second
+ * draft on every run.
+ */
+async function upsertDraftReview(
+	payload: PayloadClient,
+	review: E2EFixtureDraftReview,
+	ids: {
+		authorId: number;
+		coverId: number;
+		genreIds: number[];
+		tagIds: number[];
+		moodTagIds: number[];
+	},
+): Promise<{ id: number; slug: string }> {
+	const existing = await payload.find({
+		collection: "reviews",
+		where: { slug: { equals: review.slug } },
+		limit: 1,
+		depth: 0,
+		draft: true,
+	});
+
+	const data = {
+		title: review.title,
+		slug: review.slug,
+		bookAuthor: review.bookAuthor,
+		rating: review.rating,
+		coverImage: ids.coverId,
+		reviewContent: review.reviewContent,
+		whatILoved: review.whatILoved,
+		whatCouldBeBetter: review.whatCouldBeBetter,
+		perfectFor: review.perfectFor,
+		favoriteQuotes: [],
+		// Deliberately undated: a never-published draft has no publication
+		// date and no schedule to leave behind.
+		autoTranslate: false,
+		author: ids.authorId,
+		genres: ids.genreIds,
+		tags: ids.tagIds,
+		moodTags: ids.moodTagIds,
+		_status: "draft" as const,
+	};
+
+	const found = existing.docs[0];
+	let reviewId: number;
+
+	if (!found) {
+		const created = await payload.create({
+			collection: "reviews",
+			data,
+			context: FIXTURE_CONTEXT,
+		});
+		reviewId = toId(created.id);
+	} else {
+		// A previous spec may have moved the status along; the draft is
+		// always seeded back to `untranslated`, which is the state that keeps
+		// it out of the attention bell.
+		await alignTranslationStatus(
+			payload,
+			toId(found.id),
+			found.translationStatus ?? "untranslated",
+			"untranslated",
+		);
+
+		const updated = await payload.update({
+			collection: "reviews",
+			id: found.id,
+			data,
+			context: FIXTURE_CONTEXT,
+		});
+		reviewId = toId(updated.id);
+	}
+
+	await clearIndonesianContent(payload, reviewId);
+
+	return { id: reviewId, slug: review.slug };
 }
 
 /**
@@ -685,7 +791,22 @@ export async function seedE2EDataset(): Promise<SeedSummary> {
 	const readingList = await upsertReadingList(payload, {
 		authorId: author.id,
 		authorEmail: author.email,
+		// A reading list is a public page that renders its reviews, so it
+		// collects every fixture review - including the scheduled one. The
+		// page has to filter it out itself, which is what the public specs
+		// prove (`FR-5`, `F2`).
 		reviewIds: reviews.map((review) => review.id),
+	});
+
+	// Seeded after the reading list and never added to it: the draft is not a
+	// review any public page may show. It is seeded on every run so a spec can
+	// always open the same never-published document.
+	await upsertDraftReview(payload, E2E_FIXTURE_DRAFT_REVIEW, {
+		authorId: author.id,
+		coverId,
+		genreIds: taxonomy.genres.map((genre) => genre.id),
+		tagIds: taxonomy.tags.map((tag) => tag.id),
+		moodTagIds: taxonomy.moodTags.map((moodTag) => moodTag.id),
 	});
 
 	return { author, reviews, readingList };

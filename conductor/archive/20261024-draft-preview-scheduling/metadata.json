@@ -1,0 +1,32 @@
+{
+	"id": "20261024-draft-preview-scheduling",
+	"title": "Draft Preview & Scheduled Publishing",
+	"type": "feature",
+	"status": "complete",
+	"priority": "high",
+	"depends_on": [],
+	"created_at": "2026-10-24T21:00:00Z",
+	"updated_at": "2026-10-25T10:00:00Z",
+	"spec": "conductor/archive/20261024-draft-preview-scheduling/spec.md",
+	"plan": "conductor/archive/20261024-draft-preview-scheduling/plan.md",
+	"branch": "feat/20261024-draft-preview-scheduling",
+	"base_branch": "main",
+	"base_sha": "233d826516af4ff2f76de97ab20742314ccedea3",
+	"progress": {
+		"phases_total": 6,
+		"phases_verified": 6,
+		"tasks_total": 25,
+		"tasks_done": 25
+	},
+	"last_checkpoint": "efa311d",
+	"review_verdict": "PASS WITH FINDINGS",
+	"review_rounds": 3,
+	"doc_sync": "updated",
+	"pr_url": "https://github.com/mansyar/chasing-chapters-v2/pull/21",
+	"pr_state": "open",
+	"reverted_at": null,
+	"revert_commit": null,
+	"revert_pr_url": null,
+	"archived_at": "2026-10-25T10:00:00Z",
+	"archive_path": "conductor/archive/20261024-draft-preview-scheduling"
+}

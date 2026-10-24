@@ -277,6 +277,27 @@ describe("decideTranslationAction", () => {
 		expect(result).toBe("none");
 	});
 
+	test("saving only the schedule → none (a publishAt edit starts no translation)", () => {
+		// Scheduling is not an English change: the content is untouched, so
+		// setting, moving or clearing `publishAt` must leave the translation
+		// pipeline alone (`FR-9`, `AC-9`). The review is otherwise identical
+		// and already translated.
+		const result = decideTranslationAction({
+			doc: makeDoc({
+				publishAt: "2030-01-01T00:00:00.000Z",
+				englishUpdatedAt: "2026-01-01T00:00:00.000Z",
+				translationUpdatedAt: "2026-01-01T00:00:00.000Z",
+			}),
+			previousDoc: makeDoc({
+				publishAt: null,
+				englishUpdatedAt: "2026-01-01T00:00:00.000Z",
+				translationUpdatedAt: "2026-01-01T00:00:00.000Z",
+			}),
+			context: {},
+		});
+		expect(result).toBe("none");
+	});
+
 	test("auto-translate OFF, stale dates but status failed → none (failed → stale is illegal)", () => {
 		const result = decideTranslationAction({
 			doc: makeDoc({
