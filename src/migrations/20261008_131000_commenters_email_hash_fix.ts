@@ -14,6 +14,10 @@ import { sql } from "@payloadcms/db-postgres";
  * All statements are idempotent so they are safe to replay against databases
  * (like production) that already have the target schema.
  */
+// destructive: drops "commenters"."email", the plain-text address that
+// "email_hash" replaced. Identity is a SHA-256 digest now, so the column cannot
+// be reintroduced — a hash is not reversible, and `down()` adds the column back
+// empty because the addresses are gone by design (FR-2).
 export async function up({ db }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
     ALTER TABLE "commenters" ADD COLUMN IF NOT EXISTS "email_hash" varchar NOT NULL;
