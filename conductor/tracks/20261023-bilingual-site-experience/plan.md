@@ -214,3 +214,20 @@ Review fixes are appended by `conductor-review` as:
 **Checkpoint:** 3d7a1eb
 **Evidence:** conductor/tracks/20261023-bilingual-site-experience/verification/phase-R3.md
 
+
+## Phase R4: Review Fixes (round 4)
+
+- **Goal:** The rich-text blank check accepts a body whose only content is an atomic leaf (an upload, a relationship, a horizontal rule) the way the editor's own rule does, so a valid English body is never rejected.
+- **Depends on:** Phase R3
+- **Covers:** round-4 finding F1
+- **Touches:** `src/collections/requireDefaultLocaleValue.ts`, `src/collections/__tests__/localization.test.ts`, `conductor/tracks/20261023-bilingual-site-experience/verification/integrated.md`
+- **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
+- **Status:** verified
+
+- [x] **R4.T1: Accept an atomic leaf as content** - covers: F1
+  - [x] **R4.T1.1: Return "has content" for a childless non-text node, keeping an empty paragraph textless**
+  - [x] **R4.T1.2: Add the upload-only body case to the validator contract tests**
+
+**Result:** verified
+**Checkpoint:** 00653de
+**Evidence:** conductor/tracks/20261023-bilingual-site-experience/verification/integrated.md

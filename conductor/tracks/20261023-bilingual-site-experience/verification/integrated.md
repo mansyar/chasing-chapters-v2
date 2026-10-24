@@ -1,153 +1,99 @@
 # Integrated Verification — Bilingual Site Experience
 
-| Field | Value |
-|---|---|
-| Track | `20261023-bilingual-site-experience` |
-| Date | 2026-10-24 |
-| Branch | `feat/20261023-bilingual-site-experience` |
-| Base | `98351d54d692ea8842468df5705cc2c0be0a5c60` (main at track start) |
-| Head | `974c2f4` |
-| Result | **Verified** — every configured layer green on the branch |
+- **Track:** `20261023-bilingual-site-experience`
+- **Date:** 2026-10-24
+- **Branch:** `feat/20261023-bilingual-site-experience`
+- **Base:** `98351d54d692ea8842468df5705cc2c0be0a5c60` (`main`)
+- **Head:** `00653de` (code; the doc-sync commits follow)
+- **Result:** Verified — every configured layer is green, every acceptance criterion is proved by a
+  test that ran in this tree
 
 ## Commands
 
-The configured verification strategy (`static`, `unit`, `e2e`) plus the coverage
-gate and the production build, run once on the branch at `974c2f4`:
+| Layer | Command | Exit | Result |
+| --- | --- | --- | --- |
+| Typecheck | `bun run typecheck` | 0 | No type errors in 228 files |
+| Lint | `bun run lint` | 0 | Checked 220 files — no fixes applied |
+| Unit + coverage | `bun test --coverage` | 0 | 524 pass / 0 fail across 42 files; all files 79.91 % funcs / 89.32 % lines (gate 80 % on new code — every new module is 100 % except `requireDefaultLocaleValue.ts` at 91.49 % lines) |
+| Build | `bun run build` | 0 | Production build, 25/25 static pages generated in ~34 s; run against the harness database (`_e2e`, `STORAGE_ADAPTER=local`, empty `NEXT_PUBLIC_R2_PUBLIC_URL`) because the local dev database predates this track's migrations |
+| E2E | `bun run test:e2e` | 0 | **95 passed / 0 failed / 0 skipped** (3.1 m) — 37 public, the rest locale/admin/a11y/content coverage |
 
-| Check | Command | Exit | Result |
-|---|---|---|---|
-| Typecheck | `bun run typecheck` | 0 | `No type errors in 228 files` |
-| Lint / format | `bun run lint` | 0 | `Checked 220 files in 258ms. No fixes applied.` |
-| Unit tests | `bun test` | 0 | **515 pass / 0 fail**, 1191 expect() calls, 42 files |
-| Coverage | `bun test --coverage` | 0 | all files 79.91 % funcs / 89.52 % lines; **every new logic module 100 %** (below) |
-| Build | `bun run build` | 0 | 25/25 static pages in 33.2 s, standalone artifact |
-| Browser suite | `bun run test:e2e` | 0 | **91 passed (2.2m)**, 0 failed, 0 skipped |
+Counts at the start of the track: 436 unit, 41 browser. Growth: +88 unit cases, +54 browser specs.
 
-The build and the browser suite ran against the harness database
-(`chasing-chapters_e2e`, `STORAGE_ADAPTER=local`, `NEXT_PUBLIC_R2_PUBLIC_URL` empty)
-because the local dev database is mid-upgrade (see *Environment* below). The
-harness applies the migrations and seeds itself, so the run proves the additive
-migrations on a database that predates the track.
+## New-code coverage
 
-### Coverage of the new code
+| File | Funcs | Lines | Note |
+| --- | --- | --- | --- |
+| `src/lib/i18n/locale.ts` | 100 | 100 | routing/`localizePath`/`isStaticAssetPath` |
+| `src/lib/i18n/dictionary.ts` | 100 | 100 | key-set parity tested |
+| `src/lib/i18n/format.ts` | 100 | 100 | interpolation |
+| `src/lib/seo/metadata.ts` | 100 | 100 | canonical/alternates/OG |
+| `src/lib/seo/sitemap.ts` | 100 | 100 | per-locale entries |
+| `src/lib/seo/structured-data.ts` | 100 | 100 | `inLanguage` schemas |
+| `src/lib/feed.ts` | 100 | 100 | locale-aware RSS |
+| `src/collections/requireDefaultLocaleValue.ts` | 100 | 91.49 | uncovered: the create-in-another-locale path and two defensive branches |
+| `src/hooks/formatSlug.ts` | 100 | 100 | non-default-locale write keeps the slug |
 
-The gate is `coverage: { gate: 80, scope: "new-code" }`, and every module this
-track introduced is fully covered:
-
-| Module | Funcs | Lines |
-|---|---|---|
-| `src/lib/i18n/locale.ts` | 100.00 | 100.00 |
-| `src/lib/i18n/dictionary.ts` | 100.00 | 100.00 |
-| `src/lib/i18n/format.ts` | 100.00 | 100.00 |
-| `src/lib/seo/metadata.ts` | 100.00 | 100.00 |
-| `src/lib/seo/sitemap.ts` | 100.00 | 100.00 |
-| `src/lib/seo/structured-data.ts` | 100.00 | 100.00 |
-| `src/lib/feed.ts` | 100.00 | 100.00 |
-| `src/collections/requireDefaultLocaleValue.ts` | 100.00 | 100.00 |
-| `src/hooks/formatSlug.ts` | 100.00 | 100.00 |
-| `src/lib/e2e-harness.ts` | 92.31 | 97.88 |
-
-The all-files figure (79.91 % funcs) is lower than the 86.87 % recorded before this
-track for one reason, and it is not the new code: `src/lib/__tests__/e2e-harness.test.ts`
-value-imports `upsertCover` from `e2e/global-setup.ts`, which loads the Playwright
-global setup (and therefore `dotenv` + Payload) into the unit run, so Bun counts
-that file's ~500 lines as uncovered (23.53 % funcs / 13.47 % lines). It is recorded
-as a follow-up below; the gate is scoped to new code and passes on its own terms.
+The all-files figure is dragged down by `e2e/global-setup.ts` (value-imported by a unit test for
+`upsertCover`) and by pre-existing files; the workflow's gate scopes coverage to new code.
 
 ## Requirements
 
-Each requirement is proven by the phase evidence it was built in; this table
-records the one integrated run that carries all of them.
+| ID | Implemented by | Verified by | Status |
+| --- | --- | --- | --- |
+| FR-1 path locales | `src/app/(public)/[locale]/**`, `src/proxy.ts` | `e2e/locale-routing.spec.ts` | covered |
+| FR-2 remembered choice | `LanguageToggle` + `NEXT_LOCALE` (one writer, one reader) | `locale-routing.spec.ts` (persistence, shared link does not overwrite) | covered |
+| FR-3 control on every page | `.first()` toggle in the navbar + review hero | `locale-routing.spec.ts` (query preserved) | covered |
+| FR-4 typed dictionary | `src/lib/i18n/dictionary.ts` | `dictionary.test.ts`, `dictionary-source.test.ts` | covered |
+| FR-5 document language + metadata | `[locale]/layout.tsx`, `buildPageMetadata` | `locale-metadata.spec.ts`, `metadata.test.ts` | covered |
+| FR-6 reciprocal hreflang | `localeLanguageAlternates` | `locale-metadata.spec.ts`, `metadata.test.ts` | covered |
+| FR-7 legacy `?locale=` | `src/proxy.ts` (308) | `locale-routing.spec.ts` | covered |
+| FR-8 sitemap alternates | `src/lib/seo/sitemap.ts` | `locale-metadata.spec.ts`, `sitemap.test.ts` | covered |
+| FR-9 per-locale feeds | `[locale]/feed.xml/route.ts`, `/feed.xml` 308 | `locale-metadata.spec.ts`, `feed.test.ts` | covered |
+| FR-10 localizable content + fallback | 5 collections, `requireDefaultLocaleValue`, `formatSlug` | `localization.test.ts`, `content-localization.spec.ts` | covered |
+| FR-11 normalized locale | `normalizeLocale`, `resolveLocale` | `locale.test.ts` | covered |
+| FR-12 pre-rendered detail pages | `generateStaticParams` × locale | build route table | covered |
+| NFR-1 accessible control | `LanguageToggle` | `language-control-a11y.spec.ts` (rendered contrast, keyboard, `lang`) | covered |
+| NFR-2 no client bundle growth | server-only dictionary | `language-control-a11y.spec.ts` (chunk scan), `dictionary-source.test.ts` | covered |
+| NFR-3 SEO correctness | `metadata.ts`, `sitemap.ts` | `locale-metadata.spec.ts` | covered |
+| NFR-4 testability | pure helpers in `locale.ts`/`format.ts` | `locale.test.ts`, `format` tests | covered |
+| NFR-5 migration safety + reversibility | both migrations; `193922.down()` copies English back, `195302.down()` is a no-op | dependency migration proof on a scratch database | covered (`payload migrate:down` itself unproven — see Debt) |
+| NFR-6 platform currency | `proxy.ts` (Next 16 convention) | build (`ƒ Proxy`) | covered |
+| AC-1 … AC-11 | — | `locale-routing`, `locale-metadata`, `content-localization`, `language-control-a11y`, build route table | covered |
 
-| Requirement | Evidence in this run | Status |
-|---|---|---|
-| FR-1 path locales, unprefixed paths redirect, unsupported 404 | `e2e/locale-routing.spec.ts` (12 cases); route table below | Covered |
-| FR-2 remembered preference, toggle-only write | `e2e/locale-routing.spec.ts` "a direct Indonesian URL leaves the stored preference alone" | Covered |
-| FR-3 control on every page, preserves slug/depth/query | `LanguageToggle` in the navbar; AC-3 case in `e2e/locale-routing.spec.ts` | Covered |
-| FR-4 typed dictionary over all public surfaces | `dictionary.test.ts` (key parity), `dictionary-source.test.ts` (no literal left) | Covered |
-| FR-5 document language, localized metadata, `og:locale`, canonical | `e2e/locale-metadata.spec.ts` (4 cases); `metadata.test.ts` | Covered |
-| FR-6 reciprocal `en`/`id`/`x-default` alternates | `e2e/locale-metadata.spec.ts` "emits reciprocal hreflang alternates from both locales" | Covered |
-| FR-7 legacy `?locale=` permanent redirect | `e2e/locale-routing.spec.ts`; `src/proxy.ts` 308 branch | Covered |
-| FR-8 sitemap in both locales with alternates | `e2e/locale-metadata.spec.ts` (2 sitemap cases); `sitemap.test.ts` | Covered |
-| FR-9 `/en/feed.xml`, `/id/feed.xml`, `/feed.xml` 308, feed advertised | `e2e/locale-metadata.spec.ts` (4 feed cases); `feed.test.ts` | Covered |
-| FR-10 localizable taxonomy/list/title with English fallback | `e2e/content-localization.spec.ts` (10 cases); `localization.test.ts` | Covered |
-| FR-11 normalized locale on every read | `locale.test.ts`; every page normalizes `params` before Payload | Covered |
-| FR-12 detail pages pre-render per locale | Route table: both detail routes `●` for both locales | Covered |
-| NFR-1 accessibility of the control | `e2e/language-control-a11y.spec.ts` (contrast 4.95 / 7.77, keyboard, `aria-pressed`, `lang`) | Covered |
-| NFR-2 dictionary server-side, flat client bundle | 1,532,683 bytes; Indonesian strings in the HTML and in **zero** chunks | Covered |
-| NFR-3 SEO correctness | `metadata.test.ts`; the metadata table in `verification/phase-3.md` | Covered |
-| NFR-4 pure locale functions | `src/lib/i18n/__tests__/locale.test.ts` | Covered |
-| NFR-5 migration safety | additive migrations; the e2e run migrated a pre-track database | Covered |
-| NFR-6 platform currency | Next 16.4.2 `proxy.ts`; installed i18n guide followed | Covered |
-| AC-1…AC-11 | the sweep table in `verification/phase-5.md`, re-run here | Covered |
+## Deviations and notes
 
-## Pre-rendering
+- **Bulk action surfaces**: n/a for this track. The one cross-cutting deviation is the language
+  control: the review page carries two instances (navbar and hero), deliberately kept.
+- **`requireDefaultLocaleValue`** replaces `required: true` on every localizable field, including
+  `reviewContent` after Phase R2/R3. Payload reads `required` on a localized field as required in
+  *every* locale, which would make the pipeline's Indonesian write and the fixture's `id` clear
+  impossible. The validator enforces the value in the default locale only, is rich-text aware
+  (textless editor states and upload-only bodies are handled correctly), and the generated types
+  (`reviewContent?: … | null`) are guarded at their single render site.
+- **The e2e database is the only place the migrations have been applied to existing data.** Local
+  dev databases created before this track need `bun run payload migrate:fresh` (destructive) or one
+  `bun run dev` push; recorded in the phase-5 evidence and reported to the owner.
+- **`/feed.xml`** permanently redirects to `/en/feed.xml`; the proxy passes it through so exactly
+  one layer answers.
+- **Structured data**: the synthetic English `reviewBody` is gone rather than translated; the
+  schemas now carry `inLanguage` and locale-scoped `@id`s.
+- **The 404 body is English** (document `lang` follows the served locale). `not-found.js` accepts no
+  props, and reading the locale cookie at that boundary would make every `[locale]` route dynamic.
+- **`/[locale]/reviews` is dynamic** because it reads `searchParams` for filters — pre-existing, not
+  introduced here.
+- **No pre-track bundle baseline** exists; NFR-2 is proved as an absolute measurement (1,532,683 B of
+  uncompressed JS on `/id`) plus the absence of every dictionary string from every chunk, held by a
+  pinned ceiling.
 
-`bun run build` produced the same route shape as every phase since Phase 1:
+## Follow-ups (left deliberately)
 
-- `●` `/en`, `/id`, both locales of `/about`, `/reading-lists`, both detail routes
-  (9 review paths and 2 reading-list paths from `generateStaticParams`), and
-  `/en/feed.xml` + `/id/feed.xml`.
-- `ƒ` only for the two `opengraph-image` handlers, `/[locale]/reviews` (it reads
-  `searchParams` for filters — pre-existing), `/feed.xml` (the 308 handler), the
-  admin and API routes, `/sitemap.xml` (`force-dynamic`), and `Proxy (Middleware)`.
-
-**No static page became dynamic during this track.**
-
-## Deviations carried by this track
-
-Every phase's deviations were accepted as the smallest change that made the goal
-hold; collected here so the review sees them in one place:
-
-| Phase | Files outside the original Touches | Why |
-|---|---|---|
-| 1 | `ReviewCard.tsx`, `ReadingListCard.tsx`; `date-format.ts` + test; `revalidatePages.ts` + test; `like-review.ts`, `comments.ts` | In-locale root links; collapsing two locale modules into one; revalidation must name the locale-prefixed paths |
-| 2 | — | None |
-| 3 | `Footer.tsx`, `not-found.tsx`, `revalidatePages.ts` + test | The footer names the feed and needs the active locale; the feed now exists per locale |
-| 4 | `formatSlug.ts`; `requireDefaultLocaleValue.ts` (new); 19 nullable-title guards across pages, OG handlers and five cards | Payload re-derives the slug from the translated name; `required` cannot be satisfied per locale by a body-only pipeline |
-| 5 | `LanguageToggle.tsx` (one class string) | The active pill measured 3.66:1 and now measures 4.95 / 7.77:1 |
-
-The only hand-written SQL in the track is the backfill inside the otherwise
-generated `20261023_193922_localize_taxonomy_and_reading_list_content` migration,
-placed between the generated DDL and the generated `DROP COLUMN` statements so the
-existing English values move into the default-locale rows before their columns go.
-
-## Environment
-
-`bun run build` against the **local dev** database fails with
-`column reviews_locales.title does not exist (42703)` because that database was
-schema-pushed after `20261021_140330` was authored, so its migration ledger cannot
-replay from batch 0 (`"y" | bun run payload migrate` stops on the already-present
-`english_updated_at` column). This is a local-environment repair, not a track
-defect: CI migrates a fresh database, and the harness database migrated and seeded
-cleanly in this run. The repair is `bun run payload migrate:fresh` followed by
-`bun run seed`, or one `bun run dev` (which pushes the schema) — both discard local
-dev data, so it is left to the owner.
-
-## Follow-ups
-
-Recorded, not fixed here:
-
-1. The 404 **body** is English while its document `lang` follows the served locale
-   (`not-found.js` receives no props and reading the cookie in the root boundary
-   made every `[locale]` route dynamic).
-2. `/[locale]/reviews` is dynamic for its filters — pre-existing, not a regression.
-3. No pre-track client-bundle baseline exists, so NFR-2 is an absolute measurement
-   (1,532,683 bytes) plus proof of dictionary absence, guarded by a 1,600,000-byte
-   ceiling rather than a delta.
-4. A review page carries two language controls (navbar + hero), left intentionally.
-5. The two `opengraph-image` handlers remain `ƒ`.
-6. `src/lib/__tests__/e2e-harness.test.ts` imports `upsertCover` from
-   `e2e/global-setup.ts`, which loads the Playwright setup into the unit run and
-   distorts the all-files coverage figure; moving `upsertCover` into
-   `src/lib/e2e-harness.ts` would fix it.
-7. The local dev database needs the repair described above.
+1. Localize the 404 body (needs a locale signal at the root boundary without making routes dynamic).
+2. Record a bundle baseline so future tracks can report a delta.
+3. Prove `payload migrate:down` end to end via the CLI once the permission layer allows it.
+4. Pre-existing: the local dev database's migration ledger needs a rebuild.
 
 ## Evidence
 
-- `verification/phase-1.md` — locale routing (`ea7832f`)
-- `verification/phase-2.md` — interface dictionary and control (`f3390e2`)
-- `verification/phase-3.md` — metadata, alternates, sitemap and feeds (`c1b83e6`)
-- `verification/phase-4.md` — content localization (`dfcede1`)
-- `verification/phase-5.md` — pre-rendering, accessibility and the AC sweep (`5a5031a`)
-- `spec.md`, `plan.md`, `review.md`
+`verification/phase-1.md` … `verification/phase-5.md`, `verification/phase-R1.md`,
+`verification/phase-R2.md`, `verification/phase-R3.md`, `review.md`.
