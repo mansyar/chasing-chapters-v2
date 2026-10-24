@@ -25,6 +25,10 @@ export const Reviews: CollectionConfig = {
 			"status",
 			"translationStatus",
 			"publishDate",
+			// The schedule is the field an author checks most often while a
+			// review is waiting to go out, so it earns a column of its own
+			// rather than living behind the edit view (`FR-7`).
+			"publishAt",
 		],
 		/**
 		 * Payload's native Preview button (`FR-1`).
@@ -353,6 +357,26 @@ export const Reviews: CollectionConfig = {
 				},
 				description:
 					"Hides the review from every public page until this moment. Leave empty to publish immediately.",
+				// The list says which state the row is in rather than echoing
+				// the raw date, and the cell is where "scheduled" and "live"
+				// become distinguishable at a glance (`FR-7`, `AC-7`).
+				components: {
+					Cell: "/collections/Reviews/admin/PublishStateCell#PublishStateCell",
+				},
+			},
+		},
+		{
+			// The sentence that goes with the field above: when this review will
+			// publish, or that it already is (`FR-7`, `AC-7`). A `ui` field, so
+			// it holds no data - it reads the document through the form state.
+			name: "publishScheduleNotice",
+			type: "ui",
+			admin: {
+				position: "sidebar",
+				components: {
+					Field:
+						"/collections/Reviews/admin/PublishScheduleNotice#PublishScheduleNotice",
+				},
 			},
 		},
 		{

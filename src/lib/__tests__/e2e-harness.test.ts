@@ -11,6 +11,8 @@ import {
 	DEFAULT_WORKER_COUNT,
 	E2E_FIXTURE_AUTHOR,
 	E2E_FIXTURE_COVER,
+	E2E_FIXTURE_DRAFT_REVIEW,
+	E2E_FIXTURE_DRAFT_REVIEW_PATH,
 	E2E_FIXTURE_READING_LIST,
 	E2E_FIXTURE_REVIEW_PATH,
 	E2E_FIXTURE_REVIEW_SLUG,
@@ -349,6 +351,19 @@ describe("e2e-harness", () => {
 			}
 			expect(deriveSlug(E2E_FIXTURE_READING_LIST.title)).toBe(
 				E2E_FIXTURE_READING_LIST.slug,
+			);
+			expect(deriveSlug(E2E_FIXTURE_DRAFT_REVIEW.title)).toBe(
+				E2E_FIXTURE_DRAFT_REVIEW.slug,
+			);
+		});
+
+		it("keeps the never-published draft out of the seeded reviews", () => {
+			// The draft is its own row on purpose: every spec that walks the
+			// seeded reviews expects published documents, and the sitemap spec
+			// expects the ones without a schedule to be listed.
+			expect(E2E_FIXTURE_REVIEWS).not.toContain(E2E_FIXTURE_DRAFT_REVIEW);
+			expect(E2E_FIXTURE_DRAFT_REVIEW_PATH).toBe(
+				"/reviews/e2e-fixture-the-unwritten-letter",
 			);
 		});
 

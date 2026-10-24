@@ -110,6 +110,15 @@ export default defineConfig({
 			dependencies: ["admin-locale-preference"],
 			use: { ...devices["Desktop Chrome"] },
 		},
+		{
+			// The schedule specs read the reviews list and two edit views. They
+			// are chained after the preview spec for the same reason as the
+			// others: one admin session and one shared fixture at a time.
+			name: "admin-review-schedule",
+			testMatch: "**/admin/review-schedule.spec.ts",
+			dependencies: ["admin-draft-preview"],
+			use: { ...devices["Desktop Chrome"] },
+		},
 	],
 
 	// Serve the production build. `bun run test:e2e` builds before the suite

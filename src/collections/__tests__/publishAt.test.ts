@@ -4,6 +4,7 @@ import type {
 	CollectionConfig,
 	Field,
 } from "payload";
+import { isPubliclyVisible } from "../../lib/publish-visibility";
 import { Reviews } from "../Reviews";
 
 /**
@@ -140,6 +141,68 @@ describe("reviews publish schedule", () => {
 			});
 
 			expect(data.publishDate).toBeUndefined();
+		});
+	});
+
+	describe("the admin surfaces that name the state", () => {
+		it("lists the schedule as a default column", () => {
+			expect(Reviews.admin?.defaultColumns).toContain("publishAt");
+		});
+
+		it("renders the list cell from the collection config", () => {
+			const publishAt = field(Reviews, "publishAt") as {
+				admin?: { components?: { Cell?: unknown } };
+			};
+
+			expect(publishAt.admin?.components?.Cell).toBe(
+				"/collections/Reviews/admin/PublishStateCell#PublishStateCell",
+			);
+		});
+
+		it("puts the notice in the sidebar, directly after the schedule field", () => {
+			const names = Reviews.fields.map((candidate) =>
+				"name" in candidate ? candidate.name : undefined,
+			);
+			const scheduleIndex = names.indexOf("publishAt");
+			const noticeIndex = names.indexOf("publishScheduleNotice");
+			const notice = field(Reviews, "publishScheduleNotice") as {
+				type?: string;
+				admin?: {
+					position?: string;
+					components?: { Field?: unknown };
+				};
+			};
+
+			expect(noticeIndex).toBe(scheduleIndex + 1);
+			expect(notice.type).toBe("ui");
+			expect(notice.admin?.position).toBe("sidebar");
+			expect(notice.admin?.components?.Field).toBe(
+				"/collections/Reviews/admin/PublishScheduleNotice#PublishScheduleNotice",
+			);
+		});
+	});
+
+	describe("a translation that never succeeds", () => {
+		// `AC-9`: the schedule is a gate of its own. A review whose Indonesian
+		// translation failed, or is still missing, goes public at its moment
+		// anyway - the pipeline is not part of the gate, so it cannot delay it.
+		const failed = {
+			_status: "published",
+			publishAt: SCHEDULE,
+			translationStatus: "failed",
+		};
+
+		it("stays hidden until the moment", () => {
+			const before = new Date(Date.parse(SCHEDULE) - 1000);
+
+			expect(isPubliclyVisible(failed, before)).toBeFalse();
+		});
+
+		it("becomes visible at the moment with the translation still failed", () => {
+			expect(isPubliclyVisible(failed, new Date(SCHEDULE))).toBeTrue();
+			expect(
+				isPubliclyVisible(failed, new Date(Date.parse(SCHEDULE) + 1000)),
+			).toBeTrue();
 		});
 	});
 });

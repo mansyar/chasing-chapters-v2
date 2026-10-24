@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import {
+	E2E_FIXTURE_DRAFT_REVIEW,
 	E2E_FIXTURE_REVIEW,
 	E2E_FIXTURE_SCHEDULED_REVIEW,
 	E2E_FIXTURE_SCHEDULED_REVIEW_PATH,
@@ -75,6 +76,9 @@ test.describe("Scheduled review visibility", () => {
 		expect(response.status()).toBe(200);
 		const body = await response.text();
 		expect(body).not.toContain(`/reviews/${SCHEDULED_SLUG}`);
+		// The never-published draft is not on the sitemap either, for the other
+		// reason: it has never been published at all (`AC-2`).
+		expect(body).not.toContain(`/reviews/${E2E_FIXTURE_DRAFT_REVIEW.slug}`);
 		expect(body).toContain(`/reviews/${E2E_FIXTURE_REVIEW.slug}`);
 	});
 

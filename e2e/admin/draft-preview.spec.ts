@@ -1,5 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 import {
+	E2E_FIXTURE_DRAFT_REVIEW,
 	E2E_FIXTURE_REVIEW,
 	E2E_FIXTURE_SCHEDULED_REVIEW,
 } from "../../src/lib/e2e-harness";
@@ -9,6 +10,8 @@ const HIDDEN_SLUG = E2E_FIXTURE_SCHEDULED_REVIEW.slug;
 const HIDDEN_TITLE = E2E_FIXTURE_SCHEDULED_REVIEW.title;
 const PUBLIC_SLUG = E2E_FIXTURE_REVIEW.slug;
 const PUBLIC_TITLE = E2E_FIXTURE_REVIEW.title;
+const DRAFT_SLUG = E2E_FIXTURE_DRAFT_REVIEW.slug;
+const DRAFT_TITLE = E2E_FIXTURE_DRAFT_REVIEW.title;
 
 const ENTRY = `/api/preview?slug=${HIDDEN_SLUG}&locale=en`;
 
@@ -156,6 +159,54 @@ test.describe("Draft preview", () => {
 		expect(
 			(await page.request.get(`/id/reviews/${HIDDEN_SLUG}`)).status(),
 		).toBe(404);
+	});
+
+	test("previews a never-published draft and leaves it unpublished", async ({
+		page,
+	}) => {
+		await loginAsFixtureAdmin(page);
+
+		// AC-2: this document has never been published, so no reader reaches
+		// it in either language.
+		expect((await page.request.get(`/en/reviews/${DRAFT_SLUG}`)).status()).toBe(
+			404,
+		);
+		expect((await page.request.get(`/id/reviews/${DRAFT_SLUG}`)).status()).toBe(
+			404,
+		);
+
+		await page.goto(`/api/preview?slug=${DRAFT_SLUG}&locale=en`);
+		await expect(page).toHaveURL(new RegExp(`/en/reviews/${DRAFT_SLUG}$`));
+		await expect(banner(page)).toBeVisible();
+		await expect(banner(page)).toContainText("Preview");
+		// The body only a draft-mode session may render.
+		await expect(page.getByRole("heading", { level: 1 })).toContainText(
+			DRAFT_TITLE,
+		);
+
+		// Rendering the draft wrote nothing back: it is still a draft, and it
+		// is still untranslated (`AC-9`). The exact-state assertion for the
+		// scheduled review lives in the case below; this one pins the draft.
+		const state = await readTranslationState(page, DRAFT_SLUG);
+		expect(state.documentStatus).toBe("draft");
+		expect(state.status).toBe("untranslated");
+
+		// AC-3: the other language stays in preview mode, and because the
+		// draft has no Indonesian body it renders the English fallback.
+		await banner(page).getByRole("link").click();
+		await expect(page).toHaveURL(new RegExp(`/id/reviews/${DRAFT_SLUG}$`));
+		await expect(page.locator("html")).toHaveAttribute("lang", "id");
+		await expect(banner(page)).toBeVisible();
+		await expect(page.getByRole("heading", { level: 1 })).toContainText(
+			DRAFT_TITLE,
+		);
+
+		// Exiting ends the authority: the draft disappears again.
+		await banner(page).getByRole("button").click();
+		await expect(banner(page)).toHaveCount(0);
+		expect((await page.request.get(`/id/reviews/${DRAFT_SLUG}`)).status()).toBe(
+			404,
+		);
 	});
 
 	test("previews a published review and exits back to it", async ({ page }) => {

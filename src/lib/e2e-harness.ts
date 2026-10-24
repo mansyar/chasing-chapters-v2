@@ -678,6 +678,59 @@ export const E2E_FIXTURE_SCHEDULED_REVIEW_PATH = `/reviews/${E2E_FIXTURE_SCHEDUL
 /** The path of the reading list the public specs navigate to. */
 export const E2E_FIXTURE_READING_LIST_PATH = `/reading-lists/${E2E_FIXTURE_READING_LIST.slug}`;
 
+/**
+ * The never-published draft (`FR-2`, `AC-2`).
+ *
+ * It is a review of its own rather than another entry in
+ * `E2E_FIXTURE_REVIEWS`, because it is not a review the public pages may ever
+ * mention: it has never been published, so it has no `publishDate`, no
+ * `publishAt` and no Indonesian content, and every spec that walks the seeded
+ * reviews would otherwise have to special-case it. It keeps its own single
+ * row in the admin list, which is also what lets the preview spec prove that
+ * a document that was never published still renders in draft mode.
+ */
+export type E2EFixtureDraftReview = Pick<
+	E2EFixtureReview,
+	| "title"
+	| "slug"
+	| "bookAuthor"
+	| "rating"
+	| "reviewContent"
+	| "whatILoved"
+	| "whatCouldBeBetter"
+	| "perfectFor"
+	| "genres"
+	| "tags"
+	| "moodTags"
+>;
+
+/** The draft the preview specs open, which must never be publicly reachable. */
+export const E2E_FIXTURE_DRAFT_REVIEW: E2EFixtureDraftReview = {
+	title: "E2E Fixture: The Unwritten Letter",
+	slug: "e2e-fixture-the-unwritten-letter",
+	bookAuthor: "Noor Haddad",
+	rating: 3,
+	reviewContent: richText(
+		"A translator spends a winter deciphering letters her grandmother never sent.",
+	),
+	whatILoved: richText(
+		"The way every unfinished sentence turns into a small act of forgiveness.",
+	),
+	whatCouldBeBetter: richText(
+		"The middle third repeats a discovery the first third already made.",
+	),
+	perfectFor: richText("Readers who keep the letters they never posted."),
+	genres: ["Fantasy"],
+	tags: ["Classic"],
+	moodTags: ["Adventurous"],
+};
+
+/** The slug of the never-published draft. */
+export const E2E_FIXTURE_DRAFT_REVIEW_SLUG = E2E_FIXTURE_DRAFT_REVIEW.slug;
+
+/** The public path of the draft, which must never render. */
+export const E2E_FIXTURE_DRAFT_REVIEW_PATH = `/reviews/${E2E_FIXTURE_DRAFT_REVIEW_SLUG}`;
+
 /* -------------------------------------------------------------------------- *
  * The Redis readiness probe
  *
