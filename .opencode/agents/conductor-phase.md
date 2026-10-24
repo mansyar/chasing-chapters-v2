@@ -90,8 +90,7 @@ permissions:
   - action: shell
     resource: "git mv *"
     effect: allow
-  # --- PROJECT COMMANDS START ---
-  # From conductor/workflow.md Workflow Config
+  # Shell allow-list, derived from conductor/workflow.md Workflow Config.
   - action: shell
     resource: "bun install"
     effect: allow
@@ -182,7 +181,6 @@ permissions:
   - action: shell
     resource: "bunx biome check --write *"
     effect: allow
-  # --- PROJECT COMMANDS END ---
 ---
 
 You are the **Conductor Phase Executor**. You execute exactly one phase of one

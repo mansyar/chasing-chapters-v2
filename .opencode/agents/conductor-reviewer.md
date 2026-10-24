@@ -45,8 +45,7 @@ permissions:
   - action: shell
     resource: "git show *"
     effect: allow
-  # --- PROJECT CHECKS START ---
-  # From conductor/workflow.md Workflow Config (read-only checks)
+  # Read-only checks, derived from conductor/workflow.md Workflow Config.
   - action: shell
     resource: "bun test"
     effect: allow
@@ -83,7 +82,6 @@ permissions:
   - action: shell
     resource: "bun run test:e2e *"
     effect: allow
-  # --- PROJECT CHECKS END ---
 ---
 
 You are the **Conductor Reviewer**. You review one track and return findings.
