@@ -12,7 +12,6 @@ import {
 	E2E_FIXTURE_READING_LIST,
 	E2E_FIXTURE_READING_LIST_LOCALIZED,
 	E2E_FIXTURE_REVIEWS,
-	E2E_FIXTURE_SCHEDULED_REVIEW_SLUG,
 	E2E_FIXTURE_TAXONOMY,
 	E2E_FIXTURE_TAXONOMY_LOCALIZED,
 	E2E_STORAGE_ADAPTER,
@@ -793,11 +792,10 @@ export async function seedE2EDataset(): Promise<SeedSummary> {
 		authorId: author.id,
 		authorEmail: author.email,
 		// A reading list is a public page that renders its reviews, so it
-		// collects only the visible fixture reviews; the scheduled one is left
-		// off it on purpose.
-		reviewIds: reviews
-			.filter((review) => review.slug !== E2E_FIXTURE_SCHEDULED_REVIEW_SLUG)
-			.map((review) => review.id),
+		// collects every fixture review - including the scheduled one. The
+		// page has to filter it out itself, which is what the public specs
+		// prove (`FR-5`, `F2`).
+		reviewIds: reviews.map((review) => review.id),
 	});
 
 	// Seeded after the reading list and never added to it: the draft is not a

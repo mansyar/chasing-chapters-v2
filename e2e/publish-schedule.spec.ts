@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import {
 	E2E_FIXTURE_DRAFT_REVIEW,
+	E2E_FIXTURE_READING_LIST_PATH,
 	E2E_FIXTURE_REVIEW,
 	E2E_FIXTURE_SCHEDULED_REVIEW,
 	E2E_FIXTURE_SCHEDULED_REVIEW_PATH,
@@ -32,6 +33,48 @@ test.describe("Scheduled review visibility", () => {
 		}
 	});
 
+	test("stays out of the public REST API", async ({ browser }) => {
+		// The collection's anonymous read is the rule the public `/api` proxy
+		// serves, so it is one more public surface (`FR-5`, `NFR-4`). A
+		// signed-out context is what a reader has.
+		const anonymous = await browser.newContext();
+
+		try {
+			const scheduledQuery = new URLSearchParams({
+				"where[slug][equals]": SCHEDULED_SLUG,
+				limit: "1",
+			});
+			const scheduled = await anonymous.request.get(
+				`/api/reviews?${scheduledQuery.toString()}`,
+			);
+
+			expect(scheduled.status()).toBe(200);
+			const scheduledBody = (await scheduled.json()) as {
+				docs?: Array<{ slug?: string }>;
+			};
+			expect(scheduledBody.docs).toEqual([]);
+
+			// The control: the same query for a visible review returns exactly
+			// one document, so a rule that served nothing would fail too.
+			const visibleQuery = new URLSearchParams({
+				"where[slug][equals]": E2E_FIXTURE_REVIEW.slug,
+				limit: "1",
+			});
+			const visible = await anonymous.request.get(
+				`/api/reviews?${visibleQuery.toString()}`,
+			);
+
+			expect(visible.status()).toBe(200);
+			const visibleBody = (await visible.json()) as {
+				docs?: Array<{ slug?: string }>;
+			};
+			expect(visibleBody.docs).toHaveLength(1);
+			expect(visibleBody.docs?.[0]?.slug).toBe(E2E_FIXTURE_REVIEW.slug);
+		} finally {
+			await anonymous.close();
+		}
+	});
+
 	test("stays off the home page's latest reviews", async ({ page }) => {
 		await page.goto(localePath("/", "en"));
 
@@ -52,6 +95,23 @@ test.describe("Scheduled review visibility", () => {
 				page.locator(`a[href*="/reviews/${SCHEDULED_SLUG}"]`),
 			).toHaveCount(0);
 			await expect(page.getByText(SCHEDULED_TITLE)).toHaveCount(0);
+			await expect(
+				page.locator(`a[href*="/reviews/${E2E_FIXTURE_REVIEW.slug}"]`).first(),
+			).toBeVisible();
+		}
+	});
+
+	test("shows no card for it on the fixture reading list", async ({ page }) => {
+		// The fixture reading list holds every fixture review, the scheduled
+		// one included, so the page itself has to filter it (`FR-5`).
+		for (const locale of ["en", "id"] as const) {
+			await page.goto(localePath(E2E_FIXTURE_READING_LIST_PATH, locale));
+
+			await expect(page.getByText(SCHEDULED_TITLE)).toHaveCount(0);
+			await expect(
+				page.locator(`a[href*="/reviews/${SCHEDULED_SLUG}"]`),
+			).toHaveCount(0);
+			// The control: a visible review's card is on the same grid.
 			await expect(
 				page.locator(`a[href*="/reviews/${E2E_FIXTURE_REVIEW.slug}"]`).first(),
 			).toBeVisible();

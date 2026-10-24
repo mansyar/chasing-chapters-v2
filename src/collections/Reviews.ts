@@ -6,6 +6,7 @@ import {
 	translateReview,
 } from "../hooks/translateReview";
 import { normalizeLocale } from "../lib/i18n/locale";
+import { publishedAndVisibleWhere } from "../lib/publish-visibility";
 import { retranslateReview } from "../lib/retranslate";
 import {
 	canTransition,
@@ -85,12 +86,11 @@ export const Reviews: CollectionConfig = {
 					},
 				} as Where;
 			}
-			// Public can only see published reviews
-			return {
-				_status: {
-					equals: "published",
-				},
-			};
+			// Public reads use the same visibility rule every public page
+			// uses (`FR-5`, `NFR-4`): the public REST API is a public surface,
+			// so a published review with a future `publishAt` must not be
+			// served there either.
+			return publishedAndVisibleWhere(new Date());
 		},
 		create: ({ req: { user } }) => Boolean(user),
 		update: ({ req: { user } }) => {
@@ -462,7 +462,7 @@ export const Reviews: CollectionConfig = {
 	],
 	hooks: {
 		beforeChange: [
-			({ data, operation }) => {
+			({ data, operation, originalDoc }) => {
 				if (operation === "create" || operation === "update") {
 					// A scheduled review is meant to publish at its schedule, so
 					// an empty `publishDate` starts there instead of at the
@@ -470,11 +470,18 @@ export const Reviews: CollectionConfig = {
 					// value is never overwritten, and clearing `publishAt`
 					// changes nothing here: with no schedule to copy, the date
 					// the row already carries stays.
-					if (!data.publishDate && data.publishAt) {
-						data.publishDate = data.publishAt;
-					}
-					if (data._status === "published" && !data.publishDate) {
-						data.publishDate = new Date();
+					//
+					// A partial update carries only the fields it changes, so the
+					// stored date has to be read alongside it: an update that
+					// touches `publishAt` alone must not overwrite the author's
+					// date with the schedule.
+					const publishDate = data.publishDate ?? originalDoc?.publishDate;
+					if (!publishDate) {
+						if (data.publishAt) {
+							data.publishDate = data.publishAt;
+						} else if (data._status === "published") {
+							data.publishDate = new Date();
+						}
 					}
 				}
 				return data;

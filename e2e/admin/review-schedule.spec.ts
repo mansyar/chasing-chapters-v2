@@ -86,4 +86,25 @@ test.describe("Review schedule in the admin", () => {
 		await expect(page.getByText(/Scheduled to publish on/)).toHaveCount(0);
 		await expect(page.getByText(LIVE_NOTICE)).toHaveCount(0);
 	});
+
+	test("stops promising a schedule the author cleared without saving", async ({
+		page,
+	}) => {
+		await loginAsFixtureAdmin(page);
+
+		const scheduledId = await getReviewIdBySlug(page, SCHEDULED_SLUG);
+		await page.goto(`${REVIEWS_ADMIN_PATH}/${scheduledId}`);
+		await expect(page.getByText(SCHEDULED_NOTICE)).toBeVisible();
+
+		// Clearing the date writes `null` into the form without saving, so the
+		// notice has to follow the form rather than keep reading the saved
+		// document (`F4`). Nothing is submitted here: the saved schedule and
+		// every other case in this file must be unaffected.
+		await page
+			.locator("#field-publishAt .date-time-picker__clear-button")
+			.click();
+
+		await expect(page.getByText(LIVE_NOTICE)).toBeVisible();
+		await expect(page.getByText(SCHEDULED_NOTICE)).toHaveCount(0);
+	});
 });

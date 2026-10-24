@@ -37,10 +37,13 @@ export async function GET(
 	const siteUrl =
 		process.env.NEXT_PUBLIC_APP_URL || "https://chasing-chapters.com";
 	const payload = await getPayload({ config: configPromise });
+	// One clock reading for both the query and the in-memory rule beneath it,
+	// so the two can never disagree about the moment.
+	const now = new Date();
 
 	const { docs } = await payload.find({
 		collection: "reviews",
-		where: publishedAndVisibleWhere(new Date()),
+		where: publishedAndVisibleWhere(now),
 		sort: "-publishDate",
 		limit: 20,
 		depth: 1,
@@ -49,13 +52,22 @@ export async function GET(
 			title: true,
 			slug: true,
 			publishDate: true,
+			publishAt: true,
+			// The rule below reads the status off the document, so the query
+			// has to return it even though the `where` already filters on it.
+			_status: true,
 			createdAt: true,
 			reviewContent: true,
 			coverImage: true,
 		},
 	});
 
-	const xml = buildRssFeed({ reviews: docs, siteUrl, locale: appLocale });
+	const xml = buildRssFeed({
+		reviews: docs,
+		siteUrl,
+		locale: appLocale,
+		now,
+	});
 
 	return new Response(xml, {
 		headers: {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import type { Where } from "payload";
 import {
+	canAcceptPublicWrite,
 	isPubliclyVisible,
 	publishedAndVisibleWhere,
 } from "../publish-visibility";
@@ -81,6 +82,33 @@ describe("publish-visibility", () => {
 			expect(
 				isPubliclyVisible({ _status: "published", publishAt: "" }, NOW),
 			).toBe(true);
+		});
+	});
+
+	describe("canAcceptPublicWrite", () => {
+		it("refuses a review scheduled for the future", () => {
+			// A comment is a public write, so it answers like a public read:
+			// the reader who cannot see the review cannot comment on it.
+			expect(
+				canAcceptPublicWrite(
+					{ _status: "published", publishAt: "2026-07-01T00:00:00.000Z" },
+					NOW,
+				),
+			).toBe(false);
+		});
+
+		it("accepts a visible review", () => {
+			expect(
+				canAcceptPublicWrite(
+					{ _status: "published", publishAt: "2026-05-01T00:00:00.000Z" },
+					NOW,
+				),
+			).toBe(true);
+			expect(canAcceptPublicWrite({ _status: "published" }, NOW)).toBe(true);
+		});
+
+		it("refuses a review that is not published", () => {
+			expect(canAcceptPublicWrite({ _status: "draft" }, NOW)).toBe(false);
 		});
 	});
 

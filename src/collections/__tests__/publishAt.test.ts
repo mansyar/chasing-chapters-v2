@@ -33,12 +33,14 @@ function field(config: CollectionConfig, name: string): Field {
 function runBeforeChange(
 	data: Record<string, unknown>,
 	operation: "create" | "update" = "create",
+	originalDoc?: Record<string, unknown>,
 ): Record<string, unknown> {
 	const hook = Reviews.hooks?.beforeChange?.[0] as CollectionBeforeChangeHook;
 
 	return hook({
 		data,
 		operation,
+		originalDoc,
 	} as unknown as Parameters<CollectionBeforeChangeHook>[0]);
 }
 
@@ -108,6 +110,17 @@ describe("reviews publish schedule", () => {
 			});
 
 			expect(data.publishDate).toBe(AUTHOR_DATE);
+		});
+
+		it("keeps the stored date on a partial update", () => {
+			// An update carries only the fields it changes, so `data` has no
+			// `publishDate` at all. The row's own date is the author's, and the
+			// schedule must not replace it (`FR-8`).
+			const data = runBeforeChange({ publishAt: SCHEDULE }, "update", {
+				publishDate: AUTHOR_DATE,
+			});
+
+			expect(data.publishDate).toBeUndefined();
 		});
 
 		it("leaves the date alone when the schedule is cleared", () => {

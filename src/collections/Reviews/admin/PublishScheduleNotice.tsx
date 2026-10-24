@@ -23,12 +23,17 @@ import {
  */
 export const PublishScheduleNotice: React.FC = () => {
 	const { data } = useDocumentInfo();
-	const { value: scheduledValue } = useField<string>({ path: "publishAt" });
+	const { value: scheduledValue } = useField<string | null>({
+		path: "publishAt",
+	});
 
 	const doc: ReviewPublishDoc = {
 		_status: data?._status,
-		publishAt:
-			typeof scheduledValue === "string" ? scheduledValue : data?.publishAt,
+		// The form's `null` is a value: the author cleared the schedule, so the
+		// notice must stop promising a publication that is no longer set. Only
+		// `undefined` means the form has not been initialized yet, and that is
+		// when the saved document is the right answer.
+		publishAt: scheduledValue === undefined ? data?.publishAt : scheduledValue,
 	};
 	const notice = publishScheduleNotice(doc, new Date());
 

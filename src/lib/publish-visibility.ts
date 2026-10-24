@@ -105,3 +105,22 @@ export function isPubliclyVisible(
 
 	return scheduledFor <= now.getTime();
 }
+
+/**
+ * Decides whether a public write - a reader's comment - may target an
+ * already-loaded review (`FR-5`).
+ *
+ * The answer is {@link isPubliclyVisible}: the write path has to agree with the
+ * read path. A reader who can see a review can comment on it, and a reader who
+ * cannot must get the same answer as for a review that does not exist, or a
+ * scheduled review leaks its existence through a distinct reply.
+ *
+ * It lives in this module rather than beside the action because the action
+ * module is `"use server"`, where every export must be an async server action.
+ */
+export function canAcceptPublicWrite(
+	doc: PublishVisibilityDoc,
+	now: Date,
+): boolean {
+	return isPubliclyVisible(doc, now);
+}

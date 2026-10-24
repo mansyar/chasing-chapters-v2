@@ -9,6 +9,7 @@ import { getDictionary } from "@/lib/i18n/dictionary";
 import { formatMessage } from "@/lib/i18n/format";
 import { normalizeLocale, SUPPORTED_LOCALES } from "@/lib/i18n/locale";
 import { resolveMediaUrl } from "@/lib/media-url";
+import { isPubliclyVisible } from "@/lib/publish-visibility";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { generateBreadcrumbSchema, SITE_URL } from "@/lib/seo/structured-data";
 import type { Media, Review } from "@/payload-types";
@@ -117,7 +118,14 @@ export default async function ReadingListDetailPage({ params }: PageProps) {
 	}
 
 	const coverImage = list.coverImage as Media;
-	const reviews = (list.reviews as Review[]) || [];
+	// A reading list is a public page, so it renders only the reviews that are
+	// public at this moment: a scheduled review in the relationship must not
+	// appear as a card pointing at a URL that 404s (`FR-5`). Filtering before
+	// the empty-state check keeps the grid, the count and the "no reviews"
+	// message agreeing.
+	const reviews = ((list.reviews as Review[]) || []).filter((review) =>
+		isPubliclyVisible(review, new Date()),
+	);
 
 	const breadcrumbJsonLd = generateBreadcrumbSchema(
 		[

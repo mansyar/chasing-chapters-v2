@@ -12,6 +12,7 @@ const makeReview = (overrides: Partial<FeedReview> = {}): FeedReview => ({
 	title: "A Great Book",
 	slug: "a-great-book",
 	publishDate: "2026-01-15T00:00:00.000Z",
+	_status: "published",
 	reviewContent: {
 		root: {
 			children: [{ text: "A short review body." }],
@@ -19,6 +20,9 @@ const makeReview = (overrides: Partial<FeedReview> = {}): FeedReview => ({
 	},
 	...overrides,
 });
+
+/** The moment every `buildRssFeed` call in this file is built at. */
+const NOW = new Date("2026-06-01T00:00:00.000Z");
 
 describe("feed", () => {
 	describe("escapeXml", () => {
@@ -86,6 +90,7 @@ describe("feed", () => {
 			const xml = buildRssFeed({
 				reviews: [],
 				siteUrl: "https://chasing-chapters.com",
+				now: NOW,
 			});
 			expect(xml).toContain(`<rss version="2.0"`);
 			expect(xml).toContain("<title>Chasing Chapters</title>");
@@ -101,6 +106,7 @@ describe("feed", () => {
 			const xml = buildRssFeed({
 				reviews: [makeReview()],
 				siteUrl: "https://chasing-chapters.com",
+				now: NOW,
 			});
 			expect(xml).toContain("<item>");
 			expect(xml).toContain("<title>A Great Book</title>");
@@ -119,6 +125,7 @@ describe("feed", () => {
 					}),
 				],
 				siteUrl: "https://chasing-chapters.com",
+				now: NOW,
 			});
 			expect(xml).toContain(
 				`<description><![CDATA[<img src="https://cdn.example.com/cover.jpg" />`,
@@ -130,6 +137,7 @@ describe("feed", () => {
 			const xml = buildRssFeed({
 				reviews: [makeReview()],
 				siteUrl: "https://chasing-chapters.com",
+				now: NOW,
 			});
 			expect(xml).not.toContain("<img");
 		});
@@ -149,6 +157,7 @@ describe("feed", () => {
 					}),
 				],
 				siteUrl: "https://chasing-chapters.com",
+				now: NOW,
 			});
 			expect(xml.indexOf("Newer Review")).toBeLessThan(
 				xml.indexOf("Older Review"),
@@ -166,6 +175,7 @@ describe("feed", () => {
 			const xml = buildRssFeed({
 				reviews,
 				siteUrl: "https://chasing-chapters.com",
+				now: NOW,
 			});
 			expect(xml).toContain(`Review ${FEED_ITEM_LIMIT + 4}`);
 			expect(xml).not.toContain("Review 0<");
@@ -178,9 +188,31 @@ describe("feed", () => {
 					makeReview({ title: "Draft Only", _status: "draft" }),
 				],
 				siteUrl: "https://chasing-chapters.com",
+				now: NOW,
 			});
 			expect(xml).toContain("<title>Published</title>");
 			expect(xml).not.toContain("Draft Only");
+		});
+
+		it("excludes a published review whose schedule has not arrived", () => {
+			// `_status` alone cannot answer this: the review is published, it
+			// is simply not public yet (`FR-5`, `F7`).
+			const xml = buildRssFeed({
+				reviews: [
+					makeReview({
+						title: "Scheduled Later",
+						slug: "scheduled-later",
+						publishAt: "2030-01-01T00:00:00.000Z",
+					}),
+					makeReview({ title: "Already Out", slug: "already-out" }),
+				],
+				siteUrl: "https://chasing-chapters.com",
+				now: NOW,
+			});
+
+			expect(xml).not.toContain("Scheduled Later");
+			expect(xml).not.toContain("scheduled-later");
+			expect(xml).toContain("<title>Already Out</title>");
 		});
 
 		it("escapes entities in titles and excerpts end to end", () => {
@@ -194,6 +226,7 @@ describe("feed", () => {
 					}),
 				],
 				siteUrl: "https://chasing-chapters.com",
+				now: NOW,
 			});
 			expect(xml).toContain("<title>War &amp; Peace &lt;Review&gt;</title>");
 			expect(xml).toContain("Love &amp; loss &lt;3");
@@ -204,6 +237,7 @@ describe("feed", () => {
 			const xml = buildRssFeed({
 				reviews: [makeReview({ title: "Almanak Penjaga", slug: "almanak" })],
 				siteUrl: "https://chasing-chapters.com",
+				now: NOW,
 				locale: "id",
 			});
 
@@ -222,8 +256,18 @@ describe("feed", () => {
 
 		it("localizes the channel title and description", () => {
 			const siteUrl = "https://chasing-chapters.com";
-			const english = buildRssFeed({ reviews: [], siteUrl, locale: "en" });
-			const indonesian = buildRssFeed({ reviews: [], siteUrl, locale: "id" });
+			const english = buildRssFeed({
+				reviews: [],
+				siteUrl,
+				locale: "en",
+				now: NOW,
+			});
+			const indonesian = buildRssFeed({
+				reviews: [],
+				siteUrl,
+				locale: "id",
+				now: NOW,
+			});
 
 			expect(english).toContain(
 				"<description>Book reviews, reading lists, and literary notes from Chasing Chapters.</description>",
@@ -238,6 +282,7 @@ describe("feed", () => {
 			const xml = buildRssFeed({
 				reviews: [],
 				siteUrl: "https://chasing-chapters.com",
+				now: NOW,
 				locale: "fr",
 			});
 

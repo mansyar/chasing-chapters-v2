@@ -208,8 +208,7 @@ const en = {
 
 	// Draft preview
 	previewLabel: "Preview",
-	previewDescription:
-		"You are previewing an unpublished version of this review.",
+	previewDescription: "You are previewing this review before readers see it.",
 	previewOtherLocale: "Read it in {language}",
 	previewExit: "Exit preview",
 } as const;
@@ -395,7 +394,7 @@ const id: Dictionary = {
 
 	previewLabel: "Pratinjau",
 	previewDescription:
-		"Anda sedang melihat versi pratinjau dari ulasan yang belum diterbitkan.",
+		"Anda sedang melihat pratinjau ulasan ini sebelum pembaca melihatnya.",
 	previewOtherLocale: "Baca dalam {language}",
 	previewExit: "Keluar dari pratinjau",
 };
