@@ -18,7 +18,10 @@ docker-compose.yml
 docker-compose.test.yml
 docker-compose.prod.yml
 .github
-e2e
+# `e2e/` and the Playwright config stay in the build context on purpose: the
+# Docker build runs `next build`, which type-checks the same tsconfig program
+# that `bun run typecheck` checks in CI — and a `src/` test imports
+# `e2e/global-setup`. Excluding them made the image build fail with TS2307
+# while every CI check stayed green, so the two contexts must agree.
 test-results
 playwright-report
-playwright.config.ts
