@@ -94,7 +94,7 @@
 - **Goal:** Close the first review's seven findings: the three surfaces where the old status filter is still the rule (the collection's anonymous read, the reading-list grid, the comment action), the notice's unsaved clear, the FR-8 partial-update hole, the banner copy, and the duplicate rule in the RSS builder.
 - **Depends on:** Phase 3
 - **Covers:** F1, F2, F3, F4, F5, F6, F7
-- **Touches:** `src/collections/Reviews.ts`, `src/app/(public)/[locale]/reading-lists/[slug]/page.tsx`, `src/app/actions/comments.ts`, `src/collections/Reviews/admin/PublishScheduleNotice.tsx`, `src/lib/feed.ts`, `src/lib/i18n/dictionary.ts`, `src/lib/__tests__/feed.test.ts`, `src/collections/__tests__/**`, `src/lib/e2e-harness.ts`, `e2e/global-setup.ts`, `e2e/**`
+- **Touches:** `src/collections/Reviews.ts`, `src/app/(public)/[locale]/reading-lists/[slug]/page.tsx`, `src/app/actions/comments.ts`, `src/collections/Reviews/admin/PublishScheduleNotice.tsx`, `src/lib/feed.ts`, `src/lib/i18n/dictionary.ts`, `src/lib/publish-visibility.ts`, `src/lib/__tests__/publish-visibility.test.ts`, `src/lib/__tests__/feed.test.ts`, `src/collections/__tests__/**`, `src/lib/e2e-harness.ts`, `e2e/global-setup.ts`, `e2e/**`
 - **Verification:** 'bun run typecheck && bun run lint && bun test && bun run test:e2e && bun run build'
 - **Status:** verified
 
@@ -106,7 +106,7 @@
   - [x] **R1.T2.2: Add the scheduled fixture review to the reading list's reviews and assert its card is absent while a visible card is present**
 - [x] **R1.T3: Guard the comment action with the rule, not the status** - covers: F3
   - [x] **R1.T3.1: Replace the status check with isPubliclyVisible**
-  - [x] **R1.T3.2: Cover the rejection for the scheduled fixture and accept a comment on a visible one**
+  - [x] **R1.T3.2: Cover the predicate both ways (the action path is covered by inspection, no browser case)**
 - [x] **R1.T4: Let an unsaved clear reach the notice** - covers: F4
   - [x] **R1.T4.1: Treat a form-state undefined as not initialised and null or empty as no schedule**
   - [x] **R1.T4.2: Browser case: clear the schedule without saving and assert the live sentence**
@@ -123,3 +123,22 @@
 **Result:** verified
 **Checkpoint:** b9aae41
 **Evidence:** conductor/tracks/20261024-draft-preview-scheduling/verification/phase-R1.md
+
+## Phase R2: Review Fixes (round 2)
+
+- **Goal:** The date fill distinguishes a cleared `publishDate` from an absent one again, and the two counts that still include a scheduled review agree with the grid the detail page renders.
+- **Depends on:** Phase R1
+- **Covers:** round-2 F1, round-2 F3
+- **Touches:** `src/collections/Reviews.ts`, `src/components/ReadingListCard.tsx`, `src/app/(public)/[locale]/reading-lists/[slug]/opengraph-image.tsx`, `src/collections/__tests__/**`, `e2e/**`, `conductor/tracks/20261024-draft-preview-scheduling/verification/phase-R2.md`
+- **Verification:** 'bun run typecheck && bun run lint && bun test && bun run test:e2e && bun run build'
+- **Status:** in_progress
+
+- [ ] **R2.T1: Distinguish a cleared publish date from an absent one** - covers: round-2 F1
+  - [ ] **R2.T1.1: Use `data.publishDate !== undefined` instead of `??` so a null still reaches the fill**
+  - [ ] **R2.T1.2: Unit case: a body with `publishDate: null` and a schedule refills from the schedule**
+
+- [ ] **R2.T2: Count through the shared rule** - covers: round-2 F3
+  - [ ] **R2.T2.1: Filter the reading-list card's book count and the Open Graph subtitle with `isPubliclyVisible`**
+  - [ ] **R2.T2.2: Prove the card and the detail grid report the same count for the fixture list**
+
+- [ ] **R2.T3: Record the phase evidence** - covers: round-2 F1, round-2 F3
