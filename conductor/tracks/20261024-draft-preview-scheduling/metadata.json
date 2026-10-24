@@ -6,7 +6,7 @@
 	"priority": "high",
 	"depends_on": [],
 	"created_at": "2026-10-24T21:00:00Z",
-	"updated_at": "2026-10-24T23:45:00Z",
+	"updated_at": "2026-10-25T01:40:00Z",
 	"spec": "spec.md",
 	"plan": "plan.md",
 	"branch": "feat/20261024-draft-preview-scheduling",
@@ -14,11 +14,11 @@
 	"base_sha": "233d826516af4ff2f76de97ab20742314ccedea3",
 	"progress": {
 		"phases_total": 3,
-		"phases_verified": 2,
+		"phases_verified": 3,
 		"tasks_total": 9,
-		"tasks_done": 6
+		"tasks_done": 9
 	},
-	"last_checkpoint": "ba97843",
+	"last_checkpoint": "b519fdd",
 	"review_verdict": null,
 	"review_rounds": 0,
 	"doc_sync": "pending",

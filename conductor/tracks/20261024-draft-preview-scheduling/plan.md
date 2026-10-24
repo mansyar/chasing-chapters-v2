@@ -36,7 +36,7 @@
 - **Covers:** FR-1, FR-2, FR-3, FR-4, NFR-1, NFR-2, NFR-3, AC-1, AC-2, AC-3, AC-4
 - **Touches:** `src/app/(payload)/api/preview/**`, `src/app/(public)/[locale]/reviews/[slug]/page.tsx`, `src/app/(public)/[locale]/layout.tsx`, `src/components/reviews/PreviewBanner.tsx` (new), `src/lib/i18n/dictionary.ts`, `src/collections/Reviews.ts`, `src/lib/__tests__/**`
 - **Verification:** 'bun run typecheck && bun run lint && bun test && bun run test:e2e'
-- **Status:** in_progress
+- **Status:** verified
 
 - [x] **P2.T1: Build the preview entry and exit** — covers: FR-1
   - [x] **P2.T1.1: Add an admin API route that validates the session, enables draft mode for one review and locale, and redirects to that review's public URL, refusing an anonymous request with 401**
@@ -61,18 +61,22 @@
 - **Covers:** FR-7, FR-9, NFR-5, AC-7, AC-9, AC-10
 - **Touches:** `src/collections/Reviews.ts` (registering the admin components and the list column), `src/collections/Reviews/**`, `src/components/admin/**`, `src/payload.config.ts`, `src/app/(payload)/admin/importMap.js`, `src/lib/e2e-harness.ts`, `e2e/**`, `src/collections/__tests__/**`
 - **Verification:** 'bun run typecheck && bun run lint && bun test && bun run test:e2e && bun run build'
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P3.T1: Show the schedule in the admin** — covers: FR-7
-  - [ ] **P3.T1.1: Add a list indicator that distinguishes a scheduled review from a live one, and an edit-view notice stating when it will publish**
-  - [ ] **P3.T1.2: Register both in the reviews admin config and regenerate the import map**
-- [ ] **P3.T2: Add the draft fixture and browser coverage** — covers: AC-1, AC-2, AC-3, AC-4, AC-5, AC-7
-  - [ ] **P3.T2.1: Add a never-published draft review to the fixture, idempotent and with translation skipped**
-  - [ ] **P3.T2.2: Cover the preview flow in the browser: 401 without a session, the banner, the other-locale link, the exit, and the suppressed SEO surface**
-  - [ ] **P3.T2.3: Cover scheduling in the browser: the scheduled review absent from every public surface, the admin list indicator, and the edit-view notice**
-- [ ] **P3.T3: Prove translation and pre-rendering are unchanged** — covers: FR-9, AC-9, AC-10
-  - [ ] **P3.T3.1: Assert a preview render performs no translation write, a save still runs the pipeline, and a failed translation does not delay the scheduled publish**
-  - [ ] **P3.T3.2: Run the production build and record that both review detail routes are still pre-rendered alongside the full verification chain**
+- [x] **P3.T1: Show the schedule in the admin** — covers: FR-7
+  - [x] **P3.T1.1: Add a list indicator that distinguishes a scheduled review from a live one, and an edit-view notice stating when it will publish**
+  - [x] **P3.T1.2: Register both in the reviews admin config and regenerate the import map**
+- [x] **P3.T2: Add the draft fixture and browser coverage** — covers: AC-1, AC-2, AC-3, AC-4, AC-5, AC-7
+  - [x] **P3.T2.1: Add a never-published draft review to the fixture, idempotent and with translation skipped**
+  - [x] **P3.T2.2: Cover the preview flow in the browser: 401 without a session, the banner, the other-locale link, the exit, and the suppressed SEO surface**
+  - [x] **P3.T2.3: Cover scheduling in the browser: the scheduled review absent from every public surface, the admin list indicator, and the edit-view notice**
+- [x] **P3.T3: Prove translation and pre-rendering are unchanged** — covers: FR-9, AC-9, AC-10
+  - [x] **P3.T3.1: Assert a preview render performs no translation write, a save still runs the pipeline, and a failed translation does not delay the scheduled publish**
+  - [x] **P3.T3.2: Run the production build and record that both review detail routes are still pre-rendered alongside the full verification chain**
+
+**Result:** verified
+**Checkpoint:** b519fdd
+**Evidence:** conductor/tracks/20261024-draft-preview-scheduling/verification/phase-3.md
 
 <!-- Review fixes are appended by `conductor-review` as:
 ## Phase R1: Review Fixes
