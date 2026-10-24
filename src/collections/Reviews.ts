@@ -477,13 +477,23 @@ export const Reviews: CollectionConfig = {
 					// date with the schedule. Only an absent key falls back to
 					// the stored value - an explicit `null` is the author
 					// clearing the field, and the fill below has to run for it.
+					//
+					// The schedule is read the same way, for the same reason: an
+					// update that clears `publishDate` alone carries no
+					// `publishAt` key, so the schedule it can refill from only
+					// exists on the stored row. A body that clears both is the
+					// author saying "no schedule, no date", and stays empty.
+					const schedule =
+						data.publishAt !== undefined
+							? data.publishAt
+							: originalDoc?.publishAt;
 					const publishDate =
 						data.publishDate !== undefined
 							? data.publishDate
 							: originalDoc?.publishDate;
 					if (!publishDate) {
-						if (data.publishAt) {
-							data.publishDate = data.publishAt;
+						if (schedule) {
+							data.publishDate = schedule;
 						} else if (data._status === "published") {
 							data.publishDate = new Date();
 						}

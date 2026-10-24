@@ -46,7 +46,16 @@ export async function loginAsFixtureAdmin(page: Page): Promise<void> {
 	for (let attempt = 1; attempt <= 3; attempt += 1) {
 		await page.locator("#email").fill(E2E_FIXTURE_AUTHOR.email);
 		await page.locator("#password").fill(E2E_FIXTURE_AUTHOR.password);
-		await page.getByRole("button", { name: "Sign In", exact: true }).click();
+		// Bounded because the click is the action that can hang, and an
+		// open-ended one leaves an attempt's cost uncapped inside a spec that
+		// `test.setTimeout` holds at 120 s. The arithmetic has to fit: 30 s for
+		// the form plus three attempts of at most 10 s here + 15 s waiting for
+		// the form to detach is 105 s on the all-failures path, and 70 s on the
+		// success path once the sheet wait is added. Raising either bound means
+		// raising the specs' cap with it.
+		await page
+			.getByRole("button", { name: "Sign In", exact: true })
+			.click({ timeout: 10_000 });
 		try {
 			await page
 				.locator("#email")

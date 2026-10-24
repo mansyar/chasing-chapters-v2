@@ -136,6 +136,31 @@ describe("reviews publish schedule", () => {
 			expect(data.publishDate).toBe(SCHEDULE);
 		});
 
+		it("refills a cleared date from the stored schedule", () => {
+			// The partial body says nothing about `publishAt`, so the schedule
+			// to refill from can only come from the row. Without that read the
+			// review saves scheduled and undated (`FR-8`).
+			const data = runBeforeChange({ publishDate: null }, "update", {
+				publishDate: AUTHOR_DATE,
+				publishAt: SCHEDULE,
+			});
+
+			expect(data.publishDate).toBe(SCHEDULE);
+		});
+
+		it("honours an explicit clear of both the date and the schedule", () => {
+			// Both keys are present and `null`: the author is clearing them, so
+			// neither the stored schedule nor the stored date may come back,
+			// and no date is invented.
+			const data = runBeforeChange(
+				{ publishDate: null, publishAt: null },
+				"update",
+				{ publishDate: AUTHOR_DATE, publishAt: SCHEDULE },
+			);
+
+			expect(data.publishDate).toBeNull();
+		});
+
 		it("leaves the date alone when the schedule is cleared", () => {
 			const data = runBeforeChange({
 				_status: "published",
