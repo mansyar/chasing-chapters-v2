@@ -8,6 +8,9 @@ import { HeroSkeletonContent } from "@/components/HeroSkeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { GradientBackground } from "@/components/ui/gradient-background";
+import type { Dictionary } from "@/lib/i18n/dictionary";
+import { formatMessage } from "@/lib/i18n/format";
+import type { Locale } from "@/lib/i18n/locale";
 import { resolveMediaUrl } from "@/lib/media-url";
 import { cn, extractTextFromRichText } from "@/lib/utils";
 import type { Media, Review } from "@/payload-types";
@@ -24,10 +27,22 @@ const CarouselComponent = dynamic(() => import("./ModernBookCarousel"), {
 
 interface FeaturedHeroProps {
 	reviews: Review[];
+	/** Server-resolved interface copy. */
+	dictionary: Dictionary;
+	/** The locale this page is rendered in. */
+	locale: Locale;
 }
 
 // Single review static display (no carousel needed)
-function SingleReviewHero({ review }: { review: Review }) {
+function SingleReviewHero({
+	review,
+	dictionary,
+	locale,
+}: {
+	review: Review;
+	dictionary: Dictionary;
+	locale: Locale;
+}) {
 	const coverImage = review.coverImage as Media;
 
 	return (
@@ -39,7 +54,7 @@ function SingleReviewHero({ review }: { review: Review }) {
 							variant="default"
 							className="bg-primary text-primary-foreground"
 						>
-							Featured Review
+							{dictionary.heroFeaturedReview}
 						</Badge>
 						<div className="flex gap-0.5">
 							{Array.from({ length: 5 }).map((_, i) => (
@@ -59,7 +74,9 @@ function SingleReviewHero({ review }: { review: Review }) {
 						{review.title}
 					</h1>
 					<p className="text-xl text-muted-foreground font-medium">
-						by {review.bookAuthor}
+						{formatMessage(dictionary.cardByAuthor, {
+							author: review.bookAuthor,
+						})}
 					</p>
 				</div>
 
@@ -69,8 +86,9 @@ function SingleReviewHero({ review }: { review: Review }) {
 
 				<div className="flex flex-col gap-2 min-[400px]:flex-row w-full justify-center lg:justify-start">
 					<Button asChild size="lg" className="font-medium">
-						<Link href={`/reviews/${review.slug}`}>
-							Read Full Review <ArrowRight className="ml-2 h-4 w-4" />
+						<Link href={`/${locale}/reviews/${review.slug}`}>
+							{dictionary.heroReadFullReview}{" "}
+							<ArrowRight className="ml-2 h-4 w-4" />
 						</Link>
 					</Button>
 				</div>
@@ -81,7 +99,7 @@ function SingleReviewHero({ review }: { review: Review }) {
 					{coverImage?.url && (
 						<Image
 							src={resolveMediaUrl(coverImage.url)}
-							alt={coverImage.alt || review.title}
+							alt={coverImage.alt || review.title || ""}
 							fill
 							className="object-cover rounded-lg"
 							priority
@@ -97,7 +115,11 @@ function SingleReviewHero({ review }: { review: Review }) {
 	);
 }
 
-export function FeaturedHero({ reviews }: FeaturedHeroProps) {
+export function FeaturedHero({
+	reviews,
+	dictionary,
+	locale,
+}: FeaturedHeroProps) {
 	if (reviews.length === 0) {
 		return null;
 	}
@@ -112,9 +134,17 @@ export function FeaturedHero({ reviews }: FeaturedHeroProps) {
 			    ssr:false skeleton -> carousel swap, preventing the hero CLS shift. */}
 			<div className="container mx-auto px-6 md:px-12 lg:px-32 max-w-[1600px] relative z-10 w-full h-full flex flex-col justify-center">
 				{hasMultipleReviews ? (
-					<CarouselComponent reviews={reviews} />
+					<CarouselComponent
+						reviews={reviews}
+						dictionary={dictionary}
+						locale={locale}
+					/>
 				) : (
-					<SingleReviewHero review={firstReview} />
+					<SingleReviewHero
+						review={firstReview}
+						dictionary={dictionary}
+						locale={locale}
+					/>
 				)}
 			</div>
 		</section>

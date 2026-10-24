@@ -13,7 +13,7 @@ interface ReviewCardProps {
 	review: Review;
 	className?: string;
 	priority?: boolean;
-	/** UI language for the publish date; defaults to English. */
+	/** The locale of the link and of the publish date; defaults to English. */
 	locale?: AppLocale;
 }
 
@@ -27,7 +27,7 @@ export function ReviewCard({
 
 	return (
 		<Link
-			href={`/reviews/${review.slug}`}
+			href={`/${locale}/reviews/${review.slug}`}
 			className={cn("group block h-full", className)}
 		>
 			<Card className="h-full overflow-hidden border-none shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-card">
@@ -35,7 +35,7 @@ export function ReviewCard({
 					{coverImage?.url && (
 						<Image
 							src={resolveMediaUrl(coverImage.url)}
-							alt={coverImage.alt || review.title}
+							alt={coverImage.alt || review.title || ""}
 							fill
 							className="object-cover"
 							sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

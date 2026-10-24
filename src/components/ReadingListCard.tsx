@@ -3,6 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import type { AppLocale } from "@/lib/date-format";
+import { getDictionary } from "@/lib/i18n/dictionary";
 import { resolveMediaUrl } from "@/lib/media-url";
 import { cn } from "@/lib/utils";
 import type { Media, ReadingList } from "@/payload-types";
@@ -11,21 +13,25 @@ interface ReadingListCardProps {
 	readingList: ReadingList;
 	className?: string;
 	priority?: boolean;
+	/** The locale segment of the link; defaults to English. */
+	locale?: AppLocale;
 }
 
 export function ReadingListCard({
 	readingList,
 	className,
 	priority = false,
+	locale = "en",
 }: ReadingListCardProps) {
 	const coverImage = readingList.coverImage as Media;
+	const dictionary = getDictionary(locale);
 	const bookCount = Array.isArray(readingList.reviews)
 		? readingList.reviews.length
 		: 0;
 
 	return (
 		<Link
-			href={`/reading-lists/${readingList.slug}`}
+			href={`/${locale}/reading-lists/${readingList.slug}`}
 			className={cn("group block h-full", className)}
 		>
 			<Card className="h-full overflow-hidden border-none shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-card">
@@ -33,7 +39,7 @@ export function ReadingListCard({
 					{coverImage?.url ? (
 						<Image
 							src={resolveMediaUrl(coverImage.url)}
-							alt={coverImage.alt || readingList.title}
+							alt={coverImage.alt || readingList.title || ""}
 							fill
 							className="object-cover transition-transform duration-500 group-hover:scale-105"
 							sizes="(max-width: 768px) 50vw, 25vw"
@@ -53,7 +59,10 @@ export function ReadingListCard({
 						className="absolute bottom-3 right-3 bg-background/90 backdrop-blur-sm"
 					>
 						<BookOpen className="h-3 w-3 mr-1" />
-						{bookCount} {bookCount === 1 ? "book" : "books"}
+						{bookCount}{" "}
+						{bookCount === 1
+							? dictionary.readingListBookSingular
+							: dictionary.readingListBookPlural}
 					</Badge>
 				</div>
 				<CardContent className="pt-4 pb-5">

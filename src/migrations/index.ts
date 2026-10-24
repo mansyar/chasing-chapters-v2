@@ -8,6 +8,8 @@ import * as migration_20261008_060518_add_translation_status_fields from './2026
 import * as migration_20261008_131000_commenters_email_hash_fix from './20261008_131000_commenters_email_hash_fix';
 import * as migration_20261009_195737_add_spam_signals_to_comments from './20261009_195737_add_spam_signals_to_comments';
 import * as migration_20261021_140330_add_english_updated_at from './20261021_140330_add_english_updated_at';
+import * as migration_20261023_193922_localize_taxonomy_and_reading_list_content from './20261023_193922_localize_taxonomy_and_reading_list_content';
+import * as migration_20261023_195302_relax_localized_name_columns from './20261023_195302_relax_localized_name_columns';
 
 export const migrations = [
   {
@@ -58,6 +60,16 @@ export const migrations = [
   {
     up: migration_20261021_140330_add_english_updated_at.up,
     down: migration_20261021_140330_add_english_updated_at.down,
-    name: '20261021_140330_add_english_updated_at'
+    name: '20261021_140330_add_english_updated_at',
+  },
+  {
+    up: migration_20261023_193922_localize_taxonomy_and_reading_list_content.up,
+    down: migration_20261023_193922_localize_taxonomy_and_reading_list_content.down,
+    name: '20261023_193922_localize_taxonomy_and_reading_list_content',
+  },
+  {
+    up: migration_20261023_195302_relax_localized_name_columns.up,
+    down: migration_20261023_195302_relax_localized_name_columns.down,
+    name: '20261023_195302_relax_localized_name_columns'
   },
 ];

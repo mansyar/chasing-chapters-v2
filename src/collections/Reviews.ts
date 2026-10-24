@@ -11,6 +11,7 @@ import {
 	TRANSLATION_STATUSES,
 	type TranslationStatus,
 } from "../lib/translation-status";
+import { requireDefaultLocaleValue } from "./requireDefaultLocaleValue";
 
 export const Reviews: CollectionConfig = {
 	slug: "reviews",
@@ -84,7 +85,13 @@ export const Reviews: CollectionConfig = {
 		{
 			name: "title",
 			type: "text",
-			required: true,
+			// A book title may be given in Indonesian by hand. It is
+			// deliberately not part of the translation pipeline's content
+			// fields: book titles are never machine-translated. Required in
+			// the default locale by the validator, not by `required`, which
+			// Payload applies to every locale (FR-10).
+			localized: true,
+			validate: requireDefaultLocaleValue("Title"),
 		},
 		{
 			name: "bookAuthor",
@@ -110,8 +117,14 @@ export const Reviews: CollectionConfig = {
 		{
 			name: "reviewContent",
 			type: "richText",
-			required: true,
+			// Required in the default locale only, for the same reason as the
+			// title: a document is created with its English body, and the
+			// `id` locale may leave the body out and fall back to it. Payload
+			// reads `required` on a localized field as "required in every
+			// locale", which would reject a locale-scoped clear of an
+			// Indonesian body (FR-10).
 			localized: true,
+			validate: requireDefaultLocaleValue("Review content"),
 		},
 		{
 			name: "whatILoved",

@@ -6,19 +6,41 @@ import Link from "next/link";
 import { getPayload } from "payload";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { getDictionary } from "@/lib/i18n/dictionary";
+import { normalizeLocale } from "@/lib/i18n/locale";
 import { resolveMediaUrl } from "@/lib/media-url";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 import { generateItemListSchema, SITE_URL } from "@/lib/seo/structured-data";
 import type { Media } from "@/payload-types";
 
-export const metadata: Metadata = {
-	title: "Reading Lists",
-	description: "Curated collections of books for every mood and occasion.",
-};
+export async function generateMetadata({
+	params,
+}: {
+	params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+	const { locale } = await params;
+	const appLocale = normalizeLocale(locale);
+	const dictionary = getDictionary(appLocale);
+
+	return buildPageMetadata({
+		locale: appLocale,
+		path: "/reading-lists",
+		title: dictionary.readingListsTitle,
+		description: dictionary.readingListsDescription,
+	});
+}
 
 // Enable ISR with 60 second revalidation for better caching
 export const revalidate = 60;
 
-export default async function ReadingListsPage() {
+export default async function ReadingListsPage({
+	params,
+}: {
+	params: Promise<{ locale: string }>;
+}) {
+	const { locale } = await params;
+	const appLocale = normalizeLocale(locale);
+	const dictionary = getDictionary(appLocale);
 	const payload = await getPayload({ config: configPromise });
 
 	const { docs: readingLists } = await payload.find({
@@ -29,15 +51,17 @@ export default async function ReadingListsPage() {
 			},
 		},
 		sort: "-createdAt",
+		locale: appLocale,
 	});
 
 	const itemListJsonLd = generateItemListSchema(
 		readingLists.map((list) => ({
-			name: list.title,
-			url: `${SITE_URL}/reading-lists/${list.slug}`,
+			name: list.title ?? "",
+			url: `${SITE_URL}/${appLocale}/reading-lists/${list.slug}`,
 			image: (list.coverImage as Media)?.url || undefined,
 		})),
-		"Reading Lists",
+		dictionary.readingListsTitle,
+		appLocale,
 	);
 
 	return (
@@ -48,10 +72,10 @@ export default async function ReadingListsPage() {
 			/>
 			<div className="space-y-4 mb-12 text-center">
 				<h1 className="font-serif text-4xl font-bold tracking-tight">
-					Reading Lists
+					{dictionary.readingListsTitle}
 				</h1>
 				<p className="text-muted-foreground max-w-[600px] mx-auto">
-					Curated collections of books for every mood and occasion.
+					{dictionary.readingListsDescription}
 				</p>
 			</div>
 
@@ -62,7 +86,7 @@ export default async function ReadingListsPage() {
 					return (
 						<Link
 							key={list.id}
-							href={`/reading-lists/${list.slug}`}
+							href={`/${appLocale}/reading-lists/${list.slug}`}
 							className="group block h-full"
 						>
 							<Card className="h-full overflow-hidden border-none shadow-none bg-transparent hover:bg-muted/30 transition-colors">
@@ -70,14 +94,14 @@ export default async function ReadingListsPage() {
 									{coverImage?.url ? (
 										<Image
 											src={resolveMediaUrl(coverImage.url)}
-											alt={coverImage.alt || list.title}
+											alt={coverImage.alt || list.title || ""}
 											fill
 											className="object-cover transition-transform duration-500 group-hover:scale-105"
 											sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
 										/>
 									) : (
 										<div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground">
-											No Image
+											{dictionary.readingListsNoImage}
 										</div>
 									)}
 									<div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
@@ -99,8 +123,8 @@ export default async function ReadingListsPage() {
 			{readingLists.length === 0 && (
 				<EmptyState
 					icon={Library}
-					title="No reading lists yet"
-					description="Curated collections of reviews are on the way — check back soon."
+					title={dictionary.readingListsEmptyTitle}
+					description={dictionary.readingListsEmptyDescription}
 				/>
 			)}
 		</div>

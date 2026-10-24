@@ -4,18 +4,21 @@ import { Heart } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toggleLikeReview } from "@/app/actions/like-review";
 import { Button } from "@/components/ui/button";
+import type { Dictionary } from "@/lib/i18n/dictionary";
 import { cn } from "@/lib/utils";
 
 interface LikeButtonProps {
 	reviewId: string;
 	initialLikes: number;
 	className?: string;
+	dictionary: Dictionary;
 }
 
 export function LikeButton({
 	reviewId,
 	initialLikes,
 	className,
+	dictionary,
 }: LikeButtonProps) {
 	// Optimistic state
 	const [likes, setLikes] = useState(initialLikes);
@@ -113,7 +116,7 @@ export function LikeButton({
 				)}
 			/>
 			<span className="min-w-[2ch] tabular-nums">{likes}</span>
-			<span className="sr-only">Likes</span>
+			<span className="sr-only">{dictionary.likeLikes}</span>
 		</Button>
 	);
 }

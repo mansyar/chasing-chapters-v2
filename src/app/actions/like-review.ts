@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { getPayload } from "payload";
 import { atomicDecrement, atomicIncrement } from "@/lib/db";
+import { localizedPaths } from "@/lib/i18n/locale";
 import { getClientIP, rateLimit } from "@/lib/rate-limit";
 import { formatZodError, likeReviewSchema } from "@/lib/schemas";
 
@@ -55,7 +56,9 @@ export async function toggleLikeReview(
 		});
 
 		if (review?.slug) {
-			revalidatePath(`/reviews/${review.slug}`);
+			for (const path of localizedPaths(`/reviews/${review.slug}`)) {
+				revalidatePath(path);
+			}
 		}
 
 		return { success: true, newLikes };

@@ -1,13 +1,16 @@
+import { getDictionary } from "./i18n/dictionary";
+import { type Locale, normalizeLocale } from "./i18n/locale";
 import { resolveMediaUrl } from "./media-url";
 import { extractTextFromRichText, type RichTextDocument } from "./utils";
 
 /**
  * RSS 2.0 feed builder for published reviews.
  *
- * Pure functions only: the /feed.xml route handler supplies reviews from the
- * local Payload API and a canonical site URL, and this module turns them into
- * the final XML document. Keeping the mapping, escaping and limiting here
- * makes the feed testable without a database or HTTP layer.
+ * Pure functions only: the per-locale feed route handlers supply reviews from
+ * the local Payload API (already read in their own locale) and a canonical site
+ * URL, and this module turns them into the final XML document. Keeping the
+ * mapping, escaping and limiting here makes the feed testable without a
+ * database or HTTP layer.
  */
 
 /** Maximum number of reviews included in the feed (latest first). */
@@ -29,6 +32,8 @@ export interface FeedReview {
 export interface RssFeedOptions {
 	reviews: FeedReview[];
 	siteUrl: string;
+	/** The locale the feed is written for; defaults to English. */
+	locale?: Locale | string | null;
 }
 
 /** Escape a string for safe inclusion in XML text nodes and attributes. */
@@ -63,8 +68,12 @@ export function getReviewExcerpt(
 }
 
 /** Build the RSS `<item>` XML for a single review. */
-function buildItemXml(review: FeedReview, siteUrl: string): string {
-	const link = `${siteUrl}/reviews/${review.slug}`;
+function buildItemXml(
+	review: FeedReview,
+	siteUrl: string,
+	locale: Locale,
+): string {
+	const link = `${siteUrl}/${locale}/reviews/${review.slug}`;
 	const pubDate = rfc822(review.publishDate ?? review.createdAt ?? new Date());
 	const excerpt = getReviewExcerpt(review.reviewContent);
 	const cover = review.coverImage as
@@ -96,7 +105,16 @@ function buildItemXml(review: FeedReview, siteUrl: string): string {
 }
 
 /** Build the complete RSS 2.0 XML document for a set of reviews. */
-export function buildRssFeed({ reviews, siteUrl }: RssFeedOptions): string {
+export function buildRssFeed({
+	reviews,
+	siteUrl,
+	locale,
+}: RssFeedOptions): string {
+	const appLocale = normalizeLocale(locale);
+	const dictionary = getDictionary(appLocale);
+	const homeUrl = `${siteUrl}/${appLocale}`;
+	const feedUrl = `${homeUrl}/feed.xml`;
+
 	const published = reviews.filter(
 		(review) =>
 			(!review._status || review._status === "published") && review.slug,
@@ -109,18 +127,20 @@ export function buildRssFeed({ reviews, siteUrl }: RssFeedOptions): string {
 		})
 		.slice(0, FEED_ITEM_LIMIT);
 
-	const items = latest.map((review) => buildItemXml(review, siteUrl));
+	const items = latest.map((review) =>
+		buildItemXml(review, siteUrl, appLocale),
+	);
 
 	return [
 		`<?xml version="1.0" encoding="UTF-8"?>`,
 		`<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">`,
 		"\t<channel>",
-		"\t\t<title>Chasing Chapters</title>",
-		`\t\t<link>${escapeXml(siteUrl)}</link>`,
-		"\t\t<description>Book reviews, reading lists, and literary notes from Chasing Chapters.</description>",
-		"\t\t<language>en</language>",
+		`\t\t<title>${escapeXml(dictionary.metaSiteName)}</title>`,
+		`\t\t<link>${escapeXml(homeUrl)}</link>`,
+		`\t\t<description>${escapeXml(dictionary.metaFeedDescription)}</description>`,
+		`\t\t<language>${appLocale}</language>`,
 		`\t\t<lastBuildDate>${rfc822(new Date())}</lastBuildDate>`,
-		`\t\t<atom:link href="${escapeXml(`${siteUrl}/feed.xml`)}" rel="self" type="application/rss+xml" />`,
+		`\t\t<atom:link href="${escapeXml(feedUrl)}" rel="self" type="application/rss+xml" />`,
 		...items,
 		"\t</channel>",
 		"</rss>",

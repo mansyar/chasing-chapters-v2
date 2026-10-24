@@ -15,6 +15,7 @@ import {
 	E2E_FIXTURE_REVIEW_PATH,
 	E2E_FIXTURE_REVIEW_SLUG,
 	E2E_FIXTURE_REVIEWS,
+	E2E_FIXTURE_STALE_REVIEW_LOCALIZED,
 	E2E_FIXTURE_TAXONOMY,
 	resolveE2EBaseURL,
 	resolveE2EDatabaseUri,
@@ -372,6 +373,22 @@ describe("e2e-harness", () => {
 				expect(review.id?.whatCouldBeBetter).toBeDefined();
 				expect(review.id?.perfectFor).toBeDefined();
 			}
+		});
+
+		it("gives exactly one review an Indonesian title with an English body", () => {
+			const titled = E2E_FIXTURE_REVIEWS.filter(
+				(review) => review.localizedTitle,
+			);
+
+			expect(titled).toHaveLength(1);
+			expect(titled[0].translationStatus).toBe("stale");
+			// No Indonesian body: the title is the only translated value, which
+			// is what proves the two are localized independently (FR-10).
+			expect(titled[0].id).toBeUndefined();
+			expect(titled[0].localizedTitle).toBe(
+				E2E_FIXTURE_STALE_REVIEW_LOCALIZED.title,
+			);
+			expect(titled[0].localizedTitle).not.toBe(titled[0].title);
 		});
 
 		it("references only taxonomy the fixture seeds", () => {

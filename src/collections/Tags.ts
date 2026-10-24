@@ -1,5 +1,6 @@
 import type { CollectionConfig } from "payload";
 import formatSlug from "../hooks/formatSlug";
+import { requireDefaultLocaleValue } from "./requireDefaultLocaleValue";
 
 export const Tags: CollectionConfig = {
 	slug: "tags",
@@ -16,11 +17,15 @@ export const Tags: CollectionConfig = {
 		{
 			name: "name",
 			type: "text",
-			required: true,
+			// Required in the default locale by the validator, not by
+			// `required`, which Payload applies to every locale (FR-10).
+			localized: true,
+			validate: requireDefaultLocaleValue("Name"),
 		},
 		{
 			name: "description",
 			type: "textarea",
+			localized: true,
 		},
 		{
 			name: "slug",

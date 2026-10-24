@@ -5,7 +5,11 @@ import { notFound } from "next/navigation";
 import { getPayload } from "payload";
 import { ReviewCard } from "@/components/ReviewCard";
 import { ShareButton } from "@/components/ShareButton";
+import { getDictionary } from "@/lib/i18n/dictionary";
+import { formatMessage } from "@/lib/i18n/format";
+import { normalizeLocale, SUPPORTED_LOCALES } from "@/lib/i18n/locale";
 import { resolveMediaUrl } from "@/lib/media-url";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 import { generateBreadcrumbSchema, SITE_URL } from "@/lib/seo/structured-data";
 import type { Media, Review } from "@/payload-types";
 
@@ -14,6 +18,7 @@ export const revalidate = 60;
 
 interface PageProps {
 	params: Promise<{
+		locale: string;
 		slug: string;
 	}>;
 }
@@ -21,7 +26,9 @@ interface PageProps {
 export async function generateMetadata({
 	params,
 }: PageProps): Promise<Metadata> {
-	const { slug } = await params;
+	const { locale, slug } = await params;
+	const appLocale = normalizeLocale(locale);
+	const dictionary = getDictionary(appLocale);
 	const payload = await getPayload({ config: configPromise });
 
 	const { docs: lists } = await payload.find({
@@ -36,35 +43,27 @@ export async function generateMetadata({
 		},
 		limit: 1,
 		depth: 1,
+		locale: appLocale,
 	});
 
 	const list = lists[0];
 
 	if (!list) {
 		return {
-			title: "Reading List Not Found",
+			title: dictionary.metaReadingListNotFound,
 		};
 	}
 
-	const description = list.description || `Curated reading list: ${list.title}`;
-
-	return {
-		title: list.title,
-		description,
-		alternates: {
-			canonical: `${SITE_URL}/reading-lists/${list.slug}`,
-		},
-		openGraph: {
-			title: list.title,
-			description,
-			type: "website",
-		},
-		twitter: {
-			card: "summary_large_image",
-			title: list.title,
-			description,
-		},
-	};
+	return buildPageMetadata({
+		locale: appLocale,
+		path: `/reading-lists/${list.slug}`,
+		title: list.title ?? "",
+		description:
+			list.description ||
+			formatMessage(dictionary.metaReadingListDescription, {
+				title: list.title ?? "",
+			}),
+	});
 }
 
 export async function generateStaticParams() {
@@ -82,13 +81,18 @@ export async function generateStaticParams() {
 		},
 	});
 
-	return docs.map((doc) => ({
-		slug: doc.slug,
-	}));
+	return SUPPORTED_LOCALES.flatMap((locale) =>
+		docs.map((doc) => ({
+			locale,
+			slug: doc.slug,
+		})),
+	);
 }
 
 export default async function ReadingListDetailPage({ params }: PageProps) {
-	const { slug } = await params;
+	const { locale, slug } = await params;
+	const appLocale = normalizeLocale(locale);
+	const dictionary = getDictionary(appLocale);
 	const payload = await getPayload({ config: configPromise });
 
 	const { docs: lists } = await payload.find({
@@ -103,6 +107,7 @@ export default async function ReadingListDetailPage({ params }: PageProps) {
 		},
 		limit: 1,
 		depth: 2,
+		locale: appLocale,
 	});
 
 	const list = lists[0];
@@ -114,11 +119,20 @@ export default async function ReadingListDetailPage({ params }: PageProps) {
 	const coverImage = list.coverImage as Media;
 	const reviews = (list.reviews as Review[]) || [];
 
-	const breadcrumbJsonLd = generateBreadcrumbSchema([
-		{ name: "Home", url: SITE_URL },
-		{ name: "Reading Lists", url: `${SITE_URL}/reading-lists` },
-		{ name: list.title, url: `${SITE_URL}/reading-lists/${list.slug}` },
-	]);
+	const breadcrumbJsonLd = generateBreadcrumbSchema(
+		[
+			{ name: dictionary.breadcrumbHome, url: `${SITE_URL}/${appLocale}` },
+			{
+				name: dictionary.navReadingLists,
+				url: `${SITE_URL}/${appLocale}/reading-lists`,
+			},
+			{
+				name: list.title ?? "",
+				url: `${SITE_URL}/${appLocale}/reading-lists/${list.slug}`,
+			},
+		],
+		appLocale,
+	);
 
 	return (
 		<div className="min-h-screen pb-20">
@@ -136,7 +150,12 @@ export default async function ReadingListDetailPage({ params }: PageProps) {
 						{list.description}
 					</p>
 					<div className="flex justify-center">
-						<ShareButton title={`Check out this reading list: ${list.title}`} />
+						<ShareButton
+							title={formatMessage(dictionary.readingListShareTitle, {
+								title: list.title ?? "",
+							})}
+							dictionary={dictionary}
+						/>
 					</div>
 				</div>
 
@@ -165,13 +184,14 @@ export default async function ReadingListDetailPage({ params }: PageProps) {
 							<ReviewCard
 								key={review.id}
 								review={review}
+								locale={appLocale}
 								priority={index < 2}
 							/>
 						))}
 					</div>
 				) : (
 					<div className="text-center py-12 text-muted-foreground">
-						<p>No reviews added to this list yet.</p>
+						<p>{dictionary.readingListNoReviews}</p>
 					</div>
 				)}
 			</div>

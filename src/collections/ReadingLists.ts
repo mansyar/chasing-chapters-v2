@@ -1,6 +1,7 @@
 import type { CollectionConfig } from "payload";
 import formatSlug from "../hooks/formatSlug";
 import { revalidateReadingListPages } from "../hooks/revalidatePages";
+import { requireDefaultLocaleValue } from "./requireDefaultLocaleValue";
 
 export const ReadingLists: CollectionConfig = {
 	slug: "reading-lists",
@@ -38,11 +39,15 @@ export const ReadingLists: CollectionConfig = {
 		{
 			name: "title",
 			type: "text",
-			required: true,
+			// Required in the default locale by the validator, not by
+			// `required`, which Payload applies to every locale (FR-10).
+			localized: true,
+			validate: requireDefaultLocaleValue("Title"),
 		},
 		{
 			name: "description",
 			type: "textarea",
+			localized: true,
 		},
 		{
 			name: "author",

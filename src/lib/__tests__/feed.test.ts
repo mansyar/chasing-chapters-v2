@@ -89,9 +89,12 @@ describe("feed", () => {
 			});
 			expect(xml).toContain(`<rss version="2.0"`);
 			expect(xml).toContain("<title>Chasing Chapters</title>");
-			expect(xml).toContain("<link>https://chasing-chapters.com</link>");
+			expect(xml).toContain("<link>https://chasing-chapters.com/en</link>");
 			expect(xml).toContain("<language>en</language>");
 			expect(xml).toContain("<lastBuildDate>");
+			expect(xml).toContain(
+				`<atom:link href="https://chasing-chapters.com/en/feed.xml" rel="self" type="application/rss+xml" />`,
+			);
 		});
 
 		it("maps a review to an item with link, pubDate and excerpt", () => {
@@ -102,7 +105,7 @@ describe("feed", () => {
 			expect(xml).toContain("<item>");
 			expect(xml).toContain("<title>A Great Book</title>");
 			expect(xml).toContain(
-				"<link>https://chasing-chapters.com/reviews/a-great-book</link>",
+				"<link>https://chasing-chapters.com/en/reviews/a-great-book</link>",
 			);
 			expect(xml).toContain("<pubDate>Thu, 15 Jan 2026 00:00:00 GMT</pubDate>");
 			expect(xml).toContain("A short review body.");
@@ -195,6 +198,53 @@ describe("feed", () => {
 			expect(xml).toContain("<title>War &amp; Peace &lt;Review&gt;</title>");
 			expect(xml).toContain("Love &amp; loss &lt;3");
 			expect(xml).not.toContain("War & P");
+		});
+
+		it("declares the locale and links its own feed and items", () => {
+			const xml = buildRssFeed({
+				reviews: [makeReview({ title: "Almanak Penjaga", slug: "almanak" })],
+				siteUrl: "https://chasing-chapters.com",
+				locale: "id",
+			});
+
+			expect(xml).toContain("<language>id</language>");
+			expect(xml).toContain("<link>https://chasing-chapters.com/id</link>");
+			expect(xml).toContain(
+				`<atom:link href="https://chasing-chapters.com/id/feed.xml" rel="self" type="application/rss+xml" />`,
+			);
+			expect(xml).toContain(
+				"<link>https://chasing-chapters.com/id/reviews/almanak</link>",
+			);
+			expect(xml).toContain(
+				'<guid isPermaLink="true">https://chasing-chapters.com/id/reviews/almanak</guid>',
+			);
+		});
+
+		it("localizes the channel title and description", () => {
+			const siteUrl = "https://chasing-chapters.com";
+			const english = buildRssFeed({ reviews: [], siteUrl, locale: "en" });
+			const indonesian = buildRssFeed({ reviews: [], siteUrl, locale: "id" });
+
+			expect(english).toContain(
+				"<description>Book reviews, reading lists, and literary notes from Chasing Chapters.</description>",
+			);
+			expect(indonesian).toContain(
+				"<description>Ulasan buku, daftar bacaan, dan catatan sastra dari Chasing Chapters.</description>",
+			);
+			expect(english).not.toBe(indonesian);
+		});
+
+		it("normalizes an unsupported locale to English", () => {
+			const xml = buildRssFeed({
+				reviews: [],
+				siteUrl: "https://chasing-chapters.com",
+				locale: "fr",
+			});
+
+			expect(xml).toContain("<language>en</language>");
+			expect(xml).toContain(
+				`<atom:link href="https://chasing-chapters.com/en/feed.xml"`,
+			);
 		});
 	});
 });

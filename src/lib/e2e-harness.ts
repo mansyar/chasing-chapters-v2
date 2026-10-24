@@ -314,6 +314,14 @@ export type E2EFixtureReview = {
 	 * Indonesian content is missing on purpose.
 	 */
 	id?: E2EFixtureLocalizedContent;
+	/**
+	 * The Indonesian title, for a review whose body is still English.
+	 *
+	 * The title is a localized field of its own (`FR-10`), so a page can render
+	 * a translated heading over the English body - and the stale review is the
+	 * one fixture that exercises it.
+	 */
+	localizedTitle?: string;
 	/** Taxonomy names - resolved to ids by the fixture. */
 	genres: string[];
 	tags: string[];
@@ -346,7 +354,22 @@ export const E2E_FIXTURE_TAXONOMY = {
 } as const;
 
 /**
- * The details a mood tag needs when the fixture has to create it: the color
+ * The Indonesian values the fixture writes for the taxonomy.
+ *
+ * A name that is absent here has no Indonesian value on purpose, so a spec can
+ * assert the fallback: the English name is what the Indonesian page renders
+ * (`FR-10`, `AC-9`). `Fantasy`, `Classic` and `Adventurous` are left in English.
+ */
+export const E2E_FIXTURE_TAXONOMY_LOCALIZED: Record<
+	"genres" | "tags" | "moodTags",
+	Record<string, string>
+> = {
+	genres: { "Sci-Fi": "Fiksi Ilmiah" },
+	tags: { "Hidden Gem": "Permata Tersembunyi" },
+	moodTags: { Cozy: "Hangat" },
+};
+
+/** The details a mood tag needs when the fixture has to create it: the color
  * is a required field, the icon is not. The values match the ones the seed
  * script writes, so a fixture mood tag looks like any other one.
  */
@@ -365,6 +388,30 @@ export const E2E_FIXTURE_READING_LIST = {
 	description:
 		"Four fixture reviews for slow afternoons, collected by the end-to-end suite.",
 	featured: true,
+} as const;
+
+/**
+ * The Indonesian title and description of the fixture reading list.
+ *
+ * The English values above stay the default-locale ones; these are the
+ * optional Indonesian values an author may supply (`FR-10`, `AC-9`).
+ */
+export const E2E_FIXTURE_READING_LIST_LOCALIZED = {
+	title: "Daftar Bacaan Musim Hujan",
+	description:
+		"Empat ulasan untuk sore yang lambat, dikumpulkan oleh rangkaian uji end-to-end.",
+} as const;
+
+/**
+ * The Indonesian title of the stale fixture review.
+ *
+ * No other fixture review carries one, so this is the only place the public
+ * pages can prove the title is localized: the Indonesian page shows a
+ * translated heading (and a translated meta description) over a body that is
+ * still English, and the English page is unaffected (`FR-10`, `AC-9`).
+ */
+export const E2E_FIXTURE_STALE_REVIEW_LOCALIZED = {
+	title: "Sembilan Jenis Cuaca",
 } as const;
 
 /**
@@ -531,6 +578,7 @@ export const E2E_FIXTURE_REVIEWS: E2EFixtureReview[] = [
 		publishDate: "2026-03-21T00:00:00.000Z",
 		translationStatus: "stale",
 		featured: false,
+		localizedTitle: E2E_FIXTURE_STALE_REVIEW_LOCALIZED.title,
 		reviewContent: richText(
 			"Nine short stories, one per season, told by the same house across nine weathers.",
 		),

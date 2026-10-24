@@ -8,22 +8,24 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import type { Dictionary } from "@/lib/i18n/dictionary";
 import { SORT_OPTIONS, type SortOption } from "@/lib/reviews-sort";
-
-const SORT_LABELS: Record<SortOption, string> = {
-	recent: "Most Recent",
-	rating: "Highest Rated",
-	title: "Title A–Z",
-};
 
 interface SortSelectProps {
 	currentSort: SortOption;
+	dictionary: Dictionary;
 }
 
-export function SortSelect({ currentSort }: SortSelectProps) {
+export function SortSelect({ currentSort, dictionary }: SortSelectProps) {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const pathname = usePathname();
+
+	const sortLabels: Record<SortOption, string> = {
+		recent: dictionary.browseSortRecent,
+		rating: dictionary.browseSortRating,
+		title: dictionary.browseSortTitle,
+	};
 
 	const handleValueChange = (value: string) => {
 		const params = new URLSearchParams(searchParams.toString());
@@ -45,16 +47,16 @@ export function SortSelect({ currentSort }: SortSelectProps) {
 				htmlFor="reviews-sort"
 				className="text-sm text-muted-foreground whitespace-nowrap"
 			>
-				Sort by
+				{dictionary.browseSortLabel}
 			</label>
 			<Select defaultValue={currentSort} onValueChange={handleValueChange}>
 				<SelectTrigger id="reviews-sort" className="w-[160px]">
-					<SelectValue placeholder="Sort by" />
+					<SelectValue placeholder={dictionary.browseSortLabel} />
 				</SelectTrigger>
 				<SelectContent>
 					{SORT_OPTIONS.map((option) => (
 						<SelectItem key={option} value={option}>
-							{SORT_LABELS[option]}
+							{sortLabels[option]}
 						</SelectItem>
 					))}
 				</SelectContent>

@@ -217,7 +217,7 @@ export interface Media {
  */
 export interface Genre {
   id: number;
-  name: string;
+  name?: string | null;
   slug?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -228,7 +228,7 @@ export interface Genre {
  */
 export interface Tag {
   id: number;
-  name: string;
+  name?: string | null;
   description?: string | null;
   slug?: string | null;
   updatedAt: string;
@@ -240,7 +240,7 @@ export interface Tag {
  */
 export interface MoodTag {
   id: number;
-  name: string;
+  name?: string | null;
   color: string;
   icon?: string | null;
   slug?: string | null;
@@ -253,11 +253,11 @@ export interface MoodTag {
  */
 export interface Review {
   id: number;
-  title: string;
+  title?: string | null;
   bookAuthor: string;
   rating: number;
   coverImage: number | Media;
-  reviewContent: {
+  reviewContent?: {
     root: {
       type: string;
       children: {
@@ -271,7 +271,7 @@ export interface Review {
       version: number;
     };
     [k: string]: unknown;
-  };
+  } | null;
   whatILoved?: {
     root: {
       type: string;
@@ -360,7 +360,7 @@ export interface Review {
  */
 export interface ReadingList {
   id: number;
-  title: string;
+  title?: string | null;
   description?: string | null;
   author: number | Author;
   coverImage?: (number | null) | Media;

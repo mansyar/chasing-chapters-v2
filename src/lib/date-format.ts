@@ -1,16 +1,14 @@
 import { formatDistanceToNow } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
-
-/** Locales the app supports for user-facing date rendering. */
-export type AppLocale = "en" | "id";
+import type { Locale } from "./i18n/locale";
 
 /**
- * Map an arbitrary locale param (e.g. the `?locale=` search param) to a
- * supported AppLocale, defaulting to English.
+ * Locales the app supports for user-facing date rendering.
+ *
+ * The same set the site is served in; the name stays for the components that
+ * take it as a prop.
  */
-export function normalizeLocale(locale?: string | null): AppLocale {
-	return locale === "id" ? "id" : "en";
-}
+export type AppLocale = Locale;
 
 function toDate(value: string | Date | null | undefined): Date | null {
 	if (!value) return null;

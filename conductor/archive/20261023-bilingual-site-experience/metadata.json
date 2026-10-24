@@ -1,0 +1,32 @@
+{
+	"id": "20261023-bilingual-site-experience",
+	"title": "Bilingual Site Experience",
+	"type": "feature",
+	"status": "complete",
+	"priority": "high",
+	"depends_on": [],
+	"created_at": "2026-10-23T06:00:00Z",
+	"updated_at": "2026-10-24T20:00:00Z",
+	"spec": "conductor/archive/20261023-bilingual-site-experience/spec.md",
+	"plan": "conductor/archive/20261023-bilingual-site-experience/plan.md",
+	"branch": "feat/20261023-bilingual-site-experience",
+	"base_branch": "main",
+	"base_sha": "98351d54d692ea8842468df5705cc2c0be0a5c60",
+	"progress": {
+		"phases_total": 9,
+		"phases_verified": 9,
+		"tasks_total": 30,
+		"tasks_done": 30
+	},
+	"last_checkpoint": "00653de",
+	"review_verdict": "PASS WITH FINDINGS",
+	"review_rounds": 4,
+	"doc_sync": "updated",
+	"pr_url": "https://github.com/mansyar/chasing-chapters-v2/pull/20",
+	"pr_state": "open",
+	"reverted_at": null,
+	"revert_commit": null,
+	"revert_pr_url": null,
+	"archived_at": "2026-10-24T20:00:00Z",
+	"archive_path": "conductor/archive/20261023-bilingual-site-experience"
+}

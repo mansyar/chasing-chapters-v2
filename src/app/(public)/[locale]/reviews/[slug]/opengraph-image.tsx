@@ -3,46 +3,50 @@ import { notFound } from "next/navigation";
 import { ImageResponse } from "next/og";
 import { getPayload } from "payload";
 import { OgImageFrame } from "@/components/og/OgImageFrame";
-import { buildReadingListOgProps } from "@/lib/og-image";
+import { normalizeLocale } from "@/lib/i18n/locale";
+import { buildReviewOgProps } from "@/lib/og-image";
 
 export const revalidate = 60;
 
-export const alt = "Reading list cover";
+export const alt = "Review cover";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export default async function Image({
 	params,
 }: {
-	params: Promise<{ slug: string }>;
+	params: Promise<{ locale: string; slug: string }>;
 }) {
-	const { slug } = await params;
+	const { locale, slug } = await params;
+	const appLocale = normalizeLocale(locale);
 	const payload = await getPayload({ config: configPromise });
 
 	const { docs } = await payload.find({
-		collection: "reading-lists",
+		collection: "reviews",
 		where: {
 			slug: { equals: slug },
 			_status: { equals: "published" },
 		},
 		limit: 1,
-		depth: 1,
+		depth: 0,
+		locale: appLocale,
 	});
 
-	const list = docs[0];
-	if (!list) notFound();
-	const bookCount = Array.isArray(list?.reviews) ? list.reviews.length : 0;
-	const props = buildReadingListOgProps({
-		title: list?.title,
-		bookCount,
+	const review = docs[0];
+	if (!review) notFound();
+	const props = buildReviewOgProps({
+		title: review?.title ?? undefined,
+		bookAuthor: review?.bookAuthor,
+		rating: review?.rating,
 	});
 
 	return new ImageResponse(
 		<OgImageFrame
 			siteName={props.siteName}
-			badge={props.subtitle}
+			badge="Book Review"
 			title={props.title}
-			subtitle={`${props.bookCount} ${props.bookCount === 1 ? "book" : "books"}`}
+			subtitle={`by ${props.author}`}
+			rating={props.rating}
 		/>,
 		size,
 	);

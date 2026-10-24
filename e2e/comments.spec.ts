@@ -1,5 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { E2E_FIXTURE_REVIEW_PATH } from "../src/lib/e2e-harness";
+import { localePath } from "./fixtures/locale";
+
+const FIXTURE_REVIEW_URL = localePath(E2E_FIXTURE_REVIEW_PATH);
 
 test.describe("Comments", () => {
 	// Run serially in one worker: parallel workers all submit comments from
@@ -11,7 +14,7 @@ test.describe("Comments", () => {
 	// Every test opens the review the fixture seeds, so the comment form is
 	// always the one of a known review.
 	test.beforeEach(async ({ page }) => {
-		await page.goto(E2E_FIXTURE_REVIEW_PATH);
+		await page.goto(FIXTURE_REVIEW_URL);
 	});
 
 	test("should display comment form", async ({ page }) => {

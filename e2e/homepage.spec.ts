@@ -4,17 +4,20 @@ import {
 	E2E_FIXTURE_READING_LIST_PATH,
 	E2E_FIXTURE_REVIEWS,
 } from "../src/lib/e2e-harness";
+import { localePath } from "./fixtures/locale";
+
+const HOME_URL = localePath("/");
 
 test.describe("Homepage", () => {
 	test("should load successfully", async ({ page }) => {
-		await page.goto("/");
+		await page.goto(HOME_URL);
 
 		// Page title should be present
 		await expect(page).toHaveTitle(/Chasing Chapters/i);
 	});
 
 	test("should display latest reviews section", async ({ page }) => {
-		await page.goto("/");
+		await page.goto(HOME_URL);
 
 		// Section heading should be visible
 		const latestReviewsHeading = page.getByRole("heading", {
@@ -26,7 +29,7 @@ test.describe("Homepage", () => {
 	test("should navigate to reviews page via View All link", async ({
 		page,
 	}) => {
-		await page.goto("/");
+		await page.goto(HOME_URL);
 
 		// Click View All link in Latest Reviews section
 		const viewAllLink = page
@@ -35,12 +38,12 @@ test.describe("Homepage", () => {
 			.getByRole("link", { name: /View All/i });
 		await viewAllLink.click();
 
-		// Should navigate to reviews page
-		await expect(page).toHaveURL(/\/reviews/);
+		// Should navigate to the locale-prefixed reviews page
+		await expect(page).toHaveURL(/\/en\/reviews/);
 	});
 
 	test("should display genre marquee", async ({ page }) => {
-		await page.goto("/");
+		await page.goto(HOME_URL);
 
 		// Genre section should be visible (it uses a marquee layout)
 		const genreSection = page.locator('[class*="overflow-hidden"]').first();
@@ -52,7 +55,7 @@ test.describe("Homepage", () => {
 	test("should display the featured reviews in the hero carousel", async ({
 		page,
 	}) => {
-		await page.goto("/");
+		await page.goto(HOME_URL);
 
 		const carousel = page.locator(
 			'[role="region"][aria-label="Featured reviews carousel"]',
@@ -69,14 +72,16 @@ test.describe("Homepage", () => {
 	});
 
 	test("should display the fixture reading list", async ({ page }) => {
-		await page.goto("/");
+		await page.goto(HOME_URL);
 
 		const readingListsHeading = page.getByRole("heading", {
 			name: /Curated Reading Lists/i,
 		});
 		await expect(readingListsHeading).toBeVisible();
 
-		const listLink = page.locator(`a[href="${E2E_FIXTURE_READING_LIST_PATH}"]`);
+		const listLink = page.locator(
+			`a[href="${localePath(E2E_FIXTURE_READING_LIST_PATH)}"]`,
+		);
 		await expect(listLink).toBeVisible();
 		await expect(
 			listLink.getByRole("heading", { name: E2E_FIXTURE_READING_LIST.title }),
@@ -96,7 +101,7 @@ test.describe("Homepage", () => {
 		});
 		page.on("pageerror", (error) => errors.push(error.message));
 
-		await page.goto("/");
+		await page.goto(HOME_URL);
 
 		const carousel = page.locator(
 			'[role="region"][aria-label="Featured reviews carousel"]',

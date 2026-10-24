@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { AppLocale } from "@/lib/date-format";
 import { formatRelativeTime } from "@/lib/date-format";
+import type { Dictionary } from "@/lib/i18n/dictionary";
 
 interface Comment {
 	id: number;
@@ -20,22 +21,27 @@ interface CommentListProps {
 	comments: Comment[];
 	/** UI language for relative timestamps; defaults to English. */
 	locale?: AppLocale;
+	dictionary: Dictionary;
 }
 
-export function CommentList({ comments, locale = "en" }: CommentListProps) {
+export function CommentList({
+	comments,
+	locale = "en",
+	dictionary,
+}: CommentListProps) {
 	const [reportingId, setReportingId] = useState<number | null>(null);
 	const [reportEmail, setReportEmail] = useState("");
 
 	const handleReport = async (commentId: number) => {
 		if (!reportEmail || !reportEmail.includes("@")) {
-			toast.error("Please enter a valid email");
+			toast.error(dictionary.commentsInvalidEmail);
 			return;
 		}
 
 		const result = await reportComment(commentId, reportEmail);
 
 		if (result.success) {
-			toast.success(result.message || "Report submitted");
+			toast.success(result.message || dictionary.commentsReportSubmitted);
 			setReportingId(null);
 			setReportEmail("");
 		} else {
@@ -46,7 +52,7 @@ export function CommentList({ comments, locale = "en" }: CommentListProps) {
 	if (comments.length === 0) {
 		return (
 			<div className="text-center py-12 text-muted-foreground">
-				<p>No comments yet. Be the first to share your thoughts!</p>
+				<p>{dictionary.commentsEmpty}</p>
 			</div>
 		);
 	}
@@ -84,10 +90,10 @@ export function CommentList({ comments, locale = "en" }: CommentListProps) {
 											reportingId === comment.id ? null : comment.id,
 										)
 									}
-									title="Report comment"
+									title={dictionary.commentsReport}
 								>
 									<Flag className="h-4 w-4" />
-									<span className="sr-only">Report comment</span>
+									<span className="sr-only">{dictionary.commentsReport}</span>
 								</Button>
 							</div>
 
@@ -99,13 +105,13 @@ export function CommentList({ comments, locale = "en" }: CommentListProps) {
 							{reportingId === comment.id && (
 								<div className="mt-3 p-3 rounded-lg bg-muted/50 space-y-2">
 									<p className="text-xs text-muted-foreground">
-										Report this comment as inappropriate
+										{dictionary.commentsReportPrompt}
 									</p>
 									<div className="flex gap-2">
 										<Input
 											type="email"
-											placeholder="Your email (for verification)"
-											aria-label="Your email (for verification)"
+											placeholder={dictionary.commentsReportEmailPlaceholder}
+											aria-label={dictionary.commentsReportEmailPlaceholder}
 											value={reportEmail}
 											onChange={(e) => setReportEmail(e.target.value)}
 											className="text-sm h-8"
@@ -116,7 +122,7 @@ export function CommentList({ comments, locale = "en" }: CommentListProps) {
 											onClick={() => handleReport(comment.id)}
 											className="h-8"
 										>
-											Report
+											{dictionary.commentsReportAction}
 										</Button>
 										<Button
 											size="sm"
@@ -127,7 +133,7 @@ export function CommentList({ comments, locale = "en" }: CommentListProps) {
 											}}
 											className="h-8"
 										>
-											Cancel
+											{dictionary.commentsCancel}
 										</Button>
 									</div>
 								</div>

@@ -19,10 +19,10 @@ A beautifully crafted personal book review platform — a digital space that fee
 
 - **Browse & Discover** — Filter reviews by genre or tag, or open a curated reading list. Moods are shown on the review; they are not a browse filter.
 - **Search** — Find books by title or author.
-- **Language Toggle** — On a review, switch between the English text and the Indonesian translation.
+- **Language Toggle** - Switch the whole site, not just one review: the interface, review text, genre and tag names, reading lists and page metadata follow the chosen language. The choice lives in the URL (`/en/...` or `/id/...`), so a shared link keeps its language, and the site remembers your last choice.
 - **Likes** — Like a review.
 - **Comments** — Leave thoughts and engage with reviews
-- **RSS Feed** — Subscribe to new review updates
+- **RSS Feed** - Subscribe to new reviews in either language (`/en/feed.xml` or `/id/feed.xml`; the old `/feed.xml` redirects to English)
 
 ## 🛠️ Tech Stack
 

@@ -9,7 +9,7 @@ import { logger } from "../../lib/logger";
  * `afterChange` hook rolls the write back. The guard keeps the write alive and
  * logs the failure instead.
  */
-const revalidatePath = mock(() => {
+const revalidatePath = mock((_path: string) => {
 	throw new Error(
 		'Invariant: static generation store missing in revalidatePath("/reviews")',
 	);
@@ -22,8 +22,9 @@ const { revalidateReadingListPages, revalidateReviewPages } = await import(
 );
 
 describe("revalidatePages", () => {
-	it("keeps a review write alive when the page cache cannot be revalidated", async () => {
+	it("revalidates a review page in both locales", async () => {
 		const warn = spyOn(logger, "warn").mockImplementation(() => {});
+		revalidatePath.mockClear();
 		const doc = {
 			id: 1,
 			title: "E2E Fixture Review",
@@ -42,12 +43,24 @@ describe("revalidatePages", () => {
 		});
 
 		expect(result).toBe(doc);
-		expect(revalidatePath).toHaveBeenCalled();
+		// The browse page, the detail page, the homepage and the feed each exist
+		// once per locale.
+		expect(revalidatePath.mock.calls.map(([path]) => path)).toEqual([
+			"/en/reviews",
+			"/id/reviews",
+			"/en/reviews/e2e-fixture-review",
+			"/id/reviews/e2e-fixture-review",
+			"/en",
+			"/id",
+			"/en/feed.xml",
+			"/id/feed.xml",
+		]);
 		expect(warn).toHaveBeenCalled();
 	});
 
-	it("keeps a reading list write alive when the page cache cannot be revalidated", async () => {
+	it("revalidates a reading list page in both locales", async () => {
 		const warn = spyOn(logger, "warn").mockImplementation(() => {});
+		revalidatePath.mockClear();
 		const doc = {
 			id: 2,
 			title: "E2E Fixture Reading List",
@@ -66,7 +79,14 @@ describe("revalidatePages", () => {
 		});
 
 		expect(result).toBe(doc);
-		expect(revalidatePath).toHaveBeenCalled();
+		expect(revalidatePath.mock.calls.map(([path]) => path)).toEqual([
+			"/en/reading-lists",
+			"/id/reading-lists",
+			"/en/reading-lists/e2e-fixture-reading-list",
+			"/id/reading-lists/e2e-fixture-reading-list",
+			"/en",
+			"/id",
+		]);
 		expect(warn).toHaveBeenCalled();
 	});
 
