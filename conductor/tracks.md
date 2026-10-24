@@ -1,5 +1,6 @@
 # Tracks Registry
 
+- [ ] **Track: Deploy Safety** - [20261024-deploy-safety](./tracks/20261024-deploy-safety/index.md) - chore - high
 - [x] **Track: Draft Preview & Scheduled Publishing** - [20261024-draft-preview-scheduling](./archive/20261024-draft-preview-scheduling/index.md) - feature - high
 - [x] **Track: Bilingual Site Experience** - [20261023-bilingual-site-experience](./archive/20261023-bilingual-site-experience/index.md) - feature - high
 - [x] **Track: E2E Production Harness** - [20261022-e2e-production-harness](./archive/20261022-e2e-production-harness/index.md) - chore - high
