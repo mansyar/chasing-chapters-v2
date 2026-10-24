@@ -11,7 +11,7 @@ A beautifully crafted personal book review platform — a digital space that fee
 - **Mood & Genre Tagging** — Organize reviews with genres, tags, and mood tags
 - **Reading Dates** — Record when a book was started and finished. Dates appear on the review page.
 - **Author Dashboard** — Views, likes, review count, and average rating
-- **Draft & Publish** — Save drafts and publish when ready. Scheduled publishing is not available.
+- **Draft, Publish & Schedule** - Save drafts, preview any review on its real public URL before it is public, and publish now or at a chosen moment (a future `Publish At` keeps the review out of every public surface until then, with no scheduler). The reviews list shows Scheduled / Live / Draft at a glance.
 - **Comment Moderation** — Clean comments auto-approve. Spam-flagged comments are held with their spam signals saved; trusted commenters (3+ approved comments) bypass that hold, and banned commenters are rejected. Admins work the queue from the Comment Moderation panel on the analytics dashboard.
 - **Auto-Translation** — Reviews can be translated to Indonesian with the Google Cloud Translation API. Status is tracked per review; a failure never falls back to English, and Re-translate retries it from the admin.
 
