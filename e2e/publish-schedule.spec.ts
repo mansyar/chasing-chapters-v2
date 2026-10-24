@@ -3,6 +3,7 @@ import {
 	E2E_FIXTURE_DRAFT_REVIEW,
 	E2E_FIXTURE_READING_LIST_PATH,
 	E2E_FIXTURE_REVIEW,
+	E2E_FIXTURE_REVIEWS,
 	E2E_FIXTURE_SCHEDULED_REVIEW,
 	E2E_FIXTURE_SCHEDULED_REVIEW_PATH,
 } from "../src/lib/e2e-harness";
@@ -116,6 +117,36 @@ test.describe("Scheduled review visibility", () => {
 				page.locator(`a[href*="/reviews/${E2E_FIXTURE_REVIEW.slug}"]`).first(),
 			).toBeVisible();
 		}
+	});
+
+	test("counts the same books on the card as on the list", async ({ page }) => {
+		// The fixture list holds every fixture review, so four of its five are
+		// public and the card that links to it must advertise those four - a
+		// count that still includes the schedule promises a book the page does
+		// not render (`FR-5`). The schedule is a timestamp, not a job, so the
+		// number is derived from the fixture rather than pinned by hand.
+		const bookCount = E2E_FIXTURE_REVIEWS.filter(
+			(review) => review.publishAt === undefined,
+		).length;
+
+		expect(E2E_FIXTURE_REVIEWS).toHaveLength(5);
+		expect(bookCount).toBe(4);
+
+		await page.goto(localePath("/", "en"));
+
+		const card = page.locator(`a[href="/en${E2E_FIXTURE_READING_LIST_PATH}"]`);
+		await expect(card).toHaveCount(1);
+		await expect(
+			card.getByText(`${bookCount} books`, { exact: true }),
+		).toBeVisible();
+
+		// The page the card opens renders the same list, one card per public
+		// review and none for the scheduled one.
+		await page.goto(localePath(E2E_FIXTURE_READING_LIST_PATH, "en"));
+
+		await expect(page.locator('a[href^="/en/reviews/"]')).toHaveCount(
+			bookCount,
+		);
 	});
 
 	test("stays out of both feeds", async ({ request }) => {

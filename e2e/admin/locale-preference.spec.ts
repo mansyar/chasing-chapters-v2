@@ -6,8 +6,9 @@ import {
 } from "../fixtures/admin-session";
 
 test.describe("Admin locale preference", () => {
-	// Two logins and a preference write: the admin panel is slow to warm up.
-	test.setTimeout(60_000);
+	// Two logins and a preference write: the admin panel is slow to warm up, so
+	// this takes the same room as the other admin specs.
+	test.setTimeout(120_000);
 
 	test("stores the locale preference when the admin logs in", async ({
 		page,

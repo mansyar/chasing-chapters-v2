@@ -39,6 +39,9 @@ function reviewRow(page: Page, title: string) {
 
 test.describe("Review schedule in the admin", () => {
 	test.describe.configure({ mode: "serial" });
+	// A login plus the review edit views: the admin panel is slow to hydrate
+	// on a cold server, so the same room as the other admin specs.
+	test.setTimeout(120_000);
 
 	test("tells a scheduled review from a live one in the list", async ({
 		page,
@@ -100,9 +103,20 @@ test.describe("Review schedule in the admin", () => {
 		// notice has to follow the form rather than keep reading the saved
 		// document (`F4`). Nothing is submitted here: the saved schedule and
 		// every other case in this file must be unaffected.
-		await page
-			.locator("#field-publishAt .date-time-picker__clear-button")
-			.click();
+		//
+		// The scheduled notice is server-rendered from the saved document, so it
+		// (and the clear button in that markup) is visible before the picker's
+		// React handlers are attached; a single click can land on inert markup
+		// and leave the form untouched. Click until the field actually empties,
+		// and prove the emptiness before asserting on the notice.
+		const scheduleInput = page.locator("#field-publishAt input").first();
+
+		await expect(async () => {
+			await page
+				.locator("#field-publishAt .date-time-picker__clear-button")
+				.click();
+			await expect(scheduleInput).toHaveValue("", { timeout: 1_000 });
+		}).toPass();
 
 		await expect(page.getByText(LIVE_NOTICE)).toBeVisible();
 		await expect(page.getByText(SCHEDULED_NOTICE)).toHaveCount(0);

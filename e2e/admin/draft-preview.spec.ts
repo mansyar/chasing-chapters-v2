@@ -49,6 +49,11 @@ test.describe("Draft preview", () => {
 	// The four cases share one fixture admin, so they take turns instead of
 	// racing each other's logins.
 	test.describe.configure({ mode: "serial" });
+	// A login plus four navigations through the admin panel and the preview
+	// routes. The scheduled case timed out at the default 30 s while the
+	// server was still hydrating the login form, so the suite gets room for a
+	// cold machine instead of the helper's retry never getting a turn.
+	test.setTimeout(120_000);
 
 	test("refuses the entry without a session and leaves the review hidden", async ({
 		browser,

@@ -123,6 +123,19 @@ describe("reviews publish schedule", () => {
 			expect(data.publishDate).toBeUndefined();
 		});
 
+		it("refills a cleared date from the schedule", () => {
+			// A `null` in the body is the author clearing the field, not an
+			// untouched one: the fill has to run, or a review could be saved
+			// with a schedule and no date at all (`FR-8`).
+			const data = runBeforeChange(
+				{ publishDate: null, publishAt: SCHEDULE },
+				"update",
+				{ publishDate: AUTHOR_DATE },
+			);
+
+			expect(data.publishDate).toBe(SCHEDULE);
+		});
+
 		it("leaves the date alone when the schedule is cleared", () => {
 			const data = runBeforeChange({
 				_status: "published",

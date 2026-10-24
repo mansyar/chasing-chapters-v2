@@ -12,6 +12,10 @@ const FAILED_REVIEW = E2E_FIXTURE_REVIEWS[2];
 const STALE_REVIEW = E2E_FIXTURE_REVIEWS[3];
 
 test.describe("Translation attention bell", () => {
+	// A login and the bell's own requests: the admin panel is slow to hydrate
+	// on a cold server, so the same room as the other admin specs.
+	test.setTimeout(120_000);
+
 	test("counts the reviews needing attention and links to their edit views", async ({
 		page,
 	}) => {

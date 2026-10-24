@@ -474,8 +474,13 @@ export const Reviews: CollectionConfig = {
 					// A partial update carries only the fields it changes, so the
 					// stored date has to be read alongside it: an update that
 					// touches `publishAt` alone must not overwrite the author's
-					// date with the schedule.
-					const publishDate = data.publishDate ?? originalDoc?.publishDate;
+					// date with the schedule. Only an absent key falls back to
+					// the stored value - an explicit `null` is the author
+					// clearing the field, and the fill below has to run for it.
+					const publishDate =
+						data.publishDate !== undefined
+							? data.publishDate
+							: originalDoc?.publishDate;
 					if (!publishDate) {
 						if (data.publishAt) {
 							data.publishDate = data.publishAt;

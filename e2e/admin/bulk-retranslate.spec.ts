@@ -13,6 +13,10 @@ const FAILED_REVIEW = E2E_FIXTURE_REVIEWS[2];
 const STALE_REVIEW = E2E_FIXTURE_REVIEWS[3];
 
 test.describe("Bulk re-translate action", () => {
+	// A login, the reviews list and the bulk dialog: the admin panel is slow
+	// to hydrate on a cold server, so the same room as the other admin specs.
+	test.setTimeout(120_000);
+
 	test("lists the candidates, runs the selection and reports every outcome", async ({
 		page,
 	}) => {

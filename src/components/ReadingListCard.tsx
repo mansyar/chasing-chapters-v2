@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { AppLocale } from "@/lib/date-format";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { resolveMediaUrl } from "@/lib/media-url";
+import { isPubliclyVisible } from "@/lib/publish-visibility";
 import { cn } from "@/lib/utils";
 import type { Media, ReadingList } from "@/payload-types";
 
@@ -25,9 +26,17 @@ export function ReadingListCard({
 }: ReadingListCardProps) {
 	const coverImage = readingList.coverImage as Media;
 	const dictionary = getDictionary(locale);
-	const bookCount = Array.isArray(readingList.reviews)
-		? readingList.reviews.length
-		: 0;
+	// The badge has to report the same list the detail page renders, so a
+	// scheduled review is not counted (`FR-5`). The reads that render this card
+	// populate `reviews`, so each entry is a document the rule can judge; an id
+	// is kept rather than dropped, because an unpopulated relationship says
+	// nothing about visibility and must not advertise "0 books".
+	const now = new Date();
+	const bookCount = (
+		Array.isArray(readingList.reviews) ? readingList.reviews : []
+	).filter(
+		(review) => typeof review === "number" || isPubliclyVisible(review, now),
+	).length;
 
 	return (
 		<Link
