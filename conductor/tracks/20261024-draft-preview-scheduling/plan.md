@@ -29,7 +29,7 @@
 
 - **Goal:** An authenticated author or admin can open any review — including one that was never published — on its real public URL in either locale, with a preview banner, a working exit, and no cacheable or indexable trace.
 - **Depends on:** Phase 1
-- **Covers:** FR-1, FR-2, FR-3, FR-4, NFR-1, NFR-3, AC-1, AC-2, AC-3, AC-4
+- **Covers:** FR-1, FR-2, FR-3, FR-4, NFR-1, NFR-2, NFR-3, AC-1, AC-2, AC-3, AC-4
 - **Touches:** `src/app/(payload)/api/preview/**`, `src/app/(public)/[locale]/reviews/[slug]/page.tsx`, `src/app/(public)/[locale]/layout.tsx`, `src/components/reviews/PreviewBanner.tsx` (new), `src/lib/i18n/dictionary.ts`, `src/collections/Reviews.ts`, `src/lib/__tests__/**`
 - **Verification:** 'bun run typecheck && bun run lint && bun test && bun run test:e2e'
 - **Status:** pending
@@ -51,7 +51,7 @@
 
 - **Goal:** A scheduled review is recognisable in the admin, the browser suite proves the whole feature end to end, and translation behaviour and pre-rendering are demonstrably unchanged.
 - **Depends on:** Phase 2
-- **Covers:** FR-7, FR-9, AC-7, AC-9, AC-10
+- **Covers:** FR-7, FR-9, NFR-5, AC-7, AC-9, AC-10
 - **Touches:** `src/collections/Reviews/**`, `src/components/admin/**`, `src/payload.config.ts`, `src/app/(payload)/admin/importMap.js`, `src/lib/e2e-harness.ts`, `e2e/**`, `src/collections/__tests__/**`
 - **Verification:** 'bun run typecheck && bun run lint && bun test && bun run test:e2e && bun run build'
 - **Status:** pending
