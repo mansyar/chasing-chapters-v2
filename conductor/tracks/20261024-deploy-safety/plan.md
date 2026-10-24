@@ -49,7 +49,7 @@
   - [x] **P2.T3.1: Read the base URL from `process.argv`, print per-attempt status, exit non-zero on failure**
 
 **Result:** verified
-**Checkpoint:** (recorded after squash)
+**Checkpoint:** f00fad9
 **Evidence:** conductor/tracks/20261024-deploy-safety/verification/phase-2.md
 
 ## Phase 3: CI Image Build
