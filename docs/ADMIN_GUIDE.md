@@ -193,9 +193,15 @@ reading-list title is an editorial choice, not something to machine-translate.
   marks the review stale. Type the Indonesian book title if you want one.
 
 Anything you leave empty in Indonesian falls back to the English value: the
-Indonesian page shows the English name, title or description instead of a blank
-space. Nothing has to be translated for a page to work — a half-translated site
-is a valid site.
+Indonesian page shows the English name, title, description or review body
+instead of a blank space. Nothing has to be translated for a page to work - a
+half-translated site is a valid site.
+
+One thing is still required, and only in English: a review's **Review Content**
+must have text when you save it (a body that is only an image counts as content).
+The Indonesian body is optional; leaving it empty shows the English text on the
+Indonesian page. The same rule applies to every localizable field - a name, title
+or description has to exist in English, and may be empty in Indonesian.
 
 A slug is never localized, so the URL of a genre, a tag or a reading list is the
 same in both languages.

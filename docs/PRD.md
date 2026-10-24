@@ -130,10 +130,11 @@ Each review includes:
 - Search results
 - Comments (with moderation and spam filtering)
 - Like system (rate-limited)
-- Language toggle (English/Indonesian)
+- Language toggle (English/Indonesian), site-wide and remembered: every page is
+  served at `/en/...` or `/id/...`, and the choice persists across visits
 - Social share buttons
 - Related reviews recommendations
-- RSS feed for new reviews
+- RSS feed for new reviews, served per language (`/en/feed.xml`, `/id/feed.xml`)
 
 ## 5.3 Admin/CMS Features (Payload CMS)
 
@@ -433,7 +434,7 @@ Design Inspiration:
 
 - Large book cover
 - Title, author, rating
-- Language toggle (EN/ID)
+- Language toggle (EN/ID) - the same site-wide control, on the review page too
 - Structured review sections
 - Quote callouts with special styling
 - Like and share buttons
