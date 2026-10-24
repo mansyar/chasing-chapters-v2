@@ -80,7 +80,7 @@ export default defineConfig({
 		// over the same documents, so they are chained as dependent
 		// projects and run one after the other. The locale preference spec
 		// logs in and reads the admin's stored preference, and it is chained
-		// last so the admin flow stays sequential.
+		// before the draft-preview spec so the admin flow stays sequential.
 		{
 			name: "admin-attention-bell",
 			testMatch: "**/admin/attention-bell.spec.ts",
@@ -102,6 +102,12 @@ export default defineConfig({
 			name: "admin-locale-preference",
 			testMatch: "**/admin/locale-preference.spec.ts",
 			dependencies: ["admin-translation-poller"],
+			use: { ...devices["Desktop Chrome"] },
+		},
+		{
+			name: "admin-draft-preview",
+			testMatch: "**/admin/draft-preview.spec.ts",
+			dependencies: ["admin-locale-preference"],
 			use: { ...devices["Desktop Chrome"] },
 		},
 	],

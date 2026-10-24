@@ -2,6 +2,7 @@ import configPromise from "@payload-config";
 import { RichText } from "@payloadcms/richtext-lexical/react";
 import { Calendar, Star, User } from "lucide-react";
 import type { Metadata } from "next";
+import { draftMode, headers } from "next/headers";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getPayload } from "payload";
@@ -10,6 +11,7 @@ import { CommentSection } from "@/components/comments/CommentSection";
 import { ReadingProgressBar } from "@/components/ReadingProgressBar";
 import { LanguageToggle } from "@/components/reviews/LanguageToggle";
 import { LikeButton } from "@/components/reviews/LikeButton";
+import { PreviewBanner } from "@/components/reviews/PreviewBanner";
 import { RelatedReviews } from "@/components/reviews/RelatedReviews";
 import { ShareButton } from "@/components/ShareButton";
 import { Badge } from "@/components/ui/badge";
@@ -17,8 +19,10 @@ import { Separator } from "@/components/ui/separator";
 import { formatDate } from "@/lib/date-format";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { formatMessage } from "@/lib/i18n/format";
+import type { Locale } from "@/lib/i18n/locale";
 import { normalizeLocale, SUPPORTED_LOCALES } from "@/lib/i18n/locale";
 import { resolveMediaUrl } from "@/lib/media-url";
+import { buildPreviewMetadata, canRenderDraft } from "@/lib/preview";
 import { publishedAndVisibleWhere } from "@/lib/publish-visibility";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import {
@@ -26,7 +30,7 @@ import {
 	generateReviewSchema,
 	SITE_URL,
 } from "@/lib/seo/structured-data";
-import type { Media } from "@/payload-types";
+import type { Media, Review } from "@/payload-types";
 
 // Enable ISR with 60 second revalidation for better caching
 export const revalidate = 60;
@@ -38,16 +42,71 @@ interface PageProps {
 	}>;
 }
 
-export async function generateMetadata({
-	params,
-}: PageProps): Promise<Metadata> {
-	const { locale, slug } = await params;
-	const appLocale = normalizeLocale(locale);
-	const dictionary = getDictionary(appLocale);
+/** The review this request should render, and whether it is a preview. */
+interface ReviewLookup {
+	review: Review | undefined;
+	preview: boolean;
+}
+
+/**
+ * Finds the review to render, honouring draft mode (`FR-2`).
+ *
+ * The order of the two reads is the whole point (`NFR-1`). `draftMode()` is a
+ * per-request flavour flag, not a Dynamic API: during a static render it reports
+ * `false` and Next keeps the page in the pre-rendered set, so asking for it
+ * unconditionally costs nothing. The session, by contrast, is read from the
+ * request headers - a Dynamic API - so it is read *only* inside the branch that
+ * draft mode opens. Read at the top of the page it would turn both review detail
+ * routes from `●` into `ƒ`, which is exactly the trade this phase refuses to
+ * make.
+ *
+ * Draft mode alone is not authority: the bypass cookie survives a logout, so a
+ * request without a session falls back to the public lookup - never draft
+ * content. The public path is byte-identical to the one from before draft mode
+ * existed: the same query, the same shared visibility gate, and the same
+ * `undefined` that becomes a `404`.
+ */
+async function loadReview(
+	slug: string,
+	appLocale: Locale,
+	depth: number,
+): Promise<ReviewLookup> {
 	const payload = await getPayload({ config: configPromise });
+	const draftEnabled = (await draftMode()).isEnabled;
+
+	const user = draftEnabled
+		? (await payload.auth({ headers: await headers() })).user
+		: null;
+	const previewing = canRenderDraft({
+		draftEnabled,
+		hasSession: user !== null,
+	});
+
+	if (previewing && user) {
+		// The newest version, published or not, in the requested locale. The
+		// lookup runs as the signed-in user, so a writer previews only their own
+		// reviews; `overrideAccess` stays off for exactly that reason.
+		const { docs } = await payload.find({
+			collection: "reviews",
+			where: {
+				slug: {
+					equals: slug,
+				},
+			},
+			limit: 1,
+			depth,
+			locale: appLocale,
+			draft: true,
+			overrideAccess: false,
+			user,
+		});
+
+		return { review: docs[0], preview: true };
+	}
 
 	const { docs: reviews } = await payload.find({
 		collection: "reviews",
+		locale: appLocale,
 		where: {
 			and: [
 				{
@@ -59,11 +118,19 @@ export async function generateMetadata({
 			],
 		},
 		limit: 1,
-		depth: 1,
-		locale: appLocale,
+		depth,
 	});
 
-	const review = reviews[0];
+	return { review: reviews[0], preview: false };
+}
+
+export async function generateMetadata({
+	params,
+}: PageProps): Promise<Metadata> {
+	const { locale, slug } = await params;
+	const appLocale = normalizeLocale(locale);
+	const dictionary = getDictionary(appLocale);
+	const { review, preview } = await loadReview(slug, appLocale, 1);
 
 	if (!review) {
 		return {
@@ -71,15 +138,24 @@ export async function generateMetadata({
 		};
 	}
 
+	const title = review.title ?? "";
+	const description = formatMessage(dictionary.metaReviewDescription, {
+		title,
+		author: review.bookAuthor,
+		rating: review.rating,
+	});
+
+	// A previewed page must be unshareable and unindexable (`FR-4`), so it
+	// carries its own metadata object rather than a filtered public one.
+	if (preview) {
+		return buildPreviewMetadata({ title, description });
+	}
+
 	return buildPageMetadata({
 		locale: appLocale,
 		path: `/reviews/${review.slug}`,
-		title: review.title ?? "",
-		description: formatMessage(dictionary.metaReviewDescription, {
-			title: review.title ?? "",
-			author: review.bookAuthor,
-			rating: review.rating,
-		}),
+		title,
+		description,
 		openGraphType: "article",
 	});
 }
@@ -108,26 +184,7 @@ export async function generateStaticParams() {
 export default async function ReviewPage({ params }: PageProps) {
 	const { locale, slug } = await params;
 	const appLocale = normalizeLocale(locale);
-	const payload = await getPayload({ config: configPromise });
-
-	const { docs: reviews } = await payload.find({
-		collection: "reviews",
-		locale: appLocale,
-		where: {
-			and: [
-				{
-					slug: {
-						equals: slug,
-					},
-				},
-				publishedAndVisibleWhere(new Date()),
-			],
-		},
-		limit: 1,
-		depth: 2,
-	});
-
-	const review = reviews[0];
+	const { review, preview } = await loadReview(slug, appLocale, 2);
 
 	if (!review) {
 		notFound();
@@ -150,6 +207,9 @@ export default async function ReviewPage({ params }: PageProps) {
 
 	return (
 		<article className="min-h-screen pb-20">
+			{preview ? (
+				<PreviewBanner locale={appLocale} slug={slug} dictionary={dictionary} />
+			) : null}
 			<script
 				type="application/ld+json"
 				dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

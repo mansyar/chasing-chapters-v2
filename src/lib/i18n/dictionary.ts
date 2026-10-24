@@ -205,6 +205,13 @@ const en = {
 		"Book reviews, reading lists, and literary notes from Chasing Chapters.",
 	browseItemListName: "Book Reviews",
 	breadcrumbHome: "Home",
+
+	// Draft preview
+	previewLabel: "Preview",
+	previewDescription:
+		"You are previewing an unpublished version of this review.",
+	previewOtherLocale: "Read it in {language}",
+	previewExit: "Exit preview",
 } as const;
 
 /** Every key the interface dictionary defines. */
@@ -385,6 +392,12 @@ const id: Dictionary = {
 		"Ulasan buku, daftar bacaan, dan catatan sastra dari Chasing Chapters.",
 	browseItemListName: "Ulasan Buku",
 	breadcrumbHome: "Beranda",
+
+	previewLabel: "Pratinjau",
+	previewDescription:
+		"Anda sedang melihat versi pratinjau dari ulasan yang belum diterbitkan.",
+	previewOtherLocale: "Baca dalam {language}",
+	previewExit: "Keluar dari pratinjau",
 };
 
 /** The dictionary for each supported locale. */

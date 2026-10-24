@@ -5,6 +5,7 @@ import {
 	recordEnglishChangeTime,
 	translateReview,
 } from "../hooks/translateReview";
+import { normalizeLocale } from "../lib/i18n/locale";
 import { retranslateReview } from "../lib/retranslate";
 import {
 	canTransition,
@@ -25,6 +26,34 @@ export const Reviews: CollectionConfig = {
 			"translationStatus",
 			"publishDate",
 		],
+		/**
+		 * Payload's native Preview button (`FR-1`).
+		 *
+		 * It opens the draft-preview entry point with the document's slug and the
+		 * locale being edited, so an author previewing the Indonesian version
+		 * lands on the Indonesian page. The URL is root-relative because the admin
+		 * panel and the public site share an origin, and Payload uses the returned
+		 * string verbatim as the link's `href`.
+		 *
+		 * The entry route re-checks the session, so this button is a convenience
+		 * and never the authority. A document with no slug yet - a new, unsaved
+		 * review - has no public URL to preview, so it gets no button rather than
+		 * a broken one.
+		 */
+		preview: (doc, { locale }) => {
+			const slug = doc.slug;
+
+			if (typeof slug !== "string" || slug === "") {
+				return null;
+			}
+
+			const params = new URLSearchParams({
+				slug,
+				locale: normalizeLocale(locale),
+			});
+
+			return `/api/preview?${params.toString()}`;
+		},
 	},
 	versions: {
 		drafts: true,
