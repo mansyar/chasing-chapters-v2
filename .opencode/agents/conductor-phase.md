@@ -104,6 +104,9 @@ permissions:
     resource: "bun test *"
     effect: allow
   - action: shell
+    resource: "bun -e *"
+    effect: allow
+  - action: shell
     resource: "bun run lint"
     effect: allow
   - action: shell
