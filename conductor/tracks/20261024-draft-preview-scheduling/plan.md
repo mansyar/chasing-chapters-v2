@@ -59,9 +59,9 @@
 - **Goal:** A scheduled review is recognisable in the admin, the browser suite proves the whole feature end to end, and translation behaviour and pre-rendering are demonstrably unchanged.
 - **Depends on:** Phase 2
 - **Covers:** FR-7, FR-9, NFR-5, AC-7, AC-9, AC-10
-- **Touches:** `src/collections/Reviews/**`, `src/components/admin/**`, `src/payload.config.ts`, `src/app/(payload)/admin/importMap.js`, `src/lib/e2e-harness.ts`, `e2e/**`, `src/collections/__tests__/**`
+- **Touches:** `src/collections/Reviews.ts` (registering the admin components and the list column), `src/collections/Reviews/**`, `src/components/admin/**`, `src/payload.config.ts`, `src/app/(payload)/admin/importMap.js`, `src/lib/e2e-harness.ts`, `e2e/**`, `src/collections/__tests__/**`
 - **Verification:** 'bun run typecheck && bun run lint && bun test && bun run test:e2e && bun run build'
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P3.T1: Show the schedule in the admin** — covers: FR-7
   - [ ] **P3.T1.1: Add a list indicator that distinguishes a scheduled review from a live one, and an edit-view notice stating when it will publish**
