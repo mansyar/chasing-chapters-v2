@@ -20,7 +20,11 @@ const isTextlessNode = (node: unknown): boolean => {
 	}
 
 	if (!Array.isArray(children)) {
-		return true;
+		// A node with no children that is not a text node is an atomic leaf - an
+		// upload, a relationship, a horizontal rule - and carries content of its
+		// own. Lexical's `hasText` reports such a document as having text, so an
+		// English body that is a single image must not read as blank.
+		return false;
 	}
 
 	return children.every(isTextlessNode);

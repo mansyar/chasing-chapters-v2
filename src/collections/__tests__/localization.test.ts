@@ -200,6 +200,27 @@ describe("content localization (FR-10)", () => {
 		expect(validate(Reviews, "reviewContent", written, "en")).toBe(true);
 	});
 
+	it("accepts an editor state whose only content is an atomic leaf", () => {
+		// A body that is one image is not blank: an upload node is a childless
+		// leaf that carries content of its own, and lexical's `hasText` reports
+		// such a document as having text. Reading it as blank would refuse a
+		// published review whose English body is a picture.
+		const imageOnly = {
+			root: {
+				type: "root",
+				children: [
+					{
+						type: "upload",
+						value: { id: 1, url: "/cover.png" },
+						version: 1,
+					},
+				],
+			},
+		};
+
+		expect(validate(Reviews, "reviewContent", imageOnly, "en")).toBe(true);
+	});
+
 	it("accepts an empty translation so the fallback can fill it", () => {
 		// `payload.update({ locale: "id", data: {...} })` - the translation
 		// pipeline and an author's partial write - must not be rejected for
