@@ -36,7 +36,7 @@
 - **Covers:** FR-1, FR-2, FR-3, FR-4, NFR-1, NFR-2, NFR-3, AC-1, AC-2, AC-3, AC-4
 - **Touches:** `src/app/(payload)/api/preview/**`, `src/app/(public)/[locale]/reviews/[slug]/page.tsx`, `src/app/(public)/[locale]/layout.tsx`, `src/components/reviews/PreviewBanner.tsx` (new), `src/lib/i18n/dictionary.ts`, `src/collections/Reviews.ts`, `src/lib/__tests__/**`
 - **Verification:** 'bun run typecheck && bun run lint && bun test && bun run test:e2e'
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P2.T1: Build the preview entry and exit** — covers: FR-1
   - [ ] **P2.T1.1: Add an admin API route that validates the session, enables draft mode for one review and locale, and redirects to that review's public URL, refusing an anonymous request with 401**
