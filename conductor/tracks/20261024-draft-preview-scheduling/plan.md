@@ -12,7 +12,7 @@
 - **Covers:** FR-5, FR-6, FR-8, NFR-4, AC-5, AC-6, AC-8
 - **Touches:** `src/collections/Reviews.ts`, `src/lib/publish-visibility.ts` (new), `src/lib/__tests__/publish-visibility.test.ts` (new), `src/app/(public)/[locale]/**`, `src/app/sitemap.ts`, `src/migrations/**`, `src/payload-types.ts`, `src/lib/e2e-harness.ts`, `e2e/global-setup.ts`, `src/collections/__tests__/**`
 - **Verification:** 'bun run typecheck && bun run lint && bun test && bun run test:e2e'
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P1.T1: Add the publishAt field and the shared visibility rule** — covers: FR-5, FR-6, NFR-4
   - [ ] **P1.T1.1: Add an optional `publishAt` timestamp to the reviews sidebar, generate the types, and generate the migration through Payload**
