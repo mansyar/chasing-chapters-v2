@@ -114,3 +114,27 @@ None. Every file touched is inside `Touches`
   SQL comments (`--`, `/* */`) are stripped before matching, so a note that
   mentions a `DROP` does not force a marker; the spec accepted the converse
   trade (a `DROP` inside a SQL string literal still does).
+
+## Primary verification
+
+Independently re-run by the primary after the subagent reported.
+
+| Layer | Command | Exit | Summary |
+| --- | --- | --- | --- |
+| static | `bun run typecheck` | 0 | No type errors in 247 files |
+| static | `bun run lint` | 0 | 237 files checked, no fixes applied |
+| unit | `bun test` | 0 | 592 pass, 0 fail across 47 files |
+
+**Mutation check (the gate actually works):** removed the `// destructive:` line from
+`src/migrations/20251214_135240.ts` and re-ran the scanner test. It failed with
+`(fail) requires a justification for every destructive up body` naming eight
+`DROP COLUMN` statements, and `(fail) marks the three migrations that drop in up`;
+restoring the marker returned 10 pass / 0 fail. The gate is not a no-op.
+
+**Correction accepted:** the outage migration drops ten columns, not nine. `P1.T2.3`
+in `plan.md` was corrected to say ten; the marker in the file names all ten. `FR-3`
+in `spec.md` describes the three files rather than a count, so it needed no change.
+
+**Out of scope, recorded:** `DROP INDEX` and `DROP TYPE` remain outside `FR-2`'s
+pattern. A future migration dropping an index in `up` would pass the scan. Widening
+the pattern is a spec change, not a phase fix.

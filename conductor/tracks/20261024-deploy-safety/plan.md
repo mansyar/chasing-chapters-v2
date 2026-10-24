@@ -14,16 +14,20 @@
 - **Covers:** FR-2, FR-3, NFR-5, AC-2, AC-3, AC-4
 - **Touches:** `src/migrations/__tests__/**`, `src/migrations/*.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** verified
 
-- [ ] **P1.T1: Marker scanner test** - covers: FR-2
-  - [ ] **P1.T1.1: Split each migration file at `export async function down` so only the `up` body is scanned**
-  - [ ] **P1.T1.2: Detect `DROP COLUMN`, `DROP TABLE` and `TRUNCATE` in the `up` body**
-  - [ ] **P1.T1.3: Require a `// destructive:` marker for a flagged file, and assert at least thirteen migration files were inspected so a broken glob cannot pass**
-- [ ] **P1.T2: Mark the three dropping migrations** - covers: FR-3
-  - [ ] **P1.T2.1: `20251214_135240` - review body localization**
-  - [ ] **P1.T2.2: `20261008_131000_commenters_email_hash_fix`**
-  - [ ] **P1.T2.3: `20261023_193922_localize_taxonomy_and_reading_list_content` - the outage migration; name all nine dropped columns and note the `down()` recovers English only**
+- [x] **P1.T1: Marker scanner test** - covers: FR-2
+  - [x] **P1.T1.1: Split each migration file at `export async function down` so only the `up` body is scanned**
+  - [x] **P1.T1.2: Detect `DROP COLUMN`, `DROP TABLE` and `TRUNCATE` in the `up` body**
+  - [x] **P1.T1.3: Require a `// destructive:` marker for a flagged file, and assert at least thirteen migration files were inspected so a broken glob cannot pass**
+- [x] **P1.T2: Mark the three dropping migrations** - covers: FR-3
+  - [x] **P1.T2.1: `20251214_135240` - review body localization**
+  - [x] **P1.T2.2: `20261008_131000_commenters_email_hash_fix`**
+  - [x] **P1.T2.3: `20261023_193922_localize_taxonomy_and_reading_list_content` - the outage migration; name all ten dropped columns and note the `down()` recovers English only**
+
+**Result:** verified
+**Checkpoint:** d1910e0
+**Evidence:** conductor/tracks/20261024-deploy-safety/verification/phase-1.md
 
 ## Phase 2: Deploy Smoke Check
 
