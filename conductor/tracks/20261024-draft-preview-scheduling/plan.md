@@ -12,18 +12,22 @@
 - **Covers:** FR-5, FR-6, FR-8, NFR-4, AC-5, AC-6, AC-8
 - **Touches:** `src/collections/Reviews.ts`, `src/lib/publish-visibility.ts` (new), `src/lib/__tests__/publish-visibility.test.ts` (new), `src/app/(public)/[locale]/**`, `src/app/sitemap.ts`, `src/migrations/**`, `src/payload-types.ts`, `src/lib/e2e-harness.ts`, `e2e/global-setup.ts`, `src/collections/__tests__/**`
 - **Verification:** 'bun run typecheck && bun run lint && bun test && bun run test:e2e'
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P1.T1: Add the publishAt field and the shared visibility rule** — covers: FR-5, FR-6, NFR-4
-  - [ ] **P1.T1.1: Add an optional `publishAt` timestamp to the reviews sidebar, generate the types, and generate the migration through Payload**
-  - [ ] **P1.T1.2: Write one pure module exposing a Payload `where` fragment and an in-memory predicate for public visibility, with unit tests for unset, past, future, boundary and invalid values**
-- [ ] **P1.T2: Apply the gate to every public read** — covers: FR-5
-  - [ ] **P1.T2.1: Gate the home page, the browse page and the review detail route, which must 404 for a hidden review**
-  - [ ] **P1.T2.2: Gate the RSS feed, the sitemap and both Open Graph handlers**
-  - [ ] **P1.T2.3: Add a scheduled fixture review whose `publishAt` is in the future, upserted idempotently, so the gate is provable end to end**
-- [ ] **P1.T3: Fill an empty publishDate from the schedule** — covers: FR-8
-  - [ ] **P1.T3.1: Extend the collection's beforeChange hook to copy `publishAt` into an empty `publishDate` without ever overwriting an author value**
-  - [ ] **P1.T3.2: Unit-test the fill, the author-supplied case, and clearing the schedule**
+- [x] **P1.T1: Add the publishAt field and the shared visibility rule** — covers: FR-5, FR-6, NFR-4
+  - [x] **P1.T1.1: Add an optional `publishAt` timestamp to the reviews sidebar, generate the types, and generate the migration through Payload**
+  - [x] **P1.T1.2: Write one pure module exposing a Payload `where` fragment and an in-memory predicate for public visibility, with unit tests for unset, past, future, boundary and invalid values**
+- [x] **P1.T2: Apply the gate to every public read** — covers: FR-5
+  - [x] **P1.T2.1: Gate the home page, the browse page and the review detail route, which must 404 for a hidden review**
+  - [x] **P1.T2.2: Gate the RSS feed, the sitemap and both Open Graph handlers**
+  - [x] **P1.T2.3: Add a scheduled fixture review whose `publishAt` is in the future, upserted idempotently, so the gate is provable end to end**
+- [x] **P1.T3: Fill an empty publishDate from the schedule** — covers: FR-8
+  - [x] **P1.T3.1: Extend the collection's beforeChange hook to copy `publishAt` into an empty `publishDate` without ever overwriting an author value**
+  - [x] **P1.T3.2: Unit-test the fill, the author-supplied case, and clearing the schedule**
+
+**Result:** verified
+**Checkpoint:** c76ba18
+**Evidence:** conductor/tracks/20261024-draft-preview-scheduling/verification/phase-1.md
 
 ## Phase 2: Preview Entry and Draft Rendering
 
