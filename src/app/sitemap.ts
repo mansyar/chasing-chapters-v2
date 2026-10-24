@@ -1,6 +1,7 @@
 import configPromise from "@payload-config";
 import type { MetadataRoute } from "next";
 import { getPayload } from "payload";
+import { publishedAndVisibleWhere } from "@/lib/publish-visibility";
 import { buildSitemapEntries, type SitemapSource } from "@/lib/seo/sitemap";
 
 // Depends on content that changes at runtime, so it cannot be pre-rendered at build.
@@ -14,11 +15,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	const [reviews, readingLists] = await Promise.all([
 		payload.find({
 			collection: "reviews",
-			where: {
-				_status: {
-					equals: "published",
-				},
-			},
+			// A scheduled review is not public yet, so its URL has no business in
+			// the sitemap until the schedule arrives.
+			where: publishedAndVisibleWhere(new Date()),
 			limit: 1000,
 			select: {
 				slug: true,

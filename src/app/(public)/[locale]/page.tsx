@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locale";
+import { publishedAndVisibleWhere } from "@/lib/publish-visibility";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 // Enable ISR with 60 second revalidation for better caching
@@ -42,6 +43,9 @@ export default async function Homepage({
 	const appLocale = normalizeLocale(locale);
 	const dictionary = getDictionary(appLocale);
 	const payload = await getPayload({ config: configPromise });
+	// The visibility rule is built once per render, so every review read on the
+	// page agrees on the instant it is judging the schedule against.
+	const visibleNow = publishedAndVisibleWhere(new Date());
 
 	// Fetch data in parallel for better performance
 	const [
@@ -53,8 +57,7 @@ export default async function Homepage({
 		payload.find({
 			collection: "reviews",
 			where: {
-				featured: { equals: true },
-				_status: { equals: "published" },
+				and: [visibleNow, { featured: { equals: true } }],
 			},
 			limit: 5,
 			depth: 2,
@@ -62,9 +65,7 @@ export default async function Homepage({
 		}),
 		payload.find({
 			collection: "reviews",
-			where: {
-				_status: { equals: "published" },
-			},
+			where: visibleNow,
 			sort: "-publishDate",
 			limit: 6,
 			depth: 1,

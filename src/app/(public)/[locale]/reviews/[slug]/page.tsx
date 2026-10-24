@@ -19,6 +19,7 @@ import { getDictionary } from "@/lib/i18n/dictionary";
 import { formatMessage } from "@/lib/i18n/format";
 import { normalizeLocale, SUPPORTED_LOCALES } from "@/lib/i18n/locale";
 import { resolveMediaUrl } from "@/lib/media-url";
+import { publishedAndVisibleWhere } from "@/lib/publish-visibility";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import {
 	generateBreadcrumbSchema,
@@ -48,12 +49,14 @@ export async function generateMetadata({
 	const { docs: reviews } = await payload.find({
 		collection: "reviews",
 		where: {
-			slug: {
-				equals: slug,
-			},
-			_status: {
-				equals: "published",
-			},
+			and: [
+				{
+					slug: {
+						equals: slug,
+					},
+				},
+				publishedAndVisibleWhere(new Date()),
+			],
 		},
 		limit: 1,
 		depth: 1,
@@ -85,11 +88,9 @@ export async function generateStaticParams() {
 	const payload = await getPayload({ config: configPromise });
 	const { docs } = await payload.find({
 		collection: "reviews",
-		where: {
-			_status: {
-				equals: "published",
-			},
-		},
+		// A review scheduled for the future is not a page yet: pre-building it
+		// would cache the public view of a document nobody may read.
+		where: publishedAndVisibleWhere(new Date()),
 		limit: 50, // Pre-build top 50 reviews
 		select: {
 			slug: true,
@@ -113,12 +114,14 @@ export default async function ReviewPage({ params }: PageProps) {
 		collection: "reviews",
 		locale: appLocale,
 		where: {
-			slug: {
-				equals: slug,
-			},
-			_status: {
-				equals: "published",
-			},
+			and: [
+				{
+					slug: {
+						equals: slug,
+					},
+				},
+				publishedAndVisibleWhere(new Date()),
+			],
 		},
 		limit: 1,
 		depth: 2,

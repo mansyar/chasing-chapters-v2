@@ -297,6 +297,11 @@ export type E2EFixtureReview = {
 	rating: number;
 	/** Fixed publication date - never `new Date()`. */
 	publishDate: string;
+	/**
+	 * The public schedule. Set only on the review that proves the visibility
+	 * gate: a date far enough in the future that no run ever reaches it.
+	 */
+	publishAt?: string;
 	translationStatus: E2EFixtureTranslationStatus;
 	/** Set for reviews whose translation is considered up to date. */
 	translationUpdatedAt?: string;
@@ -596,6 +601,52 @@ export const E2E_FIXTURE_REVIEWS: E2EFixtureReview[] = [
 		tags: ["Classic"],
 		moodTags: ["Adventurous"],
 	},
+	{
+		// The scheduled review: published, translated, and invisible because
+		// `publishAt` is far enough in the future that no run reaches it. The
+		// public specs assert its absence everywhere, which is what proves the
+		// gate end to end (AC-5).
+		title: "E2E Fixture: The Slow Orbit",
+		slug: "e2e-fixture-the-slow-orbit",
+		bookAuthor: "Mira Vance",
+		rating: 4,
+		publishDate: "2026-02-14T00:00:00.000Z",
+		publishAt: "2030-01-01T00:00:00.000Z",
+		translationStatus: "translated",
+		translationUpdatedAt: "2026-02-15T00:00:00.000Z",
+		featured: false,
+		reviewContent: richText(
+			"A station keeper spends eleven years waiting for a supply ship that keeps missing the dock.",
+		),
+		whatILoved: richText(
+			"The patience of the prose, which never once hurries the waiting.",
+		),
+		whatCouldBeBetter: richText(
+			"The final chapter explains an orbit the rest of the book was happy to leave mysterious.",
+		),
+		perfectFor: richText(
+			"Readers who like quiet science fiction about time more than about machines.",
+		),
+		favoriteQuotes: [],
+		genres: ["Sci-Fi"],
+		tags: ["Hidden Gem"],
+		moodTags: ["Adventurous"],
+		id: {
+			reviewContent: richText(
+				"Seorang penjaga stasiun menghabiskan sebelas tahun menunggu kapal pasokan yang terus meleset dari dermaga.",
+			),
+			whatILoved: richText(
+				"Kesabaran prosanya, yang tidak pernah sekali pun mempercepat penantian.",
+			),
+			whatCouldBeBetter: richText(
+				"Bab terakhir menjelaskan orbit yang sepanjang buku dibiarkan misterius.",
+			),
+			perfectFor: richText(
+				"Pembaca yang menyukai fiksi ilmiah tenang tentang waktu, bukan tentang mesin.",
+			),
+			favoriteQuotes: [],
+		},
+	},
 ];
 
 /** The review the public specs navigate to. */
@@ -606,6 +657,23 @@ export const E2E_FIXTURE_REVIEW_SLUG = E2E_FIXTURE_REVIEW.slug;
 
 /** The path of the review the public specs navigate to. */
 export const E2E_FIXTURE_REVIEW_PATH = `/reviews/${E2E_FIXTURE_REVIEW_SLUG}`;
+
+/**
+ * The review the public specs assert is invisible everywhere: published and
+ * translated, but scheduled so far in the future that no run reaches it. The
+ * cast is safe because the fixture has exactly one scheduled review, which
+ * `e2e-harness.test.ts` asserts.
+ */
+export const E2E_FIXTURE_SCHEDULED_REVIEW = E2E_FIXTURE_REVIEWS.find(
+	(review) => review.publishAt !== undefined,
+) as E2EFixtureReview;
+
+/** The slug of the scheduled review. */
+export const E2E_FIXTURE_SCHEDULED_REVIEW_SLUG =
+	E2E_FIXTURE_SCHEDULED_REVIEW.slug;
+
+/** The public path of the scheduled review, which must never render. */
+export const E2E_FIXTURE_SCHEDULED_REVIEW_PATH = `/reviews/${E2E_FIXTURE_SCHEDULED_REVIEW_SLUG}`;
 
 /** The path of the reading list the public specs navigate to. */
 export const E2E_FIXTURE_READING_LIST_PATH = `/reading-lists/${E2E_FIXTURE_READING_LIST.slug}`;

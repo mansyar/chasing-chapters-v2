@@ -308,6 +308,25 @@ export const Reviews: CollectionConfig = {
 			},
 		},
 		{
+			name: "publishAt",
+			type: "date",
+			label: "Publish At",
+			// The schedule the public gate reads (FR-5, FR-6). An empty value
+			// means "no schedule", which keeps every existing review visible
+			// without a backfill; a value in the future hides the review from
+			// every public read until that moment. Storage is UTC: Payload's
+			// `date` field stores an instant, and the admin reads it back in
+			// the browser's own zone.
+			admin: {
+				position: "sidebar",
+				date: {
+					pickerAppearance: "dayAndTime",
+				},
+				description:
+					"Hides the review from every public page until this moment. Leave empty to publish immediately.",
+			},
+		},
+		{
 			name: "author",
 			type: "relationship",
 			relationTo: "authors",
@@ -392,6 +411,15 @@ export const Reviews: CollectionConfig = {
 		beforeChange: [
 			({ data, operation }) => {
 				if (operation === "create" || operation === "update") {
+					// A scheduled review is meant to publish at its schedule, so
+					// an empty `publishDate` starts there instead of at the
+					// moment the author happened to save (FR-8). An author's own
+					// value is never overwritten, and clearing `publishAt`
+					// changes nothing here: with no schedule to copy, the date
+					// the row already carries stays.
+					if (!data.publishDate && data.publishAt) {
+						data.publishDate = data.publishAt;
+					}
 					if (data._status === "published" && !data.publishDate) {
 						data.publishDate = new Date();
 					}

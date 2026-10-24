@@ -344,6 +344,10 @@ export interface Review {
   views?: number | null;
   likes?: number | null;
   publishDate?: string | null;
+  /**
+   * Hides the review from every public page until this moment. Leave empty to publish immediately.
+   */
+  publishAt?: string | null;
   author: number | Author;
   genres?: (number | Genre)[] | null;
   tags?: (number | Tag)[] | null;
@@ -688,6 +692,7 @@ export interface ReviewsSelect<T extends boolean = true> {
   views?: T;
   likes?: T;
   publishDate?: T;
+  publishAt?: T;
   author?: T;
   genres?: T;
   tags?: T;

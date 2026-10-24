@@ -7,6 +7,7 @@ import {
 	normalizeLocale,
 	SUPPORTED_LOCALES,
 } from "@/lib/i18n/locale";
+import { publishedAndVisibleWhere } from "@/lib/publish-visibility";
 
 /**
  * The RSS 2.0 feed of one locale.
@@ -39,11 +40,7 @@ export async function GET(
 
 	const { docs } = await payload.find({
 		collection: "reviews",
-		where: {
-			_status: {
-				equals: "published",
-			},
-		},
+		where: publishedAndVisibleWhere(new Date()),
 		sort: "-publishDate",
 		limit: 20,
 		depth: 1,

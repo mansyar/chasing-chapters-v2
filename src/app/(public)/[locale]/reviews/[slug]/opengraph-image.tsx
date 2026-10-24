@@ -5,6 +5,7 @@ import { getPayload } from "payload";
 import { OgImageFrame } from "@/components/og/OgImageFrame";
 import { normalizeLocale } from "@/lib/i18n/locale";
 import { buildReviewOgProps } from "@/lib/og-image";
+import { publishedAndVisibleWhere } from "@/lib/publish-visibility";
 
 export const revalidate = 60;
 
@@ -24,8 +25,12 @@ export default async function Image({
 	const { docs } = await payload.find({
 		collection: "reviews",
 		where: {
-			slug: { equals: slug },
-			_status: { equals: "published" },
+			and: [
+				{
+					slug: { equals: slug },
+				},
+				publishedAndVisibleWhere(new Date()),
+			],
 		},
 		limit: 1,
 		depth: 0,
