@@ -3,9 +3,9 @@
 - **Track:** `20261023-bilingual-site-experience`
 - **Type:** `feature`
 - **Branch:** `feat/20261023-bilingual-site-experience`
-- **Range:** `98351d54d692ea8842468df5705cc2c0be0a5c60..a5df8cc`
+- **Range:** `98351d54d692ea8842468df5705cc2c0be0a5c60..e031171`
 - **Date:** `2026-10-24`
-- **Verdict:** `BLOCK`
+- **Verdict:** `PASS WITH FINDINGS` (round 4; the only remaining finding was fixed in `00653de`)
 
 ## Summary
 
@@ -172,15 +172,18 @@ No review-fix phase exists yet; this is round 1.
 
 ## Doc sync
 
-`pending` - the pre-review sync updated `README.md` (the language toggle and RSS
-lines), `conductor/product.md` (the bilingual pillar) and `conductor/tech-stack.md`
-(an i18n row). The post-review sync must cover whatever the fix phase changes and
-`docs/PRD.md`, which still describes the toggle as a per-review feature.
+`updated` - the pre-review sync updated `README.md` (the language toggle and RSS lines),
+`conductor/product.md` (the bilingual pillar) and `conductor/tech-stack.md` (an i18n row). The
+post-review sync added the authoring rule the fix rounds introduced to `docs/ADMIN_GUIDE.md` (a
+review body must have English text, a body of only an image counts, the Indonesian body is
+optional) and corrected `docs/PRD.md`, which still described the toggle as a per-review feature.
+`conductor/tech-stack.md` needed nothing further: the i18n row already names the dictionaries, the
+proxy and the localized-field validator.
 
 ## Round 2
 
 - **Range:** `661e6c5..a5df8cc` (delta: the review-fix phase, code `578a0ab..a5df8cc`)
-- **Verdict:** `BLOCK` - 0 Critical, 1 High, 0 Medium, 1 Low
+- **Verdict:** `PASS WITH FINDINGS` (round 4; the only remaining finding was fixed in `00653de`) - 0 Critical, 1 High, 0 Medium, 1 Low
 
 All five round-1 findings are closed in the code, not just on report: the navbar prefixes the
 logo and the three section links in both blocks with `/admin` left bare (a repo-wide `href="/…"`
@@ -261,6 +264,47 @@ remain, and `review.strict` requires they be fixed rather than deferred.
   - **Requirement:** AC-9
   - **Test gap:** the marker assertion is the test; run the suite twice from the same database to prove both reviews heal.
 
+## Round 4
+
+- **Range:** `ee04f23..e031171` (delta: Phase R3, checkpoint `3d7a1eb`)
+- **Verdict:** `PASS WITH FINDINGS` — 0 Critical, 0 High, 0 Medium, 1 Low
+
+Phase R3's three fixes were checked in code and hold up:
+
+- the body's blank check is shape-aware and agrees with lexical's `hasText` on every state that
+  matters, and the non-default-locale short-circuit runs first so the fixture's clear stays legal;
+- the generated types (`reviewContent?: … | null`) match the config, the single render site is
+  guarded without breaking the layout, every other consumer already tolerated null via
+  `extractTextFromRichText`, and a contract assertion keeps `required` off the field so the next
+  regeneration cannot silently diverge;
+- the healing clear is scoped on status, runs before the authored-body write, and the new marker
+  assertion only discriminates on a second run — which the double run supplied.
+
+One finding remained, and it was introduced by the F1 fix itself.
+
+- **F1 - A body made only of an atomic leaf read as blank**
+  - **File:** `src/collections/requireDefaultLocaleValue.ts:22-24`
+  - **What:** `isTextlessNode` returned "textless" for any non-`text` node without a `children`
+    array, so an English body consisting only of an upload (the editor's image feature is
+    registered), a relationship or a horizontal rule was rejected with "Review content is required
+    in en" even though the editor's `hasText` reports it as having content and the value renders.
+  - **Why:** the branch was uncovered, so the semantics were accidental rather than chosen: a valid
+    review could not be saved in the default locale, which is the one thing the validator exists to
+    guarantee. Edge case, no data loss, so Low.
+  - **Fix:** return "has content" for a childless non-text node, with the comment saying why (an
+    atomic leaf carries content of its own), and add the case to the contract tests.
+  - **Requirement:** FR-10
+  - **Test gap:** the case now exists — an upload-only body is accepted in `en` while a textless
+    state, whitespace-only text and an empty paragraph are still rejected.
+
+**Disposition:** fixed directly by the primary in `00653de` (the fix is three lines plus a test and
+was verified by rerunning the gate: 524 unit, 95 browser, coverage 79.91 % funcs / 89.32 % lines,
+build 25/25). Every requirement is `covered`, including NFR-5, whose rollback was exercised on a
+scratch database holding a deliberately blank non-default name.
+
+
+
+
 ## History
 
 | Round | Verdict | Critical | High | Medium | Low | Fixed |
@@ -268,5 +312,4 @@ remain, and `review.strict` requires they be fixed rather than deferred.
 | 1 | BLOCK | 0 | 2 | 1 | 2 | 0 |
 | 2 | BLOCK | 0 | 1 | 0 | 1 | 5 |
 | 3 | PASS WITH FINDINGS | 0 | 0 | 1 | 2 | 2 |
-
-
+| 4 | PASS WITH FINDINGS | 0 | 0 | 0 | 1 | 1 |
