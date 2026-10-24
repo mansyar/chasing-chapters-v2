@@ -146,3 +146,22 @@
 **Result:** verified
 **Checkpoint:** a198b1f
 **Evidence:** conductor/tracks/20261024-draft-preview-scheduling/verification/phase-R2.md
+
+## Phase R3: Review Fixes (round 3)
+
+- **Goal:** The date fill reads the schedule the same way it reads the date, so a partial update that clears `publishDate` alone still refills from a stored schedule; the admin login's waiting action is bounded so the helper's own retry can actually run inside the test budget.
+- **Depends on:** Phase R2
+- **Covers:** round-3 F1, round-3 F2
+- **Touches:** `src/collections/Reviews.ts`, `src/collections/__tests__/publishAt.test.ts`, `e2e/fixtures/admin-session.ts`, `conductor/tracks/20261024-draft-preview-scheduling/verification/phase-R3.md`
+- **Verification:** 'bun run typecheck && bun run lint && bun test && bun run test:e2e && bun run build'
+- **Status:** in_progress
+
+- [ ] **R3.T1: Read the stored schedule too** - covers: round-3 F1
+  - [ ] **R3.T1.1: Derive `schedule` with `!== undefined` from `data` falling back to `originalDoc` and fill from it**
+  - [ ] **R3.T1.2: Unit cases: a cleared date over a stored schedule refills; clearing both leaves it empty**
+
+- [ ] **R3.T2: Bound the login wait** - covers: round-3 F2
+  - [ ] **R3.T2.1: Give the `Sign In` click an explicit timeout so three attempts fit the test budget**
+  - [ ] **R3.T2.2: State the helper's worst case in a comment so the budget and the retries agree**
+
+- [ ] **R3.T3: Record the phase evidence** - covers: round-3 F1, round-3 F2

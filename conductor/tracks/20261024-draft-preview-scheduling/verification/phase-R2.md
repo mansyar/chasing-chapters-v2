@@ -232,10 +232,14 @@ The configured phase command exited 0. The build ran directly against the harnes
 (`DATABASE_URI` suffixed `_e2e`, `STORAGE_ADAPTER=local`, empty `NEXT_PUBLIC_R2_PUBLIC_URL`),
 so this is my own build rather than the harness's.
 
-**Diff against Touches** — `7f93c1c..HEAD` is 8 files: the evidence, `src/collections/Reviews.ts`,
-`src/collections/__tests__/publishAt.test.ts`, `src/components/ReadingListCard.tsx`, the
-reading-list `opengraph-image.tsx`, `e2e/publish-schedule.spec.ts`, and the two admin specs
-touched by the timeout fix. No unreported file, no deviation beyond the brief.
+**Diff against Touches** — `7f93c1c..a198b1f` is 12 files, 370 insertions and 13 deletions: the
+evidence, `src/collections/Reviews.ts`, `src/collections/__tests__/publishAt.test.ts`,
+`src/components/ReadingListCard.tsx`, the reading-list `opengraph-image.tsx`,
+`e2e/publish-schedule.spec.ts`, and **six** `e2e/admin` specs carrying the 120 s budget —
+`attention-bell.spec.ts:17`, `bulk-retranslate.spec.ts:18`, `locale-preference.spec.ts:11` and
+`translation-poller.spec.ts:15` newly declaring it, `draft-preview.spec.ts:56` and
+`review-schedule.spec.ts:44` following the rework. No unreported file, no deviation beyond the
+brief.
 
 **Both findings, checked in the code.**
 
