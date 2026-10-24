@@ -88,3 +88,34 @@
 - **Status:** pending
 - [ ] **R1.T1: Resolve <finding ID>** — covers: <finding ID>
 -->
+
+## Phase R1: Review Fixes
+
+- **Goal:** Close the first review's seven findings: the three surfaces where the old status filter is still the rule (the collection's anonymous read, the reading-list grid, the comment action), the notice's unsaved clear, the FR-8 partial-update hole, the banner copy, and the duplicate rule in the RSS builder.
+- **Depends on:** Phase 3
+- **Covers:** F1, F2, F3, F4, F5, F6, F7
+- **Touches:** `src/collections/Reviews.ts`, `src/app/(public)/[locale]/reading-lists/[slug]/page.tsx`, `src/app/actions/comments.ts`, `src/collections/Reviews/admin/PublishScheduleNotice.tsx`, `src/lib/feed.ts`, `src/lib/i18n/dictionary.ts`, `src/lib/__tests__/feed.test.ts`, `src/collections/__tests__/**`, `src/lib/e2e-harness.ts`, `e2e/global-setup.ts`, `e2e/**`
+- **Verification:** 'bun run typecheck && bun run lint && bun test && bun run test:e2e && bun run build'
+- **Status:** in_progress
+
+- [ ] **R1.T1: Gate the collection's anonymous read with the shared rule** - covers: F1
+  - [ ] **R1.T1.1: Return the shared visibility fragment from the anonymous branch of access.read, leaving the writer and admin branches untouched**
+  - [ ] **R1.T1.2: Add an unauthenticated REST assertion that the scheduled slug returns no documents, with a visible review as the control**
+- [ ] **R1.T2: Filter the reading-list grid** - covers: F2
+  - [ ] **R1.T2.1: Filter the populated reviews with isPubliclyVisible before the empty-state check so the grid, the count and the message agree**
+  - [ ] **R1.T2.2: Add the scheduled fixture review to the reading list's reviews and assert its card is absent while a visible card is present**
+- [ ] **R1.T3: Guard the comment action with the rule, not the status** - covers: F3
+  - [ ] **R1.T3.1: Replace the status check with isPubliclyVisible**
+  - [ ] **R1.T3.2: Cover the rejection for the scheduled fixture and accept a comment on a visible one**
+- [ ] **R1.T4: Let an unsaved clear reach the notice** - covers: F4
+  - [ ] **R1.T4.1: Treat a form-state undefined as not initialised and null or empty as no schedule**
+  - [ ] **R1.T4.2: Browser case: clear the schedule without saving and assert the live sentence**
+- [ ] **R1.T5: Keep a stored publishDate on a partial update** - covers: F5
+  - [ ] **R1.T5.1: Fall back to originalDoc.publishDate in the fill and in the published fallback**
+  - [ ] **R1.T5.2: Unit case invoking the hook with only publishAt in data**
+- [ ] **R1.T6: Stop the banner claiming an unpublished version** - covers: F6
+  - [ ] **R1.T6.1: Reword the copy publication-agnostically in both locales, keeping key parity**
+- [ ] **R1.T7: Give the RSS builder the shared rule** - covers: F7
+  - [ ] **R1.T7.1: Pass now through buildRssFeed and filter with isPubliclyVisible**
+  - [ ] **R1.T7.2: Feed case: a future publishAt produces no item**
+- [ ] **R1.T8: Record the phase evidence** - covers: F1, F2, F3, F4, F5, F6, F7
