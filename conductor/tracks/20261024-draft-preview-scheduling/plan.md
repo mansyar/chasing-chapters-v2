@@ -131,14 +131,18 @@
 - **Covers:** round-2 F1, round-2 F3
 - **Touches:** `src/collections/Reviews.ts`, `src/components/ReadingListCard.tsx`, `src/app/(public)/[locale]/reading-lists/[slug]/opengraph-image.tsx`, `src/collections/__tests__/**`, `e2e/**`, `conductor/tracks/20261024-draft-preview-scheduling/verification/phase-R2.md`
 - **Verification:** 'bun run typecheck && bun run lint && bun test && bun run test:e2e && bun run build'
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **R2.T1: Distinguish a cleared publish date from an absent one** - covers: round-2 F1
-  - [ ] **R2.T1.1: Use `data.publishDate !== undefined` instead of `??` so a null still reaches the fill**
-  - [ ] **R2.T1.2: Unit case: a body with `publishDate: null` and a schedule refills from the schedule**
+- [x] **R2.T1: Distinguish a cleared publish date from an absent one** - covers: round-2 F1
+  - [x] **R2.T1.1: Use `data.publishDate !== undefined` instead of `??` so a null still reaches the fill**
+  - [x] **R2.T1.2: Unit case: a body with `publishDate: null` and a schedule refills from the schedule**
 
-- [ ] **R2.T2: Count through the shared rule** - covers: round-2 F3
-  - [ ] **R2.T2.1: Filter the reading-list card's book count and the Open Graph subtitle with `isPubliclyVisible`**
-  - [ ] **R2.T2.2: Prove the card and the detail grid report the same count for the fixture list**
+- [x] **R2.T2: Count through the shared rule** - covers: round-2 F3
+  - [x] **R2.T2.1: Filter the reading-list card's book count and the Open Graph subtitle with `isPubliclyVisible`**
+  - [x] **R2.T2.2: Prove the card and the detail grid report the same count for the fixture list**
 
-- [ ] **R2.T3: Record the phase evidence** - covers: round-2 F1, round-2 F3
+- [x] **R2.T3: Record the phase evidence** - covers: round-2 F1, round-2 F3
+
+**Result:** verified
+**Checkpoint:** a198b1f
+**Evidence:** conductor/tracks/20261024-draft-preview-scheduling/verification/phase-R2.md
