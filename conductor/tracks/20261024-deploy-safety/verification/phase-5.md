@@ -72,7 +72,7 @@ A claim with no source here was cut from the document rather than softened.
 | A migration runs while the previous image is still serving | `deploy.yml:40-42` |
 | A destructive migration breaks the currently serving image the moment it lands | `deploy.yml:38-41` |
 | On 2026-10-24 the window never closed: ten columns dropped, build failed, `42703` for about ten hours | `deploy.yml:42-43`; `conductor/tracks/20261024-deploy-safety/spec.md:16-22` |
-| The pipeline cannot make that window safe, only short and visible | `deploy.yml:36-43`; `spec.md:57-59` (Out of Scope: no automatic compensation) |
+| The pipeline cannot make that window safe, only short and visible | `deploy.yml:36-43`; `spec.md:57-59` (Out of Scope: no automatic compensation). **Superseded by R1/F1** — "visible" holds only when the build succeeds |
 | `build-and-push` starts as soon as `migrate` finishes | `deploy.yml:85` (`needs: migrate`) |
 | `verify` fails the run when the site stops answering | `deploy.yml:135-137`, `:144-145` |
 
@@ -86,7 +86,7 @@ A claim with no source here was cut from the document rather than softened.
 | Six attempts, fifteen seconds apart | `deploy.yml:187-188`; `src/lib/deploy-smoke.ts:134`, `:137` |
 | `/en/reviews/<slug>` is probed only when a published review exists | `src/lib/deploy-smoke.ts:117-118`, `:120-121`; `deploy.yml:150-152` |
 | Any endpoint that never returns 200 fails the job and the run | `deploy.yml:144-145` (no `continue-on-error`) |
-| It catches the 2026-10-24 shape because that shows up whether or not the new image rolled out | `deploy.yml:158-160` |
+| It catches the 2026-10-24 shape because that shows up whether or not the new image rolled out | `deploy.yml:158-160`. **Superseded by R1/F1** — it catches that shape only if the build succeeded, which on 2026-10-24 it did not |
 | It cannot prove the new image is serving; a rollout can outlast the window | `deploy.yml:156-157` |
 | It can miss a new image that is broken but not yet live | `deploy.yml:160-162` |
 | It does not judge correctness and cannot undo anything | `deploy.yml:161-162`; `conductor/tracks/20261024-deploy-safety/verification/phase-4.md` ("What this check cannot catch") |

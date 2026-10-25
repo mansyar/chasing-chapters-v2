@@ -221,8 +221,8 @@ with that fact in front of them, not a step a workflow takes on its own.
 
 ## Declaring a destructive migration
 
-Any migration whose `up()` contains `DROP COLUMN`, `DROP TABLE`, `RENAME COLUMN`
-or `TRUNCATE` must carry a justification comment:
+Any migration whose `up()` contains `DROP COLUMN`, `DROP TABLE`, `RENAME COLUMN`,
+`RENAME ... TO` or `TRUNCATE` must carry a justification comment:
 
 ```ts
 // destructive: drops the ten content columns the `*_locales` tables replace —
@@ -240,8 +240,8 @@ Three migrations currently carry a marker: `20251214_135240`,
 `20261008_131000_commenters_email_hash_fix` and
 `20261023_193922_localize_taxonomy_and_reading_list_content`.
 
-**Scope, precisely.** The scan flags `DROP COLUMN`, `DROP TABLE`, `RENAME COLUMN`
-and `TRUNCATE`. A rename is included because it breaks a deployed image exactly
+**Scope, precisely.** The scan flags `DROP COLUMN`, `DROP TABLE`, `RENAME COLUMN`,
+`RENAME ... TO` and `TRUNCATE`. A rename is included because it breaks a deployed image exactly
 the way a drop does: the old name is gone and every query using it fails with
 `42703`. `DROP NOT NULL`, `DROP CONSTRAINT` and `DROP DEFAULT` are **not**
 flagged — they loosen a constraint, they do not remove data. `DELETE FROM` is not

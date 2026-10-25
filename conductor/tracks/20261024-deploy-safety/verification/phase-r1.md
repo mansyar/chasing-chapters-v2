@@ -135,3 +135,24 @@ One note left deliberately unaddressed: the phase allow-list still grants
 directory. It predates this track and phase agents need it to run the scripts
 the briefs name; narrowing it is a separate decision about how phases are
 supervised, not a deploy-safety fix.
+## Third review round
+
+**PASS.** Both blocking findings were confirmed closed, and the review found no
+regressions. It also caught that the first note fix was weaker than claimed:
+
+- The zero-budget test asserted `attempts.length <= 1` against a fixture that
+  answers 200 everywhere — and a 200 stops at the first attempt whatever the
+  budget is, so a clamp of 2 would have passed. The fixture now fails on
+  `/api/genres`, which makes the length assertion mean something. Verified by
+  mutating the clamp to 2: the test fails.
+- The rule listed `RENAME COLUMN` but not `RENAME ... TO`, which the pattern also
+  flags. Both lists now match the pattern.
+- `phase-5.md` had the same "short and visible" claim as `phase-4.md` without a
+  note. Both now carry one.
+- A missing blank line between two top-level declarations.
+
+Two notes were left alone deliberately: the phase allow-list's `bun run
+src/scripts/*` (pre-existing, needed, and a question about how phases are
+supervised rather than about deploy safety), and the theoretical truncation if a
+line beginning exactly `export async function down` appeared *inside* an `up`
+body (no such file exists, and the shapes the finding named are covered).
