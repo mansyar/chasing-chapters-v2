@@ -4,6 +4,25 @@ on:
   push:
     branches:
       - main
+    # Docs and Conductor state do not affect the image, so a push that touches
+    # nothing else skips the deploy instead of spending five minutes rebuilding
+    # a byte-identical artifact. #24 was exactly that: a track archive that
+    # redeployed production to move some markdown.
+    #
+    # GitHub skips the run only when *every* changed path matches one of these,
+    # so a commit touching docs *and* source still deploys. The list relies on
+    # that: it can only ever suppress a push that changed nothing buildable.
+    #
+    # What must never appear here: anything the image reads. `e2e/` is in the
+    # build context (#22), `src/migrations/` is the schema, `Dockerfile` and
+    # `.dockerignore` define the artifact, and `.github/workflows/` stays so a
+    # change to this file is exercised by a real run rather than merged blind.
+    paths-ignore:
+      - "conductor/**"
+      - ".conductor/**"
+      - "docs/**"
+      - ".opencode/**"
+      - "*.md"
   workflow_dispatch: # Allows manual trigger
 
 # One deploy at a time, and the second one waits.
