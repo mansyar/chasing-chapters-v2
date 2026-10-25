@@ -97,7 +97,7 @@
 - **Covers:** FR-9, AC-10
 - **Touches:** `docs/DEPLOYMENT.md`, `README.md`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P5.T1: Write `docs/DEPLOYMENT.md`** - covers: FR-9
   - [ ] **P5.T1.1: The deploy order and why migrations precede the build**
