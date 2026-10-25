@@ -66,21 +66,24 @@
 - **Covers:** FR-5, FR-8, AC-5, AC-8
 - **Touches:** `src/lib/translate.ts`, `src/lib/translation-errors.ts`, `src/lib/__tests__/translate.test.ts`, `src/lib/__tests__/translation-errors.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** in_progress
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** 48289c5
+- **Evidence:** conductor/tracks/20261025-translation-quota-resilience/verification/phase-3.md
 
-- [ ] **P3.T1: Make quota non-retryable** - covers: FR-5
-  - [ ] **P3.T1.1: Add an `isRetryable(kind)` predicate to `translation-errors.ts`** - `quota` returns false; `network` and `timeout` keep their existing behaviour.
-  - [ ] **P3.T1.2: Break out of the retry loop on a non-retryable classification** - the failure is reported after one attempt, not three.
-  - [ ] **P3.T1.3: Preserve the transient flag for the delayed re-run** - quota stays transient in `TRANSIENT_KINDS` so the existing automatic re-run still fires.
-- [ ] **P3.T2: Replace the raw error dump with structured fields** - covers: FR-8
-  - [ ] **P3.T2.1: Build a structured fields object** - `code`, `reason`, `characters`, `texts`, `attempt`, `remainingBudget`.
-  - [ ] **P3.T2.2: Stop passing the raw error object to the logger** - this is what currently prints `response: Gunzip { _writeState, _readableState, ... }` instead of the error body.
-  - [ ] **P3.T2.3: Retain the raw detail as a bounded string field** so debugging does not lose information.
-- [ ] **P3.T3: Cover classification and logging with tests** - covers: AC-5, AC-8
-  - [ ] **P3.T3.1: Regression test - a mocked `403 userRateLimitExceeded` produces exactly one provider call.** This test must fail before the change (three calls) and pass after.
-  - [ ] **P3.T3.2: Test that the failure writes `translationStatus: "failed"` carrying the quota message.**
-  - [ ] **P3.T3.3: Test that the emitted log contains `code`, `reason`, and character count, and contains no `Gunzip` or `_readableState` text.**
-  - [ ] **P3.T3.4: Test that network and timeout failures still retry.**
+- [x] **P3.T1: Make quota non-retryable** - covers: FR-5
+  - [x] **P3.T1.1: Add an `isRetryable(kind)` predicate to `translation-errors.ts`** - `quota` returns false; `network` and `timeout` keep their existing behaviour.
+  - [x] **P3.T1.2: Break out of the retry loop on a non-retryable classification** - the failure is reported after one attempt, not three.
+  - [x] **P3.T1.3: Preserve the transient flag for the delayed re-run** - quota stays transient in `TRANSIENT_KINDS` so the existing automatic re-run still fires.
+- [x] **P3.T2: Replace the raw error dump with structured fields** - covers: FR-8
+  - [x] **P3.T2.1: Build a structured fields object** - `code`, `reason`, `characters`, `texts`, `attempt`, `remainingBudget`.
+  - [x] **P3.T2.2: Stop passing the raw error object to the logger** - this is what currently prints `response: Gunzip { _writeState, _readableState, ... }` instead of the error body.
+  - [x] **P3.T2.3: Retain the raw detail as a bounded string field** so debugging does not lose information.
+- [x] **P3.T3: Cover classification and logging with tests** - covers: AC-5, AC-8
+  - [x] **P3.T3.1: Regression test - a mocked `403 userRateLimitExceeded` produces exactly one provider call.** This test must fail before the change (three calls) and pass after.
+  - [x] **P3.T3.2: Test that the failure writes `translationStatus: "failed"` carrying the quota message.**
+  - [x] **P3.T3.3: Test that the emitted log contains `code`, `reason`, and character count, and contains no `Gunzip` or `_readableState` text.**
+  - [x] **P3.T3.4: Test that network and timeout failures still retry.**
 
 ## Phase 4: Call-site fixes
 

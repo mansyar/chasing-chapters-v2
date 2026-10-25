@@ -204,3 +204,27 @@ Redis accounting could not answer, not that the window was empty.
    That is a string, so it does not produce the `Gunzip` dump, but it is the
    pipeline-level line and Phase 5 owns that call site. Noted so review sees it
    against the final diff. Low.
+
+## Primary verification
+
+The primary re-ran all three layers on the squashed checkpoint `48289c5`:
+
+| Layer | Command | Exit | Summary |
+|---|---|---|---|
+| static | `bun run typecheck` | 0 | No type errors in 252 files (793ms) |
+| static | `bun run lint` | 0 | 243 files checked, no fixes applied |
+| unit | `bun test` | 0 | 648 pass, 0 fail, 1521 expect() calls, 49 files (2.95s) |
+
+The primary read the `translate.ts` and `translation-errors.ts` diffs directly and confirmed the contract independently:
+
+- `RETRYABLE_KINDS` is `network`/`timeout`/`unexpected`; `TRANSIENT_KINDS` still contains `quota`, with a comment stating that the two lists answer different questions. A test pins both answers together.
+- The non-retryable branch throws `providerFailure(error, attempt + 1)` **before** the backoff, so a quota failure reports `attempts === 1` and keeps the same `TranslationError` shape and `cause` - the stored `translationError` and the delayed re-run are unchanged.
+- `logAttemptFailure` passes one fields object (`kind`/`code`/`reason`/`characters`/`texts`/`attempt`/`remainingBudget`/`retryable`/`detail`) and never the `ApiError`; `summarizeErrorDetail` bounds the retained stack at 400 characters.
+- The evidence file records the regression test failing at "Received number of calls: 3" against the pre-change code and passing with 1 after, which is the proof the defect existed rather than an assertion of it.
+
+**Result: verified.** AC-5 and AC-8 are satisfied by direct test evidence; FR-5 and FR-8 by the code above. No existing test was weakened: the one pre-existing assertion that changed (`translate-batch.test.ts`, 6 lines) encoded the defect itself and was reported as a deviation.
+
+### Non-blocking observations carried forward to review
+
+1. **`unexpected` is retryable, so the array-length mismatch retries.** `Translation API returned N results for M inputs` classifies as `unexpected` and therefore still burns three attempts. This is unchanged behaviour and narrowing it is out of scope, but it is the same shape of defect as the quota bug - a deterministic failure retried. Low.
+2. **A deeply nested error's 400-character detail can be mostly stack frames.** `summarizeErrorDetail` prefers `error.stack`, so for a wrapped error the bounded tail may carry frames rather than the message. `code`/`reason`/`kind` are separate fields and are not affected, so the line is still diagnosable. Low.
