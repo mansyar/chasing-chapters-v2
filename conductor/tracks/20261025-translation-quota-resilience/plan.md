@@ -143,7 +143,7 @@
 - **Covers:** FR-9, AC-9
 - **Touches:** `src/components/admin/translation-attention.ts`, `src/lib/translation-errors.ts`, `src/components/admin/__tests__/translation-attention.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P6.T1: Classify stored failures by kind in the attention data** - covers: FR-9
   - [ ] **P6.T1.1: Derive the kind from the persisted `translationError` using the existing classifier**, rather than adding a new stored field.
