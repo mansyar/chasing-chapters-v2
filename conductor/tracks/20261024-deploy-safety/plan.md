@@ -111,13 +111,16 @@
 - **Covers:** F1, F2, F3, F4, F5, F6, F7, F8
 - **Touches:** `docs/DEPLOYMENT.md`, `.github/workflows/deploy.yml`, `src/migrations/__tests__/destructive-markers.test.ts`, `src/lib/deploy-smoke.ts`, `src/lib/__tests__/deploy-smoke.test.ts`, `src/scripts/deploy-smoke.ts`, `.opencode/agents/conductor-phase.md`, `conductor/tracks/20261024-deploy-safety/spec.md`
 - **Verification:** `bun run typecheck && bun run lint && bun test`, plus `bun test --coverage` to evidence the 80% new-code gate
-- **Status:** in_progress
+- **Status:** done
 
-- [ ] **R1.T1: Stop the runbook claiming `verify` would have caught 2026-10-24** - covers: F1
-- [ ] **R1.T2: Make the marker scan fail closed on layout** - covers: F2
-- [ ] **R1.T3: Guard `RENAME COLUMN`, and state what stays unguarded** - covers: F3
-- [ ] **R1.T4: Test the script's argument parsing and exit code** - covers: F4
-- [ ] **R1.T5: Restore least privilege in the phase allow-list** - covers: F5
-- [ ] **R1.T6: Guard `main()` behind `import.meta.main`** - covers: F6
-- [ ] **R1.T7: Correct the retry-budget arithmetic in the workflow comment** - covers: F7
-- [ ] **R1.T8: Make a zero attempt budget a report, not a throw** - covers: F8
+- [x] **R1.T1: Stop the runbook claiming `verify` would have caught 2026-10-24** - covers: F1
+- [x] **R1.T2: Make the marker scan fail closed on layout** - covers: F2
+- [x] **R1.T3: Guard `RENAME COLUMN`, and state what stays unguarded** - covers: F3
+- [x] **R1.T4: Test the script's argument parsing and exit code** - covers: F4
+- [x] **R1.T5: Restore least privilege in the phase allow-list** - covers: F5
+- [x] **R1.T6: Guard `main()` behind `import.meta.main`** - covers: F6
+- [x] **R1.T7: Correct the retry-budget arithmetic in the workflow comment** - covers: F7
+- [x] **R1.T8: Make a zero attempt budget a report, not a throw** - covers: F8
+**Result:** verified
+**Checkpoint:** 2afb33d
+**Evidence:** conductor/tracks/20261024-deploy-safety/verification/phase-r1.md
