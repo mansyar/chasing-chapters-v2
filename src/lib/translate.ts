@@ -248,7 +248,9 @@ export const TRANSLATION_REQUEST_TIMEOUT_MS = 30 * 1000;
 // Exponential backoff schedule between retry attempts (~2s -> ~8s -> ~30s).
 export const RETRY_DELAYS_MS = [2000, 8000, 30000];
 
-const MAX_ATTEMPTS = 3;
+// Retry policy shared with the lock TTL: the TTL is derived from these, so
+// they must stay exported and must not be restated as literals elsewhere.
+export const MAX_ATTEMPTS = 3;
 
 /**
  * Ceiling on the raw detail kept in a failed-attempt log line.

@@ -9,6 +9,7 @@ import {
 	test,
 } from "bun:test";
 import type { Payload } from "payload";
+import { logger } from "../../lib/logger";
 import * as redisModule from "../../lib/redis";
 import type { RichTextDocument } from "../../lib/utils";
 import type { Review } from "../../payload-types";
@@ -1237,5 +1238,104 @@ describe("translateReview hook (F1: no nested write)", () => {
 		for (const call of payload.update.mock.calls) {
 			expect(call[0].data.englishUpdatedAt).toBeUndefined();
 		}
+	});
+
+	test("a pipeline throw after the response is sent produces one classified log entry and no unhandled rejection", async () => {
+		// The window FR-10 is about: `runTranslationPipeline`'s own `catch`
+		// covers provider failures, but a throw in its `finally` — a failing
+		// lock release — escapes it. `void` used to discard that promise, so
+		// the run vanished as an unhandled rejection with no log line.
+		const payload = makePayload();
+		const lockModule = await import("../../lib/translation-lock");
+		const releaseSpy = spyOn(
+			lockModule,
+			"releaseTranslationLock",
+		).mockImplementation(async () => {
+			throw new Error("redis connection lost during release");
+		});
+		const errorLog = spyOn(logger, "error").mockImplementation(() => {});
+		const rejections: unknown[] = [];
+		const onRejection = (reason: unknown) => rejections.push(reason);
+		process.on("unhandledRejection", onRejection);
+
+		try {
+			await runHook({
+				// A unique id keeps the lock this run never releases from
+				// blocking the other cases in this block.
+				doc: makeDoc({
+					id: 7001,
+					reviewContent: makeRichText(para("Changed text")),
+				}),
+				previousDoc: makeDoc(),
+				payload,
+			});
+			// Let any unhandled rejection be reported before asserting.
+			await new Promise((resolve) => setTimeout(resolve, 20));
+
+			expect(rejections).toEqual([]);
+			expect(errorLog).toHaveBeenCalledTimes(1);
+
+			const [message, fields] = errorLog.mock.calls[0];
+			expect(message).toContain("failed after the response was sent");
+			// The existing classifier's kind, not a bare "Error".
+			expect(message).toContain("(unexpected)");
+			// Structured fields, never the raw error object (FR-8's style).
+			expect(fields).toEqual({
+				kind: "unexpected",
+				transient: false,
+				detail: "redis connection lost during release",
+			});
+		} finally {
+			process.off("unhandledRejection", onRejection);
+			releaseSpy.mockRestore();
+			errorLog.mockRestore();
+		}
+	});
+
+	test("mark-stale on an untranslated review leaves the status unchanged and logs no error", async () => {
+		// `stale` is only legal from `translated`. The unconditional write the
+		// hook used to make was rejected by the collection validator, and the
+		// rejection was logged at error level and ignored (FR-12, AC-12).
+		const payload = makePayload();
+		const errorLog = spyOn(logger, "error").mockImplementation(() => {});
+
+		try {
+			await runHook({
+				doc: makeDoc({
+					autoTranslate: false,
+					translationStatus: "untranslated",
+					reviewContent: makeRichText(para("Changed text")),
+				}),
+				previousDoc: makeDoc(),
+				payload,
+			});
+
+			// No write at all: nothing is attempted that the validator would
+			// have to reject.
+			expect(payload.update).not.toHaveBeenCalled();
+			expect(errorLog).not.toHaveBeenCalled();
+		} finally {
+			errorLog.mockRestore();
+		}
+	});
+
+	test("mark-stale on a translated review still writes stale", async () => {
+		// The legal path must keep working: restricting the write to
+		// `translated` is not a removal of the feature.
+		const payload = makePayload();
+		await runHook({
+			doc: makeDoc({
+				autoTranslate: false,
+				translationStatus: "translated",
+				reviewContent: makeRichText(para("Changed text")),
+			}),
+			previousDoc: makeDoc(),
+			payload,
+		});
+
+		expect(payload.update).toHaveBeenCalledTimes(1);
+		expect(payload.update.mock.calls[0][0].data.translationStatus).toBe(
+			"stale",
+		);
 	});
 });
