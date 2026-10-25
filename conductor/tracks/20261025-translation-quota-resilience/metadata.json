@@ -1,0 +1,32 @@
+{
+  "id": "20261025-translation-quota-resilience",
+  "title": "Translation Quota Resilience",
+  "type": "bug",
+  "status": "new",
+  "priority": "high",
+  "depends_on": [],
+  "created_at": "2026-10-25T08:31:08Z",
+  "updated_at": "2026-10-25T08:31:08Z",
+  "spec": "spec.md",
+  "plan": "plan.md",
+  "branch": "fix/20261025-translation-quota-resilience",
+  "base_branch": "main",
+  "base_sha": "bdc422de3a0b25eecd167ac685455db345317b78",
+  "progress": {
+    "phases_total": 6,
+    "phases_verified": 0,
+    "tasks_total": 19,
+    "tasks_done": 0
+  },
+  "last_checkpoint": null,
+  "review_verdict": null,
+  "review_rounds": 0,
+  "doc_sync": "pending",
+  "pr_url": null,
+  "pr_state": null,
+  "reverted_at": null,
+  "revert_commit": null,
+  "revert_pr_url": null,
+  "archived_at": null,
+  "archive_path": null
+}
