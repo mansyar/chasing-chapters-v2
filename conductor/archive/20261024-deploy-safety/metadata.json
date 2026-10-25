@@ -6,7 +6,7 @@
 	"priority": "high",
 	"depends_on": [],
 	"created_at": "2026-10-24T12:10:00Z",
-	"updated_at": "2026-10-25T19:30:00Z",
+	"updated_at": "2026-10-25T19:55:00Z",
 	"spec": "spec.md",
 	"plan": "plan.md",
 	"branch": "chore/20261024-deploy-safety",
@@ -22,11 +22,11 @@
 	"review_verdict": "PASS",
 	"review_rounds": 3,
 	"doc_sync": "synced",
-	"pr_url": null,
-	"pr_state": null,
+	"pr_url": "https://github.com/mansyar/chasing-chapters-v2/pull/23",
+	"pr_state": "merged",
 	"reverted_at": null,
 	"revert_commit": null,
 	"revert_pr_url": null,
-	"archived_at": null,
-	"archive_path": null
+	"archived_at": "2026-10-25T19:55:00Z",
+	"archive_path": "conductor/archive/20261024-deploy-safety"
 }
