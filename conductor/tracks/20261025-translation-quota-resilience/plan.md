@@ -37,7 +37,7 @@
 - **Covers:** FR-2, FR-3, FR-4, NFR-1, NFR-2, AC-2, AC-3, AC-4
 - **Touches:** `src/lib/translation-budget.ts`, `src/lib/__tests__/translation-budget.test.ts`, `src/lib/env.ts`, `src/lib/translate.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P2.T1: Build the budget module** - covers: FR-2, FR-4
   - [ ] **P2.T1.1: Implement Redis-backed rolling window** - a time-bucketed `INCRBY` keyed by character count, expiring at the window boundary. Do not reuse `rate-limit.ts`; it increments by 1 and is a fixed-window counter.
