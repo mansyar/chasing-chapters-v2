@@ -1,5 +1,11 @@
 import { MigrateUpArgs, MigrateDownArgs, sql } from "@payloadcms/db-postgres";
 
+// destructive: drops the eight columns that held the review body —
+// "reviews"."review_content", "what_i_loved", "what_could_be_better",
+// "perfect_for" and their "_reviews_v" version_* twins. `up` copies every
+// value into "reviews_locales"/"_reviews_v_locales" first, so the columns
+// cannot come back without duplicating the default-locale rows; the content is
+// localized now, and only `down()` moves the English values back (FR-2, NFR-5).
 export async function up({ db }: MigrateUpArgs): Promise<void> {
   // Step 1: Create locale enums and new tables
   await db.execute(sql`

@@ -162,3 +162,138 @@ jobs:
         # database it created.
         # GitHub Actions sets CI=true, so the worker cap resolves to 1.
         run: bun run test:e2e
+
+  # This job exists because on 2026-10-24 four consecutive deploys failed at
+  # image build time - `TS2307` on `src/lib/__tests__/e2e-harness.test.ts`,
+  # which imports `e2e/global-setup`, a path `.dockerignore` excluded - and
+  # nothing in CI noticed. `bun run build` on a runner has `e2e/` present, so
+  # only a real Docker build ever exercises the `.dockerignore`-filtered
+  # context. The `.dockerignore` and the CI context must agree; this job is
+  # what makes a disagreement visible on the pull request instead of in
+  # production. Read that before deleting it.
+  #
+  # It mirrors `deploy.yml`'s `build-and-push` argument for argument, but with
+  # placeholder values and `push: false`, so it proves the image builds without
+  # publishing it and without reading a single repository secret (NFR-1) - a
+  # fork pull request has none, and the check must stay meaningful for one.
+  # Like `E2E Tests` it is a sibling of the required check, not part of it:
+  # branch protection still requires exactly `Typecheck, Lint, Test, Build`.
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+
+    # Same placeholder stance as the `ci` job: src/lib/env.ts is zod-validated
+    # at module load, so the migrate step below needs these present. Nothing
+    # here is a real credential.
+    env:
+      # Points at the postgres service container. `next build` runs inside the
+      # build container on the host network, so this resolves to the runner's
+      # published 5432 from there too.
+      DATABASE_URI: postgresql://postgres:postgrespassword@localhost:5432/chasing-chapters
+      PAYLOAD_SECRET: ci-build-only-placeholder-secret-32-chars-min
+      R2_BUCKET: ci-build-bucket
+      R2_ENDPOINT: https://ci-build-placeholder.invalid
+      R2_ACCESS_KEY_ID: ci-build-placeholder-access-key
+      R2_SECRET_ACCESS_KEY: ci-build-placeholder-secret-key
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          # Credentials and db name mirror docker-compose.yml so CI matches the
+          # local development database conventions.
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrespassword
+          POSTGRES_DB: chasing-chapters
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          # Same Bun version as the other jobs, and the same reason for 1.4.3
+          # over 1.4.2: `bun check` only exists from 1.4.3.
+          bun-version: 1.4.3
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run database migrations
+        # The image cannot migrate itself, and `next build` prerenders against
+        # the schema, so the database must be migrated before the build runs -
+        # the same order deploy.yml takes. `echo y |` auto-accepts Payload's
+        # one-time dev-push drift prompt; on a clean migration-managed database
+        # nothing reads stdin and this is a no-op.
+        run: echo y | bun run payload migrate
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          # `network: host` on the build below is not enough on its own. The
+          # default `docker-container` driver runs buildkitd as a container on
+          # the default bridge network, so a build step asking for host
+          # networking lands in *buildkitd's* namespace, where `localhost` is
+          # buildkitd itself and `localhost:5432` misses the postgres service
+          # container entirely. Running buildkitd with host networking puts it
+          # in the runner's namespace, which is what makes the DATABASE_URI
+          # above resolve from inside the build.
+          driver-opts: network=host
+
+      # No `docker/login-action` step and no `tags`: nothing is published, so
+      # nothing is named for a registry.
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          # The default (final) target on purpose: it exercises the `runner`
+          # stage too - the HEALTHCHECK and the standalone-asset copy - for
+          # little more than `builder` costs, so a broken final stage fails
+          # here rather than in the deploy.
+          #
+          # Every ARG the Dockerfile declares, in the same order as
+          # deploy.yml, with a placeholder where the deploy passes a secret.
+          # A missing ARG silently produces a different build than production,
+          # which is how the `.dockerignore` gap hid; `R2_PUBLIC_URL` and
+          # `NEXT_PUBLIC_R2_PUBLIC_URL` carry the same value on purpose,
+          # because the second is the build-time-inlined copy of the first.
+          #
+          # `SENTRY_AUTH_TOKEN` is deliberately empty rather than a fake token:
+          # with no token @sentry/nextjs skips the source-map upload, while a
+          # bogus one would attempt it and fail on a 401 - a permanent red
+          # check that proves nothing about the image.
+          build-args: |
+            DATABASE_URI=postgresql://postgres:postgrespassword@localhost:5432/chasing-chapters
+            PAYLOAD_SECRET=ci-build-only-placeholder-secret-32-chars-min
+            R2_BUCKET=ci-build-bucket
+            R2_ENDPOINT=https://ci-build-placeholder.invalid
+            R2_ACCESS_KEY_ID=ci-build-placeholder-access-key
+            R2_SECRET_ACCESS_KEY=ci-build-placeholder-secret-key
+            R2_PUBLIC_URL=https://ci-build-placeholder.invalid
+            NEXT_PUBLIC_R2_PUBLIC_URL=https://ci-build-placeholder.invalid
+            NEXT_PUBLIC_SITE_URL=https://ci-build-placeholder.invalid
+            SENTRY_AUTH_TOKEN=
+          # The build container must reach the postgres service container on
+          # the runner's published port, and inside the build `localhost` is
+          # the build container itself. Host networking puts the build in the
+          # runner's namespace - but only because buildkitd is started with
+          # host networking too, in the `Set up Docker Buildx` step above; with
+          # the driver's default bridge, `localhost` would mean buildkitd.
+          # The alternative, `host.docker.internal`, needs extra host entries
+          # on a Linux runner and would turn this job into a permanent failure.
+          network: host
+          # Scoped away from the deploy build's default gha scope so the two
+          # caches do not evict each other, and `mode=max` so intermediate
+          # layers are reused - the caching is what keeps the added PR wall
+          # clock inside NFR-2's budget.
+          cache-from: type=gha,scope=ci-image
+          cache-to: type=gha,mode=max,scope=ci-image

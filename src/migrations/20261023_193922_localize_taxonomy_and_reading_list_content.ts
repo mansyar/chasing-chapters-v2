@@ -9,6 +9,14 @@ import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
 // text into the default (`en`) rows first, so an existing document keeps its
 // English value and only gains the option of an Indonesian one (NFR-5). The
 // `20251214_135240` migration does the same thing for the review body.
+// destructive: drops the ten content columns the `*_locales` tables replace —
+// "genres"."name", "tags"."name", "tags"."description", "mood_tags"."name",
+// "reviews"."title", "_reviews_v"."version_title", "reading_lists"."title",
+// "reading_lists"."description", "_reading_lists_v"."version_title" and
+// "_reading_lists_v"."version_description". `up` copies each value into its
+// default-locale row first, so the columns cannot come back without duplicating
+// that row; `down()` restores the English rows only, and any Indonesian text
+// written afterwards is not recoverable (FR-2, NFR-5).
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
    CREATE TABLE "genres_locales" (

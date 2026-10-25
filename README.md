@@ -217,9 +217,12 @@ docker compose -f docker-compose.prod.yml up -d
 
 The project uses GitHub Actions for CI/CD:
 
-1. **Build** — Docker image is built with all environment variables
-2. **Push** — Image is pushed to Docker Hub
+1. **Migrate** — Database migrations run against production first, because `next build` prerenders against the live schema
+2. **Build and Push** — Docker image is built with all environment variables and pushed to Docker Hub
 3. **Deploy** — Coolify webhook triggers deployment
+4. **Verify** — The live site is polled after the webhook, and the run fails if it stops answering
+
+Deploys are serialised, and a destructive migration has to declare itself. If a deploy goes wrong, read the [deployment runbook](./docs/DEPLOYMENT.md) before reverting anything.
 
 ### Required GitHub Secrets
 
@@ -234,6 +237,7 @@ The project uses GitHub Actions for CI/CD:
 ## 📖 Documentation
 
 - [Product Requirements Document](./docs/PRD.md) — Full project specification
+- [Deployment Runbook](./docs/DEPLOYMENT.md) — Deploy order, migrations, and what a revert cannot restore
 
 ## 📝 License
 

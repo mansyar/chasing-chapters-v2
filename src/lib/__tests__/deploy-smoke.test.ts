@@ -1,0 +1,402 @@
+import { describe, expect, it } from "bun:test";
+import {
+	DEFAULT_MAX_ATTEMPTS,
+	DEFAULT_RETRY_INTERVAL_MS,
+	failedEndpoints,
+	parseSmokeArguments,
+	runDeploySmoke,
+	SMOKE_ENDPOINTS,
+	SMOKE_USAGE,
+	type SmokeFetch,
+	type SmokeResponse,
+} from "../deploy-smoke";
+
+const BASE_URL = "https://chasing-chapters.example";
+
+const NO_REVIEWS = JSON.stringify({ docs: [] });
+
+/** The path of a probed URL, as the fake site keys its plan. */
+function pathOf(url: string): string {
+	return new URL(url).pathname;
+}
+
+/**
+ * A fake site.
+ *
+ * Each path answers with the statuses it was given, in order, and repeats the
+ * last one once the list runs out: `[500, 500, 200]` is "two failures then
+ * recovery", `[500]` is "never recovers", `["error"]` is "the connection
+ * cannot be made". A path with no entry answers 200, so a test only has to
+ * describe the endpoint it is about.
+ */
+function fakeSite(
+	plan: Record<string, Array<number | "error">> = {},
+	bodies: Record<string, string> = {},
+): SmokeFetch & { calls: string[]; inits: Array<RequestInit | undefined> } {
+	const calls: string[] = [];
+	const inits: Array<RequestInit | undefined> = [];
+	const served = new Map<string, number>();
+
+	const fetchImpl = async (
+		url: string,
+		init?: RequestInit,
+	): Promise<SmokeResponse> => {
+		const path = pathOf(url);
+		calls.push(path);
+		inits.push(init);
+
+		const sequence = plan[path] ?? [200];
+		const index = served.get(path) ?? 0;
+		served.set(path, index + 1);
+
+		const next = sequence[Math.min(index, sequence.length - 1)];
+		if (next === "error") {
+			throw new Error(`connect ECONNREFUSED ${path}`);
+		}
+
+		return { status: next, text: async () => bodies[path] ?? "" };
+	};
+
+	return Object.assign(fetchImpl, { calls, inits });
+}
+
+describe("deploy-smoke", () => {
+	it("passes an endpoint that recovers inside the retry budget", async () => {
+		// This is the outage's shape from the outside: /api/genres answered 500
+		// while the rest of the site was fine. The check has to wait it out
+		// rather than fail the deploy on a cold first response.
+		const site = fakeSite(
+			{ "/api/genres": [500, 500, 200] },
+			{ "/api/reviews": NO_REVIEWS },
+		);
+		let sleeps = 0;
+
+		const report = await runDeploySmoke({
+			baseUrl: BASE_URL,
+			fetch: site,
+			sleep: async () => {
+				sleeps += 1;
+			},
+		});
+
+		expect(report.ok).toBe(true);
+		const genres = report.endpoints.find(
+			(endpoint) => endpoint.path === "/api/genres?limit=1",
+		);
+		expect(genres?.outcome).toBe("passed");
+		expect(genres?.attempts.map((attempt) => attempt.status)).toEqual([
+			500, 500, 200,
+		]);
+		// Two failed attempts, so two waits — and never a real one.
+		expect(sleeps).toBe(2);
+		// NFR-3: the check is read-only.
+		expect(site.inits.every((init) => init?.method === "GET")).toBe(true);
+	});
+
+	it("fails and names the endpoint that never recovered", async () => {
+		// A deploy that leaves /api/genres returning 500 *is* the 2026-10-24
+		// outage. The report has to point at that path and status, otherwise
+		// the workflow log says "smoke failed" and the reader learns nothing.
+		const site = fakeSite(
+			{ "/api/genres": [500] },
+			{ "/api/reviews": NO_REVIEWS },
+		);
+
+		const report = await runDeploySmoke({
+			baseUrl: BASE_URL,
+			fetch: site,
+			sleep: async () => {},
+		});
+
+		expect(report.ok).toBe(false);
+		const failed = report.endpoints.filter(
+			(endpoint) => endpoint.outcome === "failed",
+		);
+		expect(failed.map((endpoint) => endpoint.path)).toEqual([
+			"/api/genres?limit=1",
+		]);
+		expect(failed[0]?.finalStatus).toBe(500);
+		expect(failed[0]?.attempts).toHaveLength(DEFAULT_MAX_ATTEMPTS);
+		// NFR-3: at most about forty requests, retries included.
+		expect(report.requests).toBeLessThanOrEqual(40);
+	});
+
+	it("passes and skips the detail probe when no review is published", async () => {
+		// A site with nothing published yet is healthy, not broken (AC-6). The
+		// detail route is the one probe that needs data, so it reports skipped
+		// and the rest of the run still decides the exit code.
+		const site = fakeSite({}, { "/api/reviews": JSON.stringify({ docs: [] }) });
+
+		const report = await runDeploySmoke({
+			baseUrl: BASE_URL,
+			fetch: site,
+			sleep: async () => {},
+		});
+
+		expect(report.ok).toBe(true);
+		expect(report.endpoints.map((endpoint) => endpoint.path)).toEqual([
+			...SMOKE_ENDPOINTS,
+			"/en/reviews/<slug>",
+		]);
+		const detail = report.endpoints.at(-1);
+		expect(detail?.outcome).toBe("skipped");
+		expect(detail?.attempts).toEqual([]);
+		expect(site.calls).not.toContain("/en/reviews/<slug>");
+	});
+
+	it("probes the detail route of the published slug", async () => {
+		// The list route only proves the query ran. A detail route proves the
+		// review's own columns still line up with the schema, which is the part
+		// a taxonomy migration is most likely to break.
+		const site = fakeSite(
+			{},
+			{ "/api/reviews": JSON.stringify({ docs: [{ slug: "the-lantern" }] }) },
+		);
+
+		const report = await runDeploySmoke({
+			baseUrl: BASE_URL,
+			fetch: site,
+			sleep: async () => {},
+		});
+
+		expect(report.ok).toBe(true);
+		const detail = report.endpoints.at(-1);
+		expect(detail?.path).toBe("/en/reviews/the-lantern");
+		expect(detail?.outcome).toBe("passed");
+		expect(site.calls).toContain("/en/reviews/the-lantern");
+	});
+
+	it("records a transport error instead of throwing", async () => {
+		// A refused connection is what a rollout that has not bound its port
+		// looks like. It has to become a failed endpoint in the report, because
+		// a thrown error would lose every other endpoint's result.
+		const site = fakeSite({ "/id": ["error"] }, { "/api/reviews": NO_REVIEWS });
+
+		const report = await runDeploySmoke({
+			baseUrl: BASE_URL,
+			fetch: site,
+			sleep: async () => {},
+		});
+
+		expect(report.ok).toBe(false);
+		const indonesian = report.endpoints.find(
+			(endpoint) => endpoint.path === "/id",
+		);
+		expect(indonesian?.outcome).toBe("failed");
+		expect(indonesian?.finalStatus).toBeNull();
+		expect(indonesian?.note).toContain("ECONNREFUSED");
+		expect(indonesian?.attempts).toHaveLength(DEFAULT_MAX_ATTEMPTS);
+	});
+});
+
+describe("deploy-smoke budget", () => {
+	it("honours a custom attempt budget", async () => {
+		// The deploy job raises the budget because a Coolify rollout outlasts
+		// the default. If the option were ignored, a failing endpoint would
+		// still stop after DEFAULT_MAX_ATTEMPTS and the deploy would give up
+		// early - which is the behaviour the option exists to change.
+		const site = fakeSite(
+			{ "/api/genres": [500] },
+			{ "/api/reviews": NO_REVIEWS },
+		);
+
+		const report = await runDeploySmoke({
+			baseUrl: BASE_URL,
+			fetch: site,
+			sleep: async () => {},
+			maxAttempts: 3,
+		});
+
+		const genres = report.endpoints.find(
+			(endpoint) => endpoint.path === "/api/genres?limit=1",
+		);
+		expect(genres?.attempts).toHaveLength(3);
+		expect(genres?.attempts.map((attempt) => attempt.attempt)).toEqual([
+			1, 2, 3,
+		]);
+		expect(genres?.outcome).toBe("failed");
+	});
+
+	it("honours a custom retry interval, and never waits a real one", async () => {
+		// The interval reaches the injected sleep rather than a module
+		// constant, so the deploy job's fifteen-second spacing is what actually
+		// runs - and this test proves the seam carries it without waiting.
+		const site = fakeSite(
+			{ "/api/genres": [500, 500, 200] },
+			{ "/api/reviews": NO_REVIEWS },
+		);
+		const waits: number[] = [];
+
+		const report = await runDeploySmoke({
+			baseUrl: BASE_URL,
+			fetch: site,
+			sleep: async (milliseconds) => {
+				waits.push(milliseconds);
+			},
+			maxAttempts: 3,
+			retryIntervalMs: 15_000,
+		});
+
+		const genres = report.endpoints.find(
+			(endpoint) => endpoint.path === "/api/genres?limit=1",
+		);
+		expect(genres?.outcome).toBe("passed");
+		// Two failed attempts before the recovery, so two waits of 15s each.
+		expect(waits).toEqual([15_000, 15_000]);
+	});
+
+	it("keeps the exported constants as the defaults", async () => {
+		// The five tests above rely on the defaults being exactly what they
+		// were before the budget became configurable. This is the test that
+		// fails if someone changes a default while wiring an option through:
+		// a run with no budget options must behave like the constants say.
+		const site = fakeSite({ "/id": [500] }, { "/api/reviews": NO_REVIEWS });
+		const waits: number[] = [];
+
+		const report = await runDeploySmoke({
+			baseUrl: BASE_URL,
+			fetch: site,
+			sleep: async (milliseconds) => {
+				waits.push(milliseconds);
+			},
+		});
+
+		const indonesian = report.endpoints.find(
+			(endpoint) => endpoint.path === "/id",
+		);
+		expect(indonesian?.attempts).toHaveLength(DEFAULT_MAX_ATTEMPTS);
+		// One wait between each pair of attempts, at the default interval.
+		expect(waits).toEqual(
+			Array.from(
+				{ length: DEFAULT_MAX_ATTEMPTS - 1 },
+				() => DEFAULT_RETRY_INTERVAL_MS,
+			),
+		);
+	});
+});
+describe("smoke arguments", () => {
+	// `process.argv` shape: runtime, script, then the real arguments.
+	const argv = (...args: string[]) => [
+		"bun",
+		"src/scripts/deploy-smoke.ts",
+		...args,
+	];
+
+	it("reads the deploy job's exact command line", () => {
+		// This is the string in `deploy.yml`. If the parser stops accepting it,
+		// the deploy run fails on its own smoke check rather than on the site.
+		expect(
+			parseSmokeArguments(
+				argv(
+					"https://chasing-chapters.com",
+					"--max-attempts",
+					"6",
+					"--interval-ms",
+					"15000",
+				),
+			),
+		).toEqual({
+			baseUrl: "https://chasing-chapters.com",
+			maxAttempts: 6,
+			retryIntervalMs: 15000,
+		});
+	});
+
+	it("accepts a bare base URL and leaves the budget undefined", () => {
+		// Undefined, not a number: the module's defaults then apply, which is
+		// what keeps the two settings in one place.
+		expect(parseSmokeArguments(argv("https://example.test"))).toEqual({
+			baseUrl: "https://example.test",
+			maxAttempts: undefined,
+			retryIntervalMs: undefined,
+		});
+	});
+
+	it("rejects a budget that is not a positive whole number", () => {
+		// A rejected value is the point: silently falling back to the default
+		// would shrink the window without saying so.
+		for (const bad of ["0", "-3", "abc", "1.5", ""]) {
+			expect(
+				parseSmokeArguments(
+					argv("https://example.test", "--max-attempts", bad),
+				),
+			).toContain("--max-attempts needs a positive whole number");
+		}
+	});
+
+	it("rejects a flag with no value, and the wrong number of positionals", () => {
+		expect(
+			parseSmokeArguments(argv("https://example.test", "--interval-ms")),
+		).toContain("--interval-ms needs a positive whole number");
+		expect(parseSmokeArguments(argv())).toBe(SMOKE_USAGE);
+		expect(parseSmokeArguments(argv("https://a.test", "https://b.test"))).toBe(
+			SMOKE_USAGE,
+		);
+	});
+});
+
+describe("smoke exit decision", () => {
+	it("reports no failures when every endpoint passed", async () => {
+		const report = await runDeploySmoke({
+			baseUrl: BASE_URL,
+			fetch: fakeSite({}, { "/api/reviews": NO_REVIEWS }),
+			sleep: async () => {},
+		});
+
+		expect(failedEndpoints(report)).toEqual([]);
+	});
+
+	it("names only the endpoints that failed", async () => {
+		// The script exits 1 off this list, so a filter that matched nothing
+		// would turn the guard into a check that always passes.
+		const report = await runDeploySmoke({
+			baseUrl: BASE_URL,
+			fetch: fakeSite({ "/api/genres": [500] }, { "/api/reviews": NO_REVIEWS }),
+			sleep: async () => {},
+			maxAttempts: 2,
+		});
+
+		expect(failedEndpoints(report).map((endpoint) => endpoint.path)).toEqual([
+			"/api/genres?limit=1",
+		]);
+	});
+
+	it("returns a report rather than throwing when the budget is zero", async () => {
+		// `maxAttempts` is a seam, so it can be handed a nonsensical value; the
+		// function's contract is that a failed run is still a complete report.
+		//
+		// The fixture fails on purpose. A site that answers 200 everywhere stops at
+		// the first attempt whatever the budget is, so it would pin nothing: the
+		// clamp could become 2 and the test would still pass.
+		const report = await runDeploySmoke({
+			baseUrl: BASE_URL,
+			fetch: fakeSite({ "/api/genres": [500] }, { "/api/reviews": NO_REVIEWS }),
+			sleep: async () => {},
+			maxAttempts: 0,
+		});
+
+		expect(failedEndpoints(report).map((endpoint) => endpoint.path)).toEqual([
+			"/api/genres?limit=1",
+		]);
+
+		const genres = report.endpoints.find(
+			(endpoint) => endpoint.path === "/api/genres?limit=1",
+		);
+		expect(genres?.attempts).toHaveLength(1);
+	});
+
+	it("falls back to the default when the budget is not a finite number", async () => {
+		// `NaN` survives `Math.max`, so a clamp alone would still empty the list.
+		const report = await runDeploySmoke({
+			baseUrl: BASE_URL,
+			fetch: fakeSite({ "/en": [500] }, { "/api/reviews": NO_REVIEWS }),
+			sleep: async () => {},
+			maxAttempts: Number.NaN,
+		});
+
+		const english = report.endpoints.find(
+			(endpoint) => endpoint.path === "/en",
+		);
+		expect(english?.attempts).toHaveLength(DEFAULT_MAX_ATTEMPTS);
+	});
+});
