@@ -44,11 +44,19 @@ const envSchema = z.object({
 	// window. Google Cloud Translation v2 defaults to 100,000 per user and
 	// allows up to 10,000,000; raising the console quota means raising this
 	// value to match, or pacing stays needlessly conservative.
-	TRANSLATION_CHAR_BUDGET: z.coerce
-		.number()
-		.int("TRANSLATION_CHAR_BUDGET must be a whole number of characters")
-		.positive("TRANSLATION_CHAR_BUDGET must be greater than zero")
-		.default(100000),
+	//
+	// An empty string is treated as unset. Container env-var UIs commonly leave
+	// an optional key defined with no value, and `z.coerce.number()` turns ""
+	// into 0 — which `.positive()` then rejects, crashing the process at boot
+	// over a tuning knob that has a perfectly good default.
+	TRANSLATION_CHAR_BUDGET: z.preprocess(
+		(value) => (value === "" ? undefined : value),
+		z.coerce
+			.number()
+			.int("TRANSLATION_CHAR_BUDGET must be a whole number of characters")
+			.positive("TRANSLATION_CHAR_BUDGET must be greater than zero")
+			.default(100000),
+	),
 });
 
 /**
@@ -73,3 +81,13 @@ function validateEnv() {
 
 export const env = validateEnv();
 export type Env = z.infer<typeof envSchema>;
+
+/**
+ * The raw schema, exported for tests only.
+ *
+ * `env` is validated once at module load against the real `process.env`, so a
+ * test cannot vary an input by mutating the environment afterwards. Exposing
+ * the schema lets a test parse a synthetic environment and assert the
+ * coercion and defaulting rules directly.
+ */
+export const envSchemaForTest = envSchema;
