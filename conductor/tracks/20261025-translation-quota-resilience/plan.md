@@ -92,20 +92,23 @@
 - **Covers:** FR-6, FR-7, AC-6, AC-7
 - **Touches:** `src/hooks/translateReview.ts`, `src/lib/retranslate.ts`, `src/hooks/__tests__/translateReview.test.ts`, `src/lib/__tests__/retranslate-bulk.test.ts`, `src/lib/__tests__/retranslate-bulk-run.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** in_progress
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** 96e6a78
+- **Evidence:** conductor/tracks/20261025-translation-quota-resilience/verification/phase-4.md
 
-- [ ] **P4.T1: Translate favorite quotes in one call** - covers: FR-6
-  - [ ] **P4.T1.1: Replace the `Promise.all` of per-quote `translateText` calls with a single batched call** - `translateBatch` already accepts an array and returns aligned results.
-  - [ ] **P4.T1.2: Preserve page numbers and array order** when mapping translations back onto the quote objects.
-  - [ ] **P4.T1.3: Handle an empty or all-blank quote array without issuing a request.**
-- [ ] **P4.T2: Bound bulk retranslate by the shared budget** - covers: FR-7
-  - [ ] **P4.T2.1: Thread the character budget through the bulk run** alongside the existing 30-second wall clock.
-  - [ ] **P4.T2.2: Report remaining reviews as `skipped`** with a distinct reason when the character budget is reached, mirroring the existing budget-stop behaviour.
-  - [ ] **P4.T2.3: Keep whichever limit is reached first authoritative** - wall clock or characters, no change to the existing time-budget semantics.
-- [ ] **P4.T3: Cover both call sites with tests** - covers: AC-6, AC-7
-  - [ ] **P4.T3.1: Test that N quotes produce one provider call, not N.**
-  - [ ] **P4.T3.2: Test that a bulk run stops at the character budget and reports the remainder as skipped rather than failed.**
-  - [ ] **P4.T3.3: Test that the wall-clock stop still behaves as before.**
+- [x] **P4.T1: Translate favorite quotes in one call** - covers: FR-6
+  - [x] **P4.T1.1: Replace the `Promise.all` of per-quote `translateText` calls with a single batched call** - `translateBatch` already accepts an array and returns aligned results.
+  - [x] **P4.T1.2: Preserve page numbers and array order** when mapping translations back onto the quote objects.
+  - [x] **P4.T1.3: Handle an empty or all-blank quote array without issuing a request.**
+- [x] **P4.T2: Bound bulk retranslate by the shared budget** - covers: FR-7
+  - [x] **P4.T2.1: Thread the character budget through the bulk run** alongside the existing 30-second wall clock.
+  - [x] **P4.T2.2: Report remaining reviews as `skipped`** with a distinct reason when the character budget is reached, mirroring the existing budget-stop behaviour.
+  - [x] **P4.T2.3: Keep whichever limit is reached first authoritative** - wall clock or characters, no change to the existing time-budget semantics.
+- [x] **P4.T3: Cover both call sites with tests** - covers: AC-6, AC-7
+  - [x] **P4.T3.1: Test that N quotes produce one provider call, not N.**
+  - [x] **P4.T3.2: Test that a bulk run stops at the character budget and reports the remainder as skipped rather than failed.**
+  - [x] **P4.T3.3: Test that the wall-clock stop still behaves as before.**
 
 ## Phase 5: Pipeline robustness
 
