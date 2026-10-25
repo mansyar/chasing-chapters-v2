@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import {
 	DEFAULT_MAX_ATTEMPTS,
+	DEFAULT_RETRY_INTERVAL_MS,
 	runDeploySmoke,
 	SMOKE_ENDPOINTS,
 	type SmokeFetch,
@@ -182,5 +183,91 @@ describe("deploy-smoke", () => {
 		expect(indonesian?.finalStatus).toBeNull();
 		expect(indonesian?.note).toContain("ECONNREFUSED");
 		expect(indonesian?.attempts).toHaveLength(DEFAULT_MAX_ATTEMPTS);
+	});
+});
+
+describe("deploy-smoke budget", () => {
+	it("honours a custom attempt budget", async () => {
+		// The deploy job raises the budget because a Coolify rollout outlasts
+		// the default. If the option were ignored, a failing endpoint would
+		// still stop after DEFAULT_MAX_ATTEMPTS and the deploy would give up
+		// early - which is the behaviour the option exists to change.
+		const site = fakeSite(
+			{ "/api/genres": [500] },
+			{ "/api/reviews": NO_REVIEWS },
+		);
+
+		const report = await runDeploySmoke({
+			baseUrl: BASE_URL,
+			fetch: site,
+			sleep: async () => {},
+			maxAttempts: 3,
+		});
+
+		const genres = report.endpoints.find(
+			(endpoint) => endpoint.path === "/api/genres?limit=1",
+		);
+		expect(genres?.attempts).toHaveLength(3);
+		expect(genres?.attempts.map((attempt) => attempt.attempt)).toEqual([
+			1, 2, 3,
+		]);
+		expect(genres?.outcome).toBe("failed");
+	});
+
+	it("honours a custom retry interval, and never waits a real one", async () => {
+		// The interval reaches the injected sleep rather than a module
+		// constant, so the deploy job's fifteen-second spacing is what actually
+		// runs - and this test proves the seam carries it without waiting.
+		const site = fakeSite(
+			{ "/api/genres": [500, 500, 200] },
+			{ "/api/reviews": NO_REVIEWS },
+		);
+		const waits: number[] = [];
+
+		const report = await runDeploySmoke({
+			baseUrl: BASE_URL,
+			fetch: site,
+			sleep: async (milliseconds) => {
+				waits.push(milliseconds);
+			},
+			maxAttempts: 3,
+			retryIntervalMs: 15_000,
+		});
+
+		const genres = report.endpoints.find(
+			(endpoint) => endpoint.path === "/api/genres?limit=1",
+		);
+		expect(genres?.outcome).toBe("passed");
+		// Two failed attempts before the recovery, so two waits of 15s each.
+		expect(waits).toEqual([15_000, 15_000]);
+	});
+
+	it("keeps the exported constants as the defaults", async () => {
+		// The five tests above rely on the defaults being exactly what they
+		// were before the budget became configurable. This is the test that
+		// fails if someone changes a default while wiring an option through:
+		// a run with no budget options must behave like the constants say.
+		const site = fakeSite({ "/id": [500] }, { "/api/reviews": NO_REVIEWS });
+		const waits: number[] = [];
+
+		const report = await runDeploySmoke({
+			baseUrl: BASE_URL,
+			fetch: site,
+			sleep: async (milliseconds) => {
+				waits.push(milliseconds);
+			},
+		});
+
+		const indonesian = report.endpoints.find(
+			(endpoint) => endpoint.path === "/id",
+		);
+		expect(indonesian?.attempts).toHaveLength(DEFAULT_MAX_ATTEMPTS);
+		// One wait between each pair of attempts, at the default interval.
+		expect(waits).toEqual(
+			Array.from(
+				{ length: DEFAULT_MAX_ATTEMPTS - 1 },
+				() => DEFAULT_RETRY_INTERVAL_MS,
+			),
+		);
 	});
 });

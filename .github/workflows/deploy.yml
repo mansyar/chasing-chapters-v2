@@ -6,16 +6,46 @@ on:
       - main
   workflow_dispatch: # Allows manual trigger
 
+# One deploy at a time, and the second one waits.
+#
+# Two merges minutes apart each run their own `migrate`, against one database.
+# Without a group those runs interleave, which is the hazard this exists to
+# remove (FR-6). A group on a single job would not do it either: run B's
+# `migrate` would still race run A's `build-and-push`.
+#
+# `cancel-in-progress: false` is the load-bearing half, and it reads like "off".
+# GitHub's default is to cancel the in-progress run when a newer one queues;
+# for a deploy that means a half-finished rollout and a migrated database with
+# no matching image. `false` queues the second run behind the first instead.
+#
+# `workflow_dispatch` shares this group, so a manual trigger queues behind a
+# merge-triggered deploy rather than racing it.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
 env:
   DOCKER_IMAGE: mansyar/chasing-chapters
   DOCKER_TAG: latest
 
 jobs:
-  # Migrations MUST run before the Docker build: `next build` performs static
-  # generation against the production database, so new schema columns must
-  # already exist or prerendering fails (42703). Migrations are additive and
-  # backward-compatible with the currently deployed image, so applying them
-  # first is safe even if the subsequent build fails.
+  # Migrations run first because `next build` statically generates pages
+  # against the production database: a column the new code reads has to exist
+  # by then, or prerendering dies with 42703.
+  #
+  # That order has a cost, and an earlier version of this comment hid it behind
+  # a claim that applying migrations first was safe for the image already
+  # serving. Nothing enforced that claim and it was not true. A destructive
+  # migration - dropping or renaming a column the deployed image still reads -
+  # breaks the *currently serving* image the moment it lands. The window
+  # between this step and the new image going live is one where the site can be
+  # returning 500s. That is what happened on 2026-10-24: the migration landed,
+  # the image build failed, and production served 42703 for ten hours.
+  #
+  # So a destructive migration is a deliberate, reviewable decision rather than
+  # a routine one. `src/migrations/__tests__/destructive-markers.test.ts`
+  # requires a `// destructive: <justification>` marker on any `up()` that
+  # drops a column or a table, which is what makes it reviewable.
   migrate:
     name: Run DB Migrations
     runs-on: ubuntu-latest
@@ -27,7 +57,11 @@ jobs:
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.2
+          # 1.4.3, matching ci.yml: `bun check` only exists from 1.4.3 (CI run
+          # 39567563082 proved 1.4.2 lacks it), so the migrate job should run
+          # the migrations on the same Bun the merge was validated with rather
+          # than a version behind it (FR-7).
+          bun-version: 1.4.3
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -97,3 +131,58 @@ jobs:
             -H "Accept: application/json" \
             -H "Authorization: Bearer ${{ secrets.COOLIFY_WEBHOOK_TOKEN }}" \
             --fail-with-body
+
+  # The webhook returns as soon as Coolify accepts it, so on its own this
+  # workflow goes green without ever asking whether the site is serving. This
+  # job asks.
+  #
+  # No `bun install`: `src/lib/deploy-smoke.ts` and the script that drives it
+  # import nothing from `node_modules` (only global `fetch`, `setTimeout`,
+  # `URL`, `AbortSignal`), and Bun strips the TypeScript types on its own. Adding
+  # an install step "to be safe" would buy forty seconds of nothing.
+  #
+  # No `continue-on-error`: a non-zero exit is the point. The script exits 1 on
+  # a failed endpoint, which fails this job, which fails the run.
+  #
+  # Budget: 6 attempts 15 seconds apart is a 75-second window per endpoint -
+  # 2.5x the module's 30-second default, which is the point of passing flags at
+  # all. The arithmetic that keeps this inside NFR-3's "about forty requests":
+  # 5 fixed endpoints x 6 attempts = 30, plus at most one discovery call, plus
+  # up to 6 for the conditional detail probe when a review is published - 37
+  # worst case. Endpoints are polled in sequence, so a total outage burns about
+  # seven minutes before the run fails. Raising the attempts past 6 without
+  # amending NFR-3 breaks that ceiling.
+  #
+  # What it cannot do: a Coolify rollout can take longer than 75 seconds, so the
+  # check may still be talking to the previous container. What it reliably
+  # catches is the 2026-10-24 shape - a migration lands, the serving image can
+  # no longer read the schema, and the site starts returning 500s immediately -
+  # because that shows up whether or not the new image has rolled out. What it
+  # can miss is a new image that is broken but not yet live. It does not prove
+  # the new build is serving.
+  verify:
+    name: Verify the Rollout
+    runs-on: ubuntu-latest
+    needs: deploy
+
+    env:
+      # A repository variable, not a secret: the origin is public, and `vars`
+      # keeps this readable. The default is the real production origin so the
+      # check works with no configuration.
+      SMOKE_BASE_URL: ${{ vars.PRODUCTION_BASE_URL || 'https://chasing-chapters.com' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          # Same version as every other job in this workflow and in ci.yml.
+          bun-version: 1.4.3
+
+      - name: Run smoke check
+        run: >-
+          bun run src/scripts/deploy-smoke.ts "$SMOKE_BASE_URL"
+          --max-attempts 6
+          --interval-ms 15000

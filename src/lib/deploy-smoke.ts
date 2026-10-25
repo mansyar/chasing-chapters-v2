@@ -80,7 +80,7 @@ export interface SmokeReport {
 	readonly requests: number;
 }
 
-/** The seams. Everything else is fixed by the requirement. */
+/** The seams and the budget. Everything else is fixed by the requirement. */
 export interface DeploySmokeOptions {
 	/** Origin to probe, e.g. `https://chasing-chapters.com`. */
 	readonly baseUrl: string;
@@ -88,6 +88,10 @@ export interface DeploySmokeOptions {
 	readonly fetch?: SmokeFetch;
 	/** Defaults to a real `setTimeout` wait. */
 	readonly sleep?: SmokeSleep;
+	/** Attempts per endpoint. Defaults to `DEFAULT_MAX_ATTEMPTS`. */
+	readonly maxAttempts?: number;
+	/** Wait between attempts, in ms. Defaults to `DEFAULT_RETRY_INTERVAL_MS`. */
+	readonly retryIntervalMs?: number;
 }
 
 /**
@@ -117,17 +121,20 @@ const PUBLISHED_REVIEWS_PATH =
 const DETAIL_PATH_TEMPLATE = "/en/reviews/<slug>";
 
 /**
- * Attempts per endpoint.
+ * Attempts per endpoint, when the caller does not say otherwise.
  *
  * Six endpoints times six attempts is 36 requests, plus one for discovery, so a
  * worst-case run stays under the "about forty" of `NFR-3`. It also bounds a
  * dead rollout at roughly two and a half minutes, which is inside the deploy
- * job's patience and short enough to fail a run while someone is still watching.
+ * job's patience and short enough to fail a run while someone is still
+ * watching. `maxAttempts` exists because a Coolify rollout can outlast that:
+ * raising it buys a longer window and spends the request budget, so the
+ * arithmetic above is the ceiling to reason against.
  */
 export const DEFAULT_MAX_ATTEMPTS = 6;
 
 /** Wait between attempts. Long enough for a container to finish booting. */
-const RETRY_INTERVAL_MS = 5_000;
+export const DEFAULT_RETRY_INTERVAL_MS = 5_000;
 
 /** Per-request ceiling, so one hung socket cannot hold the whole run. */
 const REQUEST_TIMEOUT_MS = 5_000;
@@ -140,6 +147,8 @@ interface ProbeContext {
 	readonly fetch: SmokeFetch;
 	readonly sleep: SmokeSleep;
 	readonly baseUrl: string;
+	readonly maxAttempts: number;
+	readonly retryIntervalMs: number;
 }
 
 /** A request that either produced a response or a message explaining itself. */
@@ -181,6 +190,8 @@ export async function runDeploySmoke(
 		fetch: options.fetch ?? globalFetch,
 		sleep: options.sleep ?? defaultSleep,
 		baseUrl: options.baseUrl,
+		maxAttempts: options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
+		retryIntervalMs: options.retryIntervalMs ?? DEFAULT_RETRY_INTERVAL_MS,
 	};
 
 	const endpoints: SmokeEndpointReport[] = [];
@@ -230,7 +241,7 @@ async function pollEndpoint(
 	const url = toUrl(context.baseUrl, path);
 	const attempts: SmokeAttempt[] = [];
 
-	for (let attempt = 1; attempt <= DEFAULT_MAX_ATTEMPTS; attempt += 1) {
+	for (let attempt = 1; attempt <= context.maxAttempts; attempt += 1) {
 		const result = await requestOnce(context, url);
 		attempts.push({
 			attempt,
@@ -248,8 +259,8 @@ async function pollEndpoint(
 			};
 		}
 
-		if (attempt < DEFAULT_MAX_ATTEMPTS) {
-			await context.sleep(RETRY_INTERVAL_MS);
+		if (attempt < context.maxAttempts) {
+			await context.sleep(context.retryIntervalMs);
 		}
 	}
 
