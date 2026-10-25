@@ -125,6 +125,11 @@ serving image can no longer read the schema, and requests start returning 500
 immediately. That failure is present whether or not the new image has rolled
 out, which is precisely why this check would have caught it.
 
+> **Superseded by R1/F1.** The last sentence is wrong. On 2026-10-24 the *build*
+> is what failed, so `deploy` and `verify` were skipped and this check never ran.
+> The workflow and runbook now say so. Kept here because a phase record should
+> not be silently rewritten; see `verification/phase-r1.md`.
+
 ## Deviations
 
 | File | Reason |

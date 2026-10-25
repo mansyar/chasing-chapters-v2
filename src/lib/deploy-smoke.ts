@@ -190,10 +190,11 @@ export async function runDeploySmoke(
 		fetch: options.fetch ?? globalFetch,
 		sleep: options.sleep ?? defaultSleep,
 		baseUrl: options.baseUrl,
-		// Clamped, because the loop reads the last attempt it made: a budget of
-		// zero would leave that list empty and throw out of a function whose
-		// contract is that a failed run is still a complete report.
-		maxAttempts: Math.max(1, options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS),
+		// Normalised, because the loop reads the last attempt it made: a budget of
+		// zero - or a NaN from a caller that bypassed the parser - would leave that
+		// list empty and throw out of a function whose contract is that a failed
+		// run is still a complete report.
+		maxAttempts: normaliseAttempts(options.maxAttempts),
 		retryIntervalMs: options.retryIntervalMs ?? DEFAULT_RETRY_INTERVAL_MS,
 	};
 
@@ -473,4 +474,18 @@ function positiveInteger(raw: string | undefined): number | null {
 	const value = Number(raw.trim());
 
 	return Number.isInteger(value) && value > 0 ? value : null;
+}
+/**
+ * A usable attempt budget from whatever a caller passed.
+ *
+ * `maxAttempts` is a public seam, so it can arrive as zero, negative, or `NaN`
+ * from something that never went through `parseSmokeArguments`. All three would
+ * leave the attempt list empty and turn a report into a throw.
+ */
+function normaliseAttempts(maxAttempts: number | undefined): number {
+	if (maxAttempts === undefined || !Number.isFinite(maxAttempts)) {
+		return DEFAULT_MAX_ATTEMPTS;
+	}
+
+	return Math.max(1, Math.floor(maxAttempts));
 }

@@ -55,14 +55,21 @@ columns, the image build failed, and production served `42703` on every query
 touching genres, tags, mood tags, reading lists or a review title for roughly
 ten hours.
 
-**The pipeline cannot make that window safe.** It can only make it short and
-make it visible:
+**The pipeline cannot make that window safe.** It can only make it short, and
+make it visible *when the build succeeds*:
 
 - Short, because `build-and-push` starts as soon as `migrate` finishes, so the
   gap is one image build rather than an afternoon.
-- Visible, because `verify` runs after the webhook and fails the run when the
-  site stops answering. That is the first automated signal that a rollout did
-  not land.
+- Visible *when the build succeeds*, because `verify` runs after the webhook and
+  fails the run when the site stops answering. That is the first automated
+  signal that a rollout did not land.
+
+That second bullet is conditional, and the condition is exactly what failed on
+2026-10-24: `verify` only runs if the image built. When the build is what
+breaks, the run goes red at `build-and-push`, `deploy` and `verify` are skipped,
+and nothing automated looks at the site at all — see "What `verify` proves, and
+what it does not" below. A failed build is the case where a human has to check
+production by hand.
 
 The decision that actually removes the risk is a human one: do not merge a
 destructive migration and a build-breaking change in the same deploy.
@@ -214,8 +221,8 @@ with that fact in front of them, not a step a workflow takes on its own.
 
 ## Declaring a destructive migration
 
-Any migration whose `up()` contains `DROP COLUMN`, `DROP TABLE` or `TRUNCATE`
-must carry a justification comment:
+Any migration whose `up()` contains `DROP COLUMN`, `DROP TABLE`, `RENAME COLUMN`
+or `TRUNCATE` must carry a justification comment:
 
 ```ts
 // destructive: drops the ten content columns the `*_locales` tables replace —
@@ -225,8 +232,9 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
 
 `src/migrations/__tests__/destructive-markers.test.ts` fails `bun test` when a
 flagged file has no marker, so this is enforced in CI and in the pre-commit hook
-rather than by memory. `down()` bodies are never scanned: reverting is the one
-place a drop belongs.
+rather than by memory. `down()` bodies are not scanned: reverting is the one
+place a drop belongs. (The exception is a file with no `up` at all — the scan
+then reads the whole file rather than assume there is nothing to find.)
 
 Three migrations currently carry a marker: `20251214_135240`,
 `20261008_131000_commenters_email_hash_fix` and

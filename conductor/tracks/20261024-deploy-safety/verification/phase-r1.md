@@ -90,3 +90,48 @@ table above re-measures with a direct invocation.
   asserted in the YAML; it has not been observed serialising two real runs.
 - **The `verify` job has not executed.** Everything above about it is the
   workflow text and a local run of the same command.
+## Second review round
+
+The first re-review returned **BLOCK** on two points, both correct.
+
+**F1, again — the implication survived.** The explicit "would have caught it"
+sentence was gone, but the section that frames the hazard still read "It can
+only make it short and make it visible", with visibility attributed to `verify`.
+Read against the paragraph 25 lines later saying a failed build leaves "no
+automated signal at all", the runbook contradicted itself — and the unqualified
+claim is the one a reader meets first. The bullet is now conditional ("visible
+*when the build succeeds*") and a paragraph follows naming the failed-build case
+explicitly. This is the second time the same defect was fixed at the named site
+and left standing next to it, which is the argument for reviewing the section
+rather than the diff line.
+
+**F3, again — the normative rule was not updated.** The scan learned
+`RENAME COLUMN` and "Scope, precisely" listed it, but the rule two paragraphs
+above still said only `DROP COLUMN`, `DROP TABLE`, `TRUNCATE`. An author
+following the rule would skip a marker and be failed by CI. Corrected.
+
+Non-blocking notes taken:
+
+- `down()` bodies "never scanned" was absolute; the no-`up` fallback does scan the
+  whole file. Qualified.
+- `verification/phase-4.md` still asserted the check "would have caught" the
+  outage. Left as written with a **Superseded by R1/F1** note rather than
+  rewritten: a phase record that quietly changes is worth less than one that
+  shows it was wrong.
+- `Math.max(1, NaN)` is `NaN`, so the clamp alone left a hole. Replaced with
+  `normaliseAttempts`, which falls back to the default for a non-finite value.
+- The zero-budget test asserted only "did not throw", which a clamp of 2 would
+  also satisfy. It now pins the attempt count, and a second test covers `NaN`.
+
+| Mutation | Test that failed |
+|---|---|
+| Clamp without the finite check | `falls back to the default when the budget is not a finite number` |
+
+Final state: `bun run typecheck` 0 errors / 250 files, `bun run lint` clean /
+240 files, `bun test` 612 pass / 0 fail / 1406 `expect()` / 48 files.
+
+One note left deliberately unaddressed: the phase allow-list still grants
+`bun run src/scripts/*`, which is arbitrary execution of any file in that
+directory. It predates this track and phase agents need it to run the scripts
+the briefs name; narrowing it is a separate decision about how phases are
+supervised, not a deploy-safety fix.

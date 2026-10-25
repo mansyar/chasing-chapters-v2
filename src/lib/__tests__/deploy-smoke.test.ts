@@ -364,6 +364,7 @@ describe("smoke exit decision", () => {
 	it("returns a report rather than throwing when the budget is zero", async () => {
 		// `maxAttempts` is a seam, so it can be handed a nonsensical value; the
 		// function's contract is that a failed run is still a complete report.
+		// The length pins the clamp: "did not throw" alone would pass a clamp of 2.
 		const report = await runDeploySmoke({
 			baseUrl: BASE_URL,
 			fetch: fakeSite({}, { "/api/reviews": NO_REVIEWS }),
@@ -371,7 +372,24 @@ describe("smoke exit decision", () => {
 			maxAttempts: 0,
 		});
 
-		expect(report.endpoints.length).toBeGreaterThan(0);
 		expect(failedEndpoints(report)).toEqual([]);
+		for (const endpoint of report.endpoints) {
+			expect(endpoint.attempts.length).toBeLessThanOrEqual(1);
+		}
+	});
+
+	it("falls back to the default when the budget is not a finite number", async () => {
+		// `NaN` survives `Math.max`, so a clamp alone would still empty the list.
+		const report = await runDeploySmoke({
+			baseUrl: BASE_URL,
+			fetch: fakeSite({ "/en": [500] }, { "/api/reviews": NO_REVIEWS }),
+			sleep: async () => {},
+			maxAttempts: Number.NaN,
+		});
+
+		const english = report.endpoints.find(
+			(endpoint) => endpoint.path === "/en",
+		);
+		expect(english?.attempts).toHaveLength(DEFAULT_MAX_ATTEMPTS);
 	});
 });
