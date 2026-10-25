@@ -244,6 +244,20 @@ function capturePipelineFailure(label: string, run: Promise<void>): void {
 }
 
 /**
+ * The reason a budget stop is persisted with.
+ *
+ * The thrown error already names the limit that actually fired: a deadline stop
+ * carries `TRANSLATION_BUDGET_REASON` and a refused character reservation
+ * carries `TRANSLATION_CHARACTER_BUDGET_REASON`. Storing the error's own
+ * message is what keeps the two distinct in the admin UI and in the attention
+ * bell's classification. The constant is the fallback for a stop that somehow
+ * carries no message.
+ */
+function budgetStopReason(error: TranslationBudgetError): string {
+	return error.message || TRANSLATION_BUDGET_REASON;
+}
+
+/**
  * Full translation pipeline: marks the review pending, translates all
  * localized fields in batched requests, then saves the Indonesian locale and
  * the final status. On failure the Indonesian locale is left untouched
@@ -409,9 +423,15 @@ export async function runTranslationPipeline(
 					id: doc.id,
 					data: {
 						translationStatus: failed.status,
-						translationError: budgetStop
-							? TRANSLATION_BUDGET_REASON
-							: formatTranslationError(error),
+						// A budget stop carries its own reason: the time stop and
+						// the character stop are different limits, and the stored
+						// message is what the admin reads and the bell classifies.
+						// Re-labelling every stop as the time budget would name a
+						// wall clock that never expired.
+						translationError:
+							error instanceof TranslationBudgetError
+								? budgetStopReason(error)
+								: formatTranslationError(error),
 						translationUpdatedAt: failedAt,
 					},
 					context: { skipTranslation: true },

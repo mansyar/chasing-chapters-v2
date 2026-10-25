@@ -46,6 +46,8 @@ mock.module("@google-cloud/translate", () => ({
 
 // Import AFTER mock.module so translate.ts binds to the mocked client.
 const {
+	TRANSLATION_BUDGET_REASON,
+	TranslationBudgetError,
 	TranslationError,
 	createRichTextFromPlain,
 	extractPlainText,
@@ -504,5 +506,104 @@ describe("provider retry policy", () => {
 		expect(mockClientTranslate).toHaveBeenCalledTimes(1);
 		expect(classifyTranslationError(caught).kind).toBe("credentials");
 		expect(classifyTranslationError(caught).transient).toBe(false);
+	});
+
+	it("reports the provider failure, not a budget stop, when the character budget refuses the retry", async () => {
+		// F1: a budget stop is only the *cause* of a failure when nothing has
+		// failed yet. Here attempt 1 fails for a network reason and the retry
+		// is refused by the rolling character budget — the network failure is
+		// what must be reported, with its cause intact and its classified
+		// message reachable, so the delayed re-run is still scheduled.
+		const networkError = Object.assign(new Error("ECONNRESET"), { code: 503 });
+		mockClientTranslate.mockImplementation(() => Promise.reject(networkError));
+
+		const budgetModule = await import("../translation-budget");
+		let reservations = 0;
+		const reserveSpy = spyOn(
+			budgetModule,
+			"reserveCharacters",
+		).mockImplementation(async (characters: number) => {
+			reservations += 1;
+			// Attempt 1 gets its characters; the retry is refused.
+			return {
+				granted: reservations === 1,
+				characters,
+				used: characters,
+				remaining: 0,
+				waitedMs: 0,
+				backend: "memory",
+			};
+		});
+
+		let caught: unknown;
+		try {
+			await translateBatch(["Hello"], "id", {
+				delays: [0, 0, 0],
+				deadline: Date.now() + 60_000,
+			});
+		} catch (error) {
+			caught = error;
+		} finally {
+			reserveSpy.mockRestore();
+		}
+
+		expect(reservations).toBe(2);
+		expect(mockClientTranslate).toHaveBeenCalledTimes(1);
+		expect(caught).toBeInstanceOf(TranslationError);
+		expect(caught).not.toBeInstanceOf(TranslationBudgetError);
+		expect((caught as Error).message).toBe("ECONNRESET");
+		expect((caught as Error).message).not.toBe(TRANSLATION_BUDGET_REASON);
+		expect((caught as { cause?: unknown }).cause).toBe(networkError);
+		expect((caught as InstanceType<typeof TranslationError>).attempts).toBe(1);
+	});
+
+	it("reports the provider failure when the wait for the character budget uses up the deadline", async () => {
+		// F1, the other half: the deadline check after the reservation wait
+		// must mirror the one before the attempt. The deadline only prevented
+		// the retry; the provider failure is still the reason it failed.
+		const networkError = Object.assign(new Error("ECONNRESET"), { code: 503 });
+		mockClientTranslate.mockImplementation(() => Promise.reject(networkError));
+
+		const deadline = Date.now() + 200;
+		const budgetModule = await import("../translation-budget");
+		let reservations = 0;
+		const reserveSpy = spyOn(
+			budgetModule,
+			"reserveCharacters",
+		).mockImplementation(async (characters: number) => {
+			reservations += 1;
+			if (reservations > 1) {
+				// The retry's reservation waits for the window to roll forward
+				// and the wait outlives the run's deadline.
+				const wait = Math.max(0, deadline - Date.now()) + 10;
+				await new Promise((resolve) => setTimeout(resolve, wait));
+			}
+			return {
+				granted: true,
+				characters,
+				used: characters,
+				remaining: 0,
+				waitedMs: 0,
+				backend: "memory",
+			};
+		});
+
+		let caught: unknown;
+		try {
+			await translateBatch(["Hello"], "id", { delays: [0, 0, 0], deadline });
+		} catch (error) {
+			caught = error;
+		} finally {
+			reserveSpy.mockRestore();
+		}
+
+		// The refusal came from the post-reservation check, not from the one
+		// before the attempt: both attempts reserved.
+		expect(reservations).toBe(2);
+		expect(mockClientTranslate).toHaveBeenCalledTimes(1);
+		expect(caught).toBeInstanceOf(TranslationError);
+		expect(caught).not.toBeInstanceOf(TranslationBudgetError);
+		expect((caught as { cause?: unknown }).cause).toBe(networkError);
+		expect((caught as InstanceType<typeof TranslationError>).attempts).toBe(1);
 	});
 });

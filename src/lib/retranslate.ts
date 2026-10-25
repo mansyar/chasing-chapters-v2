@@ -1,7 +1,10 @@
 import type { Payload, TypedUser } from "payload";
 import { runTranslationPipeline } from "../hooks/translateReview";
 import type { Review } from "../payload-types";
-import { TRANSLATION_BUDGET_REASON } from "./translate";
+import {
+	TRANSLATION_BUDGET_REASON,
+	TRANSLATION_CHARACTER_BUDGET_REASON,
+} from "./translate";
 import { remainingCharacters } from "./translation-budget";
 import { isTranslationLocked } from "./translation-lock";
 
@@ -278,14 +281,22 @@ export async function retranslateReviews(
 		const outcome = await retranslateOneReview(payload, user, id, {
 			deadline,
 		});
-		// A budget stop recorded while the batch still had time left can only
-		// be the character budget: the pipeline's only other stop is the batch
-		// deadline it was given, and that has not arrived. Every later review
-		// would meet the same wall, so the rest of the batch is not attempted.
-		if (clock() < deadline && isBudgetStop(outcome)) {
-			charactersExhausted = true;
-			outcomes.push(asThrottledOutcome(outcome));
-			continue;
+		// A budget stop is not a provider failure, and the persisted message now
+		// names the limit that fired, so the two are read apart instead of being
+		// inferred from the batch clock.
+		//
+		// The character stop is the wall every later review would meet too — the
+		// quota window cannot roll forward inside this request — so that review
+		// and the rest of the batch are reported as skipped. A time-budget stop
+		// is the batch deadline this run was given: that review keeps its failed
+		// outcome, and the reviews behind it are skipped by the wall-clock check
+		// at the top of the loop.
+		if (isBudgetStop(outcome)) {
+			if (isCharacterBudgetStop(outcome)) {
+				charactersExhausted = true;
+				outcomes.push(asThrottledOutcome(outcome));
+				continue;
+			}
 		}
 		outcomes.push(outcome);
 	}
@@ -309,19 +320,34 @@ async function isCharacterBudgetExhausted(
 }
 
 /**
- * Whether an outcome is the pipeline's budget stop rather than a provider
- * failure.
+ * Whether an outcome is one of the pipeline's budget stops rather than a
+ * provider failure.
  *
- * The pipeline records both budget stops — the batch deadline it was given and
- * the character reservation it could not get — with the same persisted reason
- * (`TRANSLATION_BUDGET_REASON`). The status machine is out of scope for this
- * phase, so that persisted value is left alone; the caller tells the two apart
- * by the batch clock. A real provider failure stores its classified message
- * with the raw detail appended, never the bare budget reason.
+ * The pipeline persists each stop with the reason of the limit that actually
+ * fired: a deadline stop carries `TRANSLATION_BUDGET_REASON` and a refused
+ * character reservation carries `TRANSLATION_CHARACTER_BUDGET_REASON`. Both are
+ * budget stops — neither is retried and neither is a provider failure — and
+ * which one it was is read from the stored message rather than inferred from
+ * the batch clock. A real provider failure stores its classified message with
+ * the raw detail appended, never a bare budget reason.
  */
 function isBudgetStop(outcome: BulkRetranslateOutcome): boolean {
 	return (
-		outcome.status === "failed" && outcome.reason === TRANSLATION_BUDGET_REASON
+		outcome.status === "failed" &&
+		(outcome.reason === TRANSLATION_BUDGET_REASON ||
+			outcome.reason === TRANSLATION_CHARACTER_BUDGET_REASON)
+	);
+}
+
+/**
+ * Whether a budget stop was the character reservation rather than the deadline.
+ *
+ * Only the character stop means every later review would meet the same wall.
+ */
+function isCharacterBudgetStop(outcome: BulkRetranslateOutcome): boolean {
+	return (
+		outcome.status === "failed" &&
+		outcome.reason === TRANSLATION_CHARACTER_BUDGET_REASON
 	);
 }
 

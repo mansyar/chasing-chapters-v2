@@ -757,6 +757,42 @@ describe("runTranslationPipeline", () => {
 		expect(payload.update.mock.calls.length).toBe(4);
 	});
 
+	test("a character-budget stop persists the character reason, not the time-budget one", async () => {
+		// F2: the two limits are kept distinct everywhere else, and the stored
+		// message is what the admin reads and the bell classifies. Storing the
+		// time-budget constant for every stop recorded a throttle as a wall
+		// clock that never expired.
+		const payload = makePayload();
+		const translateModule = await import("../../lib/translate");
+		translateRichTextSpy = spyOn(
+			translateModule,
+			"translateRichText",
+		).mockImplementation(async () => {
+			throw new translateModule.TranslationBudgetError(
+				translateModule.TRANSLATION_CHARACTER_BUDGET_REASON,
+			);
+		});
+
+		const doc = makeDoc();
+		await runTranslationPipeline(payload as unknown as Payload, doc, {
+			retryDelayMs: 1,
+		});
+
+		expect(payload.update.mock.calls.length).toBe(2);
+		const finalCall = payload.update.mock.calls[1][0];
+		expect(finalCall.data.translationStatus).toBe("failed");
+		expect(finalCall.data.translationError).toBe(
+			translateModule.TRANSLATION_CHARACTER_BUDGET_REASON,
+		);
+		expect(finalCall.data.translationError).not.toBe(
+			translateModule.TRANSLATION_BUDGET_REASON,
+		);
+
+		// Still a budget stop, so still no automatic re-run.
+		await new Promise((resolve) => setTimeout(resolve, 50));
+		expect(payload.update.mock.calls.length).toBe(2);
+	});
+
 	test("the guard skips the run when the review no longer exists", async () => {
 		const payload = makePayload();
 		payload.findByID.mockImplementation(async () => {

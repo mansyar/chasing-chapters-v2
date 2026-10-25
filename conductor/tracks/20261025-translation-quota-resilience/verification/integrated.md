@@ -162,10 +162,12 @@ and both changes are the point of the track:
    `TranslationError` type, the not-a-`TranslationBudgetError` assertion and the message
    assertion were left untouched.
 
-2. **`src/lib/__tests__/retranslate-bulk.test.ts`** — now pins `remainingCharacters` to a
-   full window in `beforeEach`. Its default had begun reaching a live Redis once the bulk
-   run consulted the shared budget, so the test was accidentally depending on ambient
-   state. This is a hardening, not a weakening.
+2. **`src/lib/__tests__/retranslate-bulk-run.test.ts`** (new in this track) — pins
+   `remainingCharacters` to a full window in `beforeEach`. Its default had begun reaching
+   a live Redis once the bulk run consulted the shared budget, so the test was accidentally
+   depending on ambient state. This is a hardening, not a weakening. The existing
+   `retranslate-bulk.test.ts` gained only the two budget-reason cases; the pin lives in the
+   new file, not in that one.
 
 The Phase 3 evidence records the regression test failing **before** the change
 (`Received number of calls: 3`) and passing after (`1`), which is the proof that the
@@ -214,11 +216,15 @@ covered, only the real timer is not exercised.
 ## 9. Residual risks carried to review
 
 1. **The lock TTL bound is not absolute.** `TRANSLATION_PIPELINE_STEPS = 5` assumes each
-   rich-text field fits in one packed request. A field over `TRANSLATION_BATCH_CHAR_CAP`
-   (25,000 code points) issues further chunks and can outlive the 33-minute TTL. The
-   fields carry no `maxLength`, so no finite TTL bounds that case — it needs a product
-   decision (cap the field, or accept that a very long review can exceed its lock).
-   Medium.
+   of the five sequential steps issues one packed request. The real invariant is about
+   content: the TTL bounds a run of at most five chunks, i.e. when the four rich-text
+   fields **plus the quote list** total no more than `TRANSLATION_BATCH_CHAR_CAP` (25,000)
+   code points. A long quote list adds chunks exactly as an over-cap field does —
+   `favoriteQuotes` has no `maxRows` and each quote's textarea is unbounded, so a single
+   `translateBatch` call can issue several requests — and a run that exceeds the total can
+   outlive the 33-minute TTL. None of those fields carry a `maxLength`, so no finite TTL
+   bounds that case — it needs a product decision (cap the field, or accept that a very
+   long review can exceed its lock). Medium.
 2. **The attention breakdown describes the fetched page, not the backlog.** `translationError`
    is free text, so no `where` clause filters by kind. The label says so explicitly, but a
    true backlog-wide count would need a stored kind field, which the spec puts out of
@@ -253,9 +259,11 @@ track introduced:
   and that the attention bell breaks failures down by kind, each dated 2026-10-25. The
   Redis row gained the per-review translation locks and the character budget.
 - **.env.example** - documents `TRANSLATION_CHAR_BUDGET` with its default of 100,000,
-  the instruction to raise it in step with the Google Cloud console quota, and the
-  warning that an empty value must not be used. It was absent entirely before this
-  track, which meant an operator raising the console quota had no visible knob.
+  the instruction to raise it in step with the Google Cloud console quota, and the fact
+  that an empty value falls back to that default rather than failing at boot - so the
+  variable must be set explicitly when the console quota is raised. It was absent
+  entirely before this track, which meant an operator raising the console quota had no
+  visible knob.
 
 ### The one code change made during sync, and why
 

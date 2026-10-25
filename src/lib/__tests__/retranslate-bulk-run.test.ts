@@ -386,15 +386,16 @@ describe("bulk re-translate run (FR-4)", () => {
 		let remaining = 5_000;
 		pipelineSpy.mockImplementation(async (_payload: Payload, doc: Review) => {
 			// The first review spends the whole window and is stopped by the
-			// pipeline's budget check, which persists `failed` with the budget
-			// reason (the status machine is out of scope for this phase).
+			// pipeline's budget check, which persists `failed` with the
+			// character-budget reason (the status machine is out of scope for
+			// this phase).
 			remaining = 0;
 			const stored = docs.get(doc.id);
 			if (stored) {
 				docs.set(doc.id, {
 					...stored,
 					translationStatus: "failed",
-					translationError: "translation time budget reached",
+					translationError: "translation character budget reached",
 				});
 			}
 		});
@@ -415,6 +416,75 @@ describe("bulk re-translate run (FR-4)", () => {
 				"not attempted — translation character budget reached",
 			);
 		}
+	});
+
+	test("a character stop is still reported skipped now that it persists its own reason", async () => {
+		// F2: the pipeline stores the character-budget reason instead of the
+		// time-budget constant. The bulk run must still recognise it as a
+		// budget stop — read from the message, not inferred from the clock —
+		// and report the throttled review and the rest of the batch as skipped.
+		docs.set(1, makeDoc({ id: 1, translationStatus: "failed" }));
+		docs.set(2, makeDoc({ id: 2, translationStatus: "failed" }));
+		accessible.add(1);
+		accessible.add(2);
+		const payload = makePayload();
+
+		pipelineSpy.mockImplementation(async (_payload: Payload, doc: Review) => {
+			const stored = docs.get(doc.id);
+			if (stored) {
+				docs.set(doc.id, {
+					...stored,
+					translationStatus: "failed",
+					translationError: "translation character budget reached",
+				});
+			}
+		});
+
+		const outcomes = await retranslateReviews(payload, writer, [1, 2], {
+			// A full window: the clock is not the limit here.
+			remainingCharacters: async () => 100_000,
+		});
+
+		expect(pipelineSpy).toHaveBeenCalledTimes(1);
+		expect(outcomes.map((outcome) => outcome.id)).toEqual([1, 2]);
+		for (const outcome of outcomes) {
+			expect(outcome.status).toBe("skipped");
+			expect(outcome.reason).toBe(
+				"not attempted — translation character budget reached",
+			);
+		}
+	});
+
+	test("a time-budget stop is not reclassified by the clock", async () => {
+		// The clock heuristic is gone: the stored message names the limit that
+		// fired, so a time stop stays a failed outcome even when the batch
+		// clock still has time left. Only the character stop throttles the
+		// batch.
+		docs.set(1, makeDoc({ id: 1, translationStatus: "failed" }));
+		docs.set(2, makeDoc({ id: 2, translationStatus: "failed" }));
+		accessible.add(1);
+		accessible.add(2);
+		const payload = makePayload();
+
+		pipelineSpy.mockImplementation(async (_payload: Payload, doc: Review) => {
+			const stored = docs.get(doc.id);
+			if (stored) {
+				docs.set(doc.id, {
+					...stored,
+					translationStatus: "failed",
+					translationError: "translation time budget reached",
+				});
+			}
+		});
+
+		const outcomes = await retranslateReviews(payload, writer, [1, 2], {
+			remainingCharacters: async () => 100_000,
+		});
+
+		expect(pipelineSpy).toHaveBeenCalledTimes(2);
+		expect(outcomes[0].status).toBe("failed");
+		expect(outcomes[0].reason).toBe("translation time budget reached");
+		expect(outcomes[1].status).toBe("failed");
 	});
 
 	test("a real failure is still reported as failed when characters remain", async () => {

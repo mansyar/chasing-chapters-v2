@@ -426,13 +426,31 @@ async function translateChunkWithRetry(
 		// before the request goes out. A request that would overflow the
 		// rolling window waits for the window to roll forward instead of
 		// spending an exhausted allowance. A refused reservation stops the
-		// run without sending anything and is never retried: it is a budget
-		// stop, not a provider failure. What is left of the window is kept for
+		// run without sending anything. What is left of the window is kept for
 		// the failure log below, where it says whether a retry had room.
-		const remainingBudget = await reserveChunkBudget(characters, options);
+		//
+		// A refusal is a budget stop only when nothing has failed yet. When an
+		// earlier attempt already failed, that provider failure is the real
+		// cause of the stop — the budget only prevented the retry — exactly as
+		// in the deadline check above.
+		let remainingBudget: number | undefined;
+		try {
+			remainingBudget = await reserveChunkBudget(characters, options);
+		} catch (error) {
+			if (error instanceof TranslationBudgetError && lastError !== undefined) {
+				throw providerFailure(lastError, attempt);
+			}
+			throw error;
+		}
 
 		if (deadline !== undefined && Date.now() >= deadline) {
-			// The wait for the window used up the remaining time.
+			// The wait for the window used up the remaining time. The deadline
+			// stopped the run, but it is never the reason the translation
+			// failed: an earlier provider failure is, and it is reported as
+			// such.
+			if (lastError !== undefined) {
+				throw providerFailure(lastError, attempt);
+			}
 			throw new TranslationBudgetError();
 		}
 
@@ -586,9 +604,11 @@ function packTranslationRequests(
  * waits for it to roll forward (bounded) and only then does the request reach
  * the provider.
  *
- * A reservation that cannot be granted is a deliberate stop, not a provider
- * failure: it throws TranslationBudgetError, which is never retried and never
- * schedules the automatic re-run. Any failure of the budget machinery itself
+ * A reservation that cannot be granted is a deliberate stop at this layer: it
+ * throws TranslationBudgetError, which is never retried and never schedules
+ * the automatic re-run. Whether that stop is what the caller reports depends on
+ * what came before it — `translateChunkWithRetry` rethrows an earlier provider
+ * failure instead when there is one. Any failure of the budget machinery itself
  * is logged and the request proceeds, so accounting can never break a
  * translation run (and therefore never block a review save).
  *
