@@ -47,6 +47,9 @@ describe("bulk re-translate run (FR-4)", () => {
 	let retranslateReviews: typeof import("../retranslate").retranslateReviews;
 	let pipelineSpy: PipelineSpy;
 	let lockSpy: ReturnType<typeof spyOn<LockModule, "isTranslationLocked">>;
+	let budgetSpy: ReturnType<
+		typeof spyOn<typeof import("../translation-budget"), "remainingCharacters">
+	>;
 
 	/** Review doc fixture: author 7 owns it. */
 	const makeDoc = (overrides: Partial<Review> = {}): Review =>
@@ -141,6 +144,14 @@ describe("bulk re-translate run (FR-4)", () => {
 		lockSpy = spyOn(lockMod, "isTranslationLocked").mockImplementation(
 			async () => false,
 		);
+		// The default character budget is the real one, which may be backed by
+		// a live Redis window shared with the rest of the suite. Pin it to a
+		// full window so these cases test the loop, not ambient accounting;
+		// the character-budget cases inject their own exhausted source.
+		const budgetMod = await import("../translation-budget");
+		budgetSpy = spyOn(budgetMod, "remainingCharacters").mockImplementation(
+			async () => 100_000,
+		);
 		docs = new Map();
 		accessible = new Set();
 		events = [];
@@ -149,6 +160,7 @@ describe("bulk re-translate run (FR-4)", () => {
 	afterEach(() => {
 		pipelineSpy?.mockRestore();
 		lockSpy?.mockRestore();
+		budgetSpy?.mockRestore();
 	});
 
 	test("re-translates failed and stale reviews and reports each outcome", async () => {
@@ -356,5 +368,127 @@ describe("bulk re-translate run (FR-4)", () => {
 
 		// The request answers within the budget, not past it.
 		expect(elapsed).toBeLessThan(budgetMs * 3);
+	});
+
+	test("the character budget stops the loop and reports the remainder as skipped", async () => {
+		// AC-7: a bulk run that runs out of characters reports the review that
+		// hit the limit — and every review after it — as skipped, not failed.
+		// The wall clock is not the limit here: the run would otherwise keep
+		// attempting reviews against an exhausted 100-second window.
+		docs.set(1, makeDoc({ id: 1, translationStatus: "failed" }));
+		docs.set(2, makeDoc({ id: 2, translationStatus: "failed" }));
+		docs.set(3, makeDoc({ id: 3, translationStatus: "failed" }));
+		accessible.add(1);
+		accessible.add(2);
+		accessible.add(3);
+		const payload = makePayload();
+
+		let remaining = 5_000;
+		pipelineSpy.mockImplementation(async (_payload: Payload, doc: Review) => {
+			// The first review spends the whole window and is stopped by the
+			// pipeline's budget check, which persists `failed` with the budget
+			// reason (the status machine is out of scope for this phase).
+			remaining = 0;
+			const stored = docs.get(doc.id);
+			if (stored) {
+				docs.set(doc.id, {
+					...stored,
+					translationStatus: "failed",
+					translationError: "translation time budget reached",
+				});
+			}
+		});
+
+		const outcomes = await retranslateReviews(payload, writer, [1, 2, 3], {
+			remainingCharacters: async () => remaining,
+		});
+
+		// One outcome per selected review, in input order.
+		expect(outcomes).toHaveLength(3);
+		expect(outcomes.map((outcome) => outcome.id)).toEqual([1, 2, 3]);
+		// Only the first review was attempted; the rest never reached the
+		// provider.
+		expect(pipelineSpy).toHaveBeenCalledTimes(1);
+		for (const outcome of outcomes) {
+			expect(outcome.status).toBe("skipped");
+			expect(outcome.reason).toBe(
+				"not attempted — translation character budget reached",
+			);
+		}
+	});
+
+	test("a real failure is still reported as failed when characters remain", async () => {
+		// The reclassification is narrow: only a pipeline budget stop becomes
+		// skipped. A provider failure keeps its own outcome and reason.
+		docs.set(1, makeDoc({ id: 1, translationStatus: "failed" }));
+		docs.set(2, makeDoc({ id: 2, translationStatus: "failed" }));
+		accessible.add(1);
+		accessible.add(2);
+		const payload = makePayload();
+		pipelineSpy.mockImplementation(async (_payload: Payload, doc: Review) => {
+			const stored = docs.get(doc.id);
+			if (stored) {
+				docs.set(doc.id, {
+					...stored,
+					translationStatus: "failed",
+					translationError: "Quota exceeded, try again later.",
+				});
+			}
+		});
+
+		const outcomes = await retranslateReviews(payload, writer, [1, 2], {
+			remainingCharacters: async () => 100_000,
+		});
+
+		expect(outcomes).toHaveLength(2);
+		expect(outcomes[0].status).toBe("failed");
+		expect(outcomes[0].reason).toContain("Quota exceeded");
+		expect(outcomes[1].status).toBe("failed");
+	});
+
+	test("the wall clock wins when it expires before the character budget", async () => {
+		// Whichever limit is reached first is authoritative. Here the clock
+		// jumps past the budget while characters stay plentiful, so every
+		// skipped review carries the unchanged time-budget reason.
+		docs.set(1, makeDoc({ id: 1, translationStatus: "failed" }));
+		docs.set(2, makeDoc({ id: 2, translationStatus: "failed" }));
+		accessible.add(1);
+		accessible.add(2);
+		const payload = makePayload();
+		let current = 0;
+		const clock = (): number => {
+			current += 1000;
+			return current;
+		};
+
+		const outcomes = await retranslateReviews(payload, writer, [1, 2], {
+			timeBudgetMs: 1500,
+			now: clock,
+			remainingCharacters: async () => 100_000,
+		});
+
+		expect(outcomes).toHaveLength(2);
+		expect(outcomes[1].status).toBe("skipped");
+		expect(outcomes[1].reason).toBe(
+			"not attempted — batch time budget reached",
+		);
+	});
+
+	test("a failing character-budget read does not stop the batch", async () => {
+		// NFR-3: accounting never breaks a run. The request-level reservation
+		// is the real enforcement, so a budget read that throws is ignored.
+		docs.set(1, makeDoc({ id: 1, translationStatus: "failed" }));
+		accessible.add(1);
+		const payload = makePayload();
+
+		const outcomes = await retranslateReviews(payload, writer, [1], {
+			remainingCharacters: async () => {
+				throw new Error("redis unavailable");
+			},
+		});
+
+		expect(outcomes).toHaveLength(1);
+		expect(outcomes[0].status).toBe("translated");
+		expect(pipelineSpy).toHaveBeenCalledTimes(1);
 	});
 });

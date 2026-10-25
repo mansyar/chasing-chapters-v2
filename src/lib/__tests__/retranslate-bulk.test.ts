@@ -1,9 +1,30 @@
 import { describe, expect, it } from "bun:test";
 import {
+	BULK_RETRANSLATE_BUDGET_REASON,
+	BULK_RETRANSLATE_CHARACTER_BUDGET_REASON,
 	BULK_RETRANSLATE_MAX_IDS,
 	isBulkRetranslatableStatus,
 	normalizeBulkRetranslateIds,
 } from "../retranslate";
+
+describe("bulk re-translate budget reasons", () => {
+	it("keeps the time-budget message unchanged", () => {
+		expect(BULK_RETRANSLATE_BUDGET_REASON).toBe(
+			"not attempted — batch time budget reached",
+		);
+	});
+
+	it("reports the character budget with its own reason", () => {
+		expect(BULK_RETRANSLATE_CHARACTER_BUDGET_REASON).toBe(
+			"not attempted — translation character budget reached",
+		);
+		// The two limits are different failures: an operator reading the
+		// outcomes must be able to tell a throttle from a timeout.
+		expect(BULK_RETRANSLATE_CHARACTER_BUDGET_REASON).not.toBe(
+			BULK_RETRANSLATE_BUDGET_REASON,
+		);
+	});
+});
 
 describe("normalizeBulkRetranslateIds", () => {
 	it("rejects a non-array payload", () => {

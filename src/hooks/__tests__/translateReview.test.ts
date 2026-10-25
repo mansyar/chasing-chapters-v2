@@ -149,7 +149,7 @@ const echoTranslate = (texts: string | string[]): Promise<[string[]]> => {
 };
 
 type TranslateMock = (texts: string | string[]) => Promise<[string[]]>;
-const mockClientTranslate: TranslateMock = mock(echoTranslate);
+const mockClientTranslate = mock<TranslateMock>(echoTranslate);
 
 mock.module("@google-cloud/translate", () => ({
 	v2: {
@@ -428,6 +428,90 @@ describe("runTranslationPipeline", () => {
 		);
 		expect(secondCall.data.favoriteQuotes[0].quote).toBe("ID:A fine line");
 		expect(secondCall.data.favoriteQuotes[0].page).toBe("12");
+	});
+
+	test("N favorite quotes produce one provider call, not N", async () => {
+		// AC-6: the quotes go through a single batched request. One request per
+		// quote was the sharpest burst in the pipeline — N simultaneous calls,
+		// each with its own cache lookups, against a quota measured per
+		// 100-second window.
+		const payload = makePayload();
+		const translateModule = await import("../../lib/translate");
+		translateRichTextSpy = spyOn(
+			translateModule,
+			"translateRichText",
+		).mockImplementation(async () => makeRichText(para("ID:Hello world")));
+		mockClientTranslate.mockClear();
+
+		const doc = makeDoc({
+			favoriteQuotes: [
+				{ quote: "First line", page: "10" },
+				{ quote: "Second line", page: "22" },
+				{ quote: "Third line", page: "35" },
+			],
+		});
+
+		await runTranslationPipeline(payload as unknown as Payload, doc);
+
+		// The rich text is stubbed, so the quotes are the only provider path.
+		expect(mockClientTranslate).toHaveBeenCalledTimes(1);
+		expect(mockClientTranslate.mock.calls[0][0]).toEqual([
+			"First line",
+			"Second line",
+			"Third line",
+		]);
+
+		// Every page number survives, in the original order.
+		const saved = payload.update.mock.calls[1][0];
+		expect(saved.data.favoriteQuotes).toEqual([
+			{ quote: "ID:First line", page: "10" },
+			{ quote: "ID:Second line", page: "22" },
+			{ quote: "ID:Third line", page: "35" },
+		]);
+	});
+
+	test("an all-blank favorite-quote list issues no provider call", async () => {
+		// T1.3: there is nothing to translate, so nothing is sent.
+		const payload = makePayload();
+		const translateModule = await import("../../lib/translate");
+		translateRichTextSpy = spyOn(
+			translateModule,
+			"translateRichText",
+		).mockImplementation(async () => makeRichText(para("ID:Hello world")));
+		mockClientTranslate.mockClear();
+
+		const doc = makeDoc({
+			favoriteQuotes: [
+				{ quote: "", page: "10" },
+				{ quote: "   ", page: "22" },
+			],
+		});
+
+		await runTranslationPipeline(payload as unknown as Payload, doc);
+
+		expect(mockClientTranslate).not.toHaveBeenCalled();
+		const saved = payload.update.mock.calls[1][0];
+		expect(saved.data.favoriteQuotes).toEqual([
+			{ quote: "", page: "10" },
+			{ quote: "   ", page: "22" },
+		]);
+	});
+
+	test("an empty favorite-quote list issues no provider call", async () => {
+		const payload = makePayload();
+		const translateModule = await import("../../lib/translate");
+		translateRichTextSpy = spyOn(
+			translateModule,
+			"translateRichText",
+		).mockImplementation(async () => makeRichText(para("ID:Hello world")));
+		mockClientTranslate.mockClear();
+
+		const doc = makeDoc({ favoriteQuotes: [] });
+
+		await runTranslationPipeline(payload as unknown as Payload, doc);
+
+		expect(mockClientTranslate).not.toHaveBeenCalled();
+		expect(payload.update.mock.calls[1][0].data.favoriteQuotes).toEqual([]);
 	});
 
 	test("failure → ID content NOT updated, status failed with error message", async () => {

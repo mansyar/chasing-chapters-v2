@@ -1,6 +1,8 @@
 import type { Payload, TypedUser } from "payload";
 import { runTranslationPipeline } from "../hooks/translateReview";
 import type { Review } from "../payload-types";
+import { TRANSLATION_BUDGET_REASON } from "./translate";
+import { remainingCharacters } from "./translation-budget";
 import { isTranslationLocked } from "./translation-lock";
 
 /** Outcome of the admin "Re-translate now" action. */
@@ -99,6 +101,20 @@ export const BULK_RETRANSLATE_TIME_BUDGET_MS = 30 * 1000;
 export const BULK_RETRANSLATE_BUDGET_REASON =
 	"not attempted — batch time budget reached";
 
+/**
+ * Why a review was not attempted: the shared rolling character budget is
+ * exhausted.
+ *
+ * Distinct from the time-budget reason on purpose — the two limits are
+ * different failures. Time is the batch's own 30-second ceiling; characters are
+ * the provider's quota, shared with every other translation the process is
+ * running. A run that is out of characters cannot make progress by waiting
+ * inside its own budget, because the quota window (100s) is longer than the
+ * whole batch.
+ */
+export const BULK_RETRANSLATE_CHARACTER_BUDGET_REASON =
+	"not attempted — translation character budget reached";
+
 /** Translation statuses the bulk re-translate action acts on. */
 export const BULK_RETRANSLATABLE_STATUSES = ["failed", "stale"] as const;
 
@@ -184,6 +200,12 @@ export interface BulkRetranslateOptions {
 	timeBudgetMs?: number | undefined;
 	/** Clock source, injectable for tests. Defaults to `Date.now`. */
 	now?: (() => number) | undefined;
+	/**
+	 * Characters still available in the shared rolling budget. Defaults to
+	 * `remainingCharacters` from `translation-budget.ts`; injectable for tests
+	 * so a run can be exhausted without a live Redis.
+	 */
+	remainingCharacters?: (() => Promise<number>) | undefined;
 }
 
 /**
@@ -195,11 +217,19 @@ export interface BulkRetranslateOptions {
  * re-translate are skipped, a failing review is reported as failed, and
  * neither aborts the rest of the batch.
  *
- * The batch is bounded by a wall-clock budget. Once the budget is exhausted
- * the remaining reviews are reported as skipped instead of being attempted,
- * and the review that was in flight is aborted at the same deadline — so the
- * request answers with one outcome per selected review, within the budget
- * plus a small overhead, and the proxy timeout cannot cut the response off.
+ * Two budgets bound the batch, and whichever is reached first is authoritative:
+ *
+ * - **Wall clock** (`BULK_RETRANSLATE_TIME_BUDGET_MS`): once it is exhausted
+ *   the remaining reviews are reported as skipped instead of being attempted,
+ *   and the review that was in flight is aborted at the same deadline — so the
+ *   request answers with one outcome per selected review, within the budget
+ *   plus a small overhead, and the proxy timeout cannot cut the response off.
+ * - **Characters** (`remainingCharacters()`): once the shared rolling quota is
+ *   spent the remaining reviews are reported as skipped, and no further review
+ *   is attempted. The quota window is 100 seconds, longer than this batch's
+ *   whole wall clock, so waiting cannot help inside one request. A review that
+ *   hits the budget while running is reported as skipped too: it was throttled,
+ *   not failed.
  */
 export async function retranslateReviews(
 	payload: Payload,
@@ -209,9 +239,17 @@ export async function retranslateReviews(
 ): Promise<BulkRetranslateOutcome[]> {
 	const budgetMs = options.timeBudgetMs ?? BULK_RETRANSLATE_TIME_BUDGET_MS;
 	const clock = options.now ?? Date.now;
+	const charactersLeft = options.remainingCharacters ?? remainingCharacters;
 	const deadline = clock() + budgetMs;
 	const outcomes: BulkRetranslateOutcome[] = [];
+	// Set once the character budget is spent: every later review is reported
+	// without being attempted, because the window cannot roll forward inside
+	// this request.
+	let charactersExhausted = false;
 	for (const id of ids) {
+		// The wall clock is consulted first, so its semantics are unchanged:
+		// once it is spent every remaining review reports the time-budget
+		// reason, exactly as before the character budget existed.
 		if (clock() >= deadline) {
 			outcomes.push({
 				id,
@@ -220,15 +258,88 @@ export async function retranslateReviews(
 			});
 			continue;
 		}
+		// Once the window is spent every later review is reported without being
+		// attempted — and without another budget read, since the window cannot
+		// roll forward inside this request.
+		if (
+			charactersExhausted ||
+			(await isCharacterBudgetExhausted(charactersLeft))
+		) {
+			charactersExhausted = true;
+			outcomes.push({
+				id,
+				status: "skipped",
+				reason: BULK_RETRANSLATE_CHARACTER_BUDGET_REASON,
+			});
+			continue;
+		}
 		// The in-flight review shares the batch deadline: it is aborted when
 		// the budget runs out instead of running past it.
-		outcomes.push(
-			await retranslateOneReview(payload, user, id, {
-				deadline,
-			}),
-		);
+		const outcome = await retranslateOneReview(payload, user, id, {
+			deadline,
+		});
+		// A budget stop recorded while the batch still had time left can only
+		// be the character budget: the pipeline's only other stop is the batch
+		// deadline it was given, and that has not arrived. Every later review
+		// would meet the same wall, so the rest of the batch is not attempted.
+		if (clock() < deadline && isBudgetStop(outcome)) {
+			charactersExhausted = true;
+			outcomes.push(asThrottledOutcome(outcome));
+			continue;
+		}
+		outcomes.push(outcome);
 	}
 	return outcomes;
+}
+
+/**
+ * Whether the shared character budget has nothing left in the current window.
+ *
+ * A budget failure answers `false` rather than throwing: accounting must never
+ * break a bulk run, and the request-level reservation is the real enforcement.
+ */
+async function isCharacterBudgetExhausted(
+	charactersLeft: () => Promise<number>,
+): Promise<boolean> {
+	try {
+		return (await charactersLeft()) <= 0;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Whether an outcome is the pipeline's budget stop rather than a provider
+ * failure.
+ *
+ * The pipeline records both budget stops — the batch deadline it was given and
+ * the character reservation it could not get — with the same persisted reason
+ * (`TRANSLATION_BUDGET_REASON`). The status machine is out of scope for this
+ * phase, so that persisted value is left alone; the caller tells the two apart
+ * by the batch clock. A real provider failure stores its classified message
+ * with the raw detail appended, never the bare budget reason.
+ */
+function isBudgetStop(outcome: BulkRetranslateOutcome): boolean {
+	return (
+		outcome.status === "failed" && outcome.reason === TRANSLATION_BUDGET_REASON
+	);
+}
+
+/**
+ * Report a review that ran into the character budget as skipped.
+ *
+ * A review that was throttled was not attempted-and-failed: it is skipped, and
+ * so is every review behind it.
+ */
+function asThrottledOutcome(
+	outcome: BulkRetranslateOutcome,
+): BulkRetranslateOutcome {
+	return {
+		id: outcome.id,
+		status: "skipped",
+		reason: BULK_RETRANSLATE_CHARACTER_BUDGET_REASON,
+		translationStatus: outcome.translationStatus,
+	};
 }
 
 async function retranslateOneReview(

@@ -11,8 +11,8 @@ import {
 	TRANSLATION_BUDGET_REASON,
 	TranslationBudgetError,
 	TranslationError,
+	translateBatch,
 	translateRichText,
-	translateText,
 } from "../lib/translate";
 import {
 	classifyTranslationError,
@@ -320,18 +320,17 @@ export async function runTranslationPipeline(
 				? await translateRichText(doc.perfectFor, "id", translationOptions())
 				: null;
 
-			// Translate favorite quotes (plain text array, not rich text)
+			// Translate favorite quotes (plain text array, not rich text). One
+			// batched call, never one request per quote: the fan-out fired N
+			// simultaneous requests, each doing its own cache lookups, which is
+			// the sharpest burst in the pipeline against a quota measured per
+			// 100-second window. `translateBatch` already packs by characters,
+			// resolves the cache and passes blanks through.
 			ensureBudget();
 			const translatedQuotes = doc.favoriteQuotes
-				? await Promise.all(
-						doc.favoriteQuotes.map(async (item) => ({
-							quote: await translateText(
-								item.quote,
-								"id",
-								translationOptions(),
-							),
-							page: item.page,
-						})),
+				? await translateFavoriteQuotes(
+						doc.favoriteQuotes,
+						translationOptions(),
 					)
 				: null;
 
@@ -532,6 +531,34 @@ function buildTranslationOptions(options: RunPipelineOptions):
 		timeoutMs: Math.max(0, options.deadline - Date.now()),
 		deadline: options.deadline,
 	};
+}
+
+/**
+ * Translate a review's favourite quotes in one batched request, keeping every
+ * page number and the original order.
+ *
+ * One call, never one per quote: the previous `Promise.all` fired a
+ * simultaneous request per quote, which is the sharpest burst the pipeline can
+ * produce against a quota measured over a rolling 100-second window.
+ * `translateBatch` already packs by character count, resolves the cache and
+ * passes blanks through — an empty or all-blank list resolves from the
+ * no-texts path without issuing a request. Results are aligned to the input,
+ * so mapping them back onto `{ quote, page }` is positional.
+ */
+async function translateFavoriteQuotes(
+	quotes: NonNullable<Review["favoriteQuotes"]>,
+	options?: { timeoutMs?: number; deadline?: number },
+): Promise<{ quote: string; page?: string | null }[]> {
+	const translations = await translateBatch(
+		quotes.map((item) => item.quote),
+		"id",
+		options,
+	);
+
+	return quotes.map((item, index) => ({
+		quote: translations[index],
+		page: item.page,
+	}));
 }
 
 /**
