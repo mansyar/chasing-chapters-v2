@@ -175,7 +175,7 @@ Review fixes are appended by `conductor-review` as:
 - **Covers:** review findings
 - **Touches:** ...
 - **Verification:** ...
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **R1.T1: Resolve <finding ID>** - covers: <finding ID>
 -->
@@ -187,7 +187,7 @@ Review fixes are appended by `conductor-review` as:
 - **Covers:** F1, F2, F3, F4, F5
 - **Touches:** `src/lib/translate.ts`, `src/lib/retranslate.ts`, `src/hooks/translateReview.ts`, `src/lib/translation-lock.ts`, `.env.example`, `src/lib/__tests__/translate.test.ts`, `src/lib/__tests__/retranslate-bulk-run.test.ts`, `src/hooks/__tests__/translateReview.test.ts`, `conductor/tracks/20261025-translation-quota-resilience/verification/integrated.md`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **R1.T1: Never re-label a provider failure as a budget stop** - covers: F1
   - [ ] **R1.T1.1:** Mirror the first deadline check in the post-reservation branch: when `lastError` is set, throw `providerFailure(lastError, attempt)` instead of an unconditional `TranslationBudgetError`.
