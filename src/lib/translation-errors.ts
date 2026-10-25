@@ -47,6 +47,78 @@ const TRANSIENT_KINDS: readonly TranslationErrorKind[] = [
 	"timeout",
 ];
 
+/**
+ * Kinds worth another attempt inside the tight retry loop.
+ *
+ * `quota` and `credentials` are deliberately absent. A quota window is tens of
+ * seconds wide (Google's per-user limit is measured over 100 seconds) and the
+ * loop can only afford to back off for a few, so a retry lands inside the same
+ * exhausted window and cannot succeed; a rejected credential does not heal at
+ * all. Retrying either spends requests against an allowance that is already
+ * gone.
+ *
+ * This answers a different question from `TRANSIENT_KINDS`: `quota` stays
+ * transient so the delayed automatic re-run in `translateReview.ts` still
+ * happens. "Not retryable in the tight loop" and "worth retrying later" are
+ * not the same judgement — do not make one list match the other.
+ *
+ * `unexpected` stays retryable: it is the current behaviour for anything the
+ * classifier cannot name, and narrowing it would silently drop retries.
+ */
+const RETRYABLE_KINDS: readonly TranslationErrorKind[] = [
+	"network",
+	"timeout",
+	"unexpected",
+];
+
+/** Whether a classified failure is worth another provider attempt right away. */
+export function isRetryable(kind: TranslationErrorKind): boolean {
+	return RETRYABLE_KINDS.includes(kind);
+}
+
+/** The provider-facing fields an operator needs from a failed request. */
+export interface ProviderErrorDetails {
+	/** HTTP status carried by the provider error, when it has one. */
+	code?: number;
+	/** Google's `errors[0].reason`, e.g. `userRateLimitExceeded`. */
+	reason?: string;
+}
+
+/**
+ * Extract the HTTP status and Google's machine-readable reason from an error
+ * chain.
+ *
+ * The raw `ApiError` must never be logged as an object — it carries a live
+ * HTTP response stream that `util.inspect` walks into dozens of lines of
+ * stream internals. These two fields are the part that identifies the failure:
+ * `errors[0].reason` is what separates a quota response from a credentials
+ * response, and neither is readable from the message alone.
+ */
+export function extractProviderErrorDetails(
+	error: unknown,
+): ProviderErrorDetails {
+	const details: ProviderErrorDetails = {};
+
+	for (const node of [error, ...collectCauses(error)]) {
+		if (typeof node !== "object" || node === null) continue;
+		const candidate = node as { code?: unknown; errors?: unknown };
+
+		if (details.code === undefined && typeof candidate.code === "number") {
+			details.code = candidate.code;
+		}
+		if (details.reason === undefined && Array.isArray(candidate.errors)) {
+			const first = candidate.errors[0] as { reason?: unknown } | undefined;
+			if (typeof first?.reason === "string" && first.reason) {
+				details.reason = first.reason;
+			}
+		}
+
+		if (details.code !== undefined && details.reason !== undefined) break;
+	}
+
+	return details;
+}
+
 // Google ApiError-like shape: numeric `code` (HTTP status) plus `message`.
 interface ApiErrorLike {
 	code?: unknown;

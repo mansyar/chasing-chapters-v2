@@ -158,10 +158,12 @@ describe("translateBatch", () => {
 		// The run without a deadline keeps the provider's own failure: it is
 		// never turned into a budget stop.
 		expect(caught).not.toBeInstanceOf(TranslationBudgetError);
-		expect((caught as InstanceType<typeof TranslationError>).attempts).toBe(3);
+		// A quota response is not retried: it costs exactly one provider
+		// attempt, because a retry lands inside the same exhausted window.
+		expect((caught as InstanceType<typeof TranslationError>).attempts).toBe(1);
 		// The failure must never masquerade as a successful translation.
 		expect((caught as Error).message).not.toBe("Hello");
-		expect(mockClientTranslate).toHaveBeenCalledTimes(3);
+		expect(mockClientTranslate).toHaveBeenCalledTimes(1);
 		// The single-review path keeps the same classifier outcome.
 		expect(classifyTranslationError(caught).kind).toBe("quota");
 	});
