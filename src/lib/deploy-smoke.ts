@@ -190,7 +190,10 @@ export async function runDeploySmoke(
 		fetch: options.fetch ?? globalFetch,
 		sleep: options.sleep ?? defaultSleep,
 		baseUrl: options.baseUrl,
-		maxAttempts: options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
+		// Clamped, because the loop reads the last attempt it made: a budget of
+		// zero would leave that list empty and throw out of a function whose
+		// contract is that a failed run is still a complete report.
+		maxAttempts: Math.max(1, options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS),
 		retryIntervalMs: options.retryIntervalMs ?? DEFAULT_RETRY_INTERVAL_MS,
 	};
 
@@ -389,4 +392,85 @@ function toUrl(baseUrl: string, path: string): string {
 
 function errorMessage(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
+}
+/**
+ * The endpoints that failed, in report order.
+ *
+ * Empty means the run passed, so this is the single place the exit code is
+ * decided - kept here rather than in the script so it can be tested without a
+ * process to exit.
+ */
+export function failedEndpoints(report: SmokeReport): SmokeEndpointReport[] {
+	return report.endpoints.filter((endpoint) => endpoint.outcome === "failed");
+}
+
+/** What a command line asked for. */
+export interface SmokeArguments {
+	readonly baseUrl: string;
+	readonly maxAttempts?: number;
+	readonly retryIntervalMs?: number;
+}
+
+export const SMOKE_USAGE =
+	"usage: bun run src/scripts/deploy-smoke.ts <base-url> [--max-attempts N] [--interval-ms N]";
+
+/** `process.argv[0]` is the runtime and `[1]` the script, so arguments start at 2. */
+const FIRST_ARGUMENT = 2;
+
+/**
+ * Reads the base URL and the two budget flags, or returns the message to print.
+ *
+ * Hand-rolled rather than a parser dependency: two flags do not justify one,
+ * and the script must stay import-free so the deploy job can run it without
+ * `bun install`. A flag with a missing or unusable value is an error rather
+ * than a silent fall back to the default, so a typo cannot shrink the budget
+ * without saying so.
+ */
+export function parseSmokeArguments(
+	argv: readonly string[],
+): SmokeArguments | string {
+	const positional: string[] = [];
+	let maxAttempts: number | undefined;
+	let retryIntervalMs: number | undefined;
+
+	for (let index = FIRST_ARGUMENT; index < argv.length; index += 1) {
+		const argument = argv[index];
+
+		if (argument !== "--max-attempts" && argument !== "--interval-ms") {
+			positional.push(argument.trim());
+			continue;
+		}
+
+		const value = positiveInteger(argv[index + 1]);
+		if (value === null) {
+			return `${SMOKE_USAGE}\n${argument} needs a positive whole number`;
+		}
+
+		if (argument === "--max-attempts") {
+			maxAttempts = value;
+		} else {
+			retryIntervalMs = value;
+		}
+
+		index += 1;
+	}
+
+	const baseUrl = positional[0];
+
+	if (positional.length !== 1 || baseUrl === "") {
+		return SMOKE_USAGE;
+	}
+
+	return { baseUrl, maxAttempts, retryIntervalMs };
+}
+
+/** A positive whole number, or `null` when the text is anything else. */
+function positiveInteger(raw: string | undefined): number | null {
+	if (raw === undefined) {
+		return null;
+	}
+
+	const value = Number(raw.trim());
+
+	return Number.isInteger(value) && value > 0 ? value : null;
 }

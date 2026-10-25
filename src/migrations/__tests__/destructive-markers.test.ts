@@ -17,11 +17,28 @@ import { join } from "node:path";
  */
 const MIGRATIONS_DIRECTORY = join(process.cwd(), "src/migrations");
 
-/** Statements that remove structure a deployed image may still be reading. */
-const DESTRUCTIVE_STATEMENT = /\bDROP\s+(?:COLUMN|TABLE)\b|\bTRUNCATE\b/i;
+/**
+ * Statements that remove or rename structure a deployed image may still be
+ * reading.
+ *
+ * `RENAME COLUMN` is here because it breaks a deployed image exactly the way a
+ * drop does — the old name vanishes, and every query using it fails with 42703.
+ * `DROP INDEX` is deliberately absent: it costs performance, not correctness,
+ * and every migration in this repository that drops one does so in `down`.
+ */
+const DESTRUCTIVE_STATEMENT =
+	/\bDROP\s+(?:COLUMN|TABLE)\b|\bRENAME\s+(?:COLUMN|TO)\b|\bTRUNCATE\b/i;
 
-/** Where the reversible half of a migration begins. */
-const DOWN_FUNCTION = /export\s+async\s+function\s+down\b/;
+/**
+ * Where each half of a migration begins.
+ *
+ * Anchored to the start of a line on purpose: a comment that merely mentions
+ * the signature (`// the reverse of \`export async function down\``) must not be
+ * mistaken for the declaration, or the scan silently truncates the body it was
+ * supposed to read.
+ */
+const UP_FUNCTION = /^export\s+async\s+function\s+up\b/m;
+const DOWN_FUNCTION = /^export\s+async\s+function\s+down\b/m;
 
 /** A whole-line justification — the only thing that silences the scan. */
 const MARKER = /^\s*\/\/\s*destructive:\s*\S.*$/m;
@@ -32,15 +49,29 @@ type Migration = {
 };
 
 /**
- * The `up` half of a migration file: everything before its `down` function.
+ * The `up` half of a migration file.
  *
  * The two halves are one file, so a textual scan without this split would flag
  * every ordinary migration — most of them drop in `down` and nowhere else.
+ *
+ * The split runs from `up` to `down`, which is the usual order, but it survives
+ * the other order too: a file that declares `down` first would otherwise scan
+ * as an empty body and pass with no marker, which is the one failure mode this
+ * test cannot afford. When `down` comes first, `up` runs to the end of the file.
  */
 function upBody(source: string): string {
-	const down = source.search(DOWN_FUNCTION);
+	const up = UP_FUNCTION.exec(source);
+	const down = DOWN_FUNCTION.exec(source);
 
-	return down === -1 ? source : source.slice(0, down);
+	// No `up` at all is not a migration shape this test understands; scanning the
+	// whole file is the fail-closed choice, because it can only find more.
+	if (!up) {
+		return source;
+	}
+
+	const endsAtDown = down !== null && down.index > up.index;
+
+	return endsAtDown ? source.slice(up.index, down.index) : source.slice(up.index);
 }
 
 /**
@@ -182,6 +213,58 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
 }
 `;
 
+// A rename breaks a deployed image exactly as a drop does: the old name is gone.
+const RENAMED = `
+import { sql } from "@payloadcms/db-postgres";
+
+export async function up({ db }: MigrateUpArgs): Promise<void> {
+	await db.execute(sql\`
+		ALTER TABLE "reviews" RENAME COLUMN "title" TO "headline";
+	\`);
+}
+`;
+
+// `down` declared first. The old split at the first textual `down` match would
+// have scanned the import block and found nothing.
+const DOWN_FIRST = `
+import { sql } from "@payloadcms/db-postgres";
+
+export async function down({ db }: MigrateDownArgs): Promise<void> {
+	await db.execute(sql\`
+		ALTER TABLE "reviews" ADD COLUMN "title" varchar;
+	\`);
+}
+
+export async function up({ db }: MigrateUpArgs): Promise<void> {
+	await db.execute(sql\`
+		ALTER TABLE "reviews" DROP COLUMN "title";
+	\`);
+}
+`;
+
+// A comment quoting the `down` signature must not be mistaken for it.
+const QUOTED_SIGNATURE = `
+import { sql } from "@payloadcms/db-postgres";
+
+export async function up({ db }: MigrateUpArgs): Promise<void> {
+	// the reverse of \`export async function down\` below
+	await db.execute(sql\`
+		ALTER TABLE "reviews" DROP COLUMN "title";
+	\`);
+}
+`;
+
+// Dropping an index costs performance, not correctness, so it needs no marker.
+const DROPPED_INDEX = `
+import { sql } from "@payloadcms/db-postgres";
+
+export async function up({ db }: MigrateUpArgs): Promise<void> {
+	await db.execute(sql\`
+		DROP INDEX "reviews_slug_idx";
+	\`);
+}
+`;
+
 describe("destructive migration markers", () => {
 	it("inspects every committed migration and no snapshot", () => {
 		// A scan that silently matched nothing would make every assertion below
@@ -271,5 +354,35 @@ describe("destructive migration markers", () => {
 
 	it("ignores a destructive keyword inside a SQL comment", () => {
 		expect(destructiveStatements(COMMENTED_OUT)).toEqual([]);
+	});
+
+	it("flags an unmarked up that renames a column", () => {
+		// A rename is a drop with a nicer name as far as a deployed image is
+		// concerned: the column it reads is gone and every query on it fails.
+		expect(unjustifiedStatements(RENAMED)).toEqual([
+			'ALTER TABLE "reviews" RENAME COLUMN "title" TO "headline";',
+		]);
+	});
+
+	it("does not flag a dropped index", () => {
+		// `DROP INDEX` is a performance change, not a schema break, and every
+		// migration here that drops one does so in `down` anyway.
+		expect(unjustifiedStatements(DROPPED_INDEX)).toEqual([]);
+	});
+
+	it("still finds the drop when down is declared before up", () => {
+		// The failure this guards is silent: slice to the first `down` match
+		// returns the import block, nothing matches, and the file passes.
+		expect(unjustifiedStatements(DOWN_FIRST)).toEqual([
+			'ALTER TABLE "reviews" DROP COLUMN "title";',
+		]);
+	});
+
+	it("is not fooled by a comment quoting the down signature", () => {
+		// Same silent failure by a different route: the quoted signature used to
+		// truncate the body before the drop it contained.
+		expect(unjustifiedStatements(QUOTED_SIGNATURE)).toEqual([
+			'ALTER TABLE "reviews" DROP COLUMN "title";',
+		]);
 	});
 });

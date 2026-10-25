@@ -14,7 +14,7 @@ down. Also corrects the false comment that made the 2026-10-24 outage look safe.
 ## Problem / Motivation
 
 On 2026-10-24 the localization migration (`20261023_193922`) dropped
-`genres.name` and eight sibling columns while the image build failed on a
+`genres.name` and nine sibling columns while the image build failed on a
 `.dockerignore` gap (`e2e/` excluded, but `src/lib/__tests__/e2e-harness.test.ts`
 imports `e2e/global-setup`, so `next build`'s type check died with `TS2307`).
 Production served the 2026-10-21 image against a migrated schema for roughly ten
@@ -68,7 +68,7 @@ Three things allowed it, and none of them is guarded today:
 | ID | Requirement | Priority |
 | --- | --- | --- |
 | FR-1 | `ci.yml` gains a `Docker Build` job, a sibling of `E2E Tests` and not part of the required check, that builds the production image from the same `Dockerfile` and the same build-argument shape as `deploy.yml`, against a migrated postgres service, without pushing and without reading repository secrets. | must |
-| FR-2 | A unit test under `src/migrations/__tests__/` scans every migration's `up` body and fails when it contains `DROP COLUMN`, `DROP TABLE`, or `TRUNCATE` unless the file carries a `// destructive: <justification>` marker. Statements in a `down` body are never flagged. | must |
+| FR-2 | A unit test under `src/migrations/__tests__/` scans every migration's `up` body and fails when it contains `DROP COLUMN`, `DROP TABLE`, `RENAME COLUMN`, or `TRUNCATE` unless the file carries a `// destructive: <justification>` marker. Statements in a `down` body are never flagged. A file that declares `down` before `up`, or whose `up` comment quotes the `down` signature, is still scanned. | must |
 | FR-3 | The three migrations that drop in `up` (`20251214_135240`, `20261008_131000_commenters_email_hash_fix`, `20261023_193922_localize_taxonomy_and_reading_list_content`) carry markers naming what is dropped and why it cannot be reintroduced. | must |
 | FR-4 | A smoke script polls the deployed site after the Coolify webhook and exits non-zero if `/api/genres?limit=1`, `/en`, `/id` or `/sitemap.xml` never returns 200 within its budget, printing each attempt's status for every endpoint. When the reviews API yields a published slug, it also probes `/en/reviews/<slug>`. | must |
 | FR-5 | The smoke logic is a pure function with an injectable `fetch` and an injectable sleep, unit-tested without network; the script is a thin IO wrapper around it. | must |
@@ -113,9 +113,12 @@ Three things allowed it, and none of them is guarded today:
   runner.
 - **Textual marker matching:** a `DROP` inside a string literal or a comment
   forces a marker. Accepted — the cost is a comment, not a failure.
-- **Not flagged:** `DROP NOT NULL`, `DROP CONSTRAINT`, and `DELETE FROM`.
-  `20261023_195302` relaxes three columns and is not destructive. Data-destroying
-  DML is out of the observed blast radius; recorded here rather than enforced.
+- **Not flagged:** `DROP NOT NULL`, `DROP CONSTRAINT`, `DROP DEFAULT`,
+  `DROP INDEX`, and `DELETE FROM`. `20261023_195302` relaxes three columns and is
+  not destructive; a dropped index costs performance, not correctness. `DROP
+  TYPE`, `DROP SCHEMA` and `DROP VIEW` are also not flagged — none occurs in an
+  `up` body today, and data-destroying DML is out of the observed blast radius.
+  Recorded here rather than enforced, so the gap is stated rather than implied.
 - **Empty scan:** the marker test asserts it inspected at least thirteen
   migration files, so a broken glob cannot pass silently.
 - **No published reviews:** the detail-route probe is skipped, not failed.

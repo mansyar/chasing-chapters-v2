@@ -80,8 +80,16 @@ never returns 200 fails the job, which fails the run.
 
 It **catches** the 2026-10-24 shape: a migration lands, the serving image can no
 longer read the schema, and requests start returning 500 immediately. That
-happens whether or not the new image has rolled out, which is why this check
-would have caught it.
+happens whether or not the new image has rolled out, so the check does not
+depend on the rollout finishing.
+
+**But it only runs when the image built.** `verify` comes after `deploy`, which
+comes after `build-and-push`. When the build fails, `deploy` and `verify` are
+both skipped: the run goes red at the build, and a destructive migration that
+has already landed leaves production broken with no automated signal at all. On
+2026-10-24 the build is exactly what failed, so this check would **not** have
+run. That gap is real and nothing here closes it — if `build-and-push` fails,
+check the site by hand before assuming the previous image is still healthy.
 
 It **cannot**:
 
@@ -224,11 +232,18 @@ Three migrations currently carry a marker: `20251214_135240`,
 `20261008_131000_commenters_email_hash_fix` and
 `20261023_193922_localize_taxonomy_and_reading_list_content`.
 
-**Scope, precisely.** The scan flags `DROP COLUMN`, `DROP TABLE` and `TRUNCATE`
-only. `DROP NOT NULL`, `DROP CONSTRAINT` and `DROP DEFAULT` are **not** flagged —
-they loosen a constraint, they do not remove data. `DELETE FROM` is not flagged
-either. SQL comments are stripped before matching, so a note mentioning a `DROP`
-does not force a marker, though a `DROP` inside a string literal does.
+**Scope, precisely.** The scan flags `DROP COLUMN`, `DROP TABLE`, `RENAME COLUMN`
+and `TRUNCATE`. A rename is included because it breaks a deployed image exactly
+the way a drop does: the old name is gone and every query using it fails with
+`42703`. `DROP NOT NULL`, `DROP CONSTRAINT` and `DROP DEFAULT` are **not**
+flagged — they loosen a constraint, they do not remove data. `DELETE FROM` is not
+flagged either, and neither is `DROP INDEX`, which costs performance rather than
+correctness. SQL comments are stripped before matching, so a note mentioning a
+`DROP` does not force a marker, though a `DROP` inside a string literal does.
+
+The scan reads from `up` to `down` and survives either declaration order, so a
+file that declares `down` first is still inspected rather than silently passing.
+A comment that merely mentions the `down` signature is not mistaken for it.
 
 **Placement is convention, not enforcement.** The test looks for the marker
 anywhere in the file; putting it directly above the statement it justifies is

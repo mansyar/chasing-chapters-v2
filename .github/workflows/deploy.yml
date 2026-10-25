@@ -145,8 +145,8 @@ jobs:
   # a failed endpoint, which fails this job, which fails the run.
   #
   # Budget: 6 attempts 15 seconds apart is a 75-second window per endpoint -
-  # 2.5x the module's 30-second default, which is the point of passing flags at
-  # all. The arithmetic that keeps this inside NFR-3's "about forty requests":
+  # 3x the module's 25-second default (6 attempts, but 5 waits of 5 s), which is
+  # the point of passing flags at all. The arithmetic that keeps this inside NFR-3's "about forty requests":
   # 5 fixed endpoints x 6 attempts = 30, plus at most one discovery call, plus
   # up to 6 for the conditional detail probe when a review is published - 37
   # worst case. Endpoints are polled in sequence, so a total outage burns about
@@ -160,6 +160,11 @@ jobs:
   # because that shows up whether or not the new image has rolled out. What it
   # can miss is a new image that is broken but not yet live. It does not prove
   # the new build is serving.
+  #
+  # And it only runs when the image built: this job needs `deploy`, which needs
+  # `build-and-push`. A failed build skips both, so a destructive migration that
+  # landed before it leaves production broken with no automated signal - which is
+  # what 2026-10-24 actually was. Check the site by hand when the build fails.
   verify:
     name: Verify the Rollout
     runs-on: ubuntu-latest

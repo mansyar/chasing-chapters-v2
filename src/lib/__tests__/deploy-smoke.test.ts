@@ -2,8 +2,11 @@ import { describe, expect, it } from "bun:test";
 import {
 	DEFAULT_MAX_ATTEMPTS,
 	DEFAULT_RETRY_INTERVAL_MS,
+	failedEndpoints,
+	parseSmokeArguments,
 	runDeploySmoke,
 	SMOKE_ENDPOINTS,
+	SMOKE_USAGE,
 	type SmokeFetch,
 	type SmokeResponse,
 } from "../deploy-smoke";
@@ -269,5 +272,106 @@ describe("deploy-smoke budget", () => {
 				() => DEFAULT_RETRY_INTERVAL_MS,
 			),
 		);
+	});
+});
+describe("smoke arguments", () => {
+	// `process.argv` shape: runtime, script, then the real arguments.
+	const argv = (...args: string[]) => [
+		"bun",
+		"src/scripts/deploy-smoke.ts",
+		...args,
+	];
+
+	it("reads the deploy job's exact command line", () => {
+		// This is the string in `deploy.yml`. If the parser stops accepting it,
+		// the deploy run fails on its own smoke check rather than on the site.
+		expect(
+			parseSmokeArguments(
+				argv(
+					"https://chasing-chapters.com",
+					"--max-attempts",
+					"6",
+					"--interval-ms",
+					"15000",
+				),
+			),
+		).toEqual({
+			baseUrl: "https://chasing-chapters.com",
+			maxAttempts: 6,
+			retryIntervalMs: 15000,
+		});
+	});
+
+	it("accepts a bare base URL and leaves the budget undefined", () => {
+		// Undefined, not a number: the module's defaults then apply, which is
+		// what keeps the two settings in one place.
+		expect(parseSmokeArguments(argv("https://example.test"))).toEqual({
+			baseUrl: "https://example.test",
+			maxAttempts: undefined,
+			retryIntervalMs: undefined,
+		});
+	});
+
+	it("rejects a budget that is not a positive whole number", () => {
+		// A rejected value is the point: silently falling back to the default
+		// would shrink the window without saying so.
+		for (const bad of ["0", "-3", "abc", "1.5", ""]) {
+			expect(
+				parseSmokeArguments(
+					argv("https://example.test", "--max-attempts", bad),
+				),
+			).toContain("--max-attempts needs a positive whole number");
+		}
+	});
+
+	it("rejects a flag with no value, and the wrong number of positionals", () => {
+		expect(
+			parseSmokeArguments(argv("https://example.test", "--interval-ms")),
+		).toContain("--interval-ms needs a positive whole number");
+		expect(parseSmokeArguments(argv())).toBe(SMOKE_USAGE);
+		expect(parseSmokeArguments(argv("https://a.test", "https://b.test"))).toBe(
+			SMOKE_USAGE,
+		);
+	});
+});
+
+describe("smoke exit decision", () => {
+	it("reports no failures when every endpoint passed", async () => {
+		const report = await runDeploySmoke({
+			baseUrl: BASE_URL,
+			fetch: fakeSite({}, { "/api/reviews": NO_REVIEWS }),
+			sleep: async () => {},
+		});
+
+		expect(failedEndpoints(report)).toEqual([]);
+	});
+
+	it("names only the endpoints that failed", async () => {
+		// The script exits 1 off this list, so a filter that matched nothing
+		// would turn the guard into a check that always passes.
+		const report = await runDeploySmoke({
+			baseUrl: BASE_URL,
+			fetch: fakeSite({ "/api/genres": [500] }, { "/api/reviews": NO_REVIEWS }),
+			sleep: async () => {},
+			maxAttempts: 2,
+		});
+
+		expect(failedEndpoints(report).map((endpoint) => endpoint.path)).toEqual([
+			"/api/genres?limit=1",
+		]);
+	});
+
+	it("returns a report rather than throwing when the budget is zero", async () => {
+		// `maxAttempts` is a seam, so it can be handed a nonsensical value; the
+		// function's contract is that a failed run is still a complete report.
+		const report = await runDeploySmoke({
+			baseUrl: BASE_URL,
+			fetch: fakeSite({}, { "/api/reviews": NO_REVIEWS }),
+			sleep: async () => {},
+			maxAttempts: 0,
+		});
+
+		expect(report.endpoints.length).toBeGreaterThan(0);
+		expect(failedEndpoints(report)).toEqual([]);
 	});
 });
