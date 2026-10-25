@@ -266,3 +266,30 @@ decision this phase does not have:
    UI change beyond T2.1, and it would also mean surfacing the raw
    `translationError` in the admin UI, which is a judgement call about
    exposing provider detail. Low; flagged for review rather than taken on here.
+
+## Primary verification
+
+Re-run by the primary on the squashed checkpoint `7032e23` (base `75a8a54`), independent of the subagent's own run.
+
+| Layer | Command | Exit | Summary |
+| --- | --- | --- | --- |
+| Static | `bun run typecheck` | 0 | No type errors in 252 files (421.17ms) |
+| Static | `bun run lint` | 0 | Checked 243 files, no fixes applied |
+| Unit | `bun test` | 0 | 676 pass, 0 fail, 1587 expect() calls, 49 files (2.26s) |
+
+**Reviewed directly, not taken on trust.**
+
+- `TranslationAttentionItem` gains `translationError` and `errorKind`; `extractAttentionDocs` populates both, and `errorKind` is `null` for a blank or missing message rather than defaulting to a kind. That distinction matters: a `stale` or stuck-`pending` review is not a failure, and counting it as `unexpected` would inflate the one bucket that means "go read the logs".
+- `deriveErrorKind` feeds the **stored string** to the existing `classifyTranslationError` via a synthetic `Error`. No new field, no migration, no change to what the pipeline persists — the persisted format stays the single source of truth, which is what FR-9 asked for.
+- `emptyAttentionKindCounts` spells out all five keys literally instead of deriving them, so adding a kind to `TRANSLATION_ERROR_KINDS` breaks the typecheck here rather than silently reporting zero. That is the correct failure direction for a renderer.
+- `formatAttentionKindBreakdownLines` emits a scope line naming the sample, then one line per kind present, and returns `[]` when nothing is shown (so it cannot render above the empty state). The scope line names the true backlog whenever `totalCount > shownCount`.
+- The bell diff is 22 added lines: two imports, one derived const, one conditional block. The poll, the fetch, the `where` clause, the `totalDocs` badge, `formatAttentionBadgeLabel` and the item list are untouched, and it stays on inline styles. The deviation is proportionate to T2.1 and is recorded.
+- `src/lib/translation-errors.ts` was in `Touches` and was correctly **not** modified: the classifier and its `unexpected` fallback already did the job, and changing it would have violated the brief's instruction to reuse it.
+
+**Result: verified.** AC-9 is satisfied by direct test evidence (quota separated from network/timeout/credentials/unexpected, and the unclassifiable-message fallback pinned), and FR-9 by the code. No existing test was weakened; the phase's own suite went from 18 to 36 cases.
+
+Three non-blocking observations carried to review:
+
+1. **The breakdown describes a 20-row sample, and the only honest fix is a product decision.** `translationError` is free text, so no `where` clause can filter by kind and no cheaper backlog-wide count exists. A true per-kind backlog total needs a stored kind field — which the spec puts out of scope. The labelling is honest today; the underlying limitation should be a known one, not a surprise. Low, but worth recording so nobody later "fixes" the label into a bare number.
+2. **A pre-existing or hand-edited `translationError` can classify as `unexpected` when the real cause was quota.** This is the intended fallback and the raw message is preserved on the item, but it means the breakdown can under-report quota failures written by an older build. Low.
+3. **The bell's list rows are still status-only** — the kind is visible in the summary block but not per row. Showing it per row would mean surfacing raw provider text in the admin UI, a judgement call beyond T2.1. Low.

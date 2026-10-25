@@ -143,17 +143,20 @@
 - **Covers:** FR-9, AC-9
 - **Touches:** `src/components/admin/translation-attention.ts`, `src/lib/translation-errors.ts`, `src/components/admin/__tests__/translation-attention.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** in_progress
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** 7032e23
+- **Evidence:** conductor/tracks/20261025-translation-quota-resilience/verification/phase-6.md
 
-- [ ] **P6.T1: Classify stored failures by kind in the attention data** - covers: FR-9
-  - [ ] **P6.T1.1: Derive the kind from the persisted `translationError` using the existing classifier**, rather than adding a new stored field.
-  - [ ] **P6.T1.2: Expose a per-kind breakdown** alongside the existing total count.
-- [ ] **P6.T2: Surface the breakdown in the bell** - covers: FR-9
-  - [ ] **P6.T2.1: Show quota failures as a distinct line** so an operator can tell "Google is throttling" from "credentials are wrong" without reading logs.
-  - [ ] **P6.T2.2: Keep the existing `N+` cap behaviour** for counts beyond the display limit.
-- [ ] **P6.T3: Cover the breakdown with tests** - covers: AC-9
-  - [ ] **P6.T3.1: Test that quota failures are separated from network, timeout, and unexpected failures.**
-  - [ ] **P6.T3.2: Test that an unclassifiable stored message falls back to `unexpected` rather than throwing.**
+- [x] **P6.T1: Classify stored failures by kind in the attention data** - covers: FR-9
+  - [x] **P6.T1.1: Derive the kind from the persisted `translationError` using the existing classifier**, rather than adding a new stored field.
+  - [x] **P6.T1.2: Expose a per-kind breakdown** alongside the existing total count.
+- [x] **P6.T2: Surface the breakdown in the bell** - covers: FR-9
+  - [x] **P6.T2.1: Show quota failures as a distinct line** so an operator can tell "Google is throttling" from "credentials are wrong" without reading logs.
+  - [x] **P6.T2.2: Keep the existing `N+` cap behaviour** for counts beyond the display limit.
+- [x] **P6.T3: Cover the breakdown with tests** - covers: AC-9
+  - [x] **P6.T3.1: Test that quota failures are separated from network, timeout, and unexpected failures.**
+  - [x] **P6.T3.2: Test that an unclassifiable stored message falls back to `unexpected` rather than throwing.**
 
 <!--
 The primary appends after acceptance:
