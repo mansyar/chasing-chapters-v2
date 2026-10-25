@@ -66,7 +66,7 @@
 - **Covers:** FR-5, FR-8, AC-5, AC-8
 - **Touches:** `src/lib/translate.ts`, `src/lib/translation-errors.ts`, `src/lib/__tests__/translate.test.ts`, `src/lib/__tests__/translation-errors.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P3.T1: Make quota non-retryable** - covers: FR-5
   - [ ] **P3.T1.1: Add an `isRetryable(kind)` predicate to `translation-errors.ts`** - `quota` returns false; `network` and `timeout` keep their existing behaviour.
