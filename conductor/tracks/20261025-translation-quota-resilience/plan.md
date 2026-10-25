@@ -92,7 +92,7 @@
 - **Covers:** FR-6, FR-7, AC-6, AC-7
 - **Touches:** `src/hooks/translateReview.ts`, `src/lib/retranslate.ts`, `src/hooks/__tests__/translateReview.test.ts`, `src/lib/__tests__/retranslate-bulk.test.ts`, `src/lib/__tests__/retranslate-bulk-run.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P4.T1: Translate favorite quotes in one call** - covers: FR-6
   - [ ] **P4.T1.1: Replace the `Promise.all` of per-quote `translateText` calls with a single batched call** - `translateBatch` already accepts an array and returns aligned results.
