@@ -59,7 +59,7 @@
 - **Covers:** FR-1, NFR-1, NFR-2, AC-1
 - **Touches:** `.github/workflows/ci.yml`
 - **Verification:** `bun run typecheck && bun run lint && bun test` plus `bun -e "const {parse}=await import('yaml');parse(await Bun.file('.github/workflows/ci.yml').text());console.log('yaml ok')"`; the authoritative check is the `Docker Build` job on the pushed branch
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P3.T1: Add the `Docker Build` job** - covers: FR-1
   - [ ] **P3.T1.1: Postgres service, host network for the build, and the same build-argument shape as `deploy.yml` with placeholder values**
