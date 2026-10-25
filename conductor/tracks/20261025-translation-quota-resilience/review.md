@@ -6,13 +6,12 @@
 - **Range:** `bdc422de3a0b25eecd167ac685455db345317b78..HEAD`
 - **Date:** `2026-10-25T10:40:00Z`
 - **Verdict:** `PASS WITH FINDINGS`
-- **Gate:** blocked — `review.strict` is `true`, so Phase R1 must land before a PR
+- **Gate:** cleared — Phase R1 is verified at `609aacf`; all five findings are fixed
 
-> Two verdicts are in play and they answer different questions. This header records the
-> severity-based review outcome: no Critical or High finding remains, so the track is
-> `PASS WITH FINDINGS`. `metadata.review_verdict` records the *gate*: `BLOCK`, because
-> `review.strict` is `true` and five findings are still pending their fix. The two agree
-> again at round 2 once Phase R1 is verified.
+> Round 1 recorded `metadata.review_verdict: "BLOCK"` because `review.strict` is `true`
+> and five findings were pending. Round 2 confirms every one is fixed, so the gate is
+> cleared and the header verdict — which was always `PASS WITH FINDINGS` on severity —
+> now describes the track as it stands.
 
 ## Summary
 
@@ -114,6 +113,11 @@ Phase R1 rather than deferred.
   - **Test gap:** `translate.test.ts` — `deadline` set, attempt 1 rejects `ECONNRESET`,
     attempt 2 refused by the budget; assert the thrown error is a `TranslationError`
     whose `cause` is the network error and whose message is not the budget reason.
+  - **Resolution:** **fixed** at `609aacf`. Both budget-stop exits now mirror the
+    pre-attempt check; a bare `TranslationBudgetError` is reachable only on attempt 0.
+    `translate.test.ts:511-558` and `:560-608` pin it, both demonstrated failing against
+    the pre-change code with `Received value: TranslationBudgetError: translation character
+    budget reached`. The NFR-3 path is untouched.
 
 - **F2 — A character-budget stop persists the time-budget message**
   - **File:** `src/hooks/translateReview.ts:412-414`
@@ -137,6 +141,10 @@ Phase R1 rather than deferred.
     `translateReview.test.ts` (only the status is asserted today), and add a
     `retranslate-bulk-run.test.ts` case proving the character stop is still reported
     `skipped` after the message changes.
+  - **Resolution:** **fixed** at `609aacf`. `budgetStopReason` persists the thrown error's
+    own message; `isBudgetStop` accepts both reasons, `isCharacterBudgetStop` gates the
+    batch throttle, and the clock heuristic is gone. Pinned by
+    `translateReview.test.ts:760-794` and two `retranslate-bulk-run.test.ts` cases.
 
 ### Low
 
@@ -155,6 +163,8 @@ Phase R1 rather than deferred.
     `verification/integrated.md` §11.
   - **Requirement:** FR-3
   - **Test gap:** none
+  - **Resolution:** **fixed** at `609aacf`. Both copies now match `env.ts` and the
+    behaviour `env.test.ts` pins.
 
 - **F4 — The integrated evidence names the wrong test file**
   - **File:** `conductor/tracks/20261025-translation-quota-resilience/verification/integrated.md:165-168`
@@ -169,6 +179,7 @@ Phase R1 rather than deferred.
   - **Fix:** Correct the file name and note the file is new.
   - **Requirement:** none
   - **Test gap:** none
+  - **Resolution:** **fixed** at `609aacf`.
 
 - **F5 — The lock-TTL justification understates its own trigger**
   - **File:** `src/lib/translation-lock.ts:34-41`
@@ -184,12 +195,21 @@ Phase R1 rather than deferred.
     narrower than the real one. A review whose *quote list* is long can outlive the
     33-minute TTL while every individual field is well under the cap, so a future reader
     checking only field lengths would conclude the bound holds when it does not.
-  - **Fix:** Reword the comment and the residual to the actual invariant: the TTL bounds a
-    run of at most five chunks, i.e. when the four rich-text fields plus the quote list
-    total no more than 25,000 code points; a longer quote list adds chunks just as an
-    over-cap field does.
+  - **Fix:** Reword the comment and the residual to the actual invariant, stated against the
+    packer's *target* rather than its cap: the TTL bounds a run of at most five requests
+    only when each of the four rich-text fields and the quote list packs into a single
+    request, i.e. each totals no more than `TRANSLATION_BATCH_CHAR_TARGET` (5,000) code
+    points. A field or quote list above the target adds requests in proportion.
   - **Requirement:** FR-11
   - **Test gap:** none
+  - **Resolution:** **fixed at the second attempt.** Round 1's fix rewrote the comment to
+    the right *idea* with the wrong *number* — it used `TRANSLATION_BATCH_CHAR_CAP`
+    (25,000), which is only the ceiling for a single oversized text sent alone, while
+    `packTranslationRequests` closes a request at `TRANSLATION_BATCH_CHAR_TARGET` (5,000)
+    (`translate.ts:576-593`). Round 2's delta re-review caught it as **N1**; both the
+    comment and `integrated.md` §9 now state the target, and the residual names the
+    consequence — a 20,000-code-point field issues four requests on its own while staying
+    under the cap.
 
 ## Overrides
 
@@ -245,4 +265,10 @@ are fixed in Phase R1 under strict mode; no deferrals.
 
 | Round | Verdict | Critical | High | Medium | Low | Fixed |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | BLOCK | 0 | 0 | 2 | 3 | 0 |
+| 1 | PASS WITH FINDINGS (gate: BLOCK) | 0 | 0 | 2 | 3 | 0 |
+| 2 | PASS WITH FINDINGS (gate: cleared) | 0 | 0 | 0 | 0 | 5 |
+
+Round 2 also raised **N1** (Low) against round 1's own F5 fix — a wrong constant in the
+rewritten comment — which was corrected before the round-2 verdict was recorded. That is
+the delta re-review doing its job: F5's fix had the right reasoning and the wrong number,
+and only reading the packer confirmed which.

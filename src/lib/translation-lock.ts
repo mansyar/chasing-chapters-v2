@@ -36,13 +36,19 @@ import { TRANSLATION_BUDGET_WINDOW_MS } from "./translation-budget";
  * ceiling, so it holds for any single field up to that many code points. The
  * quote step is one `translateBatch` call but not necessarily one chunk:
  * `favoriteQuotes` has no `maxRows`, so a long enough quote list is packed into
- * several requests exactly as an over-cap field is. The invariant the count
- * assumes is therefore about *content*, not call shape: the TTL bounds a run of
- * at most five chunks, i.e. when the four rich-text fields plus the quote list
- * total no more than `TRANSLATION_BATCH_CHAR_CAP` code points. A review whose
- * text exceeds that in any field, or whose quote list does, issues further
- * chunks and outlives this bound — none of them carry a maximum length, so no
- * finite TTL can bound that case. The count is stated here rather than
+ * several requests exactly as an over-cap field is.
+ *
+ * The invariant the count assumes is therefore about content, not call shape,
+ * and it is tighter than the cap suggests: the packer closes a request once it
+ * reaches `TRANSLATION_BATCH_CHAR_TARGET` (5,000) code points, so the TTL
+ * bounds a run of at most five requests only when each of the four rich-text
+ * fields and the quote list packs into a single request — that is, when each
+ * one totals no more than the *target*, not the cap. (A single text node of up
+ * to `TRANSLATION_BATCH_CHAR_CAP` also counts as one request, because an
+ * oversized text is sent alone rather than split.) A field or quote list above
+ * the target adds requests in proportion, and a run whose content is several
+ * times the target outlives this bound. None of them carry a maximum length, so
+ * no finite TTL can bound that case. The count is stated here rather than
  * multiplied in the TTL expression so the assumption is one auditable number.
  */
 export const TRANSLATION_PIPELINE_STEPS = 5;

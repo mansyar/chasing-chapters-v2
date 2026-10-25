@@ -217,14 +217,17 @@ covered, only the real timer is not exercised.
 
 1. **The lock TTL bound is not absolute.** `TRANSLATION_PIPELINE_STEPS = 5` assumes each
    of the five sequential steps issues one packed request. The real invariant is about
-   content: the TTL bounds a run of at most five chunks, i.e. when the four rich-text
-   fields **plus the quote list** total no more than `TRANSLATION_BATCH_CHAR_CAP` (25,000)
-   code points. A long quote list adds chunks exactly as an over-cap field does —
-   `favoriteQuotes` has no `maxRows` and each quote's textarea is unbounded, so a single
-   `translateBatch` call can issue several requests — and a run that exceeds the total can
-   outlive the 33-minute TTL. None of those fields carry a `maxLength`, so no finite TTL
-   bounds that case — it needs a product decision (cap the field, or accept that a very
-   long review can exceed its lock). Medium.
+   content, and it is tighter than the cap suggests: the packer closes a request once it
+   reaches `TRANSLATION_BATCH_CHAR_TARGET` (5,000) code points, so the TTL bounds a run of
+   at most five requests only when each of the four rich-text fields **and the quote list**
+   packs into a single request - each totalling no more than the *target*. A long quote list
+   adds requests exactly as an over-target field does - `favoriteQuotes` has no `maxRows`
+   and each quote's textarea is unbounded, so a single `translateBatch` call can issue
+   several requests - and each rich-text field is a multi-node Lexical document, so a
+   20,000-code-point field issues four requests on its own even though it is under the
+   25,000 cap. A run that exceeds the target outlives the 33-minute TTL. None of those
+   fields carry a `maxLength`, so no finite TTL bounds that case - it needs a product
+   decision (cap the field, or accept that a very long review can exceed its lock). Medium.
 2. **The attention breakdown describes the fetched page, not the backlog.** `translationError`
    is free text, so no `where` clause filters by kind. The label says so explicitly, but a
    true backlog-wide count would need a stored kind field, which the spec puts out of
