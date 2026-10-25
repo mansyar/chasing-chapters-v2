@@ -76,15 +76,19 @@
 - **Covers:** FR-4, FR-6, FR-7, FR-8, AC-7, AC-8, AC-9
 - **Touches:** `.github/workflows/deploy.yml`, `src/lib/deploy-smoke.ts`, `src/scripts/deploy-smoke.ts`, `src/lib/__tests__/deploy-smoke.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test` plus `bun -e "const {parse}=await import('yaml');parse(await Bun.file('.github/workflows/deploy.yml').text());console.log('yaml ok')"`
-- **Status:** in_progress
+- **Status:** done
 
-- [ ] **P4.T1: Serialise deploys** - covers: FR-6
-- [ ] **P4.T2: Align the migrate job to Bun 1.4.3** - covers: FR-7
-- [ ] **P4.T3: Replace the backward-compatibility comment with the real constraint** - covers: FR-8
-- [ ] **P4.T4: Verify the rollout** - covers: FR-4
-  - [ ] **P4.T4.1: Job after the Coolify webhook that checks out and runs the smoke script**
-  - [ ] **P4.T4.2: Base URL from a repository variable with the production default**
-  - [ ] **P4.T4.3: Make the retry budget configurable, keeping the deploy job inside NFR-3's request ceiling**
+- [x] **P4.T1: Serialise deploys** - covers: FR-6
+- [x] **P4.T2: Align the migrate job to Bun 1.4.3** - covers: FR-7
+- [x] **P4.T3: Replace the backward-compatibility comment with the real constraint** - covers: FR-8
+- [x] **P4.T4: Verify the rollout** - covers: FR-4
+  - [x] **P4.T4.1: Job after the Coolify webhook that checks out and runs the smoke script**
+  - [x] **P4.T4.2: Base URL from a repository variable with the production default**
+  - [x] **P4.T4.3: Make the retry budget configurable, keeping the deploy job inside NFR-3's request ceiling**
+
+**Result:** verified
+**Checkpoint:** 46ab895
+**Evidence:** conductor/tracks/20261024-deploy-safety/verification/phase-4.md
 
 ## Phase 5: Deployment Runbook
 
