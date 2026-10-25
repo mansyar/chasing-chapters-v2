@@ -122,5 +122,5 @@
 - [x] **R1.T7: Correct the retry-budget arithmetic in the workflow comment** - covers: F7
 - [x] **R1.T8: Make a zero attempt budget a report, not a throw** - covers: F8
 **Result:** verified
-**Checkpoint:** 2afb33d
+**Checkpoint:** f7f7bae
 **Evidence:** conductor/tracks/20261024-deploy-safety/verification/phase-r1.md
