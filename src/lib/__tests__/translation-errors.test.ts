@@ -2,7 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { TranslationError } from "../translate";
 import {
 	classifyTranslationError,
+	extractProviderErrorDetails,
 	formatTranslationError,
+	isRetryable,
 	isTransientTranslationError,
 	TRANSLATION_ERROR_KINDS,
 } from "../translation-errors";
@@ -279,5 +281,69 @@ describe("isTransientTranslationError", () => {
 			false,
 		);
 		expect(isTransientTranslationError("API down")).toBe(false);
+	});
+});
+
+describe("isRetryable", () => {
+	test("quota and credentials are not retried in the tight loop", () => {
+		expect(isRetryable("quota")).toBe(false);
+		expect(isRetryable("credentials")).toBe(false);
+	});
+
+	test("network, timeout and unexpected keep their retries", () => {
+		expect(isRetryable("network")).toBe(true);
+		expect(isRetryable("timeout")).toBe(true);
+		expect(isRetryable("unexpected")).toBe(true);
+	});
+
+	test("quota stays transient even though it is not retryable", () => {
+		// The delayed automatic re-run is keyed on transience; the tight loop
+		// is keyed on retryability. A quota failure must keep both answers.
+		expect(isRetryable("quota")).toBe(false);
+		expect(isTransientTranslationError({ code: 429, message: "quota" })).toBe(
+			true,
+		);
+	});
+});
+
+describe("extractProviderErrorDetails", () => {
+	test("reads the HTTP status and Google's errors[0].reason", () => {
+		const error = Object.assign(new Error("User Rate Limit Exceeded"), {
+			code: 403,
+			errors: [
+				{
+					message: "User Rate Limit Exceeded",
+					domain: "usageLimits",
+					reason: "userRateLimitExceeded",
+				},
+			],
+		});
+
+		expect(extractProviderErrorDetails(error)).toEqual({
+			code: 403,
+			reason: "userRateLimitExceeded",
+		});
+	});
+
+	test("finds the fields on the cause chain", () => {
+		const inner = Object.assign(new Error("RESOURCE_EXHAUSTED"), {
+			code: 429,
+			errors: [{ reason: "rateLimitExceeded" }],
+		});
+		const wrapper = new TranslationError("Translation failed", {
+			attempts: 1,
+			cause: inner,
+		});
+
+		expect(extractProviderErrorDetails(wrapper)).toEqual({
+			code: 429,
+			reason: "rateLimitExceeded",
+		});
+	});
+
+	test("returns nothing for an error without provider fields", () => {
+		expect(extractProviderErrorDetails(new Error("API down"))).toEqual({});
+		expect(extractProviderErrorDetails("boom")).toEqual({});
+		expect(extractProviderErrorDetails(null)).toEqual({});
 	});
 });

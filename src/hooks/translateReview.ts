@@ -11,8 +11,8 @@ import {
 	TRANSLATION_BUDGET_REASON,
 	TranslationBudgetError,
 	TranslationError,
+	translateBatch,
 	translateRichText,
-	translateText,
 } from "../lib/translate";
 import {
 	classifyTranslationError,
@@ -218,6 +218,46 @@ export interface RunPipelineOptions {
 }
 
 /**
+ * Attach error capture to a fire-and-forget pipeline run.
+ *
+ * The run itself is deliberately not awaited (see `translateReview`: awaiting
+ * a nested write inside the hook would wait on the row lock the outer
+ * transaction holds and deadlock the save). But `void` also discards the
+ * promise, so anything that throws *outside* the pipeline's own `catch` — a
+ * failing lock release, a failed lock acquisition, the `payload.update` in a
+ * `finally` — became an unhandled rejection: the run vanished with no log
+ * line and the review kept whatever status it had. Capture it instead, as one
+ * classified log entry with structured fields, never the raw error object.
+ */
+function capturePipelineFailure(label: string, run: Promise<void>): void {
+	void run.catch((error: unknown) => {
+		const classified = classifyTranslationError(error);
+		logger.error(
+			`[Translation] ${label} failed after the response was sent (${classified.kind})`,
+			{
+				kind: classified.kind,
+				transient: classified.transient,
+				detail: classified.raw,
+			},
+		);
+	});
+}
+
+/**
+ * The reason a budget stop is persisted with.
+ *
+ * The thrown error already names the limit that actually fired: a deadline stop
+ * carries `TRANSLATION_BUDGET_REASON` and a refused character reservation
+ * carries `TRANSLATION_CHARACTER_BUDGET_REASON`. Storing the error's own
+ * message is what keeps the two distinct in the admin UI and in the attention
+ * bell's classification. The constant is the fallback for a stop that somehow
+ * carries no message.
+ */
+function budgetStopReason(error: TranslationBudgetError): string {
+	return error.message || TRANSLATION_BUDGET_REASON;
+}
+
+/**
  * Full translation pipeline: marks the review pending, translates all
  * localized fields in batched requests, then saves the Indonesian locale and
  * the final status. On failure the Indonesian locale is left untouched
@@ -320,18 +360,17 @@ export async function runTranslationPipeline(
 				? await translateRichText(doc.perfectFor, "id", translationOptions())
 				: null;
 
-			// Translate favorite quotes (plain text array, not rich text)
+			// Translate favorite quotes (plain text array, not rich text). One
+			// batched call, never one request per quote: the fan-out fired N
+			// simultaneous requests, each doing its own cache lookups, which is
+			// the sharpest burst in the pipeline against a quota measured per
+			// 100-second window. `translateBatch` already packs by characters,
+			// resolves the cache and passes blanks through.
 			ensureBudget();
 			const translatedQuotes = doc.favoriteQuotes
-				? await Promise.all(
-						doc.favoriteQuotes.map(async (item) => ({
-							quote: await translateText(
-								item.quote,
-								"id",
-								translationOptions(),
-							),
-							page: item.page,
-						})),
+				? await translateFavoriteQuotes(
+						doc.favoriteQuotes,
+						translationOptions(),
 					)
 				: null;
 
@@ -384,9 +423,15 @@ export async function runTranslationPipeline(
 					id: doc.id,
 					data: {
 						translationStatus: failed.status,
-						translationError: budgetStop
-							? TRANSLATION_BUDGET_REASON
-							: formatTranslationError(error),
+						// A budget stop carries its own reason: the time stop and
+						// the character stop are different limits, and the stored
+						// message is what the admin reads and the bell classifies.
+						// Re-labelling every stop as the time budget would name a
+						// wall clock that never expired.
+						translationError:
+							error instanceof TranslationBudgetError
+								? budgetStopReason(error)
+								: formatTranslationError(error),
 						translationUpdatedAt: failedAt,
 					},
 					context: { skipTranslation: true },
@@ -431,7 +476,10 @@ function scheduleTranslationRetry(
 		`[Translation] Transient failure for review ${reviewId}; scheduling one automatic pipeline re-run in ${retryDelayMs}ms.`,
 	);
 	const timer = setTimeout(() => {
-		void runDelayedTranslationRetry(payload, reviewId, failedAt);
+		capturePipelineFailure(
+			"Automatic re-run",
+			runDelayedTranslationRetry(payload, reviewId, failedAt),
+		);
 	}, retryDelayMs);
 	// Do not hold the process open just for the retry.
 	timer.unref?.();
@@ -532,6 +580,34 @@ function buildTranslationOptions(options: RunPipelineOptions):
 		timeoutMs: Math.max(0, options.deadline - Date.now()),
 		deadline: options.deadline,
 	};
+}
+
+/**
+ * Translate a review's favourite quotes in one batched request, keeping every
+ * page number and the original order.
+ *
+ * One call, never one per quote: the previous `Promise.all` fired a
+ * simultaneous request per quote, which is the sharpest burst the pipeline can
+ * produce against a quota measured over a rolling 100-second window.
+ * `translateBatch` already packs by character count, resolves the cache and
+ * passes blanks through — an empty or all-blank list resolves from the
+ * no-texts path without issuing a request. Results are aligned to the input,
+ * so mapping them back onto `{ quote, page }` is positional.
+ */
+async function translateFavoriteQuotes(
+	quotes: NonNullable<Review["favoriteQuotes"]>,
+	options?: { timeoutMs?: number; deadline?: number },
+): Promise<{ quote: string; page?: string | null }[]> {
+	const translations = await translateBatch(
+		quotes.map((item) => item.quote),
+		"id",
+		options,
+	);
+
+	return quotes.map((item, index) => ({
+		quote: translations[index],
+		page: item.page,
+	}));
 }
 
 /**
@@ -637,7 +713,23 @@ export async function runFormatSyncPipeline(
 export async function markTranslationStale(
 	payload: Payload,
 	docId: number,
+	currentStatus: Review["translationStatus"],
 ): Promise<void> {
+	// `stale` is only reachable from `translated` (VALID_TRANSITIONS in
+	// translation-status.ts). From any other status — untranslated, pending,
+	// failed, already stale — the collection validator rejects the write, and
+	// the rejection used to be logged at error level and ignored, so the
+	// review stayed untranslated with nobody told. There is nothing to mark:
+	// a review that was never translated cannot hold a stale translation.
+	// The caller already knows the status — `decideTranslationAction` read it
+	// to choose this branch — so it is passed in rather than re-read.
+	if (currentStatus !== "translated") {
+		logger.debug(
+			`[Translation] Left review ${docId} at ${currentStatus}: only a translated review can become stale.`,
+		);
+		return;
+	}
+
 	try {
 		await payload.update({
 			collection: "reviews",
@@ -669,18 +761,30 @@ export const translateReview: CollectionAfterChangeHook<Review> = async ({
 			// `beforeChange` hook, in the same transaction as this save.
 			// The pipeline is deliberately not awaited: a nested write from
 			// this hook would wait for the row lock the outer transaction
-			// holds and deadlock the save.
-			void runTranslationPipeline(payload, doc);
+			// holds and deadlock the save. The failure is captured instead,
+			// so a throw after the response was sent is logged rather than
+			// surfacing as an unhandled rejection.
+			capturePipelineFailure(
+				"Translation pipeline",
+				runTranslationPipeline(payload, doc),
+			);
 			break;
 		case "format-sync":
 			// A format-only change does not change the English content, so
 			// the English change time stays where it is.
-			void runFormatSyncPipeline(payload, doc);
+			capturePipelineFailure(
+				"Format sync",
+				runFormatSyncPipeline(payload, doc),
+			);
 			break;
 		case "mark-stale":
 			// Only a real English content change moves the English change
 			// time, and that stamp is written by the `beforeChange` hook.
-			void markTranslationStale(payload, doc.id);
+			// The status is passed in: this branch was chosen by reading it.
+			capturePipelineFailure(
+				"Stale marking",
+				markTranslationStale(payload, doc.id, doc.translationStatus),
+			);
 			break;
 		case "none":
 			break;

@@ -40,6 +40,8 @@ mock.module("@google-cloud/translate", () => ({
 
 // Import AFTER mock.module so the mocked client is what translate.ts binds to.
 const {
+	TRANSLATION_BATCH_CHAR_CAP,
+	TRANSLATION_BATCH_CHAR_TARGET,
 	TRANSLATION_BATCH_SIZE,
 	TranslationBudgetError,
 	TranslationError,
@@ -156,10 +158,12 @@ describe("translateBatch", () => {
 		// The run without a deadline keeps the provider's own failure: it is
 		// never turned into a budget stop.
 		expect(caught).not.toBeInstanceOf(TranslationBudgetError);
-		expect((caught as InstanceType<typeof TranslationError>).attempts).toBe(3);
+		// A quota response is not retried: it costs exactly one provider
+		// attempt, because a retry lands inside the same exhausted window.
+		expect((caught as InstanceType<typeof TranslationError>).attempts).toBe(1);
 		// The failure must never masquerade as a successful translation.
 		expect((caught as Error).message).not.toBe("Hello");
-		expect(mockClientTranslate).toHaveBeenCalledTimes(3);
+		expect(mockClientTranslate).toHaveBeenCalledTimes(1);
 		// The single-review path keeps the same classifier outcome.
 		expect(classifyTranslationError(caught).kind).toBe("quota");
 	});
@@ -212,6 +216,80 @@ describe("translateBatch", () => {
 
 		expect(result).toEqual([]);
 		expect(mockClientTranslate).not.toHaveBeenCalled();
+	});
+});
+
+describe("translateBatch (character packing)", () => {
+	beforeEach(() => {
+		mockClientTranslate.mockImplementation(echoTranslate);
+	});
+
+	// The texts each request carried, as the provider saw them.
+	const requests = (): string[][] =>
+		mockClientTranslate.mock.calls.map((call) => {
+			const texts = call[0];
+			return Array.isArray(texts) ? texts : [texts];
+		});
+
+	// Code points per request, the unit Google's character quota is measured in.
+	const codePointsPerRequest = (): number[] =>
+		requests().map((texts) =>
+			texts.reduce((total, text) => total + [...text].length, 0),
+		);
+
+	it("splits a batch that exceeds the character target across requests", async () => {
+		// 5 x 2,000 = 10,000 code points: twice the target, a quarter of the cap.
+		const texts = Array.from({ length: 5 }, (_, i) => `${i}`.repeat(2000));
+		const result = await translateBatch(texts, "id", { delays: [0, 0, 0] });
+
+		expect(result).toEqual(texts.map((text) => `ID:${text}`));
+		expect(mockClientTranslate.mock.calls.length).toBeGreaterThan(1);
+		// No request may reach the hard cap, whatever the batch looked like.
+		for (const codePoints of codePointsPerRequest()) {
+			expect(codePoints).toBeLessThanOrEqual(TRANSLATION_BATCH_CHAR_TARGET);
+			expect(codePoints).toBeLessThanOrEqual(TRANSLATION_BATCH_CHAR_CAP);
+		}
+	});
+
+	it("sends a text longer than the character cap alone and still returns its translation", async () => {
+		const oversized = "x".repeat(TRANSLATION_BATCH_CHAR_CAP + 1000);
+
+		const result = await translateBatch([oversized, "Hello"], "id", {
+			delays: [0, 0, 0],
+		});
+
+		expect(result).toEqual([`ID:${oversized}`, "ID:Hello"]);
+		// The oversized text cannot be split, so it travels in its own request
+		// rather than sharing one with a text it would push past the cap.
+		expect(requests()).toEqual([[oversized], ["Hello"]]);
+	});
+
+	it("keeps dedupe and original order across multiple packed requests", async () => {
+		const a = "a".repeat(3000);
+		const b = "b".repeat(3000);
+
+		const result = await translateBatch([a, b, a, "", a], "id", {
+			delays: [0, 0, 0],
+		});
+
+		// Duplicates are sent once and every original slot gets the result back,
+		// blank slots untouched, even though the texts spanned two requests.
+		expect(result).toEqual([`ID:${a}`, `ID:${b}`, `ID:${a}`, "", `ID:${a}`]);
+		expect(requests()).toEqual([[a], [b]]);
+	});
+
+	it("keeps batchSize as a string ceiling under the character target", async () => {
+		const texts = ["a", "b", "c", "d", "e"];
+
+		const result = await translateBatch(texts, "id", {
+			delays: [0, 0, 0],
+			batchSize: 2,
+		});
+
+		// Five one-character texts fit the character target easily; the string
+		// ceiling is what splits them.
+		expect(result).toEqual(texts.map((text) => `ID:${text}`));
+		expect(requests().map((chunk) => chunk.length)).toEqual([2, 2, 1]);
 	});
 });
 

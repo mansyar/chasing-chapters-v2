@@ -15,8 +15,87 @@
 //   expiry makes a crashed holder's lock self-healing.
 
 import { getRedisClient } from "./redis";
+import {
+	MAX_ATTEMPTS,
+	RETRY_DELAYS_MS,
+	TRANSLATION_REQUEST_TIMEOUT_MS,
+} from "./translate";
+import { TRANSLATION_BUDGET_WINDOW_MS } from "./translation-budget";
 
-export const TRANSLATION_LOCK_TTL_MS = 10 * 60 * 1000; // 10 minutes
+/**
+ * Translation steps one pipeline run performs, in sequence.
+ *
+ * `runTranslationPipeline` translates four localized rich-text fields
+ * (`reviewContent`, `whatILoved`, `whatCouldBeBetter`, `perfectFor`) and then
+ * the favorite-quote list in one batched call — five sequential
+ * `translateBatch` calls, so a run's duration is a multiple of one step's, not
+ * one step's.
+ *
+ * One step is assumed to be one provider chunk, i.e. one request of at most
+ * `TRANSLATION_BATCH_CHAR_CAP` code points. That is the packer's per-request
+ * ceiling, so it holds for any single field up to that many code points. The
+ * quote step is one `translateBatch` call but not necessarily one chunk:
+ * `favoriteQuotes` has no `maxRows`, so a long enough quote list is packed into
+ * several requests exactly as an over-cap field is.
+ *
+ * The invariant the count assumes is therefore about content, not call shape,
+ * and it is tighter than the cap suggests: the packer closes a request once it
+ * reaches `TRANSLATION_BATCH_CHAR_TARGET` (5,000) code points, so the TTL
+ * bounds a run of at most five requests only when each of the four rich-text
+ * fields and the quote list packs into a single request — that is, when each
+ * one totals no more than the *target*, not the cap. (A single text node of up
+ * to `TRANSLATION_BATCH_CHAR_CAP` also counts as one request, because an
+ * oversized text is sent alone rather than split.) A field or quote list above
+ * the target adds requests in proportion, and a run whose content is several
+ * times the target outlives this bound. None of them carry a maximum length, so
+ * no finite TTL can bound that case. The count is stated here rather than
+ * multiplied in the TTL expression so the assumption is one auditable number.
+ */
+export const TRANSLATION_PIPELINE_STEPS = 5;
+
+/**
+ * Backoff the retry loop actually sleeps across one step (ms).
+ *
+ * `translateChunkWithRetry` sleeps only *between* attempts
+ * (`attempt < MAX_ATTEMPTS - 1`), so the schedule's last delay is never
+ * waited on: three attempts carry two backoffs.
+ */
+const TRANSLATION_RETRY_BACKOFF_MS = RETRY_DELAYS_MS.slice(
+	0,
+	MAX_ATTEMPTS - 1,
+).reduce((total, delay) => total + delay, 0);
+
+/**
+ * Worst-case duration of one translation step (ms): one `translateBatch`
+ * call, retried by `translateChunkWithRetry` up to `MAX_ATTEMPTS` times.
+ *
+ * Per attempt: the bounded wait for the rolling character budget — up to one
+ * full `TRANSLATION_BUDGET_WINDOW_MS`, which `reserveCharacters` bounds a
+ * reservation's wait by — plus the request timeout. Between attempts: the
+ * backoff above.
+ */
+export const TRANSLATION_WORST_CASE_STEP_MS =
+	MAX_ATTEMPTS *
+		(TRANSLATION_BUDGET_WINDOW_MS + TRANSLATION_REQUEST_TIMEOUT_MS) +
+	TRANSLATION_RETRY_BACKOFF_MS;
+
+/**
+ * How long a lock lives before it expires on its own (ms).
+ *
+ * Derived, never hardcoded: a fixed value silently drifts from the retry
+ * policy it is supposed to outlive, and a lock that expires mid-run lets a
+ * second run start on the same review — the double-run the lock exists to
+ * prevent. With today's constants one step is 3 × (100s + 30s) + 10s = 400s
+ * and a run is five steps, so the TTL is 2,000s (33m20s) against the 10
+ * minutes this used to be.
+ *
+ * The tradeoff: this errs long. A crashed run blocks retranslation for the
+ * whole TTL, but a short TTL would silently allow the concurrent run, which
+ * is the failure that corrupts data; a stale lock only delays a retry. No
+ * renewal heartbeat — it is more machinery than the requirement asks for.
+ */
+export const TRANSLATION_LOCK_TTL_MS =
+	TRANSLATION_PIPELINE_STEPS * TRANSLATION_WORST_CASE_STEP_MS;
 
 export function translationLockKey(reviewId: number | string): string {
 	return `translate-lock:${reviewId}`;

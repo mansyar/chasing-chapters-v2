@@ -1,10 +1,17 @@
 import { describe, expect, it } from "bun:test";
 import {
+	formatTranslationError,
+	type TranslationErrorKind,
+} from "@/lib/translation-errors";
+import {
+	type AttentionKindCounts,
 	buildAttentionWhere,
 	buildReviewEditURL,
 	extractAttentionDocs,
 	formatAttentionBadgeLabel,
+	formatAttentionKindBreakdownLines,
 	needsTranslationAttention,
+	summarizeAttentionErrorKinds,
 	TRANSLATION_ATTENTION_LIMIT,
 	TRANSLATION_STUCK_PENDING_MS,
 } from "../translation-attention";
@@ -267,13 +274,15 @@ describe("translation-attention", () => {
 			]);
 		});
 
-		it("maps each entry to id, title, status, and edit URL", () => {
+		it("maps each entry to id, title, status, error, and edit URL", () => {
 			const [failure] = extractAttentionDocs([failed], NOW);
 			expect(failure).toEqual({
 				id: "3",
 				title: "Failure",
 				translationStatus: "failed",
 				editURL: "/admin/collections/reviews/3",
+				translationError: null,
+				errorKind: null,
 			});
 		});
 
@@ -316,6 +325,221 @@ describe("translation-attention", () => {
 			expect(extractAttentionDocs(many, NOW)).toHaveLength(
 				TRANSLATION_ATTENTION_LIMIT * 2,
 			);
+		});
+	});
+
+	describe("summarizeAttentionErrorKinds", () => {
+		/** A `failed` doc whose stored error is what the pipeline actually writes. */
+		function failedDoc(id: number, error: unknown) {
+			return {
+				id,
+				title: `Failure ${id}`,
+				translationStatus: "failed",
+				updatedAt: iso(1000),
+				translationError: formatTranslationError(error),
+			};
+		}
+
+		it("separates quota failures from network, timeout, credentials and unexpected failures", () => {
+			// The stored string round-trips through the classifier, so this also
+			// proves the persisted format is enough to recover the kind.
+			const docs = [
+				failedDoc(1, new Error("quota exceeded")),
+				failedDoc(2, new Error("ECONNRESET")),
+				failedDoc(3, new Error("timed out")),
+				failedDoc(4, new Error("401 Unauthorized")),
+				failedDoc(5, new Error("boom")),
+				failedDoc(6, new Error("boom")),
+			];
+			expect(
+				summarizeAttentionErrorKinds(extractAttentionDocs(docs, NOW)),
+			).toEqual({
+				quota: 1,
+				network: 1,
+				timeout: 1,
+				credentials: 1,
+				unexpected: 2,
+			});
+		});
+
+		it("counts zero for every kind absent from the fetched page", () => {
+			const counts = summarizeAttentionErrorKinds(
+				extractAttentionDocs([failedDoc(1, new Error("quota exceeded"))], NOW),
+			);
+			expect(counts).toEqual({
+				quota: 1,
+				network: 0,
+				timeout: 0,
+				credentials: 0,
+				unexpected: 0,
+			});
+		});
+
+		it("leaves rows without a stored failure message out of every kind", () => {
+			// A `stale` review and a `failed` review with a blank message are not
+			// "unexpected failures" — they simply carry no kind.
+			const docs = [
+				{ id: 1, translationStatus: "stale", updatedAt: iso(1000) },
+				{
+					id: 2,
+					translationStatus: "failed",
+					updatedAt: iso(1000),
+					translationError: "   ",
+				},
+			];
+			const items = extractAttentionDocs(docs, NOW);
+			expect(items.map((item) => item.errorKind)).toEqual([null, null]);
+			expect(summarizeAttentionErrorKinds(items)).toEqual({
+				quota: 0,
+				network: 0,
+				timeout: 0,
+				credentials: 0,
+				unexpected: 0,
+			});
+		});
+
+		it("falls back to unexpected for an unclassifiable stored message", () => {
+			const items = extractAttentionDocs(
+				[
+					{
+						id: 9,
+						translationStatus: "failed",
+						updatedAt: iso(1000),
+						translationError: "the provider said something we have never seen",
+					},
+				],
+				NOW,
+			);
+			expect(items[0].errorKind).toBe("unexpected");
+			expect(() => summarizeAttentionErrorKinds(items)).not.toThrow();
+		});
+
+		it("keeps the stored message on the item for the operator", () => {
+			const stored = formatTranslationError(new Error("quota exceeded"));
+			const [item] = extractAttentionDocs(
+				[
+					{
+						id: 4,
+						translationStatus: "failed",
+						updatedAt: iso(1000),
+						translationError: stored,
+					},
+				],
+				NOW,
+			);
+			expect(item.translationError).toBe(stored);
+			expect(item.errorKind).toBe("quota");
+		});
+
+		it("round-trips every kind through the stored message", () => {
+			// The stored string is "<actionable message> (raw: <detail>)". Feeding
+			// it back to the classifier must land on the same kind, otherwise the
+			// bell would report a different cause than the pipeline recorded.
+			const cases: Array<[Error, TranslationErrorKind]> = [
+				[new Error("quota exceeded"), "quota"],
+				[new Error("ECONNRESET"), "network"],
+				[new Error("timed out"), "timeout"],
+				[new Error("401 Unauthorized"), "credentials"],
+				[new Error("boom"), "unexpected"],
+			];
+			for (const [error, expected] of cases) {
+				const stored = formatTranslationError(error);
+				const [item] = extractAttentionDocs(
+					[
+						{
+							id: 1,
+							translationStatus: "failed",
+							updatedAt: iso(1000),
+							translationError: stored,
+						},
+					],
+					NOW,
+				);
+				expect(item.errorKind).toBe(expected);
+			}
+		});
+
+		it("tolerates a non-string translationError", () => {
+			const [item] = extractAttentionDocs(
+				[
+					{
+						id: 5,
+						translationStatus: "failed",
+						updatedAt: iso(1000),
+						translationError: { nested: true },
+					},
+				],
+				NOW,
+			);
+			expect(item.translationError).toBeNull();
+			expect(item.errorKind).toBeNull();
+		});
+	});
+
+	describe("formatAttentionKindBreakdownLines", () => {
+		const only = (
+			overrides: Partial<AttentionKindCounts>,
+		): AttentionKindCounts => ({
+			quota: 0,
+			network: 0,
+			timeout: 0,
+			credentials: 0,
+			unexpected: 0,
+			...overrides,
+		});
+
+		it("names the sample and the true backlog when the page is truncated", () => {
+			expect(
+				formatAttentionKindBreakdownLines(
+					only({ quota: 3, network: 1 }),
+					20,
+					47,
+				),
+			).toEqual([
+				"Failure kinds across the 20 reviews shown, not the whole backlog of 47:",
+				"3 quota",
+				"1 network",
+			]);
+		});
+
+		it("gives each present kind its own line, in canonical order", () => {
+			// quota first, and each kind distinguishable from the others.
+			expect(
+				formatAttentionKindBreakdownLines(
+					only({ quota: 2, timeout: 1, unexpected: 4, credentials: 1 }),
+					8,
+				),
+			).toEqual([
+				"Failure kinds across the 8 reviews shown:",
+				"2 quota",
+				"1 timeout",
+				"1 credentials",
+				"4 unexpected",
+			]);
+		});
+
+		it("drops the backlog clause when the page is the whole backlog", () => {
+			expect(
+				formatAttentionKindBreakdownLines(only({ quota: 2 }), 2, 2),
+			).toEqual(["Failure kinds across the 2 reviews shown:", "2 quota"]);
+		});
+
+		it("uses the singular for a one-row page", () => {
+			expect(formatAttentionKindBreakdownLines(only({ quota: 1 }), 1)).toEqual([
+				"Failure kinds across the 1 review shown:",
+				"1 quota",
+			]);
+		});
+
+		it("reports none recorded when no row carries a kind", () => {
+			expect(formatAttentionKindBreakdownLines(only({}), 1, 3)).toEqual([
+				"Failure kinds across the 1 review shown, not the whole backlog of 3:",
+				"none recorded",
+			]);
+		});
+
+		it("renders nothing for an empty page", () => {
+			expect(formatAttentionKindBreakdownLines(only({}), 0, 5)).toEqual([]);
 		});
 	});
 });

@@ -1,0 +1,32 @@
+{
+	"id": "20261025-translation-quota-resilience",
+	"title": "Translation Quota Resilience",
+	"type": "bug",
+	"status": "complete",
+	"priority": "high",
+	"depends_on": [],
+	"created_at": "2026-10-25T08:31:08Z",
+	"updated_at": "2026-10-26T00:25:00Z",
+	"spec": "spec.md",
+	"plan": "plan.md",
+	"branch": "fix/20261025-translation-quota-resilience",
+	"base_branch": "main",
+	"base_sha": "bdc422de3a0b25eecd167ac685455db345317b78",
+	"progress": {
+		"phases_total": 6,
+		"phases_verified": 6,
+		"tasks_total": 19,
+		"tasks_done": 19
+	},
+	"last_checkpoint": "609aacf",
+	"review_verdict": "PASS WITH FINDINGS",
+	"review_rounds": 2,
+	"doc_sync": "updated",
+	"pr_url": "https://github.com/mansyar/chasing-chapters-v2/pull/29",
+	"pr_state": "open",
+	"reverted_at": null,
+	"revert_commit": null,
+	"revert_pr_url": null,
+	"archived_at": "2026-10-26T00:25:00Z",
+	"archive_path": "conductor/archive/20261025-translation-quota-resilience"
+}

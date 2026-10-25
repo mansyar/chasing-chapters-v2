@@ -6,6 +6,8 @@ import {
 	buildAttentionWhere,
 	extractAttentionDocs,
 	formatAttentionBadgeLabel,
+	formatAttentionKindBreakdownLines,
+	summarizeAttentionErrorKinds,
 	TRANSLATION_ATTENTION_LIMIT,
 	TRANSLATION_POLL_INTERVAL_MS,
 	type TranslationAttentionItem,
@@ -90,6 +92,13 @@ export const TranslationAttentionBell: React.FC = () => {
 
 	const count = totalCount;
 	const badgeLabel = formatAttentionBadgeLabel(count);
+	// The badge counts the whole backlog (`totalDocs`); this breakdown can only
+	// describe the bounded page fetched above, so it is labelled as such.
+	const kindBreakdownLines = formatAttentionKindBreakdownLines(
+		summarizeAttentionErrorKinds(items),
+		items.length,
+		count,
+	);
 
 	return (
 		<div
@@ -165,6 +174,19 @@ export const TranslationAttentionBell: React.FC = () => {
 					<div style={{ fontWeight: 600, marginBottom: "8px" }}>
 						Translations needing attention
 					</div>
+					{kindBreakdownLines.length > 0 && (
+						<div
+							style={{
+								color: "var(--theme-elevation-600)",
+								fontSize: "11px",
+								marginBottom: "8px",
+							}}
+						>
+							{kindBreakdownLines.map((line) => (
+								<div key={line}>{line}</div>
+							))}
+						</div>
+					)}
 					{count === 0 ? (
 						<p style={{ margin: 0 }}>There is nothing to review right now.</p>
 					) : (

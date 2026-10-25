@@ -1,11 +1,19 @@
 import { afterEach, describe, expect, mock, spyOn, test } from "bun:test";
 import * as redisModule from "../redis";
 import {
+	MAX_ATTEMPTS,
+	RETRY_DELAYS_MS,
+	TRANSLATION_REQUEST_TIMEOUT_MS,
+} from "../translate";
+import { TRANSLATION_BUDGET_WINDOW_MS } from "../translation-budget";
+import {
 	acquireTranslationLock,
 	clearTranslationLocksForTest,
 	isTranslationLocked,
 	releaseTranslationLock,
 	TRANSLATION_LOCK_TTL_MS,
+	TRANSLATION_PIPELINE_STEPS,
+	TRANSLATION_WORST_CASE_STEP_MS,
 	translationLockKey,
 } from "../translation-lock";
 
@@ -100,6 +108,47 @@ describe("translation-lock (in-memory fallback)", () => {
 		expect(await acquireTranslationLock("abc")).toBeNull();
 		await releaseTranslationLock("abc", token as string);
 		expect(await acquireTranslationLock("abc")).not.toBeNull();
+	});
+});
+
+describe("translation-lock TTL derivation", () => {
+	/**
+	 * The worst case one translation step can take, recomputed here from the
+	 * retry policy, the request timeout and the budget window — deliberately
+	 * NOT read from the module's own derived constant, so the assertion can
+	 * fail if the derivation drifts from the policy it is supposed to outlive.
+	 */
+	const worstCaseStepMs =
+		MAX_ATTEMPTS *
+			(TRANSLATION_BUDGET_WINDOW_MS + TRANSLATION_REQUEST_TIMEOUT_MS) +
+		RETRY_DELAYS_MS.slice(0, MAX_ATTEMPTS - 1).reduce(
+			(total, delay) => total + delay,
+			0,
+		);
+
+	test("the TTL exceeds one step's worst case derived from the retry and timeout constants", () => {
+		// 3 × (100s budget wait + 30s request timeout) + (2s + 8s backoff)
+		expect(worstCaseStepMs).toBe(400_000);
+		expect(TRANSLATION_WORST_CASE_STEP_MS).toBe(worstCaseStepMs);
+		expect(TRANSLATION_LOCK_TTL_MS).toBeGreaterThan(worstCaseStepMs);
+	});
+
+	test("the TTL covers every step of one run, not one step", () => {
+		// A run translates five steps in sequence: four rich-text fields plus
+		// the batched favorite-quote call.
+		expect(TRANSLATION_LOCK_TTL_MS).toBe(
+			TRANSLATION_PIPELINE_STEPS * worstCaseStepMs,
+		);
+		expect(TRANSLATION_LOCK_TTL_MS).toBeGreaterThanOrEqual(
+			TRANSLATION_PIPELINE_STEPS * worstCaseStepMs,
+		);
+	});
+
+	test("the TTL is no longer the fixed 10 minutes it used to be", () => {
+		// The defect: 10 minutes is shorter than one run's worst case, so a
+		// slow provider outlived its own lock and a second run could start.
+		expect(TRANSLATION_LOCK_TTL_MS).toBeGreaterThan(10 * 60 * 1000);
+		expect(TRANSLATION_LOCK_TTL_MS).toBe(33 * 60 * 1000 + 20 * 1000);
 	});
 });
 

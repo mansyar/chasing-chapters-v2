@@ -1,9 +1,108 @@
-import { describe, expect, it } from "bun:test";
+// Tests for the translation utilities and for the provider retry policy:
+// a quota response must cost exactly one attempt, and a failed attempt must
+// log structured fields instead of the raw error object.
 import {
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	mock,
+	spyOn,
+} from "bun:test";
+import { inspect } from "node:util";
+import * as redisModule from "../redis";
+import { clearTranslationBudgetForTest } from "../translation-budget";
+import {
+	classifyTranslationError,
+	formatTranslationError,
+} from "../translation-errors";
+import { createFailedStatus } from "../translation-status";
+
+// Shared mock for the Google Cloud Translate client, same shape as the one in
+// translate-batch.test.ts: the SDK resolves to a [translations, metadata]
+// tuple. The default implementation echoes each input back with an "ID:"
+// prefix, so any chunking strategy returns correctly-shaped results.
+type TranslateMock = (
+	texts: string | string[],
+	target?: string,
+) => Promise<[string[]]>;
+
+const echoTranslate = (texts: string | string[]): Promise<[string[]]> =>
+	Promise.resolve([
+		(Array.isArray(texts) ? texts : [texts]).map((t) => `ID:${t}`),
+	]);
+
+const mockClientTranslate = mock<TranslateMock>(echoTranslate);
+
+mock.module("@google-cloud/translate", () => ({
+	v2: {
+		Translate: class {
+			translate = (texts: string | string[], target?: string) =>
+				mockClientTranslate(texts, target);
+		},
+	},
+}));
+
+// Import AFTER mock.module so translate.ts binds to the mocked client.
+const {
+	TRANSLATION_BUDGET_REASON,
+	TranslationBudgetError,
+	TranslationError,
 	createRichTextFromPlain,
 	extractPlainText,
+	resetTranslateClientForTest,
 	syncRichTextFormat,
-} from "../translate";
+	translateBatch,
+} = await import("../translate");
+
+/**
+ * A quota response shaped like the one production logged on 2026-10-25: a
+ * Google ApiError with the HTTP status, the `usageLimits` detail, and the live
+ * HTTP response stream. `util.inspect` walks that stream into dozens of lines
+ * of internals, which is what made the old log line unreadable.
+ */
+function quotaApiError(): Error {
+	return Object.assign(new Error("User Rate Limit Exceeded"), {
+		code: 403,
+		errors: [
+			{
+				message: "User Rate Limit Exceeded",
+				domain: "usageLimits",
+				reason: "userRateLimitExceeded",
+			},
+		],
+		response: {
+			constructor: { name: "Gunzip" },
+			_readableState: { objectMode: false, highWaterMark: 16384 },
+			_writeState: { buffer: [], bufferIndex: 0 },
+		},
+	});
+}
+
+// Default cache isolation: no cached translations unless a test overrides.
+let cacheSpies: Array<ReturnType<typeof spyOn>>;
+
+beforeEach(() => {
+	// Rebuild the client under this file's mock: another test file may have
+	// memoized one under its own.
+	resetTranslateClientForTest();
+	mockClientTranslate.mockClear();
+	mockClientTranslate.mockImplementation(echoTranslate);
+	clearTranslationBudgetForTest();
+	cacheSpies = [
+		spyOn(redisModule, "getCachedTranslation").mockReturnValue(
+			Promise.resolve(null) as never,
+		),
+		spyOn(redisModule, "setCachedTranslation").mockReturnValue(
+			Promise.resolve() as never,
+		),
+	];
+});
+
+afterEach(() => {
+	cacheSpies.forEach((spy) => spy.mockRestore());
+});
 
 /**
  * Concrete view of the rich text documents the utilities return, narrow
@@ -228,5 +327,283 @@ describe("translate utilities", () => {
 			const result = syncRichTextFormat(null, { root: {} });
 			expect(result).toBeNull();
 		});
+	});
+});
+
+describe("provider retry policy", () => {
+	/** Capture every `console.error` line the run writes, then restore. */
+	function captureErrorLog(): { lines: string[]; restore: () => void } {
+		const lines: string[] = [];
+		const original = console.error;
+		console.error = (...args: unknown[]) => {
+			// Mirror what the operator actually reads: one line per call, with
+			// every argument serialized the way the console would.
+			lines.push(
+				args
+					.map((arg) =>
+						typeof arg === "string"
+							? arg
+							: inspect(arg, { depth: Number.POSITIVE_INFINITY }),
+					)
+					.join(" "),
+			);
+		};
+		return { lines, restore: () => (console.error = original) };
+	}
+
+	it("costs exactly one provider call for a 403 userRateLimitExceeded", async () => {
+		mockClientTranslate.mockImplementation(() =>
+			Promise.reject(quotaApiError()),
+		);
+
+		let caught: unknown;
+		try {
+			await translateBatch(["Hello"], "id", { delays: [0, 0, 0] });
+		} catch (error) {
+			caught = error;
+		}
+
+		// The regression: before this change the loop burned all three
+		// attempts on an allowance that was already gone.
+		expect(mockClientTranslate).toHaveBeenCalledTimes(1);
+		expect(caught).toBeInstanceOf(TranslationError);
+		expect((caught as InstanceType<typeof TranslationError>).attempts).toBe(1);
+		expect(classifyTranslationError(caught).kind).toBe("quota");
+	});
+
+	it("reports the quota failure as a failed status with the actionable message", async () => {
+		mockClientTranslate.mockImplementation(() =>
+			Promise.reject(quotaApiError()),
+		);
+
+		let caught: unknown;
+		try {
+			await translateBatch(["Hello"], "id", { delays: [0, 0, 0] });
+		} catch (error) {
+			caught = error;
+		}
+
+		const attempts = caught instanceof TranslationError ? caught.attempts : 0;
+		const failed = createFailedStatus(caught, attempts);
+		expect(failed.status).toBe("failed");
+		expect(failed.attempts).toBe(1);
+
+		// The admin UI reads the persisted string, so it must carry the
+		// actionable quota guidance rather than a bare "User Rate Limit".
+		const stored = formatTranslationError(caught);
+		expect(stored).toContain("Translation quota exceeded.");
+		expect(stored).toContain("Wait a few minutes before retrying");
+	});
+
+	it("logs code, reason and character count without dumping the error object", async () => {
+		mockClientTranslate.mockImplementation(() =>
+			Promise.reject(quotaApiError()),
+		);
+		const log = captureErrorLog();
+		try {
+			await translateBatch(["Hello", "World"], "id", { delays: [0, 0, 0] });
+		} catch {
+			// The failure itself is asserted elsewhere.
+		} finally {
+			log.restore();
+		}
+
+		const line = log.lines.join("\n");
+		expect(line).toContain("403");
+		expect(line).toContain("userRateLimitExceeded");
+		// "Hello" + "World" is ten code points, the unit the quota charges in.
+		expect(line).toContain("characters: 10");
+		expect(line).toContain("texts: 2");
+		expect(line).toContain("attempt: 1");
+
+		// The defect: the raw ApiError used to reach console.error, whose
+		// inspect walked the Gunzip response stream.
+		expect(line).not.toContain("Gunzip");
+		expect(line).not.toContain("_readableState");
+		expect(line).not.toContain("_writeState");
+	});
+
+	it("keeps the raw detail, bounded", async () => {
+		mockClientTranslate.mockImplementation(() =>
+			Promise.reject(quotaApiError()),
+		);
+		const log = captureErrorLog();
+		try {
+			await translateBatch(["Hello"], "id", { delays: [0, 0, 0] });
+		} catch {
+			// Expected.
+		} finally {
+			log.restore();
+		}
+
+		const line = log.lines.join("\n");
+		// The stack is occasionally the only clue, so it is kept — but a single
+		// failure must not become a screenful.
+		expect(line).toContain("detail:");
+		expect(line).toContain("User Rate Limit Exceeded");
+		expect(line.length).toBeLessThan(2000);
+	});
+
+	it("still retries a network failure", async () => {
+		mockClientTranslate.mockImplementationOnce(() =>
+			Promise.reject(Object.assign(new Error("ECONNRESET"), { code: 503 })),
+		);
+
+		const result = await translateBatch(["Hello"], "id", { delays: [0, 0, 0] });
+
+		expect(result).toEqual(["ID:Hello"]);
+		expect(mockClientTranslate).toHaveBeenCalledTimes(2);
+	});
+
+	it("still retries a timeout", async () => {
+		mockClientTranslate.mockImplementationOnce(() =>
+			Promise.reject(
+				new Error("Translation request timed out after 30 seconds"),
+			),
+		);
+
+		const result = await translateBatch(["Hello"], "id", { delays: [0, 0, 0] });
+
+		expect(result).toEqual(["ID:Hello"]);
+		expect(mockClientTranslate).toHaveBeenCalledTimes(2);
+	});
+
+	it("still exhausts every attempt for an unexpected failure", async () => {
+		mockClientTranslate.mockImplementation(() =>
+			Promise.reject(new Error("API down")),
+		);
+
+		let caught: unknown;
+		try {
+			await translateBatch(["Hello"], "id", { delays: [0, 0, 0] });
+		} catch (error) {
+			caught = error;
+		}
+
+		// The non-retryable set must not widen by accident: an unclassified
+		// failure keeps the three-attempt behaviour.
+		expect(mockClientTranslate).toHaveBeenCalledTimes(3);
+		expect((caught as InstanceType<typeof TranslationError>).attempts).toBe(3);
+	});
+
+	it("does not retry a rejected credential either", async () => {
+		mockClientTranslate.mockImplementation(() =>
+			Promise.reject(
+				Object.assign(new Error("Permission denied on Cloud Translation API"), {
+					code: 403,
+					errors: [{ reason: "forbidden" }],
+				}),
+			),
+		);
+
+		let caught: unknown;
+		try {
+			await translateBatch(["Hello"], "id", { delays: [0, 0, 0] });
+		} catch (error) {
+			caught = error;
+		}
+
+		expect(mockClientTranslate).toHaveBeenCalledTimes(1);
+		expect(classifyTranslationError(caught).kind).toBe("credentials");
+		expect(classifyTranslationError(caught).transient).toBe(false);
+	});
+
+	it("reports the provider failure, not a budget stop, when the character budget refuses the retry", async () => {
+		// F1: a budget stop is only the *cause* of a failure when nothing has
+		// failed yet. Here attempt 1 fails for a network reason and the retry
+		// is refused by the rolling character budget — the network failure is
+		// what must be reported, with its cause intact and its classified
+		// message reachable, so the delayed re-run is still scheduled.
+		const networkError = Object.assign(new Error("ECONNRESET"), { code: 503 });
+		mockClientTranslate.mockImplementation(() => Promise.reject(networkError));
+
+		const budgetModule = await import("../translation-budget");
+		let reservations = 0;
+		const reserveSpy = spyOn(
+			budgetModule,
+			"reserveCharacters",
+		).mockImplementation(async (characters: number) => {
+			reservations += 1;
+			// Attempt 1 gets its characters; the retry is refused.
+			return {
+				granted: reservations === 1,
+				characters,
+				used: characters,
+				remaining: 0,
+				waitedMs: 0,
+				backend: "memory",
+			};
+		});
+
+		let caught: unknown;
+		try {
+			await translateBatch(["Hello"], "id", {
+				delays: [0, 0, 0],
+				deadline: Date.now() + 60_000,
+			});
+		} catch (error) {
+			caught = error;
+		} finally {
+			reserveSpy.mockRestore();
+		}
+
+		expect(reservations).toBe(2);
+		expect(mockClientTranslate).toHaveBeenCalledTimes(1);
+		expect(caught).toBeInstanceOf(TranslationError);
+		expect(caught).not.toBeInstanceOf(TranslationBudgetError);
+		expect((caught as Error).message).toBe("ECONNRESET");
+		expect((caught as Error).message).not.toBe(TRANSLATION_BUDGET_REASON);
+		expect((caught as { cause?: unknown }).cause).toBe(networkError);
+		expect((caught as InstanceType<typeof TranslationError>).attempts).toBe(1);
+	});
+
+	it("reports the provider failure when the wait for the character budget uses up the deadline", async () => {
+		// F1, the other half: the deadline check after the reservation wait
+		// must mirror the one before the attempt. The deadline only prevented
+		// the retry; the provider failure is still the reason it failed.
+		const networkError = Object.assign(new Error("ECONNRESET"), { code: 503 });
+		mockClientTranslate.mockImplementation(() => Promise.reject(networkError));
+
+		const deadline = Date.now() + 200;
+		const budgetModule = await import("../translation-budget");
+		let reservations = 0;
+		const reserveSpy = spyOn(
+			budgetModule,
+			"reserveCharacters",
+		).mockImplementation(async (characters: number) => {
+			reservations += 1;
+			if (reservations > 1) {
+				// The retry's reservation waits for the window to roll forward
+				// and the wait outlives the run's deadline.
+				const wait = Math.max(0, deadline - Date.now()) + 10;
+				await new Promise((resolve) => setTimeout(resolve, wait));
+			}
+			return {
+				granted: true,
+				characters,
+				used: characters,
+				remaining: 0,
+				waitedMs: 0,
+				backend: "memory",
+			};
+		});
+
+		let caught: unknown;
+		try {
+			await translateBatch(["Hello"], "id", { delays: [0, 0, 0], deadline });
+		} catch (error) {
+			caught = error;
+		} finally {
+			reserveSpy.mockRestore();
+		}
+
+		// The refusal came from the post-reservation check, not from the one
+		// before the attempt: both attempts reserved.
+		expect(reservations).toBe(2);
+		expect(mockClientTranslate).toHaveBeenCalledTimes(1);
+		expect(caught).toBeInstanceOf(TranslationError);
+		expect(caught).not.toBeInstanceOf(TranslationBudgetError);
+		expect((caught as { cause?: unknown }).cause).toBe(networkError);
+		expect((caught as InstanceType<typeof TranslationError>).attempts).toBe(1);
 	});
 });

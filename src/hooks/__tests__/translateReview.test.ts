@@ -9,6 +9,7 @@ import {
 	test,
 } from "bun:test";
 import type { Payload } from "payload";
+import { logger } from "../../lib/logger";
 import * as redisModule from "../../lib/redis";
 import type { RichTextDocument } from "../../lib/utils";
 import type { Review } from "../../payload-types";
@@ -149,7 +150,7 @@ const echoTranslate = (texts: string | string[]): Promise<[string[]]> => {
 };
 
 type TranslateMock = (texts: string | string[]) => Promise<[string[]]>;
-const mockClientTranslate: TranslateMock = mock(echoTranslate);
+const mockClientTranslate = mock<TranslateMock>(echoTranslate);
 
 mock.module("@google-cloud/translate", () => ({
 	v2: {
@@ -366,6 +367,14 @@ describe("runTranslationPipeline", () => {
 		// Force the in-memory lock fallback so pipeline tests are
 		// deterministic without a live Redis (mirrors redis-less environments).
 		redisSpy = spyOn(redisModule, "getRedisClient").mockReturnValue(null);
+		// The translate client is memoized per process, so a client built by an
+		// earlier test file - under that file's module mock - would otherwise be
+		// reused here and its `translate` would not be this file's stub. That
+		// leaks across files: in CI the reused mock never settles, the first
+		// pipeline test times out holding the per-review lock, and every later
+		// test in this suite then sees a no-op. Reset it so the client is built
+		// under the mock registered at the top of this file.
+		(await import("../../lib/translate")).resetTranslateClientForTest();
 	});
 
 	afterEach(() => {
@@ -428,6 +437,90 @@ describe("runTranslationPipeline", () => {
 		);
 		expect(secondCall.data.favoriteQuotes[0].quote).toBe("ID:A fine line");
 		expect(secondCall.data.favoriteQuotes[0].page).toBe("12");
+	});
+
+	test("N favorite quotes produce one provider call, not N", async () => {
+		// AC-6: the quotes go through a single batched request. One request per
+		// quote was the sharpest burst in the pipeline — N simultaneous calls,
+		// each with its own cache lookups, against a quota measured per
+		// 100-second window.
+		const payload = makePayload();
+		const translateModule = await import("../../lib/translate");
+		translateRichTextSpy = spyOn(
+			translateModule,
+			"translateRichText",
+		).mockImplementation(async () => makeRichText(para("ID:Hello world")));
+		mockClientTranslate.mockClear();
+
+		const doc = makeDoc({
+			favoriteQuotes: [
+				{ quote: "First line", page: "10" },
+				{ quote: "Second line", page: "22" },
+				{ quote: "Third line", page: "35" },
+			],
+		});
+
+		await runTranslationPipeline(payload as unknown as Payload, doc);
+
+		// The rich text is stubbed, so the quotes are the only provider path.
+		expect(mockClientTranslate).toHaveBeenCalledTimes(1);
+		expect(mockClientTranslate.mock.calls[0][0]).toEqual([
+			"First line",
+			"Second line",
+			"Third line",
+		]);
+
+		// Every page number survives, in the original order.
+		const saved = payload.update.mock.calls[1][0];
+		expect(saved.data.favoriteQuotes).toEqual([
+			{ quote: "ID:First line", page: "10" },
+			{ quote: "ID:Second line", page: "22" },
+			{ quote: "ID:Third line", page: "35" },
+		]);
+	});
+
+	test("an all-blank favorite-quote list issues no provider call", async () => {
+		// T1.3: there is nothing to translate, so nothing is sent.
+		const payload = makePayload();
+		const translateModule = await import("../../lib/translate");
+		translateRichTextSpy = spyOn(
+			translateModule,
+			"translateRichText",
+		).mockImplementation(async () => makeRichText(para("ID:Hello world")));
+		mockClientTranslate.mockClear();
+
+		const doc = makeDoc({
+			favoriteQuotes: [
+				{ quote: "", page: "10" },
+				{ quote: "   ", page: "22" },
+			],
+		});
+
+		await runTranslationPipeline(payload as unknown as Payload, doc);
+
+		expect(mockClientTranslate).not.toHaveBeenCalled();
+		const saved = payload.update.mock.calls[1][0];
+		expect(saved.data.favoriteQuotes).toEqual([
+			{ quote: "", page: "10" },
+			{ quote: "   ", page: "22" },
+		]);
+	});
+
+	test("an empty favorite-quote list issues no provider call", async () => {
+		const payload = makePayload();
+		const translateModule = await import("../../lib/translate");
+		translateRichTextSpy = spyOn(
+			translateModule,
+			"translateRichText",
+		).mockImplementation(async () => makeRichText(para("ID:Hello world")));
+		mockClientTranslate.mockClear();
+
+		const doc = makeDoc({ favoriteQuotes: [] });
+
+		await runTranslationPipeline(payload as unknown as Payload, doc);
+
+		expect(mockClientTranslate).not.toHaveBeenCalled();
+		expect(payload.update.mock.calls[1][0].data.favoriteQuotes).toEqual([]);
 	});
 
 	test("failure → ID content NOT updated, status failed with error message", async () => {
@@ -672,6 +765,42 @@ describe("runTranslationPipeline", () => {
 		expect(payload.update.mock.calls.length).toBe(4);
 	});
 
+	test("a character-budget stop persists the character reason, not the time-budget one", async () => {
+		// F2: the two limits are kept distinct everywhere else, and the stored
+		// message is what the admin reads and the bell classifies. Storing the
+		// time-budget constant for every stop recorded a throttle as a wall
+		// clock that never expired.
+		const payload = makePayload();
+		const translateModule = await import("../../lib/translate");
+		translateRichTextSpy = spyOn(
+			translateModule,
+			"translateRichText",
+		).mockImplementation(async () => {
+			throw new translateModule.TranslationBudgetError(
+				translateModule.TRANSLATION_CHARACTER_BUDGET_REASON,
+			);
+		});
+
+		const doc = makeDoc();
+		await runTranslationPipeline(payload as unknown as Payload, doc, {
+			retryDelayMs: 1,
+		});
+
+		expect(payload.update.mock.calls.length).toBe(2);
+		const finalCall = payload.update.mock.calls[1][0];
+		expect(finalCall.data.translationStatus).toBe("failed");
+		expect(finalCall.data.translationError).toBe(
+			translateModule.TRANSLATION_CHARACTER_BUDGET_REASON,
+		);
+		expect(finalCall.data.translationError).not.toBe(
+			translateModule.TRANSLATION_BUDGET_REASON,
+		);
+
+		// Still a budget stop, so still no automatic re-run.
+		await new Promise((resolve) => setTimeout(resolve, 50));
+		expect(payload.update.mock.calls.length).toBe(2);
+	});
+
 	test("the guard skips the run when the review no longer exists", async () => {
 		const payload = makePayload();
 		payload.findByID.mockImplementation(async () => {
@@ -733,6 +862,9 @@ describe("delayed re-run (F2)", () => {
 		const mod = await import("../translateReview");
 		runTranslationPipeline = mod.runTranslationPipeline;
 		redisSpy = spyOn(redisModule, "getRedisClient").mockReturnValue(null);
+		// Rebuild the memoized client under this file's module mock; see the
+		// note in the runTranslationPipeline suite.
+		(await import("../../lib/translate")).resetTranslateClientForTest();
 	});
 
 	afterEach(() => {
@@ -1022,6 +1154,7 @@ describe("translateReview hook (F1: no nested write)", () => {
 		// Stub the translation layer: the real one would create the
 		// memoized Google client and bind it to this file's module mock.
 		const translateModule = await import("../../lib/translate");
+		translateModule.resetTranslateClientForTest();
 		translateRichTextSpy = spyOn(
 			translateModule,
 			"translateRichText",
@@ -1153,5 +1286,104 @@ describe("translateReview hook (F1: no nested write)", () => {
 		for (const call of payload.update.mock.calls) {
 			expect(call[0].data.englishUpdatedAt).toBeUndefined();
 		}
+	});
+
+	test("a pipeline throw after the response is sent produces one classified log entry and no unhandled rejection", async () => {
+		// The window FR-10 is about: `runTranslationPipeline`'s own `catch`
+		// covers provider failures, but a throw in its `finally` — a failing
+		// lock release — escapes it. `void` used to discard that promise, so
+		// the run vanished as an unhandled rejection with no log line.
+		const payload = makePayload();
+		const lockModule = await import("../../lib/translation-lock");
+		const releaseSpy = spyOn(
+			lockModule,
+			"releaseTranslationLock",
+		).mockImplementation(async () => {
+			throw new Error("redis connection lost during release");
+		});
+		const errorLog = spyOn(logger, "error").mockImplementation(() => {});
+		const rejections: unknown[] = [];
+		const onRejection = (reason: unknown) => rejections.push(reason);
+		process.on("unhandledRejection", onRejection);
+
+		try {
+			await runHook({
+				// A unique id keeps the lock this run never releases from
+				// blocking the other cases in this block.
+				doc: makeDoc({
+					id: 7001,
+					reviewContent: makeRichText(para("Changed text")),
+				}),
+				previousDoc: makeDoc(),
+				payload,
+			});
+			// Let any unhandled rejection be reported before asserting.
+			await new Promise((resolve) => setTimeout(resolve, 20));
+
+			expect(rejections).toEqual([]);
+			expect(errorLog).toHaveBeenCalledTimes(1);
+
+			const [message, fields] = errorLog.mock.calls[0];
+			expect(message).toContain("failed after the response was sent");
+			// The existing classifier's kind, not a bare "Error".
+			expect(message).toContain("(unexpected)");
+			// Structured fields, never the raw error object (FR-8's style).
+			expect(fields).toEqual({
+				kind: "unexpected",
+				transient: false,
+				detail: "redis connection lost during release",
+			});
+		} finally {
+			process.off("unhandledRejection", onRejection);
+			releaseSpy.mockRestore();
+			errorLog.mockRestore();
+		}
+	});
+
+	test("mark-stale on an untranslated review leaves the status unchanged and logs no error", async () => {
+		// `stale` is only legal from `translated`. The unconditional write the
+		// hook used to make was rejected by the collection validator, and the
+		// rejection was logged at error level and ignored (FR-12, AC-12).
+		const payload = makePayload();
+		const errorLog = spyOn(logger, "error").mockImplementation(() => {});
+
+		try {
+			await runHook({
+				doc: makeDoc({
+					autoTranslate: false,
+					translationStatus: "untranslated",
+					reviewContent: makeRichText(para("Changed text")),
+				}),
+				previousDoc: makeDoc(),
+				payload,
+			});
+
+			// No write at all: nothing is attempted that the validator would
+			// have to reject.
+			expect(payload.update).not.toHaveBeenCalled();
+			expect(errorLog).not.toHaveBeenCalled();
+		} finally {
+			errorLog.mockRestore();
+		}
+	});
+
+	test("mark-stale on a translated review still writes stale", async () => {
+		// The legal path must keep working: restricting the write to
+		// `translated` is not a removal of the feature.
+		const payload = makePayload();
+		await runHook({
+			doc: makeDoc({
+				autoTranslate: false,
+				translationStatus: "translated",
+				reviewContent: makeRichText(para("Changed text")),
+			}),
+			previousDoc: makeDoc(),
+			payload,
+		});
+
+		expect(payload.update).toHaveBeenCalledTimes(1);
+		expect(payload.update.mock.calls[0][0].data.translationStatus).toBe(
+			"stale",
+		);
 	});
 });
