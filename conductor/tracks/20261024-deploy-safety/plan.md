@@ -14,7 +14,7 @@
 - **Covers:** FR-2, FR-3, NFR-5, AC-2, AC-3, AC-4
 - **Touches:** `src/migrations/__tests__/**`, `src/migrations/*.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** verified
+- **Status:** done
 
 - [x] **P1.T1: Marker scanner test** - covers: FR-2
   - [x] **P1.T1.1: Split each migration file at `export async function down` so only the `up` body is scanned**
@@ -36,7 +36,7 @@
 - **Covers:** FR-4, FR-5, NFR-3, AC-5, AC-6
 - **Touches:** `src/lib/deploy-smoke.ts`, `src/lib/__tests__/deploy-smoke.test.ts`, `src/scripts/deploy-smoke.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** verified
+- **Status:** done
 
 - [x] **P2.T1: Pure smoke module** - covers: FR-5
   - [x] **P2.T1.1: Poll the fixed endpoint set with injectable `fetch` and sleep, returning a per-endpoint report**
@@ -97,17 +97,17 @@
 - **Covers:** FR-9, AC-10
 - **Touches:** `docs/DEPLOYMENT.md`, `README.md`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** in_progress
+- **Status:** done
 
-- [ ] **P5.T1: Write `docs/DEPLOYMENT.md`** - covers: FR-9
-  - [ ] **P5.T1.1: The deploy order and why migrations precede the build**
-  - [ ] **P5.T1.2: `migrate:status` and `migrate:down`, what a revert does not restore, and when it is unsafe**
-  - [ ] **P5.T1.3: How a destructive migration is declared and reviewed**
-- [ ] **P5.T2: Link the runbook from the README Deployment section** - covers: FR-9
+- [x] **P5.T1: Write `docs/DEPLOYMENT.md`** - covers: FR-9
+  - [x] **P5.T1.1: The deploy order and why migrations precede the build**
+  - [x] **P5.T1.2: `migrate:status` and `migrate:down`, what a revert does not restore, and when it is unsafe**
+  - [x] **P5.T1.3: How a destructive migration is declared and reviewed**
+- [x] **P5.T2: Link the runbook from the README Deployment section** - covers: FR-9
 
 <!--
 The primary appends after acceptance:
 **Result:** verified
-**Checkpoint:** <short-sha>
-**Evidence:** conductor/tracks/<track-id>/verification/phase-1.md
+**Checkpoint:** 79c9112
+**Evidence:** conductor/tracks/20261024-deploy-safety/verification/phase-5.md
 -->
