@@ -117,7 +117,7 @@
 - **Covers:** FR-10, FR-11, FR-12, AC-10, AC-11, AC-12
 - **Touches:** `src/hooks/translateReview.ts`, `src/lib/translation-lock.ts`, `src/hooks/__tests__/translateReview.test.ts`, `src/lib/__tests__/translation-lock.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P5.T1: Capture pipeline failures after the response is sent** - covers: FR-10
   - [ ] **P5.T1.1: Attach explicit error capture to the fire-and-forget pipeline invocation** so a throw becomes one classified log entry rather than an unhandled rejection.
