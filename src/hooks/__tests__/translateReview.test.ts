@@ -367,6 +367,14 @@ describe("runTranslationPipeline", () => {
 		// Force the in-memory lock fallback so pipeline tests are
 		// deterministic without a live Redis (mirrors redis-less environments).
 		redisSpy = spyOn(redisModule, "getRedisClient").mockReturnValue(null);
+		// The translate client is memoized per process, so a client built by an
+		// earlier test file - under that file's module mock - would otherwise be
+		// reused here and its `translate` would not be this file's stub. That
+		// leaks across files: in CI the reused mock never settles, the first
+		// pipeline test times out holding the per-review lock, and every later
+		// test in this suite then sees a no-op. Reset it so the client is built
+		// under the mock registered at the top of this file.
+		(await import("../../lib/translate")).resetTranslateClientForTest();
 	});
 
 	afterEach(() => {
@@ -854,6 +862,9 @@ describe("delayed re-run (F2)", () => {
 		const mod = await import("../translateReview");
 		runTranslationPipeline = mod.runTranslationPipeline;
 		redisSpy = spyOn(redisModule, "getRedisClient").mockReturnValue(null);
+		// Rebuild the memoized client under this file's module mock; see the
+		// note in the runTranslationPipeline suite.
+		(await import("../../lib/translate")).resetTranslateClientForTest();
 	});
 
 	afterEach(() => {
@@ -1143,6 +1154,7 @@ describe("translateReview hook (F1: no nested write)", () => {
 		// Stub the translation layer: the real one would create the
 		// memoized Google client and bind it to this file's module mock.
 		const translateModule = await import("../../lib/translate");
+		translateModule.resetTranslateClientForTest();
 		translateRichTextSpy = spyOn(
 			translateModule,
 			"translateRichText",
