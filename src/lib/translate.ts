@@ -205,7 +205,19 @@ export class TranslationBudgetError extends TranslationError {
 }
 
 // Maximum number of strings sent in a single Google Translate API request.
+// This is a secondary ceiling: a request is packed by character count first,
+// so a batch of short strings still stops at this count.
 export const TRANSLATION_BATCH_SIZE = 64;
+
+// Google's recommended maximum of code points per request. A request closes as
+// soon as it reaches this many, which keeps a burst of rich-text nodes from
+// becoming one huge request that drains the character quota in a single call.
+export const TRANSLATION_BATCH_CHAR_TARGET = 5000;
+
+// Hard ceiling on code points per request. It sits well under the API's 30,000
+// limit so that a text slightly over the target can never push a request past
+// what Google accepts. Only a single text longer than this travels alone.
+export const TRANSLATION_BATCH_CHAR_CAP = 25000;
 
 /** Default per-request timeout for a single translation API call (ms). */
 export const TRANSLATION_REQUEST_TIMEOUT_MS = 30 * 1000;
@@ -218,7 +230,11 @@ const MAX_ATTEMPTS = 3;
 export type TranslateBatchOptions = {
 	/** Backoff delays (ms) between retry attempts. Defaults to RETRY_DELAYS_MS. */
 	delays?: number[];
-	/** Max strings per API request. Defaults to TRANSLATION_BATCH_SIZE. */
+	/**
+	 * Max strings per API request. Defaults to TRANSLATION_BATCH_SIZE. A
+	 * request also stops at TRANSLATION_BATCH_CHAR_TARGET code points, so this
+	 * is the string ceiling of a batch, not its only limit.
+	 */
 	batchSize?: number;
 	/**
 	 * Per-request timeout (ms). Defaults to TRANSLATION_REQUEST_TIMEOUT_MS.
@@ -378,6 +394,70 @@ async function translateChunkWithRetry(
 	);
 }
 
+/**
+ * Counts Unicode code points, the unit Google measures its character quota in.
+ *
+ * `String.length` counts UTF-16 code units, so it over-counts astral characters
+ * (emoji, some CJK extensions) and would close a batch early. Over-counting is
+ * safe, under-counting is not, so the exact count is what the packer uses.
+ */
+function countCodePoints(text: string): number {
+	return [...text].length;
+}
+
+/**
+ * Packs cache-miss texts into provider requests by code-point count.
+ *
+ * A request closes as soon as it reaches the character target or the string
+ * ceiling, whichever comes first, so the number of strings in a batch can never
+ * make a request exceed the cap on its own. A single text longer than the cap
+ * cannot be split without corrupting the sentence Google translates, so it is
+ * packed alone in its own request instead.
+ *
+ * The input order is preserved: batches are consecutive runs of the given
+ * texts, which is what lets the caller map results back onto the source order.
+ */
+function packTranslationRequests(
+	texts: string[],
+	charTarget: number,
+	charCap: number,
+	batchSize: number,
+): string[][] {
+	const batches: string[][] = [];
+	let current: string[] = [];
+	let currentChars = 0;
+
+	const close = () => {
+		if (current.length > 0) {
+			batches.push(current);
+			current = [];
+			currentChars = 0;
+		}
+	};
+
+	for (const text of texts) {
+		const chars = countCodePoints(text);
+		// An oversized text starts its own request rather than being split.
+		const oversized = chars > charCap;
+		const wouldOverflow =
+			currentChars + chars > charTarget || current.length + 1 > batchSize;
+
+		if (current.length > 0 && (oversized || wouldOverflow)) {
+			close();
+		}
+
+		current.push(text);
+		currentChars += chars;
+
+		if (currentChars >= charTarget || current.length >= batchSize) {
+			close();
+		}
+	}
+
+	close();
+	return batches;
+}
+
 // Translate a list of texts using batched API calls, Redis caching, and
 // retry with exponential backoff. Blank texts pass through untouched and
 // are never sent to the API. On total failure this throws TranslationError -
@@ -429,9 +509,15 @@ export async function translateBatch(
 		}
 	}
 
-	// Translate cache misses in chunks, retrying each chunk on failure.
-	for (let start = 0; start < misses.length; start += batchSize) {
-		const chunk = misses.slice(start, start + batchSize);
+	// Translate cache misses in character-packed requests, retrying each on
+	// failure. Cache hits never reach this point, so they consume no capacity.
+	const batches = packTranslationRequests(
+		misses,
+		TRANSLATION_BATCH_CHAR_TARGET,
+		TRANSLATION_BATCH_CHAR_CAP,
+		batchSize,
+	);
+	for (const chunk of batches) {
 		const chunkTranslations = await translateChunkWithRetry(
 			chunk,
 			targetLanguage,
