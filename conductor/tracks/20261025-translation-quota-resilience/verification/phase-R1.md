@@ -228,3 +228,41 @@ edited only for the three passages named by R1.T3.2, R1.T4.1 and R1.T4.2.
 - One incidental observation, not acted on (out of scope): `retranslate.ts`'s
   uncovered lines (378, 399, 424-429, 441-446, 461) are the pre-existing
   not-found and error-description branches, untouched by this phase.
+
+## Primary verification
+
+Re-run by the primary on the squashed checkpoint `609aacf` (phase base `7347329`), against
+the same working tree the reviewer will read.
+
+| Layer | Command | Exit | Summary |
+| --- | --- | --- | --- |
+| static | `bun run typecheck` | 0 | 253 files, no type errors |
+| static | `bun run lint` | 0 | 244 files, no fixes applied |
+| unit | `bun test` | 0 | 686 pass, 0 fail, 1627 expect, 50 files |
+
+Reviewed the diff directly rather than trusting the report:
+
+- **F1** — both budget-stop branches now mirror the pre-attempt deadline check: the
+  reservation refusal is wrapped in a `try`/`catch` that rethrows `providerFailure(lastError,
+  attempt)` when an earlier attempt failed, and the post-reservation deadline check does the
+  same before falling through to a bare `TranslationBudgetError`. The bare stop is now
+  reachable only on attempt 0, which is the only case where no provider failure exists to
+  report. The NFR-3 path (the budget machinery itself throwing → log and proceed unreserved)
+  is untouched, and the two new `translate.test.ts` cases sit either side of the fix.
+- **F2** — `budgetStopReason` reads the thrown error's own message with the constant as a
+  fallback, so a character stop persists `TRANSLATION_CHARACTER_BUDGET_REASON`; `isBudgetStop`
+  accepts both reasons and `isCharacterBudgetStop` gates the batch throttle, so the
+  `clock() < deadline` heuristic is gone. The rewritten comment at `retranslate.ts:322-326`
+  now describes what the code does instead of what it used to have to guess. The pipeline
+  test asserts the persisted value *is* the character reason **and** is not the time reason,
+  and separately that no automatic re-run is scheduled.
+- **F3** — `.env.example` now states the truth an operator needs: empty falls back to the
+  default, set it explicitly when the console quota is raised.
+- **F4/F5** — the evidence names `retranslate-bulk-run.test.ts` and the lock-TTL comment
+  states the real invariant (five chunks when fields *plus quote list* fit under the cap),
+  with `favoriteQuotes`' missing `maxRows` named as the reason a call is not a chunk.
+
+`**Result: verified.**` All five findings are fixed at the root cause, each has a test that
+fails if the fix is reverted, and no phase 1–6 behaviour or test was weakened. The two budget
+reasons remain distinct strings and a test asserts that, so F2 cannot silently regress into
+one message.

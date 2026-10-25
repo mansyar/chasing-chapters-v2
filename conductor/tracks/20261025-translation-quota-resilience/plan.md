@@ -187,22 +187,25 @@ Review fixes are appended by `conductor-review` as:
 - **Covers:** F1, F2, F3, F4, F5
 - **Touches:** `src/lib/translate.ts`, `src/lib/retranslate.ts`, `src/hooks/translateReview.ts`, `src/lib/translation-lock.ts`, `.env.example`, `src/lib/__tests__/translate.test.ts`, `src/lib/__tests__/retranslate-bulk-run.test.ts`, `src/hooks/__tests__/translateReview.test.ts`, `conductor/tracks/20261025-translation-quota-resilience/verification/integrated.md`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** in_progress
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** 609aacf
+- **Evidence:** conductor/tracks/20261025-translation-quota-resilience/verification/phase-R1.md
 
-- [ ] **R1.T1: Never re-label a provider failure as a budget stop** - covers: F1
-  - [ ] **R1.T1.1:** Mirror the first deadline check in the post-reservation branch: when `lastError` is set, throw `providerFailure(lastError, attempt)` instead of an unconditional `TranslationBudgetError`.
-  - [ ] **R1.T1.2:** When `reserveChunkBudget` refuses a reservation, rethrow as `providerFailure(lastError, attempt)` if an earlier attempt failed, and as the budget stop only on attempt 0.
-  - [ ] **R1.T1.3:** Test it: `deadline` set, attempt 1 rejects with `ECONNRESET`, attempt 2 refused by the budget; assert a `TranslationError` whose cause is the network error and whose message is not the budget reason.
+- [x] **R1.T1: Never re-label a provider failure as a budget stop** - covers: F1
+  - [x] **R1.T1.1:** Mirror the first deadline check in the post-reservation branch: when `lastError` is set, throw `providerFailure(lastError, attempt)` instead of an unconditional `TranslationBudgetError`.
+  - [x] **R1.T1.2:** When `reserveChunkBudget` refuses a reservation, rethrow as `providerFailure(lastError, attempt)` if an earlier attempt failed, and as the budget stop only on attempt 0.
+  - [x] **R1.T1.3:** Test it: `deadline` set, attempt 1 rejects with `ECONNRESET`, attempt 2 refused by the budget; assert a `TranslationError` whose cause is the network error and whose message is not the budget reason.
 
-- [ ] **R1.T2: Persist the message of the budget stop that actually fired** - covers: F2
-  - [ ] **R1.T2.1:** Store the thrown error's own message for a budget stop instead of the `TRANSLATION_BUDGET_REASON` constant, so a character stop is not recorded as a time-budget stop.
-  - [ ] **R1.T2.2:** Widen `isBudgetStop` in `retranslate.ts` to accept both reasons, and drop the `clock() < deadline` heuristic that was recovering the distinction.
-  - [ ] **R1.T2.3:** Assert the persisted `translationError` for a character-budget stop in `translateReview.test.ts`, and prove the bulk run still reports it `skipped` after the message changes.
+- [x] **R1.T2: Persist the message of the budget stop that actually fired** - covers: F2
+  - [x] **R1.T2.1:** Store the thrown error's own message for a budget stop instead of the `TRANSLATION_BUDGET_REASON` constant, so a character stop is not recorded as a time-budget stop.
+  - [x] **R1.T2.2:** Widen `isBudgetStop` in `retranslate.ts` to accept both reasons, and drop the `clock() < deadline` heuristic that was recovering the distinction.
+  - [x] **R1.T2.3:** Assert the persisted `translationError` for a character-budget stop in `translateReview.test.ts`, and prove the bulk run still reports it `skipped` after the message changes.
 
-- [ ] **R1.T3: Correct the operator-facing documentation** - covers: F3
-  - [ ] **R1.T3.1:** Fix the `.env.example` sentence to state that an empty value falls back to the default, and that the variable must be set explicitly when the console quota is raised.
-  - [ ] **R1.T3.2:** Correct the same sentence in `verification/integrated.md` §11.
+- [x] **R1.T3: Correct the operator-facing documentation** - covers: F3
+  - [x] **R1.T3.1:** Fix the `.env.example` sentence to state that an empty value falls back to the default, and that the variable must be set explicitly when the console quota is raised.
+  - [x] **R1.T3.2:** Correct the same sentence in `verification/integrated.md` §11.
 
-- [ ] **R1.T4: Correct two evidence defects** - covers: F4, F5
-  - [ ] **R1.T4.1:** Name `retranslate-bulk-run.test.ts` (not `retranslate-bulk.test.ts`) in `integrated.md` §6 and note the file is new in this track.
-  - [ ] **R1.T4.2:** Reword the `TRANSLATION_PIPELINE_STEPS` comment and the `integrated.md` §9 residual to the real invariant: the TTL bounds a run of at most five chunks, i.e. when the four rich-text fields plus the quote list total no more than `TRANSLATION_BATCH_CHAR_CAP` code points.
+- [x] **R1.T4: Correct two evidence defects** - covers: F4, F5
+  - [x] **R1.T4.1:** Name `retranslate-bulk-run.test.ts` (not `retranslate-bulk.test.ts`) in `integrated.md` §6 and note the file is new in this track.
+  - [x] **R1.T4.2:** Reword the `TRANSLATION_PIPELINE_STEPS` comment and the `integrated.md` §9 residual to the real invariant: the TTL bounds a run of at most five chunks, i.e. when the four rich-text fields plus the quote list total no more than `TRANSLATION_BATCH_CHAR_CAP` code points.

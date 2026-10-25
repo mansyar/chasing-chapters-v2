@@ -6,7 +6,7 @@
 	"priority": "high",
 	"depends_on": [],
 	"created_at": "2026-10-25T08:31:08Z",
-	"updated_at": "2026-10-25T11:27:55Z",
+	"updated_at": "2026-10-25T11:54:51Z",
 	"spec": "spec.md",
 	"plan": "plan.md",
 	"branch": "fix/20261025-translation-quota-resilience",
@@ -14,11 +14,11 @@
 	"base_sha": "bdc422de3a0b25eecd167ac685455db345317b78",
 	"progress": {
 		"phases_total": 6,
-		"phases_verified": 6,
+		"phases_verified": 7,
 		"tasks_total": 19,
-		"tasks_done": 19
+		"tasks_done": 23
 	},
-	"last_checkpoint": "7032e23",
+	"last_checkpoint": "609aacf",
 	"review_verdict": "BLOCK",
 	"review_rounds": 1,
 	"doc_sync": "pending",
