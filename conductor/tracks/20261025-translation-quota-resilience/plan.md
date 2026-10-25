@@ -117,21 +117,24 @@
 - **Covers:** FR-10, FR-11, FR-12, AC-10, AC-11, AC-12
 - **Touches:** `src/hooks/translateReview.ts`, `src/lib/translation-lock.ts`, `src/hooks/__tests__/translateReview.test.ts`, `src/lib/__tests__/translation-lock.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** in_progress
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** a77c486
+- **Evidence:** conductor/tracks/20261025-translation-quota-resilience/verification/phase-5.md
 
-- [ ] **P5.T1: Capture pipeline failures after the response is sent** - covers: FR-10
-  - [ ] **P5.T1.1: Attach explicit error capture to the fire-and-forget pipeline invocation** so a throw becomes one classified log entry rather than an unhandled rejection.
-  - [ ] **P5.T1.2: Do not make the save path await the pipeline** - the review must save regardless of translation outcome (NFR-3).
-- [ ] **P5.T2: Size the lock TTL to the worst-case run** - covers: FR-11
-  - [ ] **P5.T2.1: Derive the TTL from the retry policy and request timeout constants** rather than a fixed 10 minutes.
-  - [ ] **P5.T2.2: Test that the computed TTL exceeds the worst-case duration implied by those constants**, so a slow provider cannot outlive its own lock.
-- [ ] **P5.T3: Restrict `markTranslationStale` to legal transitions** - covers: FR-12
-  - [ ] **P5.T3.1: Only write `stale` from `translated`** - writing it from `untranslated` is rejected by the validator and the error is currently swallowed, leaving the review silently untranslated.
-  - [ ] **P5.T3.2: Leave other statuses unchanged** rather than attempting a write that will be rejected.
-- [ ] **P5.T4: Cover the robustness fixes with tests** - covers: AC-10, AC-11, AC-12
-  - [ ] **P5.T4.1: Test that a pipeline throw produces one classified log entry and no unhandled-rejection warning.**
-  - [ ] **P5.T4.2: Test that `markTranslationStale` on an `untranslated` review leaves its status unchanged and logs no validator error.**
-  - [ ] **P5.T4.3: Test the TTL derivation against the retry and timeout constants.**
+- [x] **P5.T1: Capture pipeline failures after the response is sent** - covers: FR-10
+  - [x] **P5.T1.1: Attach explicit error capture to the fire-and-forget pipeline invocation** so a throw becomes one classified log entry rather than an unhandled rejection.
+  - [x] **P5.T1.2: Do not make the save path await the pipeline** - the review must save regardless of translation outcome (NFR-3).
+- [x] **P5.T2: Size the lock TTL to the worst-case run** - covers: FR-11
+  - [x] **P5.T2.1: Derive the TTL from the retry policy and request timeout constants** rather than a fixed 10 minutes.
+  - [x] **P5.T2.2: Test that the computed TTL exceeds the worst-case duration implied by those constants**, so a slow provider cannot outlive its own lock.
+- [x] **P5.T3: Restrict `markTranslationStale` to legal transitions** - covers: FR-12
+  - [x] **P5.T3.1: Only write `stale` from `translated`** - writing it from `untranslated` is rejected by the validator and the error is currently swallowed, leaving the review silently untranslated.
+  - [x] **P5.T3.2: Leave other statuses unchanged** rather than attempting a write that will be rejected.
+- [x] **P5.T4: Cover the robustness fixes with tests** - covers: AC-10, AC-11, AC-12
+  - [x] **P5.T4.1: Test that a pipeline throw produces one classified log entry and no unhandled-rejection warning.**
+  - [x] **P5.T4.2: Test that `markTranslationStale` on an `untranslated` review leaves its status unchanged and logs no validator error.**
+  - [x] **P5.T4.3: Test the TTL derivation against the retry and timeout constants.**
 
 ## Phase 6: Admin visibility of quota failures
 

@@ -242,3 +242,28 @@ excludes it explicitly, and the derived TTL already removes the defect.
 - If a maximum rich-text length is ever added to the collection, `TRANSLATION_PIPELINE_STEPS`
   becomes a true upper bound rather than a bound on the realistic shape, and this
   derivation should be revisited then.
+
+## Primary verification
+
+The primary re-ran all three layers on the squashed checkpoint `a77c486`:
+
+| Layer | Command | Exit | Summary |
+|---|---|---|---|
+| static | `bun run typecheck` | 0 | No type errors in 252 files (456ms) |
+| static | `bun run lint` | 0 | 243 files checked, no fixes applied |
+| unit | `bun test` | 0 | 663 pass, 0 fail, 1566 expect() calls, 49 files (2.29s) |
+
+The primary read both diffs directly and re-derived the TTL from the constants rather than trusting the evidence:
+
+- **FR-10:** `capturePipelineFailure` attaches `.catch` instead of discarding the promise, classifies with the existing `classifyTranslationError`, and logs one entry with `{kind, transient, detail}` — never the raw error. Wired to all three `void`-ed pipelines and to the delayed re-run in `scheduleTranslationRetry`, which the subagent added beyond the brief and which is correct: it is a fourth surface on the same path, firing minutes later with nothing on the stack. The save path still does not await; the deadlock comment is preserved and extended.
+- **FR-11:** `TRANSLATION_WORST_CASE_STEP_MS = MAX_ATTEMPTS * (TRANSLATION_BUDGET_WINDOW_MS + TRANSLATION_REQUEST_TIMEOUT_MS) + TRANSLATION_RETRY_BACKOFF_MS`, where the backoff is `RETRY_DELAYS_MS.slice(0, MAX_ATTEMPTS - 1)` — correctly two entries, because the loop sleeps only while `attempt < MAX_ATTEMPTS - 1`, so the `30000` entry is never waited on. That gives `3 * 130000 + 10000 = 400000` per step; `TRANSLATION_PIPELINE_STEPS = 5` gives `2000000` ms. The old 600000 was 1.4 million ms short of the run's own worst case. The derivation is in the module as code plus a doc comment, not only in this report, so it cannot drift silently.
+- **FR-12:** `markTranslationStale` takes the caller's status and returns before any write unless it is `translated`, logging at `debug`. It is the only caller, updated; the typecheck confirms no stale call site.
+- **AC-10** registers a real `process.on("unhandledRejection")` listener and asserts it saw nothing, which is the assertion that actually proves the fix rather than describing it.
+
+**Result: verified.** AC-10, AC-11 and AC-12 are satisfied by direct test evidence; FR-10, FR-11 and FR-12 by the code above. No existing test was weakened.
+
+### Non-blocking observations carried forward to review
+
+1. **The TTL bound is not absolute, and the code says so.** `TRANSLATION_PIPELINE_STEPS = 5` assumes each rich-text field fits in one packed request. A field over `TRANSLATION_BATCH_CHAR_CAP` (25,000 code points) issues further chunks and outlives the TTL. The fields carry no `maxLength`, so no finite TTL could bound that case — it needs a product decision (cap the field, or accept that a very long review can exceed its lock). The subagent documented this in the module rather than hiding it, which is the right call, but it is a real residual and worth a follow-up. Medium.
+2. **`MAX_ATTEMPTS` became exported.** Correct and necessary — restating `3` in `translation-lock.ts` is exactly the drift FR-11 forbids — but it widens the public surface of `translate.ts` by one constant. Low.
+3. **A 33-minute lock is a long time to be blocked.** With the TTL erring long, a crashed run blocks retranslation of that review for 33 minutes. Acceptable against silent data corruption, and the reasoning is recorded in the module, but an operator who sees "a translation run is already in progress" for half an hour has no signal that it is a stale lock rather than a live run. Phase 6's bell does not cover it. Low.
