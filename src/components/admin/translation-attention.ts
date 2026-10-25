@@ -12,6 +12,11 @@
 // documented behavior rather than a bug.
 
 import type { Where } from "payload";
+import {
+	classifyTranslationError,
+	TRANSLATION_ERROR_KINDS,
+	type TranslationErrorKind,
+} from "@/lib/translation-errors";
 
 /** Shared poll interval for the edit-view poller and the attention bell. */
 export const TRANSLATION_POLL_INTERVAL_MS = 20 * 1000;
@@ -101,6 +106,14 @@ export interface TranslationAttentionItem {
 	title: string;
 	translationStatus: string;
 	editURL: string;
+	/** The stored failure message, when the pipeline recorded a non-blank one. */
+	translationError: string | null;
+	/**
+	 * Failure kind recovered from `translationError` (FR-9). `null` for a row
+	 * with no stored message — a `stale` or stuck-`pending` review is not a
+	 * failure of any kind.
+	 */
+	errorKind: TranslationErrorKind | null;
 }
 
 /** Shape of one raw REST list doc — deliberately tolerant. */
@@ -109,6 +122,7 @@ interface AttentionCandidateDoc {
 	title?: unknown;
 	translationStatus?: unknown;
 	updatedAt?: unknown;
+	translationError?: unknown;
 }
 
 /**
@@ -141,18 +155,106 @@ export function extractAttentionDocs(
 		) {
 			continue;
 		}
+		const translationError = asNonBlankString(candidate.translationError);
 		items.push({
 			id,
 			title: asString(candidate.title) || `Review ${id}`,
 			translationStatus: status,
 			editURL: buildReviewEditURL(id),
+			translationError,
+			errorKind: deriveErrorKind(translationError),
 		});
 	}
 	return items;
 }
 
+/** Per-kind failure counts over the attention rows the caller holds. */
+export type AttentionKindCounts = Record<TranslationErrorKind, number>;
+
+/**
+ * All-zero counts. Spelled out rather than derived so that adding a kind to
+ * `TRANSLATION_ERROR_KINDS` fails the typecheck here instead of silently
+ * reporting zero for it — the renderer must never miss a kind.
+ */
+function emptyAttentionKindCounts(): AttentionKindCounts {
+	return {
+		quota: 0,
+		network: 0,
+		timeout: 0,
+		credentials: 0,
+		unexpected: 0,
+	};
+}
+
+/**
+ * Count attention rows by failure kind (FR-9).
+ *
+ * The breakdown describes the rows the caller passes in — for the bell, the
+ * bounded page it fetched — never the whole backlog. `translationError` is free
+ * text, so no `where` clause can filter by kind and there is no cheaper count
+ * to take. Rows with no stored message contribute to no kind.
+ */
+export function summarizeAttentionErrorKinds(
+	items: readonly TranslationAttentionItem[],
+): AttentionKindCounts {
+	const counts = emptyAttentionKindCounts();
+	for (const item of items) {
+		if (item.errorKind !== null) counts[item.errorKind] += 1;
+	}
+	return counts;
+}
+
+/**
+ * Render lines for the bell (FR-9): one scope line naming the sample the counts
+ * describe, then one line per failure kind present.
+ *
+ * The counts come from the fetched page, so the scope line names that page and,
+ * when it is a truncated sample, names the true backlog alongside it. "3 quota"
+ * read as a backlog total would be wrong and would drive the wrong response.
+ * Quota gets its own line so an operator can tell "Google is throttling" from
+ * "credentials are wrong" without reading logs.
+ */
+export function formatAttentionKindBreakdownLines(
+	counts: AttentionKindCounts,
+	shownCount: number,
+	totalCount: number = shownCount,
+): string[] {
+	if (shownCount <= 0) return [];
+	const reviews = `${shownCount} ${shownCount === 1 ? "review" : "reviews"}`;
+	const scope =
+		totalCount > shownCount
+			? `Failure kinds across the ${reviews} shown, not the whole backlog of ${totalCount}:`
+			: `Failure kinds across the ${reviews} shown:`;
+	const entries = TRANSLATION_ERROR_KINDS.filter(
+		(kind) => counts[kind] > 0,
+	).map((kind) => `${counts[kind]} ${kind}`);
+	return entries.length > 0 ? [scope, ...entries] : [scope, "none recorded"];
+}
+
+/**
+ * Re-derive the failure kind from the stored `translationError` string, which
+ * `formatTranslationError` wrote as "<actionable message> (raw: <detail>)".
+ * Reusing the classifier keeps the persisted format the single source of truth:
+ * no new field, no migration, no change to what the pipeline writes.
+ *
+ * The classifier already falls back to `unexpected` for anything it cannot
+ * name, so a present-but-unrecognised message still gets a kind and this never
+ * throws. A missing or blank message is not a message at all — no kind.
+ */
+function deriveErrorKind(message: string | null): TranslationErrorKind | null {
+	if (message === null) return null;
+	return classifyTranslationError(new Error(message)).kind;
+}
+
 function asString(value: unknown): string | null {
 	return typeof value === "string" ? value : null;
+}
+
+/** A string with content; whitespace-only counts as absent. */
+function asNonBlankString(value: unknown): string | null {
+	const text = asString(value);
+	if (text === null || text.trim() === "") return null;
+	return text;
 }
 
 function asDateValue(value: unknown): string | Date | null {
