@@ -27,6 +27,20 @@ The run is serialised: a workflow-level `concurrency` group named
 behind the first instead of cancelling it. Two merges minutes apart therefore
 run their migrations one after the other rather than interleaving them.
 
+**Not every push deploys.** `paths-ignore` skips the workflow when a push
+touches only `conductor/`, `.conductor/`, `docs/`, `.opencode/` or a root
+Markdown file. That exists because moving a track into the archive once
+redeployed production to ship an identical image.
+
+GitHub skips the run only when *every* changed path matches, so a commit that
+touches docs **and** source still deploys. The filter can only suppress a push
+that changed nothing the image reads — which is why `e2e/` (part of the build
+context), `src/migrations/`, the `Dockerfile`, `.dockerignore`, the lockfile and
+`.github/workflows/` are deliberately absent from the list.
+
+If a docs-only change genuinely needs a deploy, use `workflow_dispatch`. That
+trigger is not filtered.
+
 ---
 
 ## Why migrations run first
