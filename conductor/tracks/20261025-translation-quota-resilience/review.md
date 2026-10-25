@@ -259,7 +259,16 @@ are fixed in Phase R1 under strict mode; no deferrals.
 
 ## Doc sync
 
-`pending`
+`updated`
+
+Post-review sync recorded what the round-1 fixes changed in behaviour rather than adding
+new behaviour: `conductor/tech-stack.md` now states that a budget stop is persisted with
+the reason of the limit that actually fired (character budget vs. run deadline), so
+throttling is distinguishable from a timeout — the F2 fix. `.env.example` and
+`verification/integrated.md` §11 were corrected in Phase R1 itself (F3), and the lock-TTL
+invariant in `translation-lock.ts` and `integrated.md` §9 was corrected in the round-2
+delta (N1). `product.md` and `product-guidelines.md` were not touched: nothing
+reader-facing changed.
 
 ## History
 

@@ -307,3 +307,26 @@ path survived Phase 2's review.
 - No rewrite of `conductor/workflow.md`. Its verification strategy already described the
   layers and commands this track used.
 - No edit to the archived or completed tracks' artifacts.
+## 12. Post-review state
+
+The review added one round of fixes (`## Phase R1` in `plan.md`, checkpoint `609aacf`,
+evidence `verification/phase-R1.md`) plus one correction the delta re-review raised
+against that round's own work. Both are reflected above rather than in a separate diff
+description, and the layers were re-run after the last of them:
+
+| Layer | Command | Result |
+| --- | --- | --- |
+| static | `bun run typecheck` | pass - 253 files |
+| static | `bun run lint` | pass - 244 files, no fixes applied |
+| unit | `bun test` | pass - 686 pass, 0 fail, 1627 expect, 50 files, 2.68s |
+
+Unit count moved 676 → 686 across the review fix phase (five new tests for F1 and F2,
+plus the assertion changes described in section 6). Build and e2e were not re-run after
+the review fixes: the delta touches no route, no page, no rendering path and no schema -
+it changes how a failure message is chosen and which error object is rethrown inside the
+translation pipeline - so neither layer could observe it. That is a judgement, not a
+measurement, and it is stated as one; CI runs both on the pull request.
+
+Section 9's residual risks stand, with residual 1's wording corrected in the round-2
+delta (the invariant is stated against `TRANSLATION_BATCH_CHAR_TARGET`, the packer's
+closing threshold, not the per-request cap).
