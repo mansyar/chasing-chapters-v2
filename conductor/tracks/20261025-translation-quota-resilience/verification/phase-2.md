@@ -96,3 +96,50 @@ None. All four changed files are inside the phase's `Touches`.
   character-budget stop is recorded with that string. Changing the stored reason is a
   call-site change owned by Phase 4, which owns the translation call sites.
 - **No dependency was added.** `ioredis` was already present via `src/lib/redis.ts`.
+
+## Primary verification
+
+The primary re-ran all three layers independently after the subagent reported, on the squashed
+checkpoint `10f6a1b`:
+
+| Layer | Command | Exit | Summary |
+| --- | --- | --- | --- |
+| static | `bun run typecheck` | 0 | `bun check` - no type errors in 252 files (1.60s) |
+| static | `bun run lint` | 0 | `biome check .` - 243 files checked, no fixes applied |
+| unit | `bun test` | 0 | 634 pass, 0 fail, 1482 `expect()` calls, 49 files (2.87s) |
+
+The primary also read `src/lib/translation-budget.ts` in full and the `translate.ts` / `env.ts`
+diff, and confirmed the contract independently: the reservation happens inside
+`translateChunkWithRetry`'s attempt loop immediately before `client.translate(...)`; the cache is
+resolved before packing so hits reserve nothing; the Redis script does the check and the
+increment in one atomic `eval` with the TTL set only on the first increment of a bucket; a Redis
+error or a non-`ready` client degrades to the in-process window; and the wait loop terminates
+because each pass either grants, refuses, or sleeps to the bucket boundary while `waitedMs`
+accumulates against `maxWaitMs`.
+
+**Result: verified.** AC-2, AC-3, AC-4 and FR-2, FR-3, FR-4 are satisfied with direct test
+evidence, and no existing test changed.
+
+### Observations carried forward to review (not blocking)
+
+These do not violate an acceptance criterion of this phase, so they were not reworked. They are
+recorded here so `conductor-review` sees them against the final diff.
+
+1. **Duplicated code-point counter.** `countCodePoints` (`src/lib/translate.ts:436`) and
+   `countTranslationCharacters` (`src/lib/translation-budget.ts:98`) are two implementations of
+   the same unit. Both are correct today; they can diverge silently, and a divergence would mean
+   the packer and the budget disagree about how many characters a request costs. Consolidating on
+   the exported helper would remove that risk. Low.
+
+2. **The new env var is not discoverable.** `TRANSLATION_CHAR_BUDGET` is absent from
+   `.env.example`, which documents every other translation setting. An operator raising the Google
+   console quota has no visible knob to raise in step, and the failure mode of leaving it at
+   100,000 is only that pacing stays conservative - silent, not loud. `.env.example` is outside
+   this phase's `Touches`. Low.
+
+3. **An empty env value crashes the process at boot.** `z.coerce.number()` maps `""` to `0`, and
+   `.positive()` then fails, so `validateEnv()` throws at module load if `TRANSLATION_CHAR_BUDGET`
+   is set but empty - a realistic shape in a container env-var UI. Every other optional variable in
+   `envSchema` uses `.optional()` and tolerates absence. This is a new instance of an existing
+   `env.ts` pattern rather than a new design flaw, but the variable is optional and should default
+   rather than throw. Medium - it is a boot-crash path on a tuning knob.

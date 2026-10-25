@@ -37,23 +37,27 @@
 - **Covers:** FR-2, FR-3, FR-4, NFR-1, NFR-2, AC-2, AC-3, AC-4
 - **Touches:** `src/lib/translation-budget.ts`, `src/lib/__tests__/translation-budget.test.ts`, `src/lib/env.ts`, `src/lib/translate.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P2.T1: Build the budget module** - covers: FR-2, FR-4
-  - [ ] **P2.T1.1: Implement Redis-backed rolling window** - a time-bucketed `INCRBY` keyed by character count, expiring at the window boundary. Do not reuse `rate-limit.ts`; it increments by 1 and is a fixed-window counter.
-  - [ ] **P2.T1.2: Implement the in-process Map fallback** - mirror `translation-lock.ts`'s degradation shape, applied when Redis is absent or errors.
-  - [ ] **P2.T1.3: Expose `reserveCharacters(n)` and `remainingCharacters()` with an injectable clock** - the clock is what makes the regression test deterministic.
-  - [ ] **P2.T1.4: Bound the wait** - a request that cannot be reserved is deferred within a bounded time or skipped; it must never wait indefinitely (NFR-2).
-- [ ] **P2.T2: Make the limit configurable** - covers: FR-3
-  - [ ] **P2.T2.1: Add a validated env var defaulting to 100000 characters per 100 seconds** - validated through the existing `env.ts` schema, not read ad hoc.
-- [ ] **P2.T3: Wire the budget into the request path** - covers: FR-2, NFR-1
-  - [ ] **P2.T3.1: Reserve characters immediately before each provider call**, after cache misses are resolved so cache hits consume nothing.
-  - [ ] **P2.T3.2: Ensure a budget failure never blocks the review save** - translation remains independent of persistence (NFR-3).
-- [ ] **P2.T4: Cover the budget with tests** - covers: AC-2, AC-3, AC-4
-  - [ ] **P2.T4.1: Test that a request exceeding the limit waits for the window to roll, using the injected clock.**
-  - [ ] **P2.T4.2: Test that changing the env var changes the enforced limit.**
-  - [ ] **P2.T4.3: Test that enforcement still applies when Redis is unavailable.**
-  - [ ] **P2.T4.4: Test that cache hits reserve nothing.**
+**Result:** verified
+**Checkpoint:** 10f6a1b
+**Evidence:** conductor/tracks/20261025-translation-quota-resilience/verification/phase-2.md
+
+- [x] **P2.T1: Build the budget module** - covers: FR-2, FR-4
+  - [x] **P2.T1.1: Implement Redis-backed rolling window** - a time-bucketed `INCRBY` keyed by character count, expiring at the window boundary. Do not reuse `rate-limit.ts`; it increments by 1 and is a fixed-window counter.
+  - [x] **P2.T1.2: Implement the in-process Map fallback** - mirror `translation-lock.ts`'s degradation shape, applied when Redis is absent or errors.
+  - [x] **P2.T1.3: Expose `reserveCharacters(n)` and `remainingCharacters()` with an injectable clock** - the clock is what makes the regression test deterministic.
+  - [x] **P2.T1.4: Bound the wait** - a request that cannot be reserved is deferred within a bounded time or skipped; it must never wait indefinitely (NFR-2).
+- [x] **P2.T2: Make the limit configurable** - covers: FR-3
+  - [x] **P2.T2.1: Add a validated env var defaulting to 100000 characters per 100 seconds** - validated through the existing `env.ts` schema, not read ad hoc.
+- [x] **P2.T3: Wire the budget into the request path** - covers: FR-2, NFR-1
+  - [x] **P2.T3.1: Reserve characters immediately before each provider call**, after cache misses are resolved so cache hits consume nothing.
+  - [x] **P2.T3.2: Ensure a budget failure never blocks the review save** - translation remains independent of persistence (NFR-3).
+- [x] **P2.T4: Cover the budget with tests** - covers: AC-2, AC-3, AC-4
+  - [x] **P2.T4.1: Test that a request exceeding the limit waits for the window to roll, using the injected clock.**
+  - [x] **P2.T4.2: Test that changing the env var changes the enforced limit.**
+  - [x] **P2.T4.3: Test that enforcement still applies when Redis is unavailable.**
+  - [x] **P2.T4.4: Test that cache hits reserve nothing.**
 
 ## Phase 3: Quota classification and structured logging
 
