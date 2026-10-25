@@ -14,17 +14,21 @@
 - **Covers:** FR-1, NFR-6, AC-1
 - **Touches:** `src/lib/translate.ts`, `src/lib/__tests__/translate-batch.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P1.T1: Replace string-count chunking with character packing** - covers: FR-1
-  - [ ] **P1.T1.1: Add `TRANSLATION_BATCH_CHAR_TARGET` (5000) and `TRANSLATION_BATCH_CHAR_CAP` (25000) constants** - target is Google's recommendation; cap stays well under the 30K limit.
-  - [ ] **P1.T1.2: Write a packing function that accumulates code points and closes a batch at the target** - must preserve the existing dedupe and original-order reassembly.
-  - [ ] **P1.T1.3: Handle a single text longer than the cap** - send it alone in its own request rather than splitting it.
-  - [ ] **P1.T1.4: Keep `batchSize` as a secondary ceiling** - a batch satisfies both the character target and the existing count limit.
-- [ ] **P1.T2: Cover the packing behaviour with tests** - covers: AC-1
-  - [ ] **P1.T2.1: Test that a batch exceeding 5000 code points splits into multiple requests, each under the cap.**
-  - [ ] **P1.T2.2: Test that a single oversized text is sent alone and still returns its translation.**
-  - [ ] **P1.T2.3: Test that dedupe and original-order reassembly still hold across multiple packed chunks.**
+**Result:** verified
+**Checkpoint:** 5e5500c
+**Evidence:** conductor/tracks/20261025-translation-quota-resilience/verification/phase-1.md
+
+- [x] **P1.T1: Replace string-count chunking with character packing** - covers: FR-1
+  - [x] **P1.T1.1: Add `TRANSLATION_BATCH_CHAR_TARGET` (5000) and `TRANSLATION_BATCH_CHAR_CAP` (25000) constants** - target is Google's recommendation; cap stays well under the 30K limit.
+  - [x] **P1.T1.2: Write a packing function that accumulates code points and closes a batch at the target** - must preserve the existing dedupe and original-order reassembly.
+  - [x] **P1.T1.3: Handle a single text longer than the cap** - send it alone in its own request rather than splitting it.
+  - [x] **P1.T1.4: Keep `batchSize` as a secondary ceiling** - a batch satisfies both the character target and the existing count limit.
+- [x] **P1.T2: Cover the packing behaviour with tests** - covers: AC-1
+  - [x] **P1.T2.1: Test that a batch exceeding 5000 code points splits into multiple requests, each under the cap.**
+  - [x] **P1.T2.2: Test that a single oversized text is sent alone and still returns its translation.**
+  - [x] **P1.T2.3: Test that dedupe and original-order reassembly still hold across multiple packed chunks.**
 
 ## Phase 2: Rolling character budget
 

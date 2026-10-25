@@ -86,3 +86,36 @@ None. Both changed files are inside the phase's `Touches`.
 - One incidental observation, not acted on: `TRANSLATION_BATCH_SIZE` is now a secondary
   ceiling. Its comment and the `TranslateBatchOptions.batchSize` JSDoc were updated to say so,
   because leaving them describing it as the only bound would be misleading.
+
+## Primary verification
+
+The subagent reported `blocked` on the lint layer. The blocker was a Conductor state file the
+primary owns: `conductor/tracks/20261025-translation-quota-resilience/metadata.json` was
+space-indented where `biome.json` requires tabs. `biome.json` includes `**` with no exclusion
+for `conductor/`, and the archived track metadata files are tab-indented, so this file was
+simply malformed. The primary ran the exact command the subagent was denied:
+
+```bash
+bunx biome check --write conductor/tracks/20261025-translation-quota-resilience/metadata.json
+```
+
+It reported `Checked 1 file. Fixed 1 file.` Nothing under `src/` required any change.
+
+The full phase command was then re-run by the primary, all three layers separately:
+
+| Layer | Command | Exit | Summary |
+| --- | --- | --- | --- |
+| static | `bun run typecheck` | 0 | `bun check` - no type errors in 250 files (629.54ms) |
+| static | `bun run lint` | 0 | `biome check .` - 241 files checked, no fixes applied |
+| unit | `bun test` | 0 | 616 pass, 0 fail, 1414 `expect()` calls, 48 files (2.39s) |
+
+**Result: verified.** All three layers of `bun run typecheck && bun run lint && bun test` exit
+`0`. The lint obstruction was pre-existing Conductor state, not a Phase 1 regression, and it is
+resolved. The `blocked` result recorded above reflects the subagent's view before the primary
+applied the fix.
+
+The primary also reviewed the `src/lib/translate.ts` diff directly and confirmed: batches close
+at `TRANSLATION_BATCH_CHAR_TARGET`; `batchSize` remains an enforced string ceiling; a text
+longer than `TRANSLATION_BATCH_CHAR_CAP` travels alone; code points (not UTF-16 units) are
+counted; and cache resolution still precedes packing, so cache hits consume no capacity.
+Retry policy, error classification, timeout and deadline behaviour are unchanged.
