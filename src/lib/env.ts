@@ -39,6 +39,16 @@ const envSchema = z.object({
 
 	// Redis (optional - graceful degradation if missing)
 	REDIS_URL: z.string().optional(),
+
+	// Rolling translation character budget: characters allowed per 100-second
+	// window. Google Cloud Translation v2 defaults to 100,000 per user and
+	// allows up to 10,000,000; raising the console quota means raising this
+	// value to match, or pacing stays needlessly conservative.
+	TRANSLATION_CHAR_BUDGET: z.coerce
+		.number()
+		.int("TRANSLATION_CHAR_BUDGET must be a whole number of characters")
+		.positive("TRANSLATION_CHAR_BUDGET must be greater than zero")
+		.default(100000),
 });
 
 /**

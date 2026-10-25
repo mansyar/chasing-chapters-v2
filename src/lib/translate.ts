@@ -4,6 +4,11 @@ import path from "path";
 import { env } from "./env";
 import { logger } from "./logger";
 import { getCachedTranslation, setCachedTranslation } from "./redis";
+import {
+	type CharacterReservation,
+	countTranslationCharacters,
+	reserveCharacters,
+} from "./translation-budget";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -204,6 +209,18 @@ export class TranslationBudgetError extends TranslationError {
 	}
 }
 
+/**
+ * Reason reported when a run is stopped because the rolling character budget
+ * could not be reserved inside its bounded wait.
+ *
+ * It is a budget stop, not a provider failure: it is never retried and never
+ * schedules the automatic re-run. The wording deliberately avoids the patterns
+ * `classifyTranslationError` matches for provider failures, so nothing can
+ * mistake it for a quota or timeout response.
+ */
+export const TRANSLATION_CHARACTER_BUDGET_REASON =
+	"translation character budget reached";
+
 // Maximum number of strings sent in a single Google Translate API request.
 // This is a secondary ceiling: a request is packed by character count first,
 // so a batch of short strings still stops at this count.
@@ -316,6 +333,8 @@ async function translateChunkWithRetry(
 	const client = getTranslateClient();
 	const deadline = options?.deadline;
 	const requestTimeoutMs = options?.timeoutMs ?? TRANSLATION_REQUEST_TIMEOUT_MS;
+	// Every attempt sends the same characters, so every attempt spends budget.
+	const characters = countTranslationCharacters(texts);
 	let lastError: unknown;
 
 	for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
@@ -327,6 +346,19 @@ async function translateChunkWithRetry(
 			if (lastError !== undefined) {
 				throw providerFailure(lastError, attempt);
 			}
+			throw new TranslationBudgetError();
+		}
+
+		// The characters this attempt is about to send are accounted for
+		// before the request goes out. A request that would overflow the
+		// rolling window waits for the window to roll forward instead of
+		// spending an exhausted allowance. A refused reservation stops the
+		// run without sending anything and is never retried: it is a budget
+		// stop, not a provider failure.
+		await reserveChunkBudget(characters, options);
+
+		if (deadline !== undefined && Date.now() >= deadline) {
+			// The wait for the window used up the remaining time.
 			throw new TranslationBudgetError();
 		}
 
@@ -458,6 +490,48 @@ function packTranslationRequests(
 	return batches;
 }
 
+/**
+ * Reserve the characters one provider attempt is about to spend.
+ *
+ * Called after the cache misses are resolved, so a cache hit — which sends
+ * nothing — consumes nothing. When the rolling window is full the reservation
+ * waits for it to roll forward (bounded) and only then does the request reach
+ * the provider.
+ *
+ * A reservation that cannot be granted is a deliberate stop, not a provider
+ * failure: it throws TranslationBudgetError, which is never retried and never
+ * schedules the automatic re-run. Any failure of the budget machinery itself
+ * is logged and the request proceeds, so accounting can never break a
+ * translation run (and therefore never block a review save).
+ */
+async function reserveChunkBudget(
+	characters: number,
+	options?: TranslateBatchOptions,
+): Promise<void> {
+	const deadline = options?.deadline;
+
+	let reservation: CharacterReservation;
+	try {
+		reservation = await reserveCharacters(
+			characters,
+			deadline === undefined
+				? {}
+				: // A deferred reservation must never outlive the run's deadline.
+					{ maxWaitMs: Math.max(0, deadline - Date.now()) },
+		);
+	} catch (error) {
+		logger.error(
+			"[Translation] Character budget check failed; sending the request unreserved:",
+			error,
+		);
+		return;
+	}
+
+	if (!reservation.granted) {
+		throw new TranslationBudgetError(TRANSLATION_CHARACTER_BUDGET_REASON);
+	}
+}
+
 // Translate a list of texts using batched API calls, Redis caching, and
 // retry with exponential backoff. Blank texts pass through untouched and
 // are never sent to the API. On total failure this throws TranslationError -
@@ -510,7 +584,8 @@ export async function translateBatch(
 	}
 
 	// Translate cache misses in character-packed requests, retrying each on
-	// failure. Cache hits never reach this point, so they consume no capacity.
+	// failure. Cache hits never reach this point, so they consume no capacity
+	// and reserve no characters from the rolling budget.
 	const batches = packTranslationRequests(
 		misses,
 		TRANSLATION_BATCH_CHAR_TARGET,
