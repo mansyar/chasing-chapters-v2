@@ -59,11 +59,15 @@
 - **Covers:** FR-1, NFR-1, NFR-2, AC-1
 - **Touches:** `.github/workflows/ci.yml`
 - **Verification:** `bun run typecheck && bun run lint && bun test` plus `bun -e "const {parse}=await import('yaml');parse(await Bun.file('.github/workflows/ci.yml').text());console.log('yaml ok')"`; the authoritative check is the `Docker Build` job on the pushed branch
-- **Status:** in_progress
+- **Status:** done
 
-- [ ] **P3.T1: Add the `Docker Build` job** - covers: FR-1
-  - [ ] **P3.T1.1: Postgres service, host network for the build, and the same build-argument shape as `deploy.yml` with placeholder values**
-  - [ ] **P3.T1.2: `push: false`, no registry login, no repository secrets, parallel to the existing jobs**
+- [x] **P3.T1: Add the `Docker Build` job** - covers: FR-1
+  - [x] **P3.T1.1: Postgres service, host network for the build, and the same build-argument shape as `deploy.yml` with placeholder values**
+  - [x] **P3.T1.2: `push: false`, no registry login, no repository secrets, parallel to the existing jobs**
+
+**Result:** verified
+**Checkpoint:** bd93bb6
+**Evidence:** conductor/tracks/20261024-deploy-safety/verification/phase-3.md
 
 ## Phase 4: Deploy Workflow Hardening
 
