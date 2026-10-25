@@ -104,10 +104,20 @@
   - [x] **P5.T1.2: `migrate:status` and `migrate:down`, what a revert does not restore, and when it is unsafe**
   - [x] **P5.T1.3: How a destructive migration is declared and reviewed**
 - [x] **P5.T2: Link the runbook from the README Deployment section** - covers: FR-9
+## Phase R1: Review Fixes
 
-<!--
-The primary appends after acceptance:
-**Result:** verified
-**Checkpoint:** 79c9112
-**Evidence:** conductor/tracks/20261024-deploy-safety/verification/phase-5.md
--->
+- **Goal:** Resolve review findings F1-F8, so the runbook stops overstating what `verify` can catch and the marker scan stops passing silently.
+- **Depends on:** Phase 5
+- **Covers:** F1, F2, F3, F4, F5, F6, F7, F8
+- **Touches:** `docs/DEPLOYMENT.md`, `.github/workflows/deploy.yml`, `src/migrations/__tests__/destructive-markers.test.ts`, `src/lib/deploy-smoke.ts`, `src/lib/__tests__/deploy-smoke.test.ts`, `src/scripts/deploy-smoke.ts`, `.opencode/agents/conductor-phase.md`, `conductor/tracks/20261024-deploy-safety/spec.md`
+- **Verification:** `bun run typecheck && bun run lint && bun test`, plus `bun test --coverage` to evidence the 80% new-code gate
+- **Status:** in_progress
+
+- [ ] **R1.T1: Stop the runbook claiming `verify` would have caught 2026-10-24** - covers: F1
+- [ ] **R1.T2: Make the marker scan fail closed on layout** - covers: F2
+- [ ] **R1.T3: Guard `RENAME COLUMN`, and state what stays unguarded** - covers: F3
+- [ ] **R1.T4: Test the script's argument parsing and exit code** - covers: F4
+- [ ] **R1.T5: Restore least privilege in the phase allow-list** - covers: F5
+- [ ] **R1.T6: Guard `main()` behind `import.meta.main`** - covers: F6
+- [ ] **R1.T7: Correct the retry-budget arithmetic in the workflow comment** - covers: F7
+- [ ] **R1.T8: Make a zero attempt budget a report, not a throw** - covers: F8
