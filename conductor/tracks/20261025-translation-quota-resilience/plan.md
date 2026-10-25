@@ -14,7 +14,7 @@
 - **Covers:** FR-1, NFR-6, AC-1
 - **Touches:** `src/lib/translate.ts`, `src/lib/__tests__/translate-batch.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P1.T1: Replace string-count chunking with character packing** - covers: FR-1
   - [ ] **P1.T1.1: Add `TRANSLATION_BATCH_CHAR_TARGET` (5000) and `TRANSLATION_BATCH_CHAR_CAP` (25000) constants** - target is Google's recommendation; cap stays well under the 30K limit.
