@@ -2,7 +2,7 @@
 	"id": "20261027-typography-residuals",
 	"title": "Typography residuals",
 	"type": "refactor",
-	"status": "new",
+	"status": "in_progress",
 	"priority": "low",
 	"depends_on": ["20261026-content-typography"],
 	"created_at": "2026-10-27T09:00:57+11:00",
