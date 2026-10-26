@@ -190,6 +190,13 @@ const en = {
 	notFoundReturnHome: "Return Home",
 	notFoundBrowseReadingLists: "Browse Reading Lists",
 
+	// Error boundaries
+	errorTitle: "This Chapter Stumbled",
+	errorDescription:
+		"Something went wrong while turning this page. Try again — your place in the story is safe.",
+	errorTryAgain: "Try Again",
+	errorBackHome: "Back Home",
+
 	// Document metadata and feeds
 	metaSiteName: "Chasing Chapters",
 	metaHomeTitle: "Book Reviews and Reading Lists",
@@ -385,6 +392,13 @@ const id: Dictionary = {
 		"Sepertinya Anda membuka halaman yang belum ada. Kisahnya berlanjut di tempat lain.",
 	notFoundReturnHome: "Kembali ke Beranda",
 	notFoundBrowseReadingLists: "Jelajahi Daftar Bacaan",
+
+	// Error boundaries
+	errorTitle: "Bab Ini Tersandung",
+	errorDescription:
+		"Terjadi kesalahan saat membuka halaman ini. Coba lagi — tempat Anda dalam cerita tetap aman.",
+	errorTryAgain: "Coba Lagi",
+	errorBackHome: "Kembali ke Beranda",
 
 	metaSiteName: "Chasing Chapters",
 	metaHomeTitle: "Ulasan Buku dan Daftar Bacaan",

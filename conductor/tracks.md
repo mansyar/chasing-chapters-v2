@@ -19,3 +19,4 @@
 - [x] **Track: Access Control Hardening** — [20261026-access-control-hardening](./archive/20261026-access-control-hardening/index.md) — bug — high
 - [x] **Track: Content Typography & Reading Experience** — [20261026-content-typography](./archive/20261026-content-typography/index.md) — feature — high
 - [x] **Track: Reading-List Pagination Parity** — [20261027-reading-list-pagination](./archive/20261027-reading-list-pagination/index.md) — feature — medium
+- [x] **Track: Route error boundaries** — [20261027-route-error-boundaries](./archive/20261027-route-error-boundaries/index.md) — feature — medium

@@ -59,6 +59,9 @@ function resolveChildEnv(): NodeJS.ProcessEnv {
 		// pointing the run at the wrong database.
 		E2E_EXPECTED_DATABASE_URI: e2eUri,
 		STORAGE_ADAPTER: E2E_STORAGE_ADAPTER,
+		// Test-only routes (the error-boundary `/boom` trigger) 404 unless
+		// this flag is set, so they are unreachable outside the e2e run.
+		E2E_TEST_ROUTES: "1",
 		NEXT_PUBLIC_R2_PUBLIC_URL: "",
 	};
 }
