@@ -200,6 +200,24 @@
 - [x] **R2.T3: Record the phase state honestly** - covers: D3
   - [x] **R2.T3.1:** Run `bun run test:e2e` for this phase and record the result, or mark the phase `partial` with the reason.
 
+## Phase R3: Review Fixes (Round 3)
+
+- **Goal:** Resolve the two Low findings F1 and F2 raised by the round 3 delta re-review, so that under strict mode no finding is left deferred.
+- **Depends on:** Phase R2
+- **Covers:** F1, F2
+- **Touches:** `src/app/actions/comments.ts`, `src/app/actions/__tests__/comments.test.ts`, `src/components/comments/__tests__/comment-fetch-state.test.ts`
+- **Verification:** `bun run typecheck && bun run lint && bun test`
+- **Status:** in_progress
+
+- [ ] **R3.T1: Stop a refused per-review call from spending the address budget** - covers: F1
+  - [ ] **R3.T1.1:** Check the per-review bucket before the aggregate one, so a call the per-review bucket refuses returns without incrementing the address-wide counter.
+  - [ ] **R3.T1.2:** Confirm a sweep across many distinct review ids still fills the aggregate bucket, since a sweep passes each per-review bucket trivially - the sweep bound must survive the reordering.
+  - [ ] **R3.T1.3:** Correct the doc block so the "at least ten distinct review ids" claim states the property the code now actually has.
+  - [ ] **R3.T1.4:** Test that a call refused by the per-review bucket does not increment the aggregate counter, and that the aggregate still fires for a sweep.
+- [ ] **R3.T2: Scope the source assertions and cover the retained array** - covers: F2
+  - [ ] **R3.T2.1:** Scope the two negative `isLoading?`/`hasError?` assertions to the comments-list region of the component, so an unrelated edit elsewhere in the file cannot trip them.
+  - [ ] **R3.T2.2:** Assert the list-with-error branch passes the retained array rather than an empty one.
+
 <!--
 Acceptance block appended by the primary agent after a phase is accepted:
 
