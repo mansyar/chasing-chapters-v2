@@ -20,6 +20,42 @@ type ActionResult<T = void> =
 	| { success: true; data?: T; message?: string }
 	| { success: false; error: string };
 
+/** Reports at or above this count hide the comment pending moderation. */
+const REPORT_THRESHOLD = 3;
+
+/** Shown for a first report and for a repeat from the same address (`P5.T1.4`). */
+const REPORT_THANKS_MESSAGE =
+	"Thank you for your report. We will review this comment.";
+
+/**
+ * Ceiling on the rows `getApprovedComments` returns in one call (`FR-8`).
+ *
+ * This is not a page size. `CommentList` renders `comments.map(...)` over
+ * everything it is given - there is no pagination, no "load more" and no
+ * slice - so the UI has no page size for this number to match. What the
+ * constant is, honestly, is a defensive ceiling on a single anonymous
+ * request: without it one call could ask the database for every approved
+ * comment ever left on a review.
+ *
+ * The value stays at the 100 the query already used. Lowering it would
+ * silently truncate a busy review's comment list with no affordance to reach
+ * the rest, which `NFR-3` forbids; the defect `FR-8` names is the missing
+ * validation and rate limit, and both are added here. Adding pagination to
+ * `CommentList` is the change that would make a smaller number correct.
+ */
+const MAX_COMMENTS_PER_REVIEW = 100;
+
+/**
+ * Requests `getApprovedComments` allows per IP per window (`FR-8`, `AC-13`).
+ *
+ * A reader loads comments once per review page and once more after posting,
+ * so 60 a minute leaves ordinary browsing untouched while making the action
+ * useless for enumerating the catalogue. It is a new limit on a new read
+ * path; the comment and report limits are unchanged (`NFR-1`).
+ */
+const COMMENT_FETCH_LIMIT = 60;
+const COMMENT_FETCH_WINDOW_SECONDS = 60;
+
 /**
  * Submit a new comment on a review
  */
@@ -91,14 +127,12 @@ export async function submitComment(
 				};
 			}
 
-			// Update name if changed
-			if (commenter.name !== name.trim()) {
-				await payload.update({
-					collection: "commenters",
-					id: commenter.id,
-					data: { name: name.trim() },
-				});
-			}
+			// The commenter row's `name` is deliberately left alone (`FR-6`).
+			// It is keyed by an email hash, so anyone who knows or guesses a
+			// commenter's address could reach this branch and rewrite the name
+			// that commenter is shown under. Nothing is lost by not writing it:
+			// `Comments.authorName` stores the submitted name per comment
+			// (`P5.T2.2`), and that is the field the UI renders.
 		} else {
 			// Create new commenter
 			commenter = await payload.create({
@@ -173,7 +207,22 @@ export async function submitComment(
 }
 
 /**
- * Report a comment as inappropriate
+ * Report a comment as inappropriate.
+ *
+ * The report is a public, unauthenticated write, so it validates its own
+ * subject rather than trusting the id it is handed: the comment must exist, be
+ * `approved`, and belong to a review that is publicly visible right now
+ * (`FR-5`). A comment that fails any of those answers exactly like a missing
+ * one, because a distinct reply would let a caller probe for comments on
+ * drafts and scheduled reviews.
+ *
+ * The write is built field by field from what the server just read. Nothing
+ * from the request is spread into it, so `content`, `authorName`,
+ * `relatedReview` and `commenter` are unreachable by construction, and
+ * `status` can only ever carry `reported` - never `approved` (`AC-9`). Access
+ * is left at Payload's Local API default (`overrideAccess: true`) on purpose:
+ * `Comments.access.update` denies callers with no user, and a reporter is
+ * anonymous, so asking the rule here would deny every report.
  */
 export async function reportComment(
 	commentId: number,
@@ -203,55 +252,99 @@ export async function reportComment(
 
 		const payload = await getPayload({ config: configPromise });
 
-		// Get the comment
+		// `disableErrors` turns a missing comment into `null` instead of a
+		// thrown NotFound, so the action can answer it the same way as a
+		// comment it refuses to touch.
 		const comment = await payload.findByID({
 			collection: "comments",
 			id: commentId,
+			depth: 0,
+			disableErrors: true,
 		});
 
 		if (!comment) {
 			return { success: false, error: "Comment not found" };
 		}
 
-		// Check if already reported by this email
+		// Idempotency is decided before the status and visibility gates, so a
+		// second click from the same address is a success rather than an error
+		// even once three earlier reports have moved the comment to `reported`.
+		// This path writes nothing: `reportCount` does not move and
+		// `reportedBy` gains no duplicate entry (`P5.T1.4`).
+		const normalisedEmail = reporterEmail.toLowerCase();
 		const alreadyReported = comment.reportedBy?.some(
-			(r) => r.email?.toLowerCase() === reporterEmail.toLowerCase(),
+			(report) => report.email?.toLowerCase() === normalisedEmail,
 		);
 
 		if (alreadyReported) {
-			return {
-				success: false,
-				error: "You have already reported this comment",
-			};
+			return { success: true, message: REPORT_THANKS_MESSAGE };
 		}
 
-		// Update report count and add reporter
-		const newReportCount = (comment.reportCount || 0) + 1;
-		const newReportedBy = [
-			...(comment.reportedBy || []),
-			{
-				email: reporterEmail.toLowerCase(),
-				reportedAt: new Date().toISOString(),
-			},
+		// Only an approved comment is reportable. A pending, rejected or
+		// already-reported one is not public, so it answers like a missing id.
+		if (comment.status !== "approved") {
+			return { success: false, error: "Comment not found" };
+		}
+
+		// `depth: 0` above leaves the relationship as a bare id.
+		const reviewId =
+			typeof comment.relatedReview === "number"
+				? comment.relatedReview
+				: comment.relatedReview.id;
+
+		const review = await payload.findByID({
+			collection: "reviews",
+			id: reviewId,
+			depth: 0,
+			disableErrors: true,
+		});
+
+		// The same predicate `submitComment` and `toggleLikeReview` use: a write
+		// a reader can make must agree with what a reader can see, so a review
+		// that is not public is not reportable.
+		if (!review || !canAcceptPublicWrite(review, new Date())) {
+			return { success: false, error: "Comment not found" };
+		}
+
+		const newReportCount = (comment.reportCount ?? 0) + 1;
+		const reportedBy = [
+			...(comment.reportedBy ?? []),
+			{ email: normalisedEmail, reportedAt: new Date().toISOString() },
 		];
 
-		// If 3+ reports, change status to reported
-		const newStatus = newReportCount >= 3 ? "reported" : comment.status;
+		// Exactly the fields a report owns. `status` is absent until this report
+		// is the one that hides the comment, and the only value it can take is
+		// `reported`.
+		const report: {
+			reportCount: number;
+			reportedBy: typeof reportedBy;
+			status?: "reported";
+		} = {
+			reportCount: newReportCount,
+			reportedBy,
+		};
+
+		if (newReportCount >= REPORT_THRESHOLD) {
+			report.status = "reported";
+		}
 
 		await payload.update({
 			collection: "comments",
 			id: commentId,
-			data: {
-				reportCount: newReportCount,
-				reportedBy: newReportedBy,
-				status: newStatus,
-			},
+			data: report,
 		});
 
-		return {
-			success: true,
-			message: "Thank you for your report. We will review this comment.",
-		};
+		// A reported comment leaves the public read (`Comments.access.read`
+		// returns only `approved` rows) and the review page is ISR, so without
+		// this the comment stays on the cached page for up to 60 seconds
+		// (`FR-11`).
+		if (review.slug) {
+			for (const path of localizedPaths(`/reviews/${review.slug}`)) {
+				revalidatePath(path);
+			}
+		}
+
+		return { success: true, message: REPORT_THANKS_MESSAGE };
 	} catch (error) {
 		console.error("Error reporting comment:", error);
 		return {
@@ -262,10 +355,34 @@ export async function reportComment(
 }
 
 /**
- * Get approved comments for a review
+ * Get approved comments for a review.
+ *
+ * A server action is a public HTTP endpoint, so the id is validated before it
+ * reaches a query and the call is rate-limited per IP (`FR-8`, `AC-13`).
+ * `reviewId` used to be trusted: `NaN`, `0` and a negative number all ran a
+ * query, and nothing bounded how often one address could ask.
  */
 export async function getApprovedComments(reviewId: number) {
 	try {
+		if (!Number.isInteger(reviewId) || reviewId <= 0) {
+			return { success: false, error: "Invalid review ID" };
+		}
+
+		const headersList = await headers();
+		const ip = getClientIP(headersList);
+		const rateLimitResult = await rateLimit(
+			`comments:${ip}`,
+			COMMENT_FETCH_LIMIT,
+			COMMENT_FETCH_WINDOW_SECONDS,
+		);
+
+		if (!rateLimitResult.success) {
+			return {
+				success: false,
+				error: `Too many requests. Please wait ${rateLimitResult.resetInSeconds} seconds.`,
+			};
+		}
+
 		const payload = await getPayload({ config: configPromise });
 
 		const { docs: comments } = await payload.find({
@@ -279,7 +396,7 @@ export async function getApprovedComments(reviewId: number) {
 				},
 			},
 			sort: "-createdAt",
-			limit: 100,
+			limit: MAX_COMMENTS_PER_REVIEW,
 		});
 
 		return {
