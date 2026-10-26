@@ -40,14 +40,18 @@ The primary appends after acceptance:
 - **Covers:** FR-3, FR-4, NFR-3, NFR-4, AC-1, AC-2, AC-8
 - **Touches:** `src/app/(public)/[locale]/reading-lists/page.tsx`, `e2e/reading-lists-pagination.spec.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e -- reading-lists-pagination`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P2.T1: Render reviews-pattern pager (prev/next + numbers) when `totalPages > 1`** — covers: FR-3, FR-4
-  - [ ] **P2.T1.1: Pager links carry locale path and `?page=`**
-  - [ ] **P2.T1.2: Pager hidden on single page / empty library**
-- [ ] **P2.T2: E2E pager flow in EN and ID** — covers: AC-8
-  - [ ] **P2.T2.1: Page-2 slice differs from page 1, invalid `?page=` renders page 1**
-  - [ ] **P2.T2.2: Locale preserved across pager navigation**
+**Result:** verified
+**Checkpoint:** 5df5bc4
+**Evidence:** conductor/tracks/20261027-reading-list-pagination/verification/phase-2.md
+
+- [x] **P2.T1: Render reviews-pattern pager (prev/next + numbers) when `totalPages > 1`** — covers: FR-3, FR-4
+  - [x] **P2.T1.1: Pager links carry locale path and `?page=`**
+  - [x] **P2.T1.2: Pager hidden on single page / empty library**
+- [x] **P2.T2: E2E pager flow in EN and ID** — covers: AC-8
+  - [x] **P2.T2.1: Page-2 slice differs from page 1, invalid `?page=` renders page 1**
+  - [x] **P2.T2.2: Locale preserved across pager navigation**
 
 <!--
 Review fixes are appended by `conductor-review` as:
