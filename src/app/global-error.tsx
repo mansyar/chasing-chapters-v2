@@ -27,7 +27,7 @@ interface GlobalErrorProps {
  * Root boundary: catches what the segment boundary cannot, including a
  * failing root layout — so it owns its own document shell like `not-found`
  * does, and resolves its locale without any layout help: remembered cookie
- * first (`FR-3`), then the browser's accepted languages, then English.
+ * first (`FR-1`), then the browser's accepted languages, then English.
  */
 export default function GlobalError({ error, reset }: GlobalErrorProps) {
 	const locale = resolveBrowserErrorLocale();

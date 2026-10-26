@@ -19,10 +19,9 @@ export const metadata: Metadata = {
  * catches the failure in both locales.
  */
 export default function BoomPage() {
-	// Test-only route: 404 everywhere except the e2e run, which sets
-	// `E2E_TEST_ROUTES=1` in the child environment (`src/scripts/e2e-run.ts`).
-	// The production build evaluates this at request time, so the same
-	// artifact the e2e suite exercises 404s in every other deployment.
+	// Test-only route: the `E2E_TEST_ROUTES` flag is set only by the e2e
+	// harness build (`src/scripts/e2e-run.ts`); every other build omits it,
+	// so the route 404s in every other deployment.
 	if (process.env.E2E_TEST_ROUTES !== "1") {
 		notFound();
 	}

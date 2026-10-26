@@ -20,7 +20,7 @@ interface LocaleErrorProps {
  * The failing page is gone but the locale layout above still stands, so the
  * locale in the URL wins when it is usable. Otherwise this falls back the
  * request-time way the middleware resolves it — remembered cookie first
- * (`FR-3`), then the browser's accepted languages, then English — and always
+ * (`FR-1`), then the browser's accepted languages, then English — and always
  * offers a retry plus a way home.
  */
 export default function LocaleError({ error, reset }: LocaleErrorProps) {

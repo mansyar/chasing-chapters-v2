@@ -90,7 +90,7 @@ export function resolveBrowserErrorLocale(): Locale {
 
 	return resolveErrorLocale({
 		cookieLocale: readCookieValue(document.cookie, LOCALE_COOKIE_NAME),
-		acceptLanguage: navigator.language,
+		acceptLanguage: navigator.languages?.join(", ") || navigator.language,
 	});
 }
 

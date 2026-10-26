@@ -73,6 +73,25 @@ describe("resolveBrowserErrorLocale", () => {
 		// server-rendering path the boundaries take before hydration.
 		expect(resolveBrowserErrorLocale()).toBe("en");
 	});
+
+	test("ranks every browser language, not just the first", () => {
+		const globals = globalThis as unknown as {
+			document?: unknown;
+			navigator?: unknown;
+		};
+		const originalDocument = globals.document;
+		const originalNavigator = globals.navigator;
+
+		globals.document = { cookie: "" };
+		globals.navigator = { language: "fr", languages: ["fr", "id"] };
+
+		try {
+			expect(resolveBrowserErrorLocale()).toBe("id");
+		} finally {
+			globals.document = originalDocument;
+			globals.navigator = originalNavigator;
+		}
+	});
 });
 
 describe("resolveErrorLocale", () => {
