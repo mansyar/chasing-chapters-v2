@@ -14,7 +14,7 @@
 - **Covers:** FR-1, FR-2, FR-3, FR-4, NFR-1, NFR-2, NFR-3, NFR-4, AC-3, AC-4, AC-5
 - **Touches:** `src/app/global-error.tsx`, `src/app/(public)/[locale]/error.tsx`, `src/lib/i18n/*`, `src/lib/error-locale*.ts`, `src/components/error*.tsx`, co-located `__tests__/*`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P1.T1: Locale-resolution helper + dictionary entries** — covers: FR-1, NFR-1
   - [ ] **P1.T1.1: Cookie→header→EN resolver with unit tests**
