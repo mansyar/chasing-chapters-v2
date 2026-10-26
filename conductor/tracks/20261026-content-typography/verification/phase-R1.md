@@ -401,3 +401,36 @@ assertion that fails if the fix is reverted, and no Phase 1-5 behaviour was
 changed: the home page's `sizes`, the four `StarRating` call sites' rendered
 output, the three de-prosed files and the whole typography token map are untouched
 apart from the pre pair.
+
+---
+
+## Round 2 delta - the two findings the re-review raised against this phase
+
+The delta re-review of this phase confirmed all five findings fixed and raised two
+Low findings against the fixes themselves. Both were fixed by the primary at
+`f2acdb7`, after this phase's checkpoint, so they are recorded here rather than in
+a second evidence file.
+
+**N1 - the prose guard missed `className={cn(...)}`.** `F3` replaced a bare
+substring match with two patterns covering `className="..."` and
+`` className={`...`} ``, but `className={cn(...)}` is the repo's dominant idiom
+(22 files under `src/`, two of them inside a guarded file), so a regression
+written that way passed the guard. A third pattern now matches the class position
+inside a `cn()` call, and the self-test's regression list gained two `cn()` forms.
+Verified both directions: the pattern fires on `<div className={cn("prose", size)}>`
+and stays quiet on `ModernBookCarousel.tsx`, which uses `cn(...)` legitimately and
+contains no `prose`.
+
+**N2 - the default `sizes` described the wrong breakpoint.** The `F2` prop default
+was the home page's string, `(max-width: 768px) 50vw, 25vw`, but that page's grid
+is two columns to `lg` and four above it, so between 769 and 1023 pixels the
+covers are half the viewport while the declaration asked for a quarter - the same
+under-fetch `F2` fixed on the index, in the band the comment claimed covered it.
+The default now switches at 1023px to match the grid, and the doc comment
+describes the real grid rather than "four columns above `lg`". The assertion in
+`typography-source.test.ts` was updated with it, so the value cannot drift back
+silently.
+
+Verification after both: `bun run typecheck` 0 (265 files), `bun run lint` 0
+(258 files), `bun test` 0 (813 pass, 0 fail, 58 files), `bun run test:e2e` 0
+(112 passed, 1.6m). No behaviour outside the two findings changed.

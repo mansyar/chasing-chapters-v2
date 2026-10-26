@@ -14,8 +14,9 @@ in section 5 rather than papered over.
 
 ## 2. Scope of the diff
 
-24 files, 1,219 insertions, 267 deletions - 22 source files plus `package.json`
-and `bun.lock`.
+26 files, 1,235 insertions, 273 deletions - 24 source files plus `package.json`
+and `bun.lock`. The two extra files are the round-2 delta fixes recorded in
+section 11.
 
 No migration, no schema change, no collection change: `git diff --numstat` over
 `src/migrations`, `src/payload-types.ts`, `src/payload.config.ts` and
@@ -49,12 +50,14 @@ Test files: `typography-source.test.ts` (+150), `review-navigation.test.ts`
 | --- | --- | --- | --- |
 | static | `bun run typecheck` | 0 | `No type errors in 265 files` |
 | static | `bun run lint` | 0 | `Checked 258 files. No fixes applied.` |
-| unit | `bun test` | 0 | 809 pass, 0 fail, 58 files |
+| unit | `bun test` | 0 | 813 pass, 0 fail, 58 files |
 | static | `bun run build` | 0 | route table emitted, no build error |
 | e2e | `bun run test:e2e` | 0 | 112 passed, 0 failed, 0 flaky (2.0m) |
 
-The unit layer grew from 765 tests on `main` to 809 - 44 new tests across four
-new files, no existing test deleted or weakened. The one assertion that changed
+The unit layer grew from 765 tests on `main` to 813 - 48 new tests across four
+new files, no existing test deleted or weakened. One test was replaced rather than
+deleted: the neighbour helper's query-shape assertion became an outcome assertion
+when round 1 found it could not catch the defect it was written for. The one assertion that changed
 is `readingListsNoImage`'s key disappearing from both dictionaries, which the
 parity test's identical-key-set assertion still enforces symmetrically.
 
@@ -161,5 +164,54 @@ typechecks, lints, tests, builds and passes e2e, no existing test was weakened,
 there is no schema or runtime dependency change, and every requirement in the
 spec has implementation plus behavioural test evidence.
 
-The five residual risks are recorded rather than resolved. Item 1 is the one that
+The five residual risks are recorded rather than resolved, and two review rounds later the verdict stands: every finding either round raised is fixed, no Critical or High was ever raised, and section 11 records what changed. Item 1 is the one that
 bounds how much the evidence is worth; item 2 is the one a human should look at.
+
+## 11. Post-review state
+
+This report was written before the review. Two review rounds followed, and what
+they changed is recorded here rather than by rewriting the sections above.
+
+**Round 1** raised five findings - two Medium, three Low - and all five were fixed
+in Phase R1 at `0e4a21b`:
+
+| Finding | Severity | What it was | Fixed in |
+| --- | --- | --- | --- |
+| F1 | Medium | the neighbour helper fell back to `createdAt` while querying the `publishDate` column, so a review without a publish date got a "Next review" link to an unrelated review | `0e4a21b` |
+| F2 | Medium | the reading-lists index inherited the home page's `sizes`, fetching covers at roughly half the pixels they occupied on a phone | `0e4a21b` |
+| F3 | Low | the prose-free guard matched the bare substring, so a prose comment failed it while a prose class added elsewhere passed | `0e4a21b` |
+| F4 | Low | the `StarRating` call-site tests asserted the import, not the render | `0e4a21b` |
+| F5 | Low | the code-block pair was inverted, making a `pre` the brightest thing on a dark page | `0e4a21b` |
+
+**Round 2**, the delta re-review of those fixes, confirmed all five and raised two
+Low findings against the fixes themselves, both fixed at `f2acdb7`: the new prose
+guard did not understand `className={cn(...)}`, the repo's dominant idiom, so a
+regression written that way still passed; and the new `sizes` default switched at
+768px while the home page's grid switches at 1024, leaving the 769-1023 band
+under-declared - the same defect F2 fixed on the index, one layer up.
+
+**Layers re-run after the last fix:**
+
+| Layer | Command | Exit | Summary |
+| --- | --- | --- | --- |
+| static | `bun run typecheck` | 0 | `No type errors in 265 files` |
+| static | `bun run lint` | 0 | `Checked 258 files. No fixes applied.` |
+| unit | `bun test` | 0 | 813 pass, 0 fail, 58 files |
+| e2e | `bun run test:e2e` | 0 | 112 passed, 0 failed, 0 flaky (1.6m) |
+
+The build layer was not re-run after the review fixes. The delta touches a helper,
+a component prop, a CSS variable pair and two test files - no route, no page
+boundary, no dependency - so it cannot change what the build emits, and CI builds
+the app as a required check on the PR.
+
+**What the rounds changed about the residuals.** Residual 1 (no React harness) is
+unchanged and is now why F4's fix is still a source assertion. Residual 2 (the
+index's look never seen as a screenshot) stands - the review did not look at it
+either, and it is the one thing a human should eyeball before this merges.
+Residual 3 (60-second neighbour staleness) is unchanged. Residual 4 (the
+unreachable `has-data-[slot=card-action]` hook) is unchanged. Residual 5
+(hand-mapped `prose-teal`) is unchanged, and F5 turned out to be a consequence of
+it: the pre pair was mapped by analogy with the other 34 variables rather than
+considered on its own terms. Two new residuals came out of the rounds, both Low and
+recorded in `review.md`: the `sizes` default and the prose guard are both
+source-pinned rather than behaviour-pinned.

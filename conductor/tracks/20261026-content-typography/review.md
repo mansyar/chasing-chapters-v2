@@ -6,7 +6,7 @@
 - **Range:** `bca3a8bd9abac8d41f065dbf1b204d1908c111b8..HEAD`
 - **Date:** 2026-10-26
 - **Verdict:** `PASS WITH FINDINGS`
-- **Gate:** blocked - `review.strict` is `true`, so Phase R1 must land before a PR
+- **Gate:** cleared - Phase R1 and its round-2 fixes are verified; all seven findings are fixed
 
 > The header records the severity-based verdict: no Critical or High finding was
 > raised, so the track is not blocked by severity. The gate records whether
@@ -15,32 +15,32 @@
 
 ## Summary
 
-The track delivers what it promised. The typography plugin is installed and
-themed on the site's own tokens with a complete 36-variable mapping, verified
-against the plugin's own variable set - nothing missing, nothing misdirected -
-and all eight inert `prose` sites are resolved deliberately (five kept, three
-de-prosed). The three structured sections are tokenized with `color-mix`
-replacing the hex-append trick, `StarRating` replaces all four inline renderers
-without adding a `"use client"`, breadcrumbs on both detail pages share one
-`trail` array with the JSON-LD they now back, and the orphan deletions are
-genuinely unreferenced.
+**Round 3: the track is ready.** Every finding raised in any round is fixed and
+verified - five in Phase R1 and two more in the round-2 delta. No Critical or High
+finding was ever raised.
 
-Two phases were executed by the primary rather than a `conductor-phase`
-subagent, because the subagent pool was out of credits. Both evidence files say
-so at the top, and the reviewer confirms that recording is honest rather than a
-retrofit - including `phase-5.md` section 5, which states plainly that the
-reading-lists index's look changed, why, and that the approval was given in prose
-without a screenshot.
+The track does what it promised. The eight `prose` usages that were inert because
+the plugin was never installed now render through a token-themed typography map;
+the three structured review sections and the mood badge use semantic colour tokens
+instead of hardcoded Tailwind palette classes; one `StarRating` replaces four
+copy-pasted renderers and announces the rating in the reader's language; both
+detail pages carry a visible breadcrumb trail backed by the JSON-LD that already
+existed, plus prev/next review navigation; and three card renderings collapsed onto
+one shared base with the orphaned exports deleted.
 
-Two Medium defects survive. `getAdjacentReviews` substitutes `createdAt` into an
-anchor that is then compared against the `publishDate` column, so a review with
-no `publishDate` gets a neighbour link to an arbitrary unrelated review - and the
-module's own doc comment says the opposite of what the code does. The
-reading-lists index inherits a hardcoded `sizes` attribute that under-declares
-its covers by 2x at mobile widths, which is a regression the card adoption
-introduced. Three Low findings are test-brittleness and one dark-mode colour
-inversion.
+Round 1 found two Medium defects the phases had missed, both in code written for
+this track: the neighbour helper compared a `createdAt` value against the
+`publishDate` column, so a review with no `publishDate` linked to an unrelated one;
+and the reading-lists index inherited the home page's `sizes` attribute, so covers
+were fetched at half the pixels they occupied on a phone. Round 2 found that two of
+the round-1 fixes were themselves imperfect - the new prose guard did not understand
+`className={cn(...)}`, the repo's dominant idiom, and the new `sizes` default
+switched at the wrong breakpoint for the very grid it described. Both are fixed.
 
+Two phases (4 and 5) were executed by the primary because the subagent pool ran out
+of credits, so the implementer/verifier separation the workflow assumes did not hold
+there. Both evidence files say so plainly, and the reviewer confirmed the recording
+is honest rather than a retrofit.
 ## Verification
 
 | Layer | Command | Result | Evidence |
@@ -61,20 +61,20 @@ inversion.
 | FR-3 | `reviews/[slug]/page.tsx:353-383`, `globals.css:42-44,108-115,166-171` | `typography-source.test.ts:98-137` | covered |
 | FR-4 | `StarRating.tsx:54-82`; four call sites | `StarRating.test.ts:23-115` | covered |
 | FR-5 | `Breadcrumbs.tsx:34-79`; both detail pages | `Breadcrumbs.test.ts` | covered |
-| FR-6 | `review-navigation.ts:62-138`; `reviews/[slug]/page.tsx:214-220,503-540` | `review-navigation.test.ts` | partial - F1 |
+| FR-6 | `review-navigation.ts:76` (anchor), `:78-80` (guard); `reviews/[slug]/page.tsx:214-220,503-540` | `review-navigation.test.ts:168-183` | covered |
 | FR-7 | `card.tsx:14-26` (`CardLink`), both cards, index | source inspection + e2e rendering | covered |
 | FR-8 | `card.tsx:84`; deleted `CardAction`/`CardDescription`/`readingListsNoImage` | grep returns no references | covered |
 | FR-9 | `dictionary.ts` both locales | `dictionary.test.ts:11-16` | covered |
 | NFR-1 | `StarRating`/`Breadcrumbs` carry no `"use client"` | `StarRating.test.ts:110-115`, `dictionary-source.test.ts:212-216` | covered |
-| NFR-2 | three files de-prosed; `priority` for above-fold covers | source diff only | partial - F2 |
+| NFR-2 | three files de-prosed; `priority` for above-fold covers; `sizes` per surface | `typography-source.test.ts:94-140,228-251` | covered |
 | NFR-3 | no diff under migrations/types/config/collections | `integrated.md` §2 | covered |
 | NFR-4 | `@tailwindcss/typography` in devDependencies only | `typography-source.test.ts:35-42` | covered |
-| NFR-5 | no test deleted or weakened | 809 pass (765 before) | covered |
+| NFR-5 | no test deleted or weakened | 813 pass (765 before) | covered |
 | AC-1 | `globals.css:4` + `package.json:65` | `typography-source.test.ts:31-42` | covered |
 | AC-2 | `reviews/[slug]/page.tsx:353-383` | `typography-source.test.ts:103-121` | covered |
-| AC-3 | `StarRating` + four call sites | `StarRating.test.ts:23-115` | partial - F4 |
+| AC-3 | `StarRating` + four call sites | `StarRating.test.ts:105-113` (element + label per file) | covered |
 | AC-4 | `Breadcrumbs` + both pages | `Breadcrumbs.test.ts` | covered |
-| AC-5 | `review-navigation.ts` + render guard | `review-navigation.test.ts` | partial - F1 |
+| AC-5 | `review-navigation.ts:76-80` + render guard | `review-navigation.test.ts:168-183` | covered |
 | AC-6 | `reading-lists/page.tsx:5,83-88` | source inspection; e2e renders the page | covered |
 | AC-7 | `dictionary.ts` both locales | `dictionary.test.ts:11-16` | covered |
 
@@ -132,6 +132,53 @@ None.
   - **Requirement:** FR-2
   - **Test gap:** `typography-source.test.ts:44-62` asserts body/links/quote-borders/captions/hr plus two invert variables; asserting the pre pair would pin whatever is decided.
 
+### Round 2 - findings raised by the delta re-review of Phase R1
+
+Two Low findings, both introduced by the fix delta itself. Neither is a defect in
+shipped behaviour: one is a guard that did not cover the repo's dominant idiom, the
+other a comment that named the wrong breakpoint. Both are fixed.
+
+#### N1 - the prose guard missed `className={cn(...)}`
+
+- **File:** `src/lib/__tests__/typography-source.test.ts:94`
+- **What:** the F3 replacement matched two literal shapes, a plain `className`
+  attribute and a template-literal one. The repo's dominant className idiom is
+  `className={cn(...)}` - 22 sites under `src/`, two of them inside a guarded file
+  (`ModernBookCarousel.tsx:202`, `:212`). A regression written as
+  `className={cn("prose", size)}` passed both patterns.
+- **Why:** the guard exists to stop `prose` returning to three above-the-fold files
+  (NFR-2). F3 narrowed it so it stopped crying wolf; without a third pattern it also
+  stopped seeing the most likely form of the regression it protects against.
+- **Fix:** added a `cn(...)` pattern and two `cn(...)` strings to the self-test's
+  regression list, so the new pattern is itself asserted.
+- **Requirement:** AC-1
+- **Test gap:** the self-test now covers the idiom rather than assuming it.
+- **Resolution:** **fixed** at `f2acdb7`. Verified the pattern matches
+  `<div className={cn("prose", size)}>` and does not match the carousel's existing
+  prose-free `cn(...)` usage, so it fires on the regression and stays quiet on
+  legitimate code.
+
+#### N2 - the default `sizes` described the wrong breakpoint
+
+- **File:** `src/components/ReadingListCard.tsx:20`
+- **What:** the new prop doc said the default matched the home page, but that grid is
+  `grid gap-6 grid-cols-2 lg:grid-cols-4` (`[locale]/page.tsx:116`) - two columns all
+  the way to 1024px - while the default switched at 768. Between 769px and 1023px the
+  cover is about 50vw wide but `sizes` declared 25vw, so the browser picked a
+  half-width candidate: the same under-declaration F2 fixed on the index, in the band
+  the comment claimed to cover.
+- **Why:** the comment told the next reader the default was correct, making the
+  tablet-landscape under-fetch invisible to review - and the new test pinned the
+  string, so correcting it later also meant editing the test. The value predated the
+  delta; the inaccurate comment is what the delta added.
+- **Fix:** the default now switches at 1023px, the grid's own breakpoint, and the doc
+  comment describes the real grid. The home page fetches the pixels its covers occupy
+  in that band instead of half of them.
+- **Requirement:** NFR-2
+- **Test gap:** none - the corrected string is pinned by
+  `typography-source.test.ts:243`.
+- **Resolution:** **fixed** at `f2acdb7`.
+
 ## Overrides
 
 None.
@@ -175,10 +222,23 @@ all five findings are fixed in Phase R1 rather than deferred.
 
 ## Doc sync
 
-`pending`
+`updated`
+
+The post-review sync recorded what the fix rounds changed rather than adding new
+behaviour. `conductor/tech-stack.md` now states that code blocks use one
+mode-stable `--muted`/`--foreground` pair instead of the plugin's inverting
+default (F5), and that `ReadingListCard` takes a `sizes` prop so each surface
+declares the grid its covers land in (F2, N2). `product.md` and
+`product-guidelines.md` are untouched: nothing a reader is told about the product
+changed, and the two visible differences - the reading-lists index adopting the
+shared card, and code blocks becoming a panel rather than a slab - are styling
+detail recorded in the phase evidence. The neighbour-anchoring fix (F1) needs no
+documentation because it made the code match what the doc comment already said.
 
 ## History
 
 | Round | Verdict | Critical | High | Medium | Low | Fixed |
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | PASS WITH FINDINGS (gate: BLOCK) | 0 | 0 | 2 | 3 | 0 |
+| 2 | PASS WITH FINDINGS (gate: cleared) | 0 | 0 | 0 | 0 | 5 |
+| 3 | PASS WITH FINDINGS (gate: cleared) | 0 | 0 | 0 | 0 | 2 |
