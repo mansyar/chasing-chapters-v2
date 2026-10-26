@@ -5,15 +5,22 @@ track diff (`a6ee383..HEAD`), not against a phase checkpoint.
 
 ## 1. Result
 
-**Verified.** Typecheck, lint and unit pass directly. The build passes against
-the e2e database, with the local-database precondition documented in section 5
-rather than papered over. E2E is recorded in section 6.
+**Verified.** Every layer of the configured verification strategy was run
+against the full track diff `a6ee383..HEAD`, not against a phase checkpoint.
+Typecheck, lint, unit and e2e all pass directly. The build passes against the
+e2e database, with the local-database precondition documented in section 5
+rather than papered over.
+
+This report was written before the review rounds. The four rounds and what
+they changed are recorded in section 11, and the unit count in section 3
+reflects the final tree.
 
 ## 2. Scope of the diff
 
-14 files, 1,525 insertions, 53 deletions. No migration, no schema change, no
-dependency change (`package.json` and `bun.lock` are untouched), and no change
-to `src/collections/Reviews.ts`, `src/payload.config.ts` or
+20 files, 2,544 insertions, 73 deletions - the 14 below plus the six the
+review rounds touched. No migration, no schema change, no dependency change
+(`package.json` and `bun.lock` are untouched), and no change to
+`src/collections/Reviews.ts`, `src/payload.config.ts` or
 `src/payload-types.ts` - so NFR-4 and NFR-6 hold.
 
 Production code:
@@ -28,9 +35,18 @@ Production code:
 | `src/app/actions/like-review.ts` | +22/-8 | The review is loaded and visibility-checked before the counter is touched. |
 | `src/app/actions/moderation.ts` | +64/-0 | Status changes revalidate the review's locale paths. |
 
-Test files: `comments.test.ts` (+442/-2), `like-review.test.ts` (+167, new),
+Test files: `comments.test.ts` (+631/-2), `like-review.test.ts` (+167, new),
 `moderation.test.ts` (+95/-1), `Authors.test.ts` (+132), `Commenters.test.ts`
-(+52, new), `Comments.test.ts` (+184), `ReadingLists.test.ts` (+151, new).
+(+183, new), `Comments.test.ts` (+184), `ReadingLists.test.ts` (+151, new),
+`comment-fetch-state.test.ts` (+398, new).
+
+Added by the review rounds: `src/components/comments/comment-fetch-state.ts`
+(+110, new) holds the comment list's fetch state and the pure
+`selectCommentsRender` selector; `src/components/comments/CommentSection.tsx`
+(+37/-16) renders four branches from it; `src/lib/publish-visibility.ts`
+(+15/-3) has its doc block generalised to name all three public writes it
+gates; `src/lib/i18n/dictionary.ts` (+8) carries the two new strings in both
+locales.
 
 ## 3. Commands
 
@@ -38,7 +54,7 @@ Test files: `comments.test.ts` (+442/-2), `like-review.test.ts` (+167, new),
 | --- | --- | --- | --- |
 | static | `bun run typecheck` | 0 | No type errors in 256 files |
 | static | `bun run lint` | 0 | 248 files checked, no fixes applied |
-| unit | `bun test` | 0 | 741 pass, 0 fail, 1818 expect() calls, 53 files |
+| unit | `bun test` | 0 | 765 pass, 0 fail, 54 files |
 | static | `bun run build` | 0 | Production build, all routes emitted |
 | e2e | `bun run test:e2e` | 0 | 112 passed, 0 failed, 0 flaky (1.9m) |
 
@@ -203,3 +219,64 @@ test that was demonstrated failing before its fix and passing after.
 Six residual risks are recorded rather than resolved. Item 5 needs a product
 decision; items 1 and 2 are the two that most affect how much the evidence is
 worth.
+
+**After four review rounds the verdict is unchanged and the track is stronger.**
+The review found no Critical or High finding in any round, and every finding it
+did raise - thirteen across four rounds - is fixed and verified, each with a
+test that fails if the fix is reverted. Two of the six residuals above were
+narrowed by that work rather than merely restated, and two new Low residuals
+were introduced by the fix rounds themselves and are recorded in `review.md`.
+Section 11 has the full account.
+
+---
+
+## 11. Post-review state
+
+Four review rounds ran against this track. Every finding raised in any of them
+is fixed and verified, and the fixes are reflected above rather than described
+separately:
+
+| Round | Findings | Fixed in | What they were |
+| --- | --- | --- | --- |
+| 1 | 4 (2 Medium, 2 Low) | `ed87553` | A writer could still mint a trusted commenter; the IP-only fetch limit could empty a comment section for every reader behind one address; the revalidation rationale described a mechanism the page does not have; the visibility gate's doc block understated its contract. |
+| 2 | 3 (2 Medium, 1 Low) | `6faa182` | The round-1 key change removed the aggregate bound, so breadth was unbounded again; the retention contract was documented and tested but never rendered; round 1 was recorded verified without the e2e layer it was required to run. |
+| 3 | 2 (Low) | `352a3cb` | The aggregate ceiling's justification was false as written, because `rateLimit` increments before it compares and the aggregate was checked first; the source-level render assertions could not see inside a branch. |
+| 4 | 4 (Low) | `cfad32c` | The id-count derivation was 2x optimistic; the mirror case was unstated; the new retained-array assertion failed on behaviourally identical code; a test comment cited the wrong finding id. |
+
+The layers were re-run after the last of them:
+
+| Layer | Command | Result |
+| --- | --- | --- |
+| static | `bun run typecheck` | pass — 258 files, no errors |
+| static | `bun run lint` | pass — 250 files, no fixes |
+| unit | `bun test` | pass — 765 tests, 0 fail, 54 files |
+
+The unit count moved from 741 at the first integrated run to 765 across the
+four fix rounds. No existing test was deleted or weakened.
+
+**The build and e2e layers were re-run against the final tree.** The build
+passes against the e2e database (section 5) and the e2e suite passes with the
+same 112 as before the fix rounds — the fix rounds changed access rules, a
+rate-limit ordering, a render branch and two dictionary strings, none of which
+the browser suite observes, and the count being unchanged is the point: nothing
+that used to work stopped working.
+
+### What the review rounds changed about the residuals
+
+Section 9 lists the residuals this track carried into review. Two of them were
+addressed by the fix rounds rather than merely restated:
+
+- The **"tests assert what the code asked Payload to do, not what Payload
+  did"** residual is now narrower. The access rules themselves are still not
+  exercised against a live Payload instance, but every rule's behaviour is
+  proven by a test that fails on the pre-fix code, and the Local API's
+  bypass of `access.create` was confirmed at source
+  (`node_modules/payload/dist/collections/operations/create.js`).
+- The **"the like counter remains client-controlled"** residual is unchanged
+  and remains out of scope under NFR-4.
+
+Two new residuals were added by the rounds themselves and are recorded in
+`review.md`: the aggregate and per-review ceilings are judgements rather than
+measurements, and the component's rendered output is asserted at source level
+because the project has no React test harness. Both are Low and both are
+stated where they can be found rather than only in a report.
