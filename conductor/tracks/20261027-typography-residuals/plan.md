@@ -87,7 +87,7 @@ The primary appends after acceptance:
 - **Covers:** FR-2, AC-3
 - **Touches:** `.conductor/media/20261027-typography-residuals/*`
 - **Verification:** `bun .conductor/media/20261027-typography-residuals/capture.ts`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P4.T1: Capture and attach the four screenshots** — covers: FR-2, AC-3
 
