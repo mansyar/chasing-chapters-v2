@@ -1,0 +1,32 @@
+{
+	"id": "20261026-content-typography",
+	"title": "Content Typography & Reading Experience",
+	"type": "feature",
+	"status": "new",
+	"priority": "high",
+	"depends_on": [],
+	"created_at": "2026-10-26T08:35:44Z",
+	"updated_at": "2026-10-26T08:35:44Z",
+	"spec": "spec.md",
+	"plan": "plan.md",
+	"branch": "feat/20261026-content-typography",
+	"base_branch": "main",
+	"base_sha": "46a9d32f71ce5571567df220c73b9e4e20f706b6",
+	"progress": {
+		"phases_total": 5,
+		"phases_verified": 0,
+		"tasks_total": 12,
+		"tasks_done": 0
+	},
+	"last_checkpoint": null,
+	"review_verdict": null,
+	"review_rounds": 0,
+	"doc_sync": "pending",
+	"pr_url": null,
+	"pr_state": null,
+	"reverted_at": null,
+	"revert_commit": null,
+	"revert_pr_url": null,
+	"archived_at": null,
+	"archive_path": null
+}
