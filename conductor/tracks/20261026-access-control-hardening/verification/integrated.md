@@ -40,7 +40,7 @@ Test files: `comments.test.ts` (+442/-2), `like-review.test.ts` (+167, new),
 | static | `bun run lint` | 0 | 248 files checked, no fixes applied |
 | unit | `bun test` | 0 | 741 pass, 0 fail, 1818 expect() calls, 53 files |
 | static | `bun run build` | 0 | Production build, all routes emitted |
-| e2e | `bun run test:e2e` | see section 6 | Playwright against a production build |
+| e2e | `bun run test:e2e` | 0 | 112 passed, 0 failed, 0 flaky (1.9m) |
 
 The unit layer grew from 725 tests at track start to 741 - 16 new tests across
 the six phases, none deleted or weakened. Every phase's evidence file records
@@ -89,7 +89,47 @@ migrations applied, so this precondition does not weaken the gate.
 
 ## 6. E2E
 
-<!-- E2E_RESULT -->
+`bun run test:e2e` -> **exit 0, 112 passed, 0 failed, 0 flaky (1.9m)**, ending
+`[e2e] The suite finished.`
+
+The harness checks Redis, creates and migrates `chasing-chapters_e2e` (answering
+the dev-mode data-loss prompt automatically there, unlike the local dev
+database), seeds the fixture, builds a production app and drives Playwright
+against port 3100.
+
+**The suite covers this track's most important claim end to end.** This track
+closed `Comments.create` and `Commenters.create` to anonymous callers, and the
+whole track rests on the argument that guest commenting is unaffected because
+`submitComment` writes through the Local API where `overrideAccess` defaults to
+`true`. That argument was verified at source in Phase 2 (`create.js:126` guards
+with `if (!overrideAccess)`) and at Phase 5 by asserting the action passes no
+`user` or `overrideAccess` - but neither is the same as submitting a comment.
+
+`e2e/comments.spec.ts` does exactly that, in a real browser, against a real
+database, with both rules closed:
+
+- `should display comment form` - pass
+- `should show validation error for empty fields` - pass
+- `should submit comment successfully` - **pass**
+- `should display comments section container` - pass
+
+That last-but-one is AC-4 proven at the layer it actually matters, and it is
+stronger evidence than the unit test in `comments.test.ts`, which asserts what
+the action asked Payload to do. The unit test remains the regression guard
+because it is deterministic; this is the proof that the guard matches reality.
+
+`e2e/review-detail.spec.ts` also covers the surfaces Phase 6 touched - the like
+button is present and the comment section renders - though it asserts
+visibility rather than behaviour, so it does not exercise the visibility gate
+or the moderation revalidation.
+
+**What e2e does not do:** it does not report a comment, does not like a draft,
+and does not approve a comment through the admin panel and then check the public
+page. Those three are the defects this track closed, and they are pinned at the
+unit layer where the 403-equivalent state is constructible and the assertions are
+exact. Adding e2e coverage for them is a fixture change - a draft review, a
+reportable comment, an admin approval flow - worth a follow-up rather than
+claimed impossible.
 
 ## 7. Cross-phase integration
 
