@@ -180,3 +180,23 @@ No other files outside `Touches` were modified.
   and both still pass on the swapped implementation.
 - The out-of-range clamp is the only behavioural addition; it is documented in
   the component JSDoc and pinned by two dedicated tests.
+
+## Primary verification
+
+The primary re-ran every layer on the squashed checkpoint 2e9d79 and reviewed the full diff directly.
+
+| Layer | Command | Exit | Summary |
+| --- | --- | --- | --- |
+| static | un run typecheck | 0 | No type errors |
+| static | un run lint | 0 | 254 files checked, no fixes applied |
+| unit | un test | 0 | 789 pass, 0 fail (up from 774 — the 15 StarRating cases) |
+| e2e | un run test:e2e | 0 | 112 passed, 0 failed, 0 flaky (3.3m), suite finished |
+
+Diff review findings:
+
+- The component is server-safe as required: no "use client", no hooks, no event handlers; stars carry ria-hidden and the rating is announced by an sr-only span filled through ormatMessage. The clamp is applied to both the render and the announced label, so they can never disagree.
+- The four primary call-site swaps are single-block replacements with the size mapping documented in the component (sm/md/lg copied verbatim from the former renderers). The detail page dropped its now-dead wrapper 	ext-primary gap-2 — the component owns colours and gap — visually identical.
+- The five outside-Touches changes were each inspected: dictionary.ts gains one key in both locales (pre-authorized); the four extra files are exactly one atingLabel={dictionary.ratingLabel} prop addition each (three single-line, one reflowed JSX). The cascade was necessary, not a design drift: ReviewCard had no dictionary prop before this phase (verified against the phase base), and StarRating cannot import the dictionary itself because the hero and carousel render it inside client components, which NFR-2 forbids from importing dictionaries. The alternative — making the prop optional with an English fallback — would reintroduce the i18n defect.
+- The renderToStaticMarkup technique renders real DOM output (stronger than the source-level assertions the previous track had to settle for), and the suite covers both locales' labels and the clamping edges.
+
+**Result: verified.** FR-4 and AC-3 satisfied by test evidence; NFR-1 holds (no new "use client" directive; the component has none).

@@ -73,15 +73,18 @@ The primary appends after acceptance:
 - **Covers:** FR-4, AC-3
 - **Touches:** `src/components/reviews/StarRating.tsx`, `src/components/reviews/__tests__/StarRating.test.ts`, `src/components/FeaturedHero.tsx`, `src/components/ModernBookCarousel.tsx`, `src/components/ReviewCard.tsx`, `src/app/(public)/[locale]/reviews/[slug]/page.tsx`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
-- **Status:** in_progress
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** e2e9d79
+- **Evidence:** conductor/tracks/20261026-content-typography/verification/phase-3.md
 
-- [ ] **P3.T1: Build the component** — covers: FR-4
-  - [ ] **P3.T1.1: A read-only server component with size variants matching the four current renderings**
-  - [ ] **P3.T1.2: Announce "Rated N out of 5" via a screen-reader-only label; no `"use client"` directive**
-  - [ ] **P3.T1.3: Handle the extremes — 5 and 1 — rendering full and empty correctly in every size**
-- [ ] **P3.T2: Replace the four call sites and cover the component** — covers: AC-3
-  - [ ] **P3.T2.1: Component tests for sizes, full/empty rendering and the accessible label**
-  - [ ] **P3.T2.2: Swap `FeaturedHero`, `ModernBookCarousel`, `ReviewCard` and the review detail page onto the component, matching each site's previous visual size**
+- [x] **P3.T1: Build the component** — covers: FR-4
+  - [x] **P3.T1.1: A read-only server component with size variants matching the four current renderings**
+  - [x] **P3.T1.2: Announce "Rated N out of 5" via a screen-reader-only label; no `"use client"` directive**
+  - [x] **P3.T1.3: Handle the extremes — 5 and 1 — rendering full and empty correctly in every size**
+- [x] **P3.T2: Replace the four call sites and cover the component** — covers: AC-3
+  - [x] **P3.T2.1: Component tests for sizes, full/empty rendering and the accessible label**
+  - [x] **P3.T2.2: Swap `FeaturedHero`, `ModernBookCarousel`, `ReviewCard` and the review detail page onto the component, matching each site's previous visual size**
 
 <!--
 The primary appends after acceptance:
