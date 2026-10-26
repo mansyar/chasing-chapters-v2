@@ -17,4 +17,4 @@
 - [x] **Track: Docs Truthfulness — sync README, admin guide, and pagespeed opening with the shipped product** *Link: [docs_truthfulness_20261010/index.md](./archive/docs_truthfulness_20261010/index.md)*
 - [x] **Track: Translation Quota Resilience** — [20261025-translation-quota-resilience](./archive/20261025-translation-quota-resilience/index.md) — bug — high
 - [x] **Track: Access Control Hardening** — [20261026-access-control-hardening](./archive/20261026-access-control-hardening/index.md) — bug — high
-- [ ] **Track: Content Typography & Reading Experience** — [20261026-content-typography](./tracks/20261026-content-typography/index.md) — feature — high
+- [~] **Track: Content Typography & Reading Experience** — [20261026-content-typography](./tracks/20261026-content-typography/index.md) — feature — high
