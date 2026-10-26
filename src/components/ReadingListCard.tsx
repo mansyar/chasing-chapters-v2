@@ -16,8 +16,9 @@ interface ReadingListCardProps {
 	locale?: AppLocale;
 	/**
 	 * The `sizes` attribute for the cover. It has to describe the grid the card
-	 * is rendered into, which differs per surface: the home page lays out four
-	 * columns above `lg`, the index three. The default matches the home page.
+	 * is rendered into, which differs per surface: the home page lays out two
+	 * columns below `lg` and four above it, the index one below `sm`, two to
+	 * `lg` and three above. The default describes the home page grid.
 	 */
 	sizes?: string;
 }
@@ -27,7 +28,7 @@ export function ReadingListCard({
 	className,
 	priority = false,
 	locale = "en",
-	sizes = "(max-width: 768px) 50vw, 25vw",
+	sizes = "(max-width: 1023px) 50vw, 25vw",
 }: ReadingListCardProps) {
 	const coverImage = readingList.coverImage as Media;
 	const dictionary = getDictionary(locale);

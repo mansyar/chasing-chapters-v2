@@ -94,6 +94,11 @@ describe("typography plugin wiring", () => {
 	const proseClassPatterns = [
 		/className="[^"]*\bprose\b/,
 		/className=\{`[^`]*\bprose\b/,
+		// `className={cn("prose", size)}` is this repo's dominant idiom - 22 sites
+		// under src/, two of them inside a guarded file - so a guard that only
+		// understood the two literal forms above would miss the most likely way
+		// the regression comes back.
+		/className=\{cn\([^)]*\bprose\b/,
 	];
 
 	test("the clamped excerpts and the skeleton stay prose-free", () => {
@@ -119,6 +124,8 @@ describe("typography plugin wiring", () => {
 			'<div className="prose line-clamp-3">',
 			'<div className="max-w-none prose line-clamp-3">',
 			"<div className={`prose ${size}`}>",
+			'<div className={cn("prose", size)}>',
+			'<div className={cn("max-w-none", "prose")}>',
 		];
 		const innocent = [
 			"// prose would break this clamped excerpt",
@@ -238,9 +245,11 @@ describe("reading-list cover sizes", () => {
 	test("the card forwards its `sizes` prop to the image", () => {
 		expect(cardSource).toContain("sizes?: string;");
 		expect(cardSource).toContain("sizes={sizes}");
-		// The home page's grid is the default, so its four-column declaration is
-		// what a caller that does not pass `sizes` gets.
-		expect(cardSource).toContain('sizes = "(max-width: 768px) 50vw, 25vw",');
+		// The home page's grid is the default: two columns below `lg`, four above,
+		// so the declaration has to switch at 1024 - the same breakpoint the grid
+		// uses. It said 768 until the delta re-review noticed the 769-1023 band
+		// declaring half the width its covers occupy.
+		expect(cardSource).toContain('sizes = "(max-width: 1023px) 50vw, 25vw",');
 	});
 
 	test("the index declares its own single-column mobile width", () => {
