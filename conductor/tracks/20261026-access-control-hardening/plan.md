@@ -33,7 +33,7 @@
 - **Covers:** FR-3, FR-9, AC-5, AC-14
 - **Touches:** `src/collections/Comments.ts`, `src/collections/__tests__/Comments.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P2.T1: Close anonymous comment creation** - covers: FR-3
   - [ ] **P2.T1.1: Change `create` from `() => true` to deny, leaving `read`, `update` and `delete` untouched**
