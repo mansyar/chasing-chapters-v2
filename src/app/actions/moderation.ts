@@ -40,10 +40,12 @@ function reviewSlug(relatedReview: unknown): string | null {
  * must not be available to writers (who can only manage their own
  * reviews' content via collection access control).
  *
- * The public review page is ISR with a 60s window, so the status change is
- * invisible to readers until that window expires unless the page is
- * invalidated here (`FR-10`). An admin who approves a comment and watches it
- * stay hidden reads the feature as broken.
+ * The revalidation below is defence in depth (`FR-10`), not the mechanism that
+ * makes an approval visible: the comment list is client-fetched, so the public
+ * review page carries no comment markup and an admin would see the change on
+ * the next fetch either way. It is kept because FR-10 requires it, and because
+ * any server-rendered surface that does show comments must not serve a cached
+ * copy of a status the public read has moved on from.
  */
 export async function setCommentStatus(
 	commentId: number | string,

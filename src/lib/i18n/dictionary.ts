@@ -120,6 +120,8 @@ const en = {
 	commentsTitle: "Comments",
 	commentsLoading: "Loading comments...",
 	commentsEmpty: "No comments yet. Be the first to share your thoughts!",
+	commentsLoadError:
+		"Comments could not be loaded right now. Please try again in a moment.",
 	commentsFormTitle: "Leave a Comment",
 	commentsName: "Name",
 	commentsNamePlaceholder: "Your name",
@@ -309,6 +311,8 @@ const id: Dictionary = {
 	commentsTitle: "Komentar",
 	commentsLoading: "Memuat komentar...",
 	commentsEmpty: "Belum ada komentar. Jadilah yang pertama berbagi pendapat!",
+	commentsLoadError:
+		"Komentar tidak dapat dimuat saat ini. Silakan coba lagi sebentar lagi.",
 	commentsFormTitle: "Tinggalkan Komentar",
 	commentsName: "Nama",
 	commentsNamePlaceholder: "Nama Anda",

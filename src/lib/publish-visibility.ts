@@ -107,11 +107,23 @@ export function isPubliclyVisible(
 }
 
 /**
- * Decides whether a public write - a reader's comment - may target an
- * already-loaded review (`FR-5`).
+ * Decides whether a public write may target an already-loaded review (`FR-5`,
+ * `FR-7`).
+ *
+ * "Public write" is every write a reader can make without a session, and all
+ * three are gated here:
+ *
+ * - `submitComment` in `src/app/actions/comments.ts` - a reader's comment.
+ * - `reportComment` in the same module - a report.
+ * - `toggleLikeReview` in `src/app/actions/like-review.ts` - a like.
+ *
+ * A fourth public write belongs in this list and behind this call, not behind
+ * a hand-rolled `_status` check: a like-shaped write that checked only
+ * `_status` would still accept a review scheduled for next week, and the write
+ * gate would drift from the read gate.
  *
  * The answer is {@link isPubliclyVisible}: the write path has to agree with the
- * read path. A reader who can see a review can comment on it, and a reader who
+ * read path. A reader who can see a review can write to it, and a reader who
  * cannot must get the same answer as for a review that does not exist, or a
  * scheduled review leaks its existence through a distinct reply.
  *

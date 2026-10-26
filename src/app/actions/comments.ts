@@ -46,14 +46,24 @@ const REPORT_THANKS_MESSAGE =
 const MAX_COMMENTS_PER_REVIEW = 100;
 
 /**
- * Requests `getApprovedComments` allows per IP per window (`FR-8`, `AC-13`).
+ * Requests `getApprovedComments` allows per IP per review per window (`FR-8`,
+ * `AC-13`).
  *
- * A reader loads comments once per review page and once more after posting,
- * so 60 a minute leaves ordinary browsing untouched while making the action
- * useless for enumerating the catalogue. It is a new limit on a new read
- * path; the comment and report limits are unchanged (`NFR-1`).
+ * The key includes the review id, the same shape the like action uses
+ * (`like:${ip}:${reviewId}`). Keying on the address alone made the bucket
+ * shared by every reader behind one NAT, proxy or busy egress, so ordinary
+ * traffic on a popular review could exhaust it and leave those readers looking
+ * at "no comments yet".
+ *
+ * A reader loads a review's comments on mount and again after posting, so the
+ * ceiling only has to clear 2 per page view. 120 leaves room for 60 views of
+ * the same review per minute from one address - a refresh storm, several open
+ * tabs - while still bounding what a single review id can be asked for. The
+ * cost of setting it too low is a reader seeing an empty section, so it is
+ * deliberately generous; `MAX_COMMENTS_PER_REVIEW` is what bounds the rows one
+ * call returns.
  */
-const COMMENT_FETCH_LIMIT = 60;
+const COMMENT_FETCH_LIMIT = 120;
 const COMMENT_FETCH_WINDOW_SECONDS = 60;
 
 /**
@@ -334,11 +344,19 @@ export async function reportComment(
 			data: report,
 		});
 
-		// A reported comment leaves the public read (`Comments.access.read`
-		// returns only `approved` rows) and the review page is ISR, so without
-		// this the comment stays on the cached page for up to 60 seconds
-		// (`FR-11`).
-		if (review.slug) {
+		// Revalidation is defence in depth (`FR-11`). The comment list itself is
+		// client-fetched - `CommentSection` is a client component that calls
+		// `getApprovedComments` on mount - so the public review page carries no
+		// comment markup and this is not what makes a hidden comment disappear.
+		// It is kept because FR-11 requires it and because any surface that does
+		// render comments server-side, now or later, must not serve a cached
+		// copy of a comment the public read no longer returns.
+		//
+		// Gated on the status actually moving to `reported`: below the threshold
+		// the write changes only `reportCount` and `reportedBy`, neither of
+		// which is in any public output, so regenerating the page would be work
+		// with nothing to show for it.
+		if (report.status === "reported" && review.slug) {
 			for (const path of localizedPaths(`/reviews/${review.slug}`)) {
 				revalidatePath(path);
 			}
@@ -358,9 +376,9 @@ export async function reportComment(
  * Get approved comments for a review.
  *
  * A server action is a public HTTP endpoint, so the id is validated before it
- * reaches a query and the call is rate-limited per IP (`FR-8`, `AC-13`).
- * `reviewId` used to be trusted: `NaN`, `0` and a negative number all ran a
- * query, and nothing bounded how often one address could ask.
+ * reaches a query and the call is rate-limited per IP per review (`FR-8`,
+ * `AC-13`). `reviewId` used to be trusted: `NaN`, `0` and a negative number all
+ * ran a query, and nothing bounded how often one address could ask.
  */
 export async function getApprovedComments(reviewId: number) {
 	try {
@@ -371,7 +389,7 @@ export async function getApprovedComments(reviewId: number) {
 		const headersList = await headers();
 		const ip = getClientIP(headersList);
 		const rateLimitResult = await rateLimit(
-			`comments:${ip}`,
+			`comments:${ip}:${reviewId}`,
 			COMMENT_FETCH_LIMIT,
 			COMMENT_FETCH_WINDOW_SECONDS,
 		);

@@ -268,6 +268,13 @@ describe("submitComment guest identity", () => {
 
 		expect(commenterCreate.collection).toBe("commenters");
 		expect(commentCreate.collection).toBe("comments");
+		// The moderation flags are written explicitly, and they survive the
+		// field-level `create` rules added for `F1` because this call is the
+		// Local API, where `overrideAccess` defaults to true. A rule that did
+		// apply here would strip both keys instead of storing `false`.
+		expect(commenterCreate.data).toEqual(
+			expect.objectContaining({ trusted: false, banned: false }),
+		);
 		expect(commentCreate.data).toEqual(
 			expect.objectContaining({
 				authorName: "Jane Reader",
@@ -347,6 +354,20 @@ describe("reportComment", () => {
 
 		expect(data.reportCount).toBe(1);
 		expect(data).not.toHaveProperty("status");
+	});
+
+	it("does not regenerate the review page below the report threshold", async () => {
+		// `F3`. Only the third report changes any public output: the first and
+		// the second touch `reportCount` and `reportedBy`, neither of which is
+		// rendered anywhere, so regenerating the page would be work with
+		// nothing to show for it. The revalidation is kept for the report that
+		// does move the status to `reported` - the case above asserts that.
+		routeFindByID({ comment: approvedComment, review: publishedReview });
+
+		await reportComment(approvedComment.id, "first@example.com");
+
+		expect(mockPayload.update).toHaveBeenCalledTimes(1);
+		expect(revalidatePath).not.toHaveBeenCalled();
 	});
 
 	it("writes only the fields a report owns and can never approve a comment", async () => {
@@ -509,11 +530,18 @@ describe("reportComment", () => {
 
 	it("resolves the review id from an unpopulated relationship", async () => {
 		routeFindByID({
-			comment: { ...approvedComment, relatedReview: { id: 5, slug: "other" } },
+			// A third report, so the status moves and the revalidation runs -
+			// the slug has to be resolved from the bare relationship for the
+			// page to be invalidated at all.
+			comment: {
+				...approvedComment,
+				relatedReview: { id: 5, slug: "other" },
+				reportCount: 2,
+			},
 			review: { id: 5, slug: "other-review", _status: "published" },
 		});
 
-		const result = await reportComment(approvedComment.id, "first@example.com");
+		const result = await reportComment(approvedComment.id, "third@example.com");
 
 		expect(result.success).toBe(true);
 		expect(mockPayload.findByID).toHaveBeenCalledWith(
@@ -561,12 +589,41 @@ describe("getApprovedComments", () => {
 		expect(mockPayload.find).not.toHaveBeenCalled();
 	});
 
-	it("keys the rate limit on the client address", async () => {
+	it("keys the rate limit on the client address and the review", async () => {
 		mockPayload.find.mockResolvedValue({ docs: [] });
 
 		await getApprovedComments(1);
 
-		expect(rateLimitSpy).toHaveBeenCalledWith("comments:203.0.113.5", 60, 60);
+		// Keying on the address alone made the bucket shared by every reader
+		// behind one NAT or proxy, so ordinary traffic on a popular review
+		// could exhaust it and leave those readers with an empty section. The
+		// review id is part of the key, as it already is on the like action
+		// (`like:${ip}:${reviewId}`).
+		expect(rateLimitSpy).toHaveBeenCalledWith(
+			"comments:203.0.113.5:1",
+			120,
+			60,
+		);
+	});
+
+	it("gives each review its own bucket from the same address", async () => {
+		mockPayload.find.mockResolvedValue({ docs: [] });
+
+		await getApprovedComments(1);
+		await getApprovedComments(2);
+
+		expect(rateLimitSpy).toHaveBeenNthCalledWith(
+			1,
+			"comments:203.0.113.5:1",
+			120,
+			60,
+		);
+		expect(rateLimitSpy).toHaveBeenNthCalledWith(
+			2,
+			"comments:203.0.113.5:2",
+			120,
+			60,
+		);
 	});
 
 	it("returns approved comments under a bounded ceiling", async () => {
