@@ -49,11 +49,11 @@ const MAX_COMMENTS_PER_REVIEW = 100;
  * The two rate limits `getApprovedComments` enforces, and which bound each one
  * provides (`FR-8`, `AC-13`).
  *
- * Both are checked on every call, because they answer different questions and
- * neither one alone is sufficient: a per-review bucket stops one popular
- * review from being exhausted for everyone behind one address, and an
- * aggregate bucket stops that address from walking the whole catalogue
- * instead.
+ * Both are checked on every call that gets past the first one, because they
+ * answer different questions and neither one alone is sufficient: a
+ * per-review bucket stops one popular review from being exhausted for
+ * everyone behind one address, and an aggregate bucket stops that address
+ * from walking the whole catalogue instead.
  *
  * `comments:${ip}:${reviewId}` - the per-review bucket - is the same shape the
  * like action uses (`like:${ip}:${reviewId}`). Keying on the address alone
@@ -62,7 +62,7 @@ const MAX_COMMENTS_PER_REVIEW = 100;
  * readers looking at "no comments yet". This key bounds how often one review
  * id can be asked for, which is what stops a refresh storm on a single page.
  *
- * `comments:${ip}` - the aggregate bucket - is checked first, and it is what
+ * `comments:${ip}` - the aggregate bucket - is checked second, and it is what
  * bounds breadth. Without it the per-review key alone caps an address at 120
  * requests *per review id*, so the same address could ask for every review in
  * the catalogue within a minute and no ceiling would ever fire: breadth was
@@ -70,6 +70,21 @@ const MAX_COMMENTS_PER_REVIEW = 100;
  * the one that makes this action useless for enumerating the catalogue - a
  * sweep is capped at `COMMENT_FETCH_AGGREGATE_LIMIT` calls per window however
  * many distinct review ids it names.
+ *
+ * The order - per-review bucket first, aggregate second - is load-bearing
+ * rather than incidental. `rateLimit` increments its counter and only then
+ * compares it against the limit, so a call that is refused still spends the
+ * counter of whichever bucket was checked first. Checking the aggregate first
+ * therefore let a single review id spend the whole address-wide budget on its
+ * own: a client hammering one review exhausted the aggregate and was then
+ * refused comment reads on *every* review, for everyone behind that address -
+ * the shared-bucket harm the per-review key exists to remove, reintroduced
+ * through the increment-before-compare behaviour. Checking the per-review
+ * bucket first means a call it refuses returns without incrementing the
+ * address-wide counter at all, so the address-wide budget is spent only by
+ * calls a per-review bucket allowed. A sweep across many review ids still
+ * reaches the aggregate, because a sweep passes each per-review bucket
+ * trivially.
  *
  * A reader loads a review's comments on mount and again after posting, so the
  * per-review ceiling only has to clear 2 per page view. 120 leaves room for 60
@@ -82,8 +97,9 @@ const MAX_COMMENTS_PER_REVIEW = 100;
  * The aggregate ceiling is ten times that - 1200, i.e. 120 x 10 - and the
  * ratio is deliberate. Ten times is what keeps the aggregate from being the
  * binding constraint for ordinary use: an address only reaches it after
- * spending 1200 calls, and since one review id can contribute at most 120 of
- * them, it has to have named at least ten distinct review ids to get there.
+ * spending 1200 calls, and the aggregate counter only advances for calls a
+ * per-review bucket allowed, so one review id can contribute at most 120 of
+ * them - it has to have named at least ten distinct review ids to get there.
  * Ordinary browsing on one review never meets it, and a reader behind a shared
  * egress is not the caller it fires on first.
  *
@@ -427,21 +443,14 @@ export async function getApprovedComments(reviewId: number) {
 		const headersList = await headers();
 		const ip = getClientIP(headersList);
 
-		// The aggregate bucket goes first so a caller sweeping many review ids
-		// cannot step around it by never filling any single per-review bucket.
-		const aggregate = await rateLimit(
-			`comments:${ip}`,
-			COMMENT_FETCH_AGGREGATE_LIMIT,
-			COMMENT_FETCH_WINDOW_SECONDS,
-		);
-
-		if (!aggregate.success) {
-			return {
-				success: false,
-				error: `Too many requests. Please wait ${aggregate.resetInSeconds} seconds.`,
-			};
-		}
-
+		// The per-review bucket goes first, and that order is the point.
+		// `rateLimit` increments its counter and only then compares it against
+		// the limit, so a refused call still spends the counter of whichever
+		// bucket was checked first. Checking the aggregate first would let one
+		// review id spend the whole address-wide budget on its own: the
+		// address would then be refused comment reads on *every* review, for
+		// everyone behind it. Checked this way, a call the per-review bucket
+		// refuses returns without touching the address-wide counter at all.
 		const perReview = await rateLimit(
 			`comments:${ip}:${reviewId}`,
 			COMMENT_FETCH_LIMIT,
@@ -452,6 +461,21 @@ export async function getApprovedComments(reviewId: number) {
 			return {
 				success: false,
 				error: `Too many requests. Please wait ${perReview.resetInSeconds} seconds.`,
+			};
+		}
+
+		// The aggregate bucket still bounds breadth: a sweep across many
+		// review ids passes every per-review bucket and lands here.
+		const aggregate = await rateLimit(
+			`comments:${ip}`,
+			COMMENT_FETCH_AGGREGATE_LIMIT,
+			COMMENT_FETCH_WINDOW_SECONDS,
+		);
+
+		if (!aggregate.success) {
+			return {
+				success: false,
+				error: `Too many requests. Please wait ${aggregate.resetInSeconds} seconds.`,
 			};
 		}
 

@@ -612,10 +612,10 @@ describe("getApprovedComments", () => {
 		await getApprovedComments(1);
 		await getApprovedComments(2);
 
-		// Asserted by key rather than by call position: the aggregate bucket is
-		// checked first on every call, so the per-review keys are no longer
-		// calls 1 and 2. The property under test is unchanged - two reviews
-		// from one address get two distinct buckets.
+		// Asserted by key rather than by call position: both buckets are
+		// checked on every call that gets past the first one, so the
+		// per-review keys are not calls 1 and 2. The property under test is
+		// unchanged - two reviews from one address get two distinct buckets.
 		expect(rateLimitSpy).toHaveBeenCalledWith(
 			"comments:203.0.113.5:1",
 			120,
@@ -676,23 +676,72 @@ describe("getApprovedComments", () => {
 			expect(overTheLine.error).toContain("Too many requests");
 		}
 
-		// The aggregate key is what refused it: the call past the line never
-		// reached its per-review bucket, which would have allowed it. That is
-		// the difference `D1` is about - the sweep is capped by breadth, not
-		// by having exhausted any single review.
+		// The aggregate key is what refused it: the call past the line reached
+		// its own per-review bucket, which would have allowed it, and was
+		// stopped by the address-wide one. That is the difference `D1` is
+		// about - the sweep is capped by breadth, not by having exhausted any
+		// single review.
 		expect(counts.get(AGGREGATE_KEY)).toBe(aggregateLimit + 1);
-		expect(
-			counts.get(`${AGGREGATE_KEY}:${aggregateLimit + 1}`),
-		).toBeUndefined();
+		expect(counts.get(`${AGGREGATE_KEY}:${aggregateLimit + 1}`)).toBe(1);
 		expect(mockPayload.find).toHaveBeenCalledTimes(aggregateLimit);
 	});
 
-	it("checks the aggregate bucket before the per-review one", async () => {
-		// Ordering matters: a sweep that has filled only the aggregate must not
-		// spend a per-review slot before it is refused.
+	it("does not spend the address-wide budget on a call the per-review bucket refuses", async () => {
+		// `F1`. `rateLimit` increments its counter and only then compares it
+		// against the limit, so a call it refuses still spends the counter of
+		// whichever bucket was checked first. With the aggregate checked first,
+		// a client hammering one review spent the address-wide budget on its
+		// own and was then refused comment reads on *every* review - the
+		// shared-bucket harm the per-review key exists to remove, reintroduced
+		// through the increment-before-compare behaviour. The per-review
+		// bucket is checked first so that its refusals never reach the
+		// aggregate key.
+		mockPayload.find.mockResolvedValue({ docs: [] });
+
+		const AGGREGATE_KEY = "comments:203.0.113.5";
+		const PER_REVIEW_KEY = `${AGGREGATE_KEY}:1`;
+		const counts = new Map<string, number>();
+
+		// The same shape as the real limiter: the counter advances, then the
+		// result is compared against the limit.
+		rateLimitSpy.mockImplementation(async (key: string, limit: number) => {
+			const next = (counts.get(key) ?? 0) + 1;
+			counts.set(key, next);
+			return {
+				success: next <= limit,
+				remaining: Math.max(0, limit - next),
+				resetInSeconds: 60,
+			};
+		});
+
+		// Fill the per-review bucket with calls the aggregate allows, so the
+		// per-review ceiling is the only one that can refuse.
+		for (let attempt = 0; attempt < 121; attempt += 1) {
+			const result = await getApprovedComments(1);
+			expect(result.success).toBe(attempt < 120);
+		}
+
+		// The 121st call was refused by the per-review bucket, and the
+		// aggregate counter still shows only the 120 calls that bucket
+		// allowed: the refusal did not spend the address-wide budget.
+		expect(counts.get(PER_REVIEW_KEY)).toBe(121);
+		expect(counts.get(AGGREGATE_KEY)).toBe(120);
+
+		// Which is the property that matters: another review is still
+		// readable from the same address.
+		const other = await getApprovedComments(2);
+		expect(other.success).toBe(true);
+		expect(counts.get(AGGREGATE_KEY)).toBe(121);
+	});
+
+	it("checks the per-review bucket before the aggregate one", async () => {
+		// Ordering matters, because `rateLimit` increments before it compares:
+		// the bucket checked first spends its counter on a call it is about to
+		// refuse. The aggregate is the address-wide budget every review shares,
+		// so it must not be spent by a call the per-review bucket refuses.
 		mockPayload.find.mockResolvedValue({ docs: [] });
 		rateLimitSpy.mockImplementation(async (key: string) => ({
-			success: key !== "comments:203.0.113.5",
+			success: key !== "comments:203.0.113.5:7",
 			remaining: 0,
 			resetInSeconds: 30,
 		}));
@@ -701,7 +750,11 @@ describe("getApprovedComments", () => {
 
 		expect(result.success).toBe(false);
 		expect(rateLimitSpy).toHaveBeenCalledTimes(1);
-		expect(rateLimitSpy).toHaveBeenCalledWith("comments:203.0.113.5", 1200, 60);
+		expect(rateLimitSpy).toHaveBeenCalledWith(
+			"comments:203.0.113.5:7",
+			120,
+			60,
+		);
 		expect(mockPayload.find).not.toHaveBeenCalled();
 	});
 

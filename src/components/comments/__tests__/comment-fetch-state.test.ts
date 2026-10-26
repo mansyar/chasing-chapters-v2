@@ -47,6 +47,67 @@ function guardBefore(source: string, marker: string): string {
 	return "";
 }
 
+/**
+ * The part of the component that renders the comments list.
+ *
+ * The region runs from the comment that marks the start of the list to the
+ * end of the section, so it holds the four render branches and the list
+ * itself but not the heading or the form above them. Scoping an assertion to
+ * it means an edit elsewhere in the component - a ternary added to the
+ * heading, say - cannot fail an assertion about the list.
+ *
+ * An empty string means the region could not be found, which the tests
+ * assert against rather than treating as "nothing matched".
+ */
+function commentsListRegion(source: string): string {
+	const start = source.indexOf("{/* Comments List */}");
+	if (start === -1) {
+		return "";
+	}
+
+	const end = source.indexOf("</section>", start);
+	if (end === -1) {
+		return "";
+	}
+
+	return source.slice(start, end);
+}
+
+/**
+ * The opening tag of every `<CommentList>` element in the given source.
+ *
+ * More than one is possible: a component could render the list twice, and a
+ * second list handed an empty array would be exactly the defect this check
+ * exists to catch, so none of them may be skipped.
+ */
+function commentListTags(source: string): string[] {
+	const tags: string[] = [];
+	let cursor = source.indexOf("<CommentList");
+
+	while (cursor !== -1) {
+		const end = source.indexOf("/>", cursor);
+		if (end === -1) {
+			break;
+		}
+
+		tags.push(source.slice(cursor, end + 2));
+		cursor = source.indexOf("<CommentList", end);
+	}
+
+	return tags;
+}
+
+/**
+ * The value of the `comments` prop on a `<CommentList>` opening tag.
+ *
+ * An empty string means the tag has no `comments` prop at all, which the
+ * tests treat as a failure rather than as "nothing to check".
+ */
+function commentsPropValue(tag: string): string {
+	const match = /comments=\{([^}]*)\}/.exec(tag);
+	return match ? match[1].trim() : "";
+}
+
 const aComment: CommentSummary = {
 	id: 11,
 	authorName: "Jane Reader",
@@ -189,8 +250,19 @@ describe("CommentSection render branches", () => {
 		// The component must not branch on `isLoading`/`hasError` itself any
 		// more: that is the ternary that rendered the error block in place of
 		// the rows the state module had kept.
-		expect(/\bisLoading\s*\?/.test(source)).toBe(false);
-		expect(/\bhasError\s*\?/.test(source)).toBe(false);
+		//
+		// The check is scoped to the comments-list region, because that is
+		// where the defect was. A ternary on either name anywhere else in the
+		// file - the heading, the form - is not this defect and must not be
+		// able to fail this test.
+		const region = commentsListRegion(source);
+		expect(region).not.toBe("");
+		expect(/\bisLoading\s*\?/.test(region)).toBe(false);
+		expect(/\bhasError\s*\?/.test(region)).toBe(false);
+
+		// The selector call itself stays file-wide: the point of that
+		// assertion is that the component asks the selector at all, wherever
+		// it does so.
 		expect(source.includes("selectCommentsRender(state)")).toBe(true);
 	});
 
@@ -223,5 +295,44 @@ describe("CommentSection render branches", () => {
 
 		const guard = guardBefore(source, "dictionary.commentsRefreshError");
 		expect(guard.includes('renderMode === "list-with-error"')).toBe(true);
+	});
+
+	it("passes the retained rows to the list in the list-with-error branch", () => {
+		// The gap a source-level check has to close: a component that kept the
+		// four branches but handed the list an empty array would satisfy every
+		// assertion above and still never show the rows a failed refresh kept.
+		// That is the defect `D2` was raised about, so the branch that renders
+		// after a failed refresh has to be shown receiving the state's rows.
+		const source = collapsedComponentSource();
+		const region = commentsListRegion(source);
+		expect(region).not.toBe("");
+
+		// The list is reachable in the branch that renders after a failed
+		// refresh, and that is the list whose props matter.
+		const guard = guardBefore(region, "<CommentList");
+		expect(guard.includes('renderMode === "list-with-error"')).toBe(true);
+
+		const values = commentListTags(region).map(commentsPropValue);
+
+		// The prop has to be there at all, and it has to be an array: a list
+		// handed `[]` renders "no comments yet", so the retained rows would
+		// never reach the screen.
+		expect(values.length).toBeGreaterThan(0);
+		for (const value of values) {
+			expect(value).not.toBe("");
+			expect(value).not.toContain("[]");
+		}
+
+		// And the array it names has to be the state's comments - the rows
+		// `applyCommentsResult` keeps on a failed refresh - and not some other
+		// value that a branch could substitute.
+		expect(
+			values.some(
+				(value) =>
+					value === "state.comments" ||
+					(value === "comments" &&
+						/const\s*\{\s*comments\s*\}\s*=\s*state\b/.test(source)),
+			),
+		).toBe(true);
 	});
 });
