@@ -14,7 +14,7 @@
 - **Covers:** FR-1, FR-2, AC-1; NFR-2
 - **Touches:** `package.json`, `bun.lock`, `src/app/globals.css`, `src/app/(public)/[locale]/reviews/[slug]/page.tsx`, `src/app/(public)/[locale]/reviews/[slug]/loading.tsx`, `src/app/(public)/[locale]/about/page.tsx`, `src/components/FeaturedHero.tsx`, `src/components/ModernBookCarousel.tsx`, `src/lib/__tests__/typography-source.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P1.T1: Install and theme the typography plugin** — covers: FR-1, FR-2
   - [ ] **P1.T1.1: Add `@tailwindcss/typography` as a build-time dependency**
