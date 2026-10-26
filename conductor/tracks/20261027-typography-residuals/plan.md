@@ -14,7 +14,7 @@
 - **Covers:** FR-1, AC-1, AC-2
 - **Touches:** `src/lib/__tests__/helpers/*`, `src/components/__tests__/*`, `src/lib/__tests__/typography-source.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P1.T1: Render harness helper** — covers: FR-1
   - [ ] **P1.T1.1: Shared `renderToStaticMarkup` helper with server-component boundary documented**
