@@ -14,13 +14,17 @@
 - **Covers:** FR-1, FR-2, FR-5, NFR-1, NFR-2, NFR-4, AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7
 - **Touches:** `src/app/(public)/[locale]/reading-lists/page.tsx`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P1.T1: Parse `?page=` and bound the index query** — covers: FR-1, FR-2
-  - [ ] **P1.T1.1: Read `page` from searchParams with reviews-identical `Number(page) || 1` semantics**
-  - [ ] **P1.T1.2: Pass `limit: 9`, `page: currentPage`, locale-preserved `where`/`sort` to `payload.find`**
-- [ ] **P1.T2: Scope ItemList JSON-LD to the current page** — covers: FR-5
-- [ ] **P1.T3: Preserve empty state and no-pager single page** — covers: AC-6
+**Result:** verified
+**Checkpoint:** b31c88e
+**Evidence:** conductor/tracks/20261027-reading-list-pagination/verification/phase-1.md
+
+- [x] **P1.T1: Parse `?page=` and bound the index query** — covers: FR-1, FR-2
+  - [x] **P1.T1.1: Read `page` from searchParams with reviews-identical `Number(page) || 1` semantics**
+  - [x] **P1.T1.2: Pass `limit: 9`, `page: currentPage`, locale-preserved `where`/`sort` to `payload.find`**
+- [x] **P1.T2: Scope ItemList JSON-LD to the current page** — covers: FR-5
+- [x] **P1.T3: Preserve empty state and no-pager single page** — covers: AC-6
 
 <!--
 The primary appends after acceptance:
