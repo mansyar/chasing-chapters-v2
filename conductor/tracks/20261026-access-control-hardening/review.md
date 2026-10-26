@@ -15,6 +15,18 @@
 
 ## Summary
 
+**Round 4: the track is ready.** Every finding raised in any review round is
+fixed at the root cause and verified - four in Phase R1, three in Phase R2 and
+four in the round 4 polish at `cfad32c`. No Critical or High finding has ever
+been raised. The review loop closed after round 4 because the remaining class
+was documentation precision and test brittleness rather than defects, and
+because each round was finding smaller items: round 1 found two live bypasses,
+round 2 found that one of round 1's own fixes did not do what its comment
+claimed, round 3 found that the fix for that was justified by a false premise,
+and round 4 found only wording and assertion-strictness. The findings are
+recorded rather than hidden, and the residuals that remain are listed under
+`## Out of scope` and in the phase evidence.
+
 The track does what it claims. All seven defects from the spec plus the two
 same-seam defects are closed at the layer that owns them, each with a test
 demonstrated failing before its fix and passing after, and no existing test was
@@ -84,13 +96,13 @@ the unit assertion that the action passes no `overrideAccess`.
 | FR-5 | `comments.ts:252-350` report validates subject, writes owned fields | `comments.test.ts` | covered |
 | FR-6 | `comments.ts:127-135` takeover removed | `comments.test.ts` | covered |
 | FR-7 | `like-review.ts:42-58` visibility gate before counter | `like-review.test.ts` | covered |
-| FR-8 | `comments.ts:355-400` validation + rate limit + bounded read | `comments.test.ts` | partial — F2 |
+| FR-8 | `comments.ts` validation + two rate limits + bounded read | `comments.test.ts` | covered |
 | FR-9 | `Comments.ts:193-212` field-level `access.update` on `status` | `Comments.test.ts` | covered |
 | FR-10 | `moderation.ts:76-110` revalidation | `moderation.test.ts` | covered |
 | FR-11 | `comments.ts:337-345` revalidation | `comments.test.ts` | covered |
 | NFR-1 | guest limits unchanged; `e2e/comments.spec.ts` | `comments.test.ts`, e2e | covered |
 | NFR-2 | admin moderation unchanged | `moderation.test.ts` | covered |
-| NFR-3 | public reads unchanged | — | partial — F2 |
+| NFR-3 | public reads unchanged | `comments.test.ts`, `comment-fetch-state.test.ts` | covered |
 | NFR-4 | no migration, no schema change | `git diff` — 0 migration files | covered |
 | NFR-5 | every bypass demonstrated failing pre-fix | six phase evidence files | covered |
 | NFR-6 | no dependency change | `git diff` — `package.json`, `bun.lock` untouched | covered |
@@ -212,6 +224,43 @@ keeps a stable, unique id.
   - **Requirement:** FR-8, NFR-3
   - **Test gap:** No assertion covers the list-with-error branch passing the retained array.
   - **Resolution:** **fixed** in Phase R3 at `352a3cb`. The primary verified the gap closed by mutation: against a `comments={[]}` mutation the round 2 test file passes 14/14 and the round 3 test file fails 1 of 15, on "passes the retained rows to the list in the list-with-error branch".
+### Round 4 - findings raised by the delta re-review of Phase R3
+
+- **N1 - The id-count derivation was still not exact**
+  - **File:** `src/app/actions/comments.ts:100-102`
+  - **What:** The rewritten justification claimed "one review id can contribute at most 120 of them - it has to have named at least ten distinct review ids to get there". Each rate-limit window is anchored at that key's own first increment, so a per-review key first seen mid-aggregate-window can have two of its windows overlap one aggregate window and contribute up to ~240.
+  - **Why:** The bound itself is unaffected - the aggregate still caps a sweep at 1200 calls per window - but the stated floor for the ratio was 2x optimistic, and that sentence is the derivation for the next size.
+  - **Fix:** Make the claim window-exact, or drop the id-count derivation and justify 1200 by measured headroom alone.
+  - **Requirement:** FR-8
+  - **Test gap:** None.
+  - **Resolution:** **fixed** at `cfad32c`. The comment now states that the id count is approximate because a per-review window is anchored at its own first call, that in ordinary use ten or more ids are needed and a deliberately misaligning caller can get there with about five, and that ordinary browsing on one review never meets it either way.
+
+- **N2 - The mirror of F5 was not stated**
+  - **File:** `src/app/actions/comments.ts:454-473`
+  - **What:** Because the per-review increment runs before the aggregate check, every call the aggregate refuses has already incremented - and for a review id not yet seen, created - that review's per-review counter. Previously an exhausted aggregate returned at the first check and spent nothing.
+  - **Why:** Bounded, and it does not restore F5's harm, but it is a real behaviour delta: an address out of aggregate budget that keeps retrying one review pushes that review's own counter past 120, so the review can still be refused after the aggregate window resets.
+  - **Fix:** Record it in the doc block, or peek before consuming so the aggregate is read without incrementing when it is already exhausted.
+  - **Requirement:** FR-8
+  - **Test gap:** If the behaviour is kept, pin it with a case asserting a call refused by the aggregate has still incremented its per-review key.
+  - **Resolution:** **fixed** at `cfad32c` by the documentation route, which is the minimal honest fix: the doc block now states that a call the aggregate refuses has already spent its per-review bucket, that it is bounded to at most one window of extra refusals on that one review, and that it does not restore the harm the ordering removed. The behaviour itself is unchanged and deliberate.
+
+- **N3 - The new retained-array assertion was brittle in the same direction F6 was raised about**
+  - **File:** `src/components/comments/__tests__/comment-fetch-state.test.ts:317-336`
+  - **What:** The assertion failed on behaviourally identical code: `comments={state.comments ?? []}` and `comments={comments || []}` failed the `not.toContain("[]")` check, and `comments={rows}` with `const rows = state.comments` failed the literal-equality check.
+  - **Why:** A component edit with no behaviour change failed the suite - the exact class of false failure F6 was fixed to remove, reintroduced by the assertion added in the same fix.
+  - **Fix:** Resolve the prop through an alias map rather than literal equality, and narrow the empty-array rejection to a bare `[]` literal.
+  - **Requirement:** FR-8, NFR-3
+  - **Test gap:** None.
+  - **Resolution:** **fixed** at `cfad32c`. The prop value is read by scanning to the brace that closes that prop rather than the first, a redundant `?? []` / `|| []` fallback is stripped before comparison, the empty-array rejection is anchored to a bare `[]` literal, and aliases are resolved from the source (`const { comments } = state`, `const { comments: rows } = state`, `const rows = state.comments`). The primary verified the result by mutation: `state.comments ?? []`, `state.comments || []`, `const rows = state.comments`, `const { comments: rows } = state` and `comments={state.comments}` all pass, while `comments={[]}` still fails - the defect is caught and the false failures are gone.
+
+- **N4 - A test comment cited the wrong finding id**
+  - **File:** `src/app/actions/__tests__/comments.test.ts:690`
+  - **What:** The new case's comment cited `F1`, which is round 1's finding (the writer-minted trusted commenter). The delta's own finding is F5.
+  - **Why:** The citation is the only pointer from the regression test back to the finding it guards, and it resolved to an unrelated defect.
+  - **Fix:** Change the citation to `F5` and check the other references for the same mismatch.
+  - **Requirement:** None.
+  - **Test gap:** None.
+  - **Resolution:** **fixed** at `cfad32c`. The citation now reads `F5`. The other references in the suite cite `D1` and `D2`, which are unique and unaffected.
 ## Overrides
 
 None.
@@ -291,3 +340,4 @@ are recorded in the code and in the phase evidence.
 | 2 | PASS WITH FINDINGS (gate: BLOCK) | 0 | 0 | 2 | 1 | 4 |
 | 3 | PASS WITH FINDINGS (gate: BLOCK) | 0 | 0 | 0 | 0 | 0 |
 | 4 | PASS WITH FINDINGS (gate: cleared) | 0 | 0 | 0 | 0 | 2 |
+| 5 | PASS WITH FINDINGS (gate: cleared) | 0 | 0 | 0 | 4 | 4 |
