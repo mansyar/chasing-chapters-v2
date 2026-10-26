@@ -12,7 +12,7 @@
 - **Covers:** FR-1, AC-1, AC-2
 - **Touches:** `src/collections/Authors.ts`, `src/collections/__tests__/Authors.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P1.T1: Restrict the role field to admins** - covers: FR-1
   - [ ] **P1.T1.1: Add field-level `access.update` on `role` that returns true only for an admin**
