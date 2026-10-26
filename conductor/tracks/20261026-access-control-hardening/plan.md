@@ -132,15 +132,18 @@
 - **Covers:** FR-7, FR-10, AC-12, AC-15
 - **Touches:** `src/app/actions/like-review.ts`, `src/app/actions/moderation.ts`, `src/app/actions/__tests__/like-review.test.ts`, `src/app/actions/__tests__/moderation.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** in_progress
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** dd6aa0b
+- **Evidence:** conductor/tracks/20261026-access-control-hardening/verification/phase-6.md
 
-- [ ] **P6.T1: Reject likes on invisible reviews** - covers: FR-7, AC-12
-  - [ ] **P6.T1.1: Check public visibility before incrementing, reusing the shared visibility predicate**
-  - [ ] **P6.T1.2: Test that a draft and a scheduled review are both rejected while a published one succeeds**
+- [x] **P6.T1: Reject likes on invisible reviews** - covers: FR-7, AC-12
+  - [x] **P6.T1.1: Check public visibility before incrementing, reusing the shared visibility predicate**
+  - [x] **P6.T1.2: Test that a draft and a scheduled review are both rejected while a published one succeeds**
 
-- [ ] **P6.T2: Revalidate after moderation** - covers: FR-10, AC-15
-  - [ ] **P6.T2.1: Revalidate the affected review paths after a successful status change**
-  - [ ] **P6.T2.2: Test that approving revalidates the review's paths**
+- [x] **P6.T2: Revalidate after moderation** - covers: FR-10, AC-15
+  - [x] **P6.T2.1: Revalidate the affected review paths after a successful status change**
+  - [x] **P6.T2.2: Test that approving revalidates the review's paths**
 
 <!--
 Acceptance block appended by the primary agent after a phase is accepted:

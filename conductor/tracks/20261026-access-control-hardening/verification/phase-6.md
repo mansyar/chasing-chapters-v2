@@ -306,3 +306,60 @@ None. Every change falls inside the phase's `Touches` paths.
   writers still cannot moderate.
 
 **Result: verified.**
+
+## Primary verification
+
+The primary re-ran every layer on the squashed checkpoint `dd6aa0b` and
+reproduced both defects independently.
+
+| Layer | Command | Exit | Summary |
+| --- | --- | --- | --- |
+| static | `bun run typecheck` | 0 | No type errors in 256 files (620ms) |
+| static | `bun run lint` | 0 | 248 files checked, no fixes applied |
+| unit | `bun test` | 0 | 725 pass, 0 fail, 1729 expect() calls, 53 files (4.51s) |
+
+**Reproduced both defects from the phase base `dd27dd3`**, restoring each
+production file with `git checkout <base> -- <path>` and keeping this phase's
+tests:
+
+- `like-review.test.ts`: **4 pass, 4 fail**, every failure on
+  `expect(atomicIncrement).not.toHaveBeenCalled()` → `Received number of
+  calls: 1`. The counter was written for a draft, for a review scheduled for
+  later, for an unlike on a non-public review, and for an unknown id. That is
+  the defect itself, not a proxy for it.
+- `moderation.test.ts`: **8 pass, 3 fail**, all `But it was not called` on
+  `revalidatePath`.
+
+After restoring: **19 pass, 0 fail, 59 expect() calls** across the two files.
+
+**Reviewed the production diff directly.** The like action now loads the review
+at `depth: 0` with `disableErrors: true` before touching the counter, so a
+missing review and an unpublished one give the same answer — the previous code
+errored for the former and succeeded for the latter, which told a client the
+review exists. `canAcceptPublicWrite` was chosen over `isPubliclyVisible`
+and over a hand-rolled `_status` comparison: a like is a public unauthenticated
+write, which is precisely that predicate's documented question, and it is the
+call `submitComment` already makes. Rate limits and the admin-only check are
+untouched.
+
+**Result: verified.** AC-12 and AC-15 are satisfied by test evidence, FR-7 and
+FR-10 by the code. All four pre-existing moderation cases still pass, unmodified.
+
+Three observations carried to review, none blocking:
+
+- **A redundant query in moderation.** `setCommentStatus` writes the comment,
+  then `resolveReviewSlug` fetches the same comment again at `depth: 1` to
+  reach the slug. Fetching once at `depth: 1` *before* the update and reusing
+  the slug would be a single query. It is two extra round trips per moderation
+  action on an admin path, so it is cheap, and the current order does read the
+  fresh state — worth a reviewer's judgement rather than a silent rewrite here.
+- **The like counter remains client-controlled.** `shouldIncrement` is a
+  boolean from the client against a single column, so a client can drive the
+  count up or down within the rate limit. That is a different defect from FR-7
+  and fixing it needs a distinct-liker model, which is a schema change and
+  therefore outside NFR-4. Recorded, deliberately not fixed.
+- **What is not proven.** That Next.js actually serves the fresh page after
+  `revalidatePath` — the tests assert the call, not the cache behaviour — and
+  the visibility check's draft resolution, since `findByID` is mocked. Both
+  are properties of the framework and the database rather than of this code, and
+  the e2e suite does not exercise moderation.
