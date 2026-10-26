@@ -21,7 +21,7 @@
 	"last_checkpoint": "5df5bc4",
 	"review_verdict": null,
 	"review_rounds": 0,
-	"doc_sync": "pending",
+	"doc_sync": "none",
 	"pr_url": null,
 	"pr_state": null,
 	"reverted_at": null,
