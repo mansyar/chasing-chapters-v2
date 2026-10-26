@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
 
+import { renderStatic } from "../../__tests__/helpers/render-static";
 import { type BreadcrumbItem, Breadcrumbs } from "../Breadcrumbs";
 
 const items: BreadcrumbItem[] = [
@@ -11,9 +11,7 @@ const items: BreadcrumbItem[] = [
 ];
 
 function render(crumbItems: BreadcrumbItem[], label = "Breadcrumb"): string {
-	return renderToStaticMarkup(
-		createElement(Breadcrumbs, { items: crumbItems, label }),
-	);
+	return renderStatic(createElement(Breadcrumbs, { items: crumbItems, label }));
 }
 
 describe("Breadcrumbs", () => {

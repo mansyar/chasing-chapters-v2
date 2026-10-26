@@ -2,9 +2,11 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
 
+import { ReviewCard } from "@/components/ReviewCard";
 import { StarRating } from "@/components/reviews/StarRating";
+import type { Review } from "@/payload-types";
+import { renderStatic } from "../../__tests__/helpers/render-static";
 
 /** The English label template, the same string the `en` dictionary carries. */
 const EN_LABEL = "Rated {rating} out of 5";
@@ -15,7 +17,7 @@ function render(
 	props: Partial<Parameters<typeof StarRating>[0]> &
 		Pick<Parameters<typeof StarRating>[0], "rating" | "labelTemplate">,
 ): string {
-	return renderToStaticMarkup(createElement(StarRating, props));
+	return renderStatic(createElement(StarRating, props));
 }
 
 describe("StarRating", () => {
@@ -89,30 +91,70 @@ describe("StarRating", () => {
 
 	describe("call sites", () => {
 		/**
-		 * AC-3: all four former inline renderers use the component. A required
-		 * `labelTemplate` prop makes every other consumer a type error, but the
-		 * import alone proves nothing about the render: a call site that keeps
-		 * the import and stops rendering the component would still pass. So each
-		 * case asserts the element and the accessible label too.
+		 * AC-2: every former inline renderer uses the component, proven by
+		 * rendered output through the shared harness: each caller renders and
+		 * the accessible label it passes the rating through is in the markup.
+		 * A source assertion would still pass if a call site kept the import
+		 * and stopped rendering the component.
+		 *
+		 * ReviewCard renders here. FeaturedHero and ModernBookCarousel render
+		 * in `src/components/__tests__/star-rating-call-sites.test.ts`: that
+		 * file imports the server dictionary for their props, so it cannot
+		 * share a file with the client-boundary assertion below (the
+		 * dictionary-source guard scans test files too).
+		 *
+		 * The review detail page is the exception: it is an async server
+		 * component that fetches from Payload, so it cannot render in a unit
+		 * test and its wiring stays source-pinned.
 		 */
-		const callSites = [
-			"src/components/FeaturedHero.tsx",
-			"src/components/ModernBookCarousel.tsx",
-			"src/components/ReviewCard.tsx",
-			"src/app/(public)/[locale]/reviews/[slug]/page.tsx",
-		];
+		const cardReview: Review = {
+			id: 1,
+			title: "The Lighthouse Keeper",
+			bookAuthor: "A. Writer",
+			rating: 4,
+			coverImage: {
+				id: 11,
+				alt: "",
+				updatedAt: "2026-01-01T00:00:00.000Z",
+				createdAt: "2026-01-01T00:00:00.000Z",
+				url: null,
+			},
+			author: 1,
+			slug: "the-lighthouse-keeper",
+			publishDate: "2026-01-01T00:00:00.000Z",
+			updatedAt: "2026-01-01T00:00:00.000Z",
+			createdAt: "2026-01-01T00:00:00.000Z",
+		};
 
-		for (const file of callSites) {
-			test(`${file} renders StarRating with a labelTemplate`, () => {
-				const source = readFileSync(join(process.cwd(), file), "utf8");
+		test("ReviewCard renders StarRating with the caller's label template", () => {
+			const html = renderStatic(
+				createElement(ReviewCard, {
+					review: cardReview,
+					ratingLabel: EN_LABEL,
+				}),
+			);
 
-				expect(source).toContain("reviews/StarRating");
-				expect(source).toContain("<StarRating");
-				expect(source).toContain("labelTemplate=");
-			});
-		}
+			expect(html).toContain("Rated 4 out of 5");
+			expect(html).toContain("fill-primary");
+		});
+
+		test("the review detail page wires StarRating with a labelTemplate", () => {
+			const source = readFileSync(
+				join(
+					process.cwd(),
+					"src/app/(public)/[locale]/reviews/[slug]/page.tsx",
+				),
+				"utf8",
+			);
+
+			expect(source).toContain("reviews/StarRating");
+			expect(source).toContain("<StarRating");
+			expect(source).toContain("labelTemplate=");
+		});
 
 		test("StarRating itself ships no client boundary", () => {
+			// Inherently source-level: rendering succeeds either way, so no
+			// rendered output can prove the directive is absent.
 			const source = readFileSync(
 				join(process.cwd(), "src/components/reviews/StarRating.tsx"),
 				"utf8",
