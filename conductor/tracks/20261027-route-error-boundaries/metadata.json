@@ -8,15 +8,15 @@
 	"depends_on": [],
 	"doc_sync": "pending",
 	"id": "20261027-route-error-boundaries",
-	"last_checkpoint": null,
+	"last_checkpoint": "9349c9e",
 	"plan": "plan.md",
 	"pr_state": null,
 	"pr_url": null,
 	"priority": "medium",
 	"progress": {
 		"phases_total": 2,
-		"phases_verified": 0,
-		"tasks_done": 0,
+		"phases_verified": 1,
+		"tasks_done": 5,
 		"tasks_total": 7
 	},
 	"review_rounds": 0,
