@@ -100,7 +100,7 @@
 - **Covers:** FR-5, FR-6, FR-8, FR-11, AC-4, AC-8, AC-9, AC-10, AC-11, AC-13
 - **Touches:** `src/app/actions/comments.ts`, `src/app/actions/__tests__/comments.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P5.T1: Make reporting an access-checked, field-scoped write** - covers: FR-5, FR-11
   - [ ] **P5.T1.1: Resolve the comment, verify it is approved and its review is publicly visible, and reject otherwise**
