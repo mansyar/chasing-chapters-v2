@@ -208,7 +208,6 @@
 - **Touches:** `src/app/actions/comments.ts`, `src/app/actions/__tests__/comments.test.ts`, `src/components/comments/__tests__/comment-fetch-state.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
 - **Status:** verified
-- **Status:** verified
 - **Result:** verified
 - **Checkpoint:** 352a3cb
 - **Evidence:** conductor/tracks/20261026-access-control-hardening/verification/phase-R3.md
@@ -221,6 +220,26 @@
 - [x] **R3.T2: Scope the source assertions and cover the retained array** - covers: F6
   - [x] **R3.T2.1:** Scope the two negative `isLoading?`/`hasError?` assertions to the comments-list region of the component, so an unrelated edit elsewhere in the file cannot trip them.
   - [x] **R3.T2.2:** Assert the list-with-error branch passes the retained array rather than an empty one.
+
+## Phase R4: Review Fixes (Round 4)
+
+- **Goal:** Resolve the four Low findings N1, N2, N3 and N4 raised by the round 4 delta re-review - documentation precision and assertion strictness - so that under strict mode no finding is left deferred.
+- **Depends on:** Phase R3
+- **Covers:** N1, N2, N3, N4
+- **Touches:** `src/app/actions/comments.ts`, `src/app/actions/__tests__/comments.test.ts`, `src/components/comments/__tests__/comment-fetch-state.test.ts`
+- **Verification:** `bun run typecheck && bun run lint && bun test`
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** cfad32c
+- **Evidence:** conductor/tracks/20261026-access-control-hardening/verification/phase-R4.md
+
+- [x] **R4.T1: Make the aggregate ceiling derivation exact** - covers: N1, N2
+  - [x] **R4.T1.1:** State that the id count is approximate, because a per-review window is anchored at its own first call, and give the ordinary-use and deliberately-misaligned figures.
+  - [x] **R4.T1.2:** State the mirror case - a call the aggregate refuses has already spent its per-review bucket - and that it is bounded and does not restore the shared-bucket harm.
+- [x] **R4.T2: Make the retained-array assertion exact** - covers: N3, N4
+  - [x] **R4.T2.1:** Resolve the prop through an alias map instead of literal equality, and reject only a bare empty-array literal.
+  - [x] **R4.T2.2:** Verify by mutation that every behaviour-preserving rewrite passes and the defect still fails.
+  - [x] **R4.T2.3:** Correct the finding id cited in the rate-limit test comment.
 
 <!--
 Acceptance block appended by the primary agent after a phase is accepted:
