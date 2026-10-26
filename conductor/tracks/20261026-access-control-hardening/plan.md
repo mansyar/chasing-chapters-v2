@@ -78,17 +78,20 @@
 - **Covers:** FR-4, AC-6, AC-7
 - **Touches:** `src/collections/ReadingLists.ts`, `src/collections/__tests__/ReadingLists.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** in_progress
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** e81aa9c
+- **Evidence:** conductor/tracks/20261026-access-control-hardening/verification/phase-4.md
 
-- [ ] **P4.T1: Exclude drafts from public reads** - covers: FR-4
-  - [ ] **P4.T1.1: Add a `where` constraint for unauthenticated reads that excludes drafts, following the `publishedAndVisibleWhere` pattern Reviews already uses**
-  - [ ] **P4.T1.2: Confirm an authenticated admin read still returns drafts, and record whether the admin preview uses an authenticated request or `?draft=true`**
-  - [ ] **P4.T1.3: Check every public reading-list query site (index, detail, sitemap, home) and record what each relies on**
+- [x] **P4.T1: Exclude drafts from public reads** - covers: FR-4
+  - [x] **P4.T1.1: Add a `where` constraint for unauthenticated reads that excludes drafts, following the `publishedAndVisibleWhere` pattern Reviews already uses**
+  - [x] **P4.T1.2: Confirm an authenticated admin read still returns drafts, and record whether the admin preview uses an authenticated request or `?draft=true`**
+  - [x] **P4.T1.3: Check every public reading-list query site (index, detail, sitemap, home) and record what each relies on**
 
-- [ ] **P4.T2: Cover both directions** - covers: AC-6, AC-7
-  - [ ] **P4.T2.1: Test that an unauthenticated read returns no draft rows**
-  - [ ] **P4.T2.2: Test that an authenticated admin read returns the draft**
-  - [ ] **P4.T2.3: Demonstrate the unauthenticated test failing on the pre-fix commit**
+- [x] **P4.T2: Cover both directions** - covers: AC-6, AC-7
+  - [x] **P4.T2.1: Test that an unauthenticated read returns no draft rows**
+  - [x] **P4.T2.2: Test that an authenticated admin read returns the draft**
+  - [x] **P4.T2.3: Demonstrate the unauthenticated test failing on the pre-fix commit**
 
 ## Phase 5: Comment server actions
 

@@ -209,7 +209,7 @@ phase verified it rather than assuming it. The phase was therefore not blocked.
 | Tests | `src/collections/__tests__/ReadingLists.test.ts` |
 | Pre-fix run (archived) | `.conductor/evidence/phase-4-before.txt` |
 | Fix commit | `5508e0599817f3abbac2a5121f7be7249406a93d` - `fix(reading-lists): exclude drafts from unauthenticated reads` |
-| Evidence commit | the commit that adds this file |
+| Evidence commit | squashed into the checkpoint above |
 
 ## 8. Deviations
 
@@ -242,3 +242,69 @@ None. Both changed files are inside `Touches`
 **Result: verified.** `bun run typecheck && bun run lint && bun test` exits 0;
 AC-6 and AC-7 are each covered by a test that fails on the phase base and passes
 on the fix.
+
+## Primary verification
+
+The primary ran every layer again on the squashed checkpoint 81aa9c and checked
+the claims this phase rests on rather than accepting them.
+
+| Layer | Command | Exit | Summary |
+| --- | --- | --- | --- |
+| static | `bun run typecheck` | 0 | No type errors in 255 files (457ms) |
+| static | `bun run lint` | 0 | 247 files checked, no fixes applied |
+| unit | `bun test` | 0 | 710 pass, 0 fail, 1681 expect() calls, 52 files (2.57s) |
+
+**Independently reproduced the before/after.** Checked out
+`ReadingLists.ts` from the phase base `b118f29` while keeping this phase's
+tests: **3 pass, 4 fail**, with `Expected: false / Received: true` on
+"excludes drafts from an unauthenticated read" and "admits no draft row through
+the query it produces". Restored, re-ran: **7 pass, 0 fail, 18 expect() calls**.
+`Received: true` is the defect itself - the pre-fix rule was `() => true`,
+a callback that existed and returned the permissive value - so this is a real
+proof rather than the `Received: undefined` artifact that Phases 1 and 2 had
+to qualify.
+
+**Verified the two load-bearing claims at source** instead of trusting the
+report:
+
+- `git grep overrideAccess -- src`: the only `overrideAccess: false` sites
+  are the preview route, the review page's preview branch, and
+  `retranslate.ts`. **None is a reading-list query**, so every reading-list
+  read takes the default `true` and never consults this rule.
+- `git grep 'draft:\s*true' -- src`: four matches, all in the preview route,
+  the review page, or this phase's own doc comment. **No reading-list query
+  anywhere asks for drafts.**
+- `src/app/(payload)/api/preview/route.ts`: `payload.auth` at :42, a 401
+  return at :45 **before** anything is enabled, `collection: "reviews"` at
+  :49, `overrideAccess: false` at :59. `ReadingLists` has no `admin.preview`
+  builder. Preview cannot read a reading list, so FR-4's assumption holds.
+
+**A correction to the brief.** The brief named the preview route as
+`src/app/api/preview/route.ts`. That path does not exist; the real one is
+`src/app/(payload)/api/preview/route.ts`. The subagent found it by glob and
+said so, which is the right response to a wrong instruction.
+
+**A correction to the subagent's own report.** Its JSON `commits` array
+carried a second hash that does not resolve in this repository
+(`b5c938f6b6c6f3f1c6c3c6f3a8a8a8a8a8a8a8a8` - the trailing `a8` repeated is
+not a real object). The real commit is
+`b5c938f08343450ee04191634d67a8fe85423db0`. The evidence file itself only ever
+cited real hashes, so nothing downstream was affected, but the report was wrong
+and is recorded here as wrong.
+
+**Result: verified.** AC-6 and AC-7 are satisfied by test evidence, FR-4 by the
+code. `versions.drafts` and the write rules are unchanged; no other collection
+was touched. The writer branch is an addition beyond the spec's admin-vs-public
+requirement, chosen so a writer's own admin list is not emptied by this fix, and
+it is tested.
+
+Two observations carried to review, neither blocking:
+
+- **The writer branch widens the rule beyond what FR-4 asks for.** It is
+  consistent with `Reviews.read` and without it writers lose sight of their own
+  drafts in the admin panel - a regression this fix would otherwise introduce.
+  Worth a reviewer's eye because it is a judgement call, not a requirement.
+- **AC-6 is proven at the rule-and-query layer, not by a live HTTP request.**
+  There is no authenticated-REST coverage in this harness. The test reconstructs
+  the query `find` builds and evaluates it against draft and published rows,
+  which is stronger than asserting on shape alone but is still not `curl`.
