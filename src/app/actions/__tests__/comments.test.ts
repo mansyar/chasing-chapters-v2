@@ -687,7 +687,7 @@ describe("getApprovedComments", () => {
 	});
 
 	it("does not spend the address-wide budget on a call the per-review bucket refuses", async () => {
-		// `F1`. `rateLimit` increments its counter and only then compares it
+		// `F5`. `rateLimit` increments its counter and only then compares it
 		// against the limit, so a call it refuses still spends the counter of
 		// whichever bucket was checked first. With the aggregate checked first,
 		// a client hammering one review spent the address-wide budget on its

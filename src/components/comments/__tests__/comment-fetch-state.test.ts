@@ -104,8 +104,67 @@ function commentListTags(source: string): string[] {
  * tests treat as a failure rather than as "nothing to check".
  */
 function commentsPropValue(tag: string): string {
-	const match = /comments=\{([^}]*)\}/.exec(tag);
-	return match ? match[1].trim() : "";
+	const marker = "comments={";
+	const start = tag.indexOf(marker);
+	if (start === -1) {
+		return "";
+	}
+
+	// Find the brace that closes *this* prop rather than the first one in the
+	// tag: a value may contain braces, and later props in the same tag close
+	// their own. The source is whitespace-collapsed before it reaches here, so
+	// the prop ends at the brace followed by the next `name=` or by the tag's
+	// `/>`.
+	const open = start + marker.length;
+	for (let i = open; i < tag.length; i++) {
+		if (tag[i] !== "}") {
+			continue;
+		}
+
+		if (/^\s*(?:\/>|\/|$|[A-Za-z_$][\w$]*\s*=)/.test(tag.slice(i + 1))) {
+			return tag.slice(open, i).trim();
+		}
+	}
+
+	return "";
+}
+
+/**
+ * Names in the given source that provably hold `state.comments`.
+ *
+ * A component may destructure or alias the rows before handing them to the
+ * list - `const { comments } = state`, `const { comments: rows } = state`,
+ * `const rows = state.comments` - without changing what reaches the screen.
+ * Resolving those bindings keeps this check about the behaviour rather than
+ * about one spelling of it.
+ */
+function commentsAliases(source: string): string[] {
+	const names = new Set<string>(["comments", "state.comments"]);
+
+	for (const match of source.matchAll(
+		/const\s*\{\s*comments\s*:\s*([A-Za-z_$][\w$]*)\s*\}\s*=\s*state\b/g,
+	)) {
+		names.add(match[1]);
+	}
+
+	for (const match of source.matchAll(
+		/const\s+([A-Za-z_$][\w$]*)\s*=\s*state\.comments\b/g,
+	)) {
+		names.add(match[1]);
+	}
+
+	return [...names];
+}
+
+/**
+ * The prop value with a redundant empty-array fallback removed.
+ *
+ * `state.comments` is always an array, so `state.comments ?? []` and
+ * `state.comments || []` reach the list with exactly the same rows. Treating
+ * them as different would fail a rewrite that changes nothing.
+ */
+function withoutEmptyArrayFallback(value: string): string {
+	return value.replace(/\s*(?:\?\?|\|\|)\s*\[\s*\]\s*$/, "").trim();
 }
 
 const aComment: CommentSummary = {
@@ -320,18 +379,19 @@ describe("CommentSection render branches", () => {
 		expect(values.length).toBeGreaterThan(0);
 		for (const value of values) {
 			expect(value).not.toBe("");
-			expect(value).not.toContain("[]");
+			// A bare `[]` renders "no comments yet", so the retained rows would
+			// never reach the screen. Anchored, because `state.comments ?? []`
+			// carries the same rows and is not the defect.
+			expect(value).not.toMatch(/^\[\s*\]$/);
 		}
 
-		// And the array it names has to be the state's comments - the rows
-		// `applyCommentsResult` keeps on a failed refresh - and not some other
-		// value that a branch could substitute.
+		// And the array it names has to resolve to the state's comments - the
+		// rows `applyCommentsResult` keeps on a failed refresh - not some other
+		// value a branch could substitute.
+		const aliases = commentsAliases(source);
 		expect(
-			values.some(
-				(value) =>
-					value === "state.comments" ||
-					(value === "comments" &&
-						/const\s*\{\s*comments\s*\}\s*=\s*state\b/.test(source)),
+			values.some((value) =>
+				aliases.includes(withoutEmptyArrayFallback(value)),
 			),
 		).toBe(true);
 	});

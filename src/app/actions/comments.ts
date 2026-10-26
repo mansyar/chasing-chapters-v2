@@ -96,12 +96,23 @@ const MAX_COMMENTS_PER_REVIEW = 100;
  *
  * The aggregate ceiling is ten times that - 1200, i.e. 120 x 10 - and the
  * ratio is deliberate. Ten times is what keeps the aggregate from being the
- * binding constraint for ordinary use: an address only reaches it after
- * spending 1200 calls, and the aggregate counter only advances for calls a
- * per-review bucket allowed, so one review id can contribute at most 120 of
- * them - it has to have named at least ten distinct review ids to get there.
- * Ordinary browsing on one review never meets it, and a reader behind a shared
- * egress is not the caller it fires on first.
+ * binding constraint for ordinary use: the aggregate counter only advances
+ * for calls a per-review bucket allowed, so reaching it takes many review ids
+ * rather than one. The id count is approximate rather than exact, because a
+ * per-review window is anchored at that key's own first call and only expires
+ * when its own TTL runs out (`src/lib/rate-limit.ts`), so a review id first
+ * seen mid-window can have two of its windows overlap one aggregate window and
+ * contribute up to twice the per-review ceiling. In ordinary use - where
+ * reviews are visited at the pace a reader visits them - ten or more distinct
+ * ids are needed; a caller deliberately misaligning windows can get there with
+ * about five. Ordinary browsing on one review never meets it either way, and a
+ * reader behind a shared egress is not the caller it fires on first.
+ *
+ * The order also has a mirror case worth stating: a call the aggregate refuses
+ * has already spent its per-review bucket, because the per-review check comes
+ * first. That is bounded to at most one window of extra refusals on that one
+ * review for an address that keeps retrying while out of aggregate budget, and
+ * it does not restore the harm this ordering removed.
  *
  * The multiple is measured against the per-review ceiling that is in force
  * now, 120. A figure of 600 was proposed in review on the strength of the
