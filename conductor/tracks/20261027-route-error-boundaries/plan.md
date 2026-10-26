@@ -40,7 +40,7 @@ The primary appends after acceptance:
 - **Covers:** FR-5, AC-1, AC-2, AC-6, AC-7
 - **Touches:** `e2e/error-boundaries.spec.ts`, test-only trigger (route or query-gated component)
 - **Verification:** `bunx playwright test e2e/error-boundaries.spec.ts` then full `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P2.T1: Test-only forced-error trigger, unreachable in production UI** — covers: FR-5
 - [ ] **P2.T2: EN/ID e2e assertions (UI language, reset, home, no stack text)** — covers: AC-1, AC-2, AC-6
