@@ -82,7 +82,7 @@ A guide for managing your book review website.
 
 Clean comments auto-approve and appear on the review. A spam-flagged comment from a non-trusted commenter is held as **pending**, and the matched spam signals are saved on the comment. A trusted commenter (3 or more approved comments) bypasses that hold. A banned commenter is rejected. Readers can report a comment; 3 reports mark it **reported**.
 
-The **Comment Moderation** panel on the author analytics dashboard shows pending and reported counts, the latest items, and **Approve** / **Reject**. The counts link into the filtered Comments collection.
+The **Comment Moderation** panel on the author analytics dashboard shows pending and reported counts, the latest items, and **Approve** / **Reject**. The counts link into the filtered Comments collection. Approving or rejecting takes effect on the website immediately - the review page is invalidated as part of the action, so you do not have to wait out the cache window to check your work.
 
 ### Comment Status
 
