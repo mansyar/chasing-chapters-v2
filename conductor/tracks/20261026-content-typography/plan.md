@@ -152,6 +152,28 @@ The primary appends after acceptance:
 **Evidence:** conductor/tracks/<track-id>/verification/phase-5.md
 -->
 
+## Phase R1: Review Fixes
+
+- **Goal:** Resolve review findings F1, F2, F3, F4 and F5 from `review.md`.
+- **Depends on:** Phase 5
+- **Covers:** F1, F2, F3, F4, F5
+- **Touches:** `src/lib/review-navigation.ts`, `src/lib/__tests__/review-navigation.test.ts`, `src/components/ReadingListCard.tsx`, `src/app/(public)/[locale]/reading-lists/page.tsx`, `src/lib/__tests__/typography-source.test.ts`, `src/components/reviews/__tests__/StarRating.test.ts`, `src/app/globals.css`
+- **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
+- **Status:** pending
+
+- [ ] **R1.T1: Stop inventing neighbours from the wrong column** - covers: F1
+  - [ ] **R1.T1.1: Anchor on `publishDate` only so a review without one has no neighbours, as the doc comment already claims**
+  - [ ] **R1.T1.2: Replace the query-shape assertion with an outcome assertion - no `publishDate` means no query and no neighbours**
+- [ ] **R1.T2: Declare the index's own cover sizes** - covers: F2
+  - [ ] **R1.T2.1: Add an optional `sizes` prop to `ReadingListCard` defaulting to the home-page string**
+  - [ ] **R1.T2.2: Pass the index's three-breakpoint `sizes` from the reading-lists page**
+- [ ] **R1.T3: Pin code blocks to one mode-stable pair** - covers: F5
+  - [ ] **R1.T3.1: Stop inverting `--tw-prose-pre-bg`/`-pre-code` between modes; a `pre` reads dark-on-light in light mode and light-on-dark in dark mode**
+  - [ ] **R1.T3.2: Assert the pre pair in the source test so whatever is decided stays pinned**
+- [ ] **R1.T4: Make the two source guards assert behaviour** - covers: F3, F4
+  - [ ] **R1.T4.1: Match the class position rather than the bare substring in the prose-free guard**
+  - [ ] **R1.T4.2: Assert each StarRating call site renders the component with a `labelTemplate`, not just that it imports it**
+
 <!--
 Review fixes are appended by `conductor-review` as:
 
