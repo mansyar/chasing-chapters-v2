@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import type { CollectionAfterChangeHook } from "payload";
 import { localizedPaths } from "../lib/i18n/locale";
 import { logger } from "../lib/logger";
+import { getAdjacentReviews } from "../lib/review-navigation";
 
 /**
  * The error `revalidatePath` throws when it runs outside a Next.js request
@@ -56,6 +57,7 @@ export const revalidateReviewPages: CollectionAfterChangeHook = async ({
 	doc,
 	previousDoc,
 	operation,
+	req,
 }) => {
 	// Revalidate when:
 	// 1. A new review is created and published
@@ -89,6 +91,22 @@ export const revalidateReviewPages: CollectionAfterChangeHook = async ({
 
 		// Revalidate the RSS feeds (latest reviews), which exist once per locale.
 		revalidatePublicPath("/feed.xml");
+
+		// Revalidate the neighbours' pages. Their prev/next links point at
+		// this review (or stop pointing at it after an unpublish), and they
+		// are cached under their own paths, so they lag one ISR window
+		// without this. The lookup reuses the order the review pages use
+		// (publishDate descending, slug tiebreak, visibility-gated) and
+		// costs two bounded `limit: 1` queries. No neighbours is a safe
+		// no-op: a list end, a missing slug, or a missing date yields nulls.
+		if (req?.payload) {
+			const adjacent = await getAdjacentReviews(req.payload, doc);
+			for (const neighbour of [adjacent.newer, adjacent.older]) {
+				if (neighbour) {
+					revalidatePublicPath(`/reviews/${neighbour.slug}`);
+				}
+			}
+		}
 
 		// If featured status changed, homepage needs update (already covered above)
 		// Reading lists that include this review will be revalidated by their own ISR
