@@ -133,7 +133,7 @@ The primary appends after acceptance:
 - **Covers:** FR-7, FR-8, AC-6
 - **Touches:** `src/components/ReviewCard.tsx`, `src/components/ReadingListCard.tsx`, `src/app/(public)/[locale]/reading-lists/page.tsx`, `src/components/ui/card.tsx`, `src/components/__tests__/` card tests if any exist
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P5.T1: Consolidate the card renderings** — covers: FR-7
   - [ ] **P5.T1.1: Give `ReviewCard` and `ReadingListCard` one shared base card structure**
