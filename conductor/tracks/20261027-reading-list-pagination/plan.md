@@ -14,7 +14,7 @@
 - **Covers:** FR-1, FR-2, FR-5, NFR-1, NFR-2, NFR-4, AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7
 - **Touches:** `src/app/(public)/[locale]/reading-lists/page.tsx`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P1.T1: Parse `?page=` and bound the index query** — covers: FR-1, FR-2
   - [ ] **P1.T1.1: Read `page` from searchParams with reviews-identical `Number(page) || 1` semantics**
