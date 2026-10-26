@@ -6,7 +6,7 @@
 	"priority": "high",
 	"depends_on": [],
 	"created_at": "2026-10-26T00:47:24Z",
-	"updated_at": "2026-10-26T00:49:29Z",
+	"updated_at": "2026-10-26T00:59:35Z",
 	"spec": "spec.md",
 	"plan": "plan.md",
 	"branch": "fix/20261026-access-control-hardening",
@@ -14,11 +14,11 @@
 	"base_sha": "a6ee383088b34b3ba327b835099fe6840edcbe60",
 	"progress": {
 		"phases_total": 6,
-		"phases_verified": 0,
+		"phases_verified": 1,
 		"tasks_total": 15,
-		"tasks_done": 0
+		"tasks_done": 2
 	},
-	"last_checkpoint": null,
+	"last_checkpoint": "6e014e4",
 	"review_verdict": null,
 	"review_rounds": 0,
 	"doc_sync": "pending",

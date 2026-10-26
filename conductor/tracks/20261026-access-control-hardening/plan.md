@@ -12,16 +12,19 @@
 - **Covers:** FR-1, AC-1, AC-2
 - **Touches:** `src/collections/Authors.ts`, `src/collections/__tests__/Authors.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** in_progress
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** 6e014e4
+- **Evidence:** conductor/tracks/20261026-access-control-hardening/verification/phase-1.md
 
-- [ ] **P1.T1: Restrict the role field to admins** - covers: FR-1
-  - [ ] **P1.T1.1: Add field-level `access.update` on `role` that returns true only for an admin**
-  - [ ] **P1.T1.2: Confirm the admin path is unaffected and the collection-level `update` rule is left alone**
+- [x] **P1.T1: Restrict the role field to admins** - covers: FR-1
+  - [x] **P1.T1.1: Add field-level `access.update` on `role` that returns true only for an admin**
+  - [x] **P1.T1.2: Confirm the admin path is unaffected and the collection-level `update` rule is left alone**
 
-- [ ] **P1.T2: Prove both directions** - covers: AC-1, AC-2
-  - [ ] **P1.T2.1: Test that a writer's self-update setting `role: "admin"` leaves the stored role unchanged**
-  - [ ] **P1.T2.2: Test that an admin updating another author's role succeeds**
-  - [ ] **P1.T2.3: Demonstrate both tests failing on the pre-fix commit and record both runs in the evidence file**
+- [x] **P1.T2: Prove both directions** - covers: AC-1, AC-2
+  - [x] **P1.T2.1: Test that a writer's self-update setting `role: "admin"` leaves the stored role unchanged**
+  - [x] **P1.T2.2: Test that an admin updating another author's role succeeds**
+  - [x] **P1.T2.3: Demonstrate both tests failing on the pre-fix commit and record both runs in the evidence file**
 
 ## Phase 2: Comments collection access
 

@@ -5,7 +5,7 @@
 - **Date:** 2026-10-26
 - **Branch:** fix/20261026-access-control-hardening
 - **Base:** f47745cd5a94ad7f301c7204f0d55829d5768408
-- **Head:** (recorded by the primary after squash)
+- **Head:** 6e014e4
 - **Result:** verified
 
 ## 1. Commands
@@ -103,3 +103,21 @@ None. Both changed files are inside `Touches`.
 - The test file imports the collection config directly and asserts on the access callback's behaviour, matching how the file already tests the `afterLogin` hook. It does not stand up Payload or a database. The `applyFieldAccess` helper mirrors Payload's documented behaviour for a denied field (drop from the write, restore from the stored document) and cites the source lines that establish it, so the test's model of Payload is auditable rather than asserted.
 - **What this does not prove:** that a real `PATCH /api/authors/<id>` over REST is refused the field. That requires a running Payload instance and an authenticated writer session, which this project's harness does not provide for collection access rules - e2e specs drive the admin UI, not the REST API. The unit test proves the rule's behaviour and the write it produces; the REST path is covered by construction because Payload evaluates exactly this callback for every update. If a future track adds authenticated REST tests to the e2e harness, AC-1 should be re-proven there.
 - `role` remains `required: true` with `defaultValue: "writer"`, asserted by "keeps the role field required with a writer default", so creates still require an explicit role and the default still applies.
+## Primary verification
+
+The phase subagent's session was interrupted by a host restart after it had written both files but before it committed or produced evidence. The primary inspected the uncommitted diff, verified its central claim against Payload's source rather than accepting it, ran the gate, and committed.
+
+| Layer | Command | Exit | Summary |
+|---|---|---|---|
+| static | `bun run typecheck` | 0 | No type errors in 253 files (583.30ms) |
+| static | `bun run lint` | 0 | Checked 245 files, no fixes applied |
+| unit | `bun test` | 0 | 690 pass, 0 fail, 1632 expect() calls, 50 files (28.83s) |
+| unit | `bun test src/collections/__tests__/Authors.test.ts` | 0 | 8 pass, 0 fail, 13 expect() calls |
+
+The first lint run failed on formatting in `Authors.test.ts` (three expressions Biome wanted wrapped). Fixed with the project's own formatter; lint then passed with no further changes. No behavioural edit was made.
+
+The primary reproduced the before/after record independently: the pre-fix `Authors.ts` was restored, the new tests run (5 pass, 3 fail, exit 1), and the fixed file put back. The caveat in section 4 - that only the `not.toHaveProperty` failure demonstrates the vulnerability, the other two reporting `undefined` because no field rule existed - was found by reading the actual failure output, not inferred.
+
+**Result: verified.**
+
+AC-1 and AC-2 are satisfied by direct test evidence. FR-1 is satisfied by the code. The four pre-existing `afterLogin` tests are untouched and passing. The limitation recorded in section 7 - that no authenticated REST request is exercised - stands as stated; it is a property of the project's harness, not of this fix.
