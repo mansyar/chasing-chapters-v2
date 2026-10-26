@@ -132,7 +132,7 @@
 - **Covers:** FR-7, FR-10, AC-12, AC-15
 - **Touches:** `src/app/actions/like-review.ts`, `src/app/actions/moderation.ts`, `src/app/actions/__tests__/like-review.test.ts`, `src/app/actions/__tests__/moderation.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P6.T1: Reject likes on invisible reviews** - covers: FR-7, AC-12
   - [ ] **P6.T1.1: Check public visibility before incrementing, reusing the shared visibility predicate**
