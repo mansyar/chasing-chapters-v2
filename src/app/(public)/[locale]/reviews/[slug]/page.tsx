@@ -4,11 +4,13 @@ import { Calendar, User } from "lucide-react";
 import type { Metadata } from "next";
 import { draftMode, headers } from "next/headers";
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPayload } from "payload";
 import { ViewTracker } from "@/components/analytics/ViewTracker";
 import { CommentSection } from "@/components/comments/CommentSection";
 import { ReadingProgressBar } from "@/components/ReadingProgressBar";
+import { Breadcrumbs } from "@/components/reviews/Breadcrumbs";
 import { LanguageToggle } from "@/components/reviews/LanguageToggle";
 import { LikeButton } from "@/components/reviews/LikeButton";
 import { PreviewBanner } from "@/components/reviews/PreviewBanner";
@@ -25,6 +27,7 @@ import { normalizeLocale, SUPPORTED_LOCALES } from "@/lib/i18n/locale";
 import { resolveMediaUrl } from "@/lib/media-url";
 import { buildPreviewMetadata, canRenderDraft } from "@/lib/preview";
 import { publishedAndVisibleWhere } from "@/lib/publish-visibility";
+import { getAdjacentReviews } from "@/lib/review-navigation";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import {
 	generateBreadcrumbSchema,
@@ -194,17 +197,27 @@ export default async function ReviewPage({ params }: PageProps) {
 	const coverImage = review.coverImage as Media;
 	const dictionary = getDictionary(appLocale);
 	const jsonLd = generateReviewSchema(review, appLocale, coverImage);
+	// One trail, two renderings: the structured data a crawler reads and the
+	// breadcrumbs a reader sees are built from the same list, so the two cannot
+	// drift apart.
+	const trail = [
+		{ name: dictionary.breadcrumbHome, path: `/${appLocale}` },
+		{ name: dictionary.navReviews, path: `/${appLocale}/reviews` },
+		{ name: review.title ?? "", path: `/${appLocale}/reviews/${review.slug}` },
+	];
 	const breadcrumbJsonLd = generateBreadcrumbSchema(
-		[
-			{ name: dictionary.breadcrumbHome, url: `${SITE_URL}/${appLocale}` },
-			{ name: dictionary.navReviews, url: `${SITE_URL}/${appLocale}/reviews` },
-			{
-				name: review.title ?? "",
-				url: `${SITE_URL}/${appLocale}/reviews/${review.slug}`,
-			},
-		],
+		trail.map((item) => ({ name: item.name, url: `${SITE_URL}${item.path}` })),
 		appLocale,
 	);
+	// A draft preview has no neighbours and no trail: both describe a published
+	// catalogue this version of the review is not part of yet.
+	const adjacent = preview
+		? { newer: null, older: null }
+		: await getAdjacentReviews(
+				await getPayload({ config: configPromise }),
+				review,
+				{ locale: appLocale },
+			);
 
 	return (
 		<article className="min-h-screen pb-20">
@@ -224,6 +237,18 @@ export default async function ReviewPage({ params }: PageProps) {
 			{/* Hero Header */}
 			<div className="bg-muted/30 py-12 md:py-20">
 				<div className="container mx-auto px-6 md:px-12 lg:px-24 max-w-7xl">
+					{!preview && (
+						<Breadcrumbs
+							items={trail.map((item, index) => ({
+								label: item.name,
+								// The last crumb is the page the reader is on, so it is
+								// text rather than a link back to itself.
+								href: index < trail.length - 1 ? item.path : undefined,
+							}))}
+							label={dictionary.breadcrumbLabel}
+							className="mb-8"
+						/>
+					)}
 					<div className="grid gap-8 lg:grid-cols-[300px_1fr] lg:gap-12 items-start">
 						{/* Book Cover */}
 						<div className="mx-auto lg:mx-0 w-[240px] md:w-[300px] aspect-2/3 relative shadow-2xl rounded-lg rotate-2 hover:rotate-0 transition-transform duration-500 bg-background">
@@ -474,6 +499,45 @@ export default async function ReviewPage({ params }: PageProps) {
 					)}
 				</div>
 			</div>
+
+			{/* Adjacent reviews: the same order as the index, no wrap-around. */}
+			{!preview && (adjacent.newer || adjacent.older) && (
+				<nav
+					aria-label={dictionary.reviewNavLabel}
+					className="container mx-auto px-6 md:px-12 lg:px-24 max-w-7xl [content-visibility:auto] [contain-intrinsic-size:auto_120px]"
+				>
+					<div className="grid gap-4 border-t pt-8 pb-12 sm:grid-cols-2">
+						{adjacent.older ? (
+							<Link
+								href={`/${appLocale}/reviews/${adjacent.older.slug}`}
+								className="group rounded-xl border p-4 transition-colors hover:border-primary/40 hover:bg-muted/30"
+							>
+								<span className="mb-1 block text-xs uppercase tracking-wide text-muted-foreground">
+									{dictionary.reviewNavPrevious}
+								</span>
+								<span className="font-serif font-semibold group-hover:text-primary">
+									{adjacent.older.title}
+								</span>
+							</Link>
+						) : (
+							<span aria-hidden="true" />
+						)}
+						{adjacent.newer ? (
+							<Link
+								href={`/${appLocale}/reviews/${adjacent.newer.slug}`}
+								className="group rounded-xl border p-4 text-right transition-colors hover:border-primary/40 hover:bg-muted/30 sm:col-start-2"
+							>
+								<span className="mb-1 block text-xs uppercase tracking-wide text-muted-foreground">
+									{dictionary.reviewNavNext}
+								</span>
+								<span className="font-serif font-semibold group-hover:text-primary">
+									{adjacent.newer.title}
+								</span>
+							</Link>
+						) : null}
+					</div>
+				</nav>
+			)}
 
 			{/* Related Reviews */}
 			<div className="container mx-auto px-6 md:px-12 lg:px-24 pb-12 max-w-7xl [content-visibility:auto] [contain-intrinsic-size:auto_600px]">

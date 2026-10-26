@@ -212,6 +212,10 @@ const en = {
 		"Book reviews, reading lists, and literary notes from Chasing Chapters.",
 	browseItemListName: "Book Reviews",
 	breadcrumbHome: "Home",
+	breadcrumbLabel: "Breadcrumb",
+	reviewNavLabel: "Adjacent reviews",
+	reviewNavPrevious: "Previous review",
+	reviewNavNext: "Next review",
 
 	// Draft preview
 	previewLabel: "Preview",
@@ -404,6 +408,10 @@ const id: Dictionary = {
 		"Ulasan buku, daftar bacaan, dan catatan sastra dari Chasing Chapters.",
 	browseItemListName: "Ulasan Buku",
 	breadcrumbHome: "Beranda",
+	breadcrumbLabel: "Navigasi remah",
+	reviewNavLabel: "Ulasan di sekitarnya",
+	reviewNavPrevious: "Ulasan sebelumnya",
+	reviewNavNext: "Ulasan berikutnya",
 
 	previewLabel: "Pratinjau",
 	previewDescription:
