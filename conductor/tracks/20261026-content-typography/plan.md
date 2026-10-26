@@ -133,14 +133,17 @@ The primary appends after acceptance:
 - **Covers:** FR-7, FR-8, AC-6
 - **Touches:** `src/components/ReviewCard.tsx`, `src/components/ReadingListCard.tsx`, `src/app/(public)/[locale]/reading-lists/page.tsx`, `src/components/ui/card.tsx`, `src/components/__tests__/` card tests if any exist
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
-- **Status:** in_progress
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** 3a978f9
+- **Evidence:** conductor/tracks/20261026-content-typography/verification/phase-5.md
 
-- [ ] **P5.T1: Consolidate the card renderings** — covers: FR-7
-  - [ ] **P5.T1.1: Give `ReviewCard` and `ReadingListCard` one shared base card structure**
-  - [ ] **P5.T1.2: Replace the inline variant on the reading-lists index with `ReadingListCard`**
-  - [ ] **P5.T1.3: Keep each surface's existing visual outcome — consolidation changes the code, not the rendered look**
-- [ ] **P5.T2: Remove what the consolidation orphans** — covers: FR-8
-  - [ ] **P5.T2.1: Delete exports of `card.tsx` (and anything else) left with zero importers by this track's changes — nothing beyond what this track orphans**
+- [x] **P5.T1: Consolidate the card renderings** — covers: FR-7
+  - [x] **P5.T1.1: Give `ReviewCard` and `ReadingListCard` one shared base card structure**
+  - [x] **P5.T1.2: Replace the inline variant on the reading-lists index with `ReadingListCard`**
+  - [x] **P5.T1.3: Keep both existing cards' rendered look unchanged; the reading-lists index deliberately changes, because adopting `ReadingListCard` there is what FR-7 asks for**
+- [x] **P5.T2: Remove what the consolidation orphans** — covers: FR-8
+  - [x] **P5.T2.1: Delete exports of `card.tsx` (and anything else) left with zero importers by this track's changes — nothing beyond what this track orphans**
 
 <!--
 The primary appends after acceptance:

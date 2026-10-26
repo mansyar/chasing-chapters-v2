@@ -5,7 +5,7 @@
 - **Date:** 2026-10-26
 - **Branch:** `feat/20261026-content-typography`
 - **Base:** `6de0f4571f4e953291b062825828afcfacde5c29`
-- **Head:** recorded by the primary after squash
+- **Head:** `3a978f9` (squashed)
 
 ## 1. Result: PASS
 
