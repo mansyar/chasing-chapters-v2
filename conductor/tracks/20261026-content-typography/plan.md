@@ -100,21 +100,24 @@ The primary appends after acceptance:
 - **Covers:** FR-5, FR-6, FR-9, AC-4, AC-5
 - **Touches:** `src/components/reviews/Breadcrumbs.tsx`, `src/components/reviews/__tests__/Breadcrumbs.test.ts`, `src/lib/review-navigation.ts`, `src/lib/__tests__/review-navigation.test.ts`, `src/app/(public)/[locale]/reviews/[slug]/page.tsx`, `src/app/(public)/[locale]/reading-lists/[slug]/page.tsx`, `src/lib/i18n/dictionary.ts`, `src/lib/i18n/__tests__/dictionary.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
-- **Status:** in_progress
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** 7f54443
+- **Evidence:** conductor/tracks/20261026-content-typography/verification/phase-4.md
 
-- [ ] **P4.T1: Build the Breadcrumbs component** — covers: FR-5
-  - [ ] **P4.T1.1: A server component rendering Home / section / title, reusing `breadcrumbHome`, `navReviews` and `navReadingLists`**
-  - [ ] **P4.T1.2: Keep the rendered trail consistent with the existing `BreadcrumbList` JSON-LD on both pages**
-  - [ ] **P4.T1.3: Render on review detail and reading-list detail, styled to match each page**
-- [ ] **P4.T2: Add prev/next navigation** — covers: FR-6
-  - [ ] **P4.T2.1: A `review-navigation` helper returning the adjacent published reviews ordered by `publishDate` with the slug-ascending tiebreak, using `publishedAndVisibleWhere`**
-  - [ ] **P4.T2.2: Render the navigation on review detail with localized labels**
-  - [ ] **P4.T2.3: Absent links at both boundaries — no wrap-around, no disabled state**
-  - [ ] **P4.T2.4: Suppress breadcrumbs and prev/next on draft previews**
-- [ ] **P4.T3: Cover the behaviour and the dictionaries** — covers: FR-9, AC-5
-  - [ ] **P4.T3.1: Helper tests for ordering, the tiebreak and the boundaries**
-  - [ ] **P4.T3.2: Add the prev/next dictionary keys to both `en` and `id`**
-  - [ ] **P4.T3.3: Breadcrumbs tests for hrefs, labels and preview suppression**
+- [x] **P4.T1: Build the Breadcrumbs component** — covers: FR-5
+  - [x] **P4.T1.1: A server component rendering Home / section / title, reusing `breadcrumbHome`, `navReviews` and `navReadingLists`**
+  - [x] **P4.T1.2: Keep the rendered trail consistent with the existing `BreadcrumbList` JSON-LD on both pages**
+  - [x] **P4.T1.3: Render on review detail and reading-list detail, styled to match each page**
+- [x] **P4.T2: Add prev/next navigation** — covers: FR-6
+  - [x] **P4.T2.1: A `review-navigation` helper returning the adjacent published reviews ordered by `publishDate` with the slug-ascending tiebreak, using `publishedAndVisibleWhere`**
+  - [x] **P4.T2.2: Render the navigation on review detail with localized labels**
+  - [x] **P4.T2.3: Absent links at both boundaries — no wrap-around, no disabled state**
+  - [x] **P4.T2.4: Suppress breadcrumbs and prev/next on draft previews**
+- [x] **P4.T3: Cover the behaviour and the dictionaries** — covers: FR-9, AC-5
+  - [x] **P4.T3.1: Helper tests for ordering, the tiebreak and the boundaries**
+  - [x] **P4.T3.2: Add the prev/next dictionary keys to both `en` and `id`**
+  - [x] **P4.T3.3: Breadcrumbs tests for hrefs, labels and preview suppression**
 
 <!--
 The primary appends after acceptance:
