@@ -314,3 +314,68 @@ No other file outside `Touches` was modified. No generated file, lockfile,
   specified it exactly; the integrated e2e result recorded on this track
   predates these changes, so the error branch has not been exercised in a
   browser.
+
+## Primary verification
+
+The primary re-ran every layer on the squashed checkpoint `ed87553` and
+reproduced the findings independently.
+
+| Layer | Command | Exit | Summary |
+| --- | --- | --- | --- |
+| static | `bun run typecheck` | 0 | No type errors in 258 files |
+| static | `bun run lint` | 0 | 250 files checked, no fixes applied |
+| unit | `bun test` | 0 | 752 pass, 0 fail, 1855 expect() calls, 54 files |
+
+**Reproduced from the phase base `7cb09f1`**, restoring the two production
+files with `git checkout <base> -- <path>` and keeping this phase's tests:
+
+- `Commenters.test.ts`: **5 pass, 2 fail**.
+- `comments.test.ts`: **3 fail** — `reportComment > does not regenerate the
+  review page below the report threshold` (`Expected number of calls: 0`,
+  `Received: 2`) and two rate-limit key assertions showing
+  `comments:203.0.113.5` where `comments:203.0.113.5:1` is expected.
+
+After restoring: **35 pass, 0 fail, 153 expect() calls** across the three suites.
+
+**One of the two F1 failures is an artifact and one is the defect, and the
+evidence should not conflate them.** `denies a writer both flags on create and
+on update` failed with `Expected: "function" / Received: "undefined"` — no
+field rule existed, so it proves the configuration was added, not that a writer
+is denied. `drops both flags from a writer's create so the row lands untrusted`
+failed with `Expected - 0 / Received + 2` — the writer's create kept both
+flags — which is the defect itself. This is the same distinction recorded in
+Phases 1 and 2.
+
+**F3 and F4 reviewed in the diff.** The `moderation.ts` and `comments.ts`
+doc blocks now describe revalidation as defence in depth and state that the
+comment list is client-fetched; `reportComment`'s revalidation is gated on
+`report.status === "reported"`. `canAcceptPublicWrite`'s block names all
+three call sites and explains why a fourth belongs behind the call rather than a
+hand-rolled `_status` check.
+
+**F2's component half reviewed in the diff.** `CommentSection` now derives its
+render from `applyCommentsResult`, suppresses the count when `hasError`, and
+renders `dictionary.commentsLoadError` under `role="alert"`. The new
+`comment-fetch-state` module keeps existing comments on a failed refresh rather
+than blanking a list the reader was already reading — a detail beyond the
+finding, and a better behaviour than the finding asked for. Both locales carry
+the new string.
+
+**One thing the subagent flagged that I am carrying forward, not dismissing:**
+`workflow.md` requires e2e when a phase touches a user-facing flow, and F2
+changes one. No e2e was run because the phase verification command excludes it.
+That is a real gap in coverage for this phase, recorded here rather than smoothed
+over; the integrated layer will run e2e against the full diff before the PR, and
+the error branch itself is not reachable without forcing a 429 in a browser.
+
+**Result: verified.** All four findings are fixed at the root cause with tests
+that fail when reverted. No phase 1-6 behaviour was changed: the collection
+rules, the field rules on `Authors.role` and `Comments.status`, and the
+report write payload are all untouched by this phase.
+
+**The `banned` field rule closed a hole the review did not name.** The reviewer
+identified that `trusted` could be minted by a writer; the implementation also
+restricted `banned`, with the reason recorded in the diff — `create` alone
+would have let a writer silence anyone by pre-registering their email hash as
+banned. That is the same mechanism in the opposite direction and it was right to
+close both.
