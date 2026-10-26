@@ -10,7 +10,12 @@ export const Commenters: CollectionConfig = {
 	access: {
 		// Only admins can view/manage commenters
 		read: ({ req: { user } }) => user?.role === "admin",
-		create: () => true, // Created automatically when guests comment
+		// Guest commenting does not need an open create rule: the
+		// `submitComment` server action writes through the Local API, where
+		// `overrideAccess` defaults to true and this rule is not consulted.
+		// Leaving it open let anyone mint a commenter with `trusted: true`,
+		// which skips the spam hold on that commenter's comments.
+		create: ({ req: { user } }) => Boolean(user),
 		update: ({ req: { user } }) => user?.role === "admin",
 		delete: ({ req: { user } }) => user?.role === "admin",
 	},
