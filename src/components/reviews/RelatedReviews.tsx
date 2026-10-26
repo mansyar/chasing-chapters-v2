@@ -113,7 +113,12 @@ export async function RelatedReviews({
 
 			<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
 				{relatedReviews.map((review) => (
-					<ReviewCard key={review.id} review={review} locale={locale} />
+					<ReviewCard
+						key={review.id}
+						review={review}
+						locale={locale}
+						ratingLabel={dictionary.ratingLabel}
+					/>
 				))}
 			</div>
 		</section>

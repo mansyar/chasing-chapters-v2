@@ -194,6 +194,7 @@ export default async function ReadingListDetailPage({ params }: PageProps) {
 								review={review}
 								locale={appLocale}
 								priority={index < 2}
+								ratingLabel={dictionary.ratingLabel}
 							/>
 						))}
 					</div>

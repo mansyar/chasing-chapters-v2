@@ -1,6 +1,6 @@
-import { Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { StarRating } from "@/components/reviews/StarRating";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardFooter, CardHeader } from "@/components/ui/card";
 import type { AppLocale } from "@/lib/date-format";
@@ -15,6 +15,12 @@ interface ReviewCardProps {
 	priority?: boolean;
 	/** The locale of the link and of the publish date; defaults to English. */
 	locale?: AppLocale;
+	/**
+	 * The localized "Rated {rating} out of 5" template from the caller's
+	 * dictionary, forwarded to the star rating so the rating is announced to
+	 * screen readers in the page's language.
+	 */
+	ratingLabel: string;
 }
 
 export function ReviewCard({
@@ -22,6 +28,7 @@ export function ReviewCard({
 	className,
 	priority = false,
 	locale = "en",
+	ratingLabel,
 }: ReviewCardProps) {
 	const coverImage = review.coverImage as Media;
 
@@ -48,19 +55,11 @@ export function ReviewCard({
 				</div>
 				<CardHeader className="px-4 pt-4 pb-2">
 					<div className="flex items-center justify-between mb-1">
-						<div className="flex gap-1">
-							{Array.from({ length: 5 }).map((_, i) => (
-								<Star
-									key={i}
-									className={cn(
-										"h-3.5 w-3.5",
-										i < review.rating
-											? "fill-primary text-primary"
-											: "text-muted-foreground/30",
-									)}
-								/>
-							))}
-						</div>
+						<StarRating
+							rating={review.rating}
+							labelTemplate={ratingLabel}
+							size="sm"
+						/>
 						<span className="text-xs text-muted-foreground">
 							{formatDate(review.publishDate || review.createdAt, locale)}
 						</span>

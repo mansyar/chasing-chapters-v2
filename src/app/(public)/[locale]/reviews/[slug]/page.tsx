@@ -1,6 +1,6 @@
 import configPromise from "@payload-config";
 import { RichText } from "@payloadcms/richtext-lexical/react";
-import { Calendar, Star, User } from "lucide-react";
+import { Calendar, User } from "lucide-react";
 import type { Metadata } from "next";
 import { draftMode, headers } from "next/headers";
 import Image from "next/image";
@@ -13,6 +13,7 @@ import { LanguageToggle } from "@/components/reviews/LanguageToggle";
 import { LikeButton } from "@/components/reviews/LikeButton";
 import { PreviewBanner } from "@/components/reviews/PreviewBanner";
 import { RelatedReviews } from "@/components/reviews/RelatedReviews";
+import { StarRating } from "@/components/reviews/StarRating";
 import { ShareButton } from "@/components/ShareButton";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -243,17 +244,12 @@ export default async function ReviewPage({ params }: PageProps) {
 						{/* Header Content */}
 						<div className="space-y-6 text-center lg:text-left">
 							<div className="space-y-2">
-								<div className="flex items-center justify-center lg:justify-start gap-2 text-primary">
-									{Array.from({ length: 5 }).map((_, i) => (
-										<Star
-											key={i}
-											className={`h-5 w-5 ${
-												i < review.rating
-													? "fill-current"
-													: "text-muted-foreground/30"
-											}`}
-										/>
-									))}
+								<div className="flex items-center justify-center lg:justify-start">
+									<StarRating
+										rating={review.rating}
+										labelTemplate={dictionary.ratingLabel}
+										size="lg"
+									/>
 								</div>
 								<h1 className="font-serif text-4xl md:text-5xl font-bold tracking-tight text-foreground">
 									{review.title}

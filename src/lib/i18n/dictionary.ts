@@ -67,6 +67,9 @@ const en = {
 	heroGoToSlide: "Go to slide {slide}",
 	cardByAuthor: "by {author}",
 
+	// Star rating
+	ratingLabel: "Rated {rating} out of 5",
+
 	// Review browse
 	browseSearch: "Search",
 	browseSearchPlaceholder: "Search...",
@@ -262,6 +265,8 @@ const id: Dictionary = {
 	heroNextReview: "Ulasan berikutnya",
 	heroGoToSlide: "Buka slide {slide}",
 	cardByAuthor: "oleh {author}",
+
+	ratingLabel: "Dinilai {rating} dari 5",
 
 	browseSearch: "Cari",
 	browseSearchPlaceholder: "Cari...",

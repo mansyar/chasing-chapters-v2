@@ -1,10 +1,11 @@
 "use client";
 
-import { ArrowRight, Star } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { HeroSkeletonContent } from "@/components/HeroSkeleton";
+import { StarRating } from "@/components/reviews/StarRating";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { GradientBackground } from "@/components/ui/gradient-background";
@@ -12,7 +13,7 @@ import type { Dictionary } from "@/lib/i18n/dictionary";
 import { formatMessage } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/locale";
 import { resolveMediaUrl } from "@/lib/media-url";
-import { cn, extractTextFromRichText } from "@/lib/utils";
+import { extractTextFromRichText } from "@/lib/utils";
 import type { Media, Review } from "@/payload-types";
 
 // Lazy load the carousel, but keep it server-rendered. With `ssr: false` the hero
@@ -56,19 +57,10 @@ function SingleReviewHero({
 						>
 							{dictionary.heroFeaturedReview}
 						</Badge>
-						<div className="flex gap-0.5">
-							{Array.from({ length: 5 }).map((_, i) => (
-								<Star
-									key={i}
-									className={cn(
-										"h-4 w-4",
-										i < review.rating
-											? "fill-primary text-primary"
-											: "text-muted-foreground/30",
-									)}
-								/>
-							))}
-						</div>
+						<StarRating
+							rating={review.rating}
+							labelTemplate={dictionary.ratingLabel}
+						/>
 					</div>
 					<h1 className="font-serif text-4xl font-bold tracking-tight sm:text-5xl xl:text-6xl/none">
 						{review.title}

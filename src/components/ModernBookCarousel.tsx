@@ -1,9 +1,10 @@
 "use client";
 
-import { ArrowRight, ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import React, { useEffect, useRef, useState } from "react";
+import { StarRating } from "@/components/reviews/StarRating";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Dictionary } from "@/lib/i18n/dictionary";
@@ -109,19 +110,10 @@ export default function ModernBookCarousel({
 										>
 											{dictionary.heroFeaturedReview}
 										</Badge>
-										<div className="flex gap-0.5">
-											{Array.from({ length: 5 }).map((_, i) => (
-												<Star
-													key={i}
-													className={cn(
-														"h-4 w-4",
-														i < review.rating
-															? "fill-primary text-primary"
-															: "text-muted-foreground/30",
-													)}
-												/>
-											))}
-										</div>
+										<StarRating
+											rating={review.rating}
+											labelTemplate={dictionary.ratingLabel}
+										/>
 									</div>
 									<h2 className="font-serif text-3xl md:text-5xl font-bold tracking-tight">
 										{review.title}
