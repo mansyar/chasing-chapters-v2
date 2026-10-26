@@ -320,7 +320,7 @@ export default async function ReviewPage({ params }: PageProps) {
 			<div className="container mx-auto px-6 md:px-12 lg:px-24 py-12 grid gap-12 lg:grid-cols-[1fr_300px] max-w-7xl">
 				<div className="space-y-12">
 					{/* Review Content */}
-					<div className="prose prose-lg prose-gray dark:prose-invert max-w-3xl font-serif">
+					<div className="prose prose-lg prose-teal dark:prose-invert max-w-3xl font-serif">
 						{review.reviewContent ? (
 							<RichText data={review.reviewContent} />
 						) : null}
@@ -333,7 +333,7 @@ export default async function ReviewPage({ params }: PageProps) {
 								<h3 className="font-serif text-xl font-bold mb-4 flex items-center gap-2 text-green-800 dark:text-green-300">
 									{dictionary.reviewWhatILoved}
 								</h3>
-								<div className="prose prose-sm dark:prose-invert">
+								<div className="prose prose-sm prose-teal dark:prose-invert">
 									<RichText data={review.whatILoved} />
 								</div>
 							</div>
@@ -344,7 +344,7 @@ export default async function ReviewPage({ params }: PageProps) {
 								<h3 className="font-serif text-xl font-bold mb-4 flex items-center gap-2 text-orange-800 dark:text-orange-300">
 									{dictionary.reviewWhatCouldBeBetter}
 								</h3>
-								<div className="prose prose-sm dark:prose-invert">
+								<div className="prose prose-sm prose-teal dark:prose-invert">
 									<RichText data={review.whatCouldBeBetter} />
 								</div>
 							</div>
@@ -355,7 +355,7 @@ export default async function ReviewPage({ params }: PageProps) {
 								<h3 className="font-serif text-xl font-bold mb-4 flex items-center gap-2 text-blue-800 dark:text-blue-300">
 									{dictionary.reviewPerfectFor}
 								</h3>
-								<div className="prose prose-sm dark:prose-invert">
+								<div className="prose prose-sm prose-teal dark:prose-invert">
 									<RichText data={review.perfectFor} />
 								</div>
 							</div>

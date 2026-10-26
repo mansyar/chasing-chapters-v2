@@ -54,7 +54,7 @@ export default function ReviewDetailLoading() {
 			<div className="container mx-auto px-6 md:px-12 lg:px-24 py-12 grid gap-12 lg:grid-cols-[1fr_300px] max-w-7xl">
 				<div className="space-y-12">
 					{/* Review Content */}
-					<div className="prose prose-lg max-w-3xl space-y-4">
+					<div className="max-w-3xl space-y-4">
 						<Skeleton className="h-5 w-full" />
 						<Skeleton className="h-5 w-[98%]" />
 						<Skeleton className="h-5 w-[95%]" />

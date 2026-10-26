@@ -80,7 +80,7 @@ function SingleReviewHero({
 					</p>
 				</div>
 
-				<div className="prose prose-gray dark:prose-invert max-w-none line-clamp-3 text-muted-foreground text-lg">
+				<div className="max-w-none line-clamp-3 text-muted-foreground text-lg">
 					{extractTextFromRichText(review.reviewContent)}
 				</div>
 

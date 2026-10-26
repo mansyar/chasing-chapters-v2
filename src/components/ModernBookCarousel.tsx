@@ -133,7 +133,7 @@ export default function ModernBookCarousel({
 									</p>
 								</div>
 
-								<div className="prose prose-gray dark:prose-invert max-w-none line-clamp-3 text-muted-foreground text-lg italic">
+								<div className="max-w-none line-clamp-3 text-muted-foreground text-lg italic">
 									&quot;{extractTextFromRichText(review.reviewContent)}&quot;
 								</div>
 

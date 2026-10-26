@@ -55,7 +55,7 @@ export default async function AboutPage({
 						<h2 className="font-serif text-3xl font-bold">
 							{dictionary.aboutOurStory}
 						</h2>
-						<div className="prose prose-lg dark:prose-invert text-muted-foreground">
+						<div className="prose prose-lg prose-teal dark:prose-invert text-muted-foreground prose-p:text-muted-foreground">
 							<p>{dictionary.aboutStoryOne}</p>
 							<p>{dictionary.aboutStoryTwo}</p>
 							<p>{dictionary.aboutStoryThree}</p>
