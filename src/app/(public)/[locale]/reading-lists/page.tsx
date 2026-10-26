@@ -4,6 +4,15 @@ import type { Metadata } from "next";
 import { getPayload } from "payload";
 import { ReadingListCard } from "@/components/ReadingListCard";
 import { EmptyState } from "@/components/ui/empty-state";
+import {
+	Pagination,
+	PaginationContent,
+	PaginationEllipsis,
+	PaginationItem,
+	PaginationLink,
+	PaginationNext,
+	PaginationPrevious,
+} from "@/components/ui/pagination";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locale";
 import { buildPageMetadata } from "@/lib/seo/metadata";
@@ -32,15 +41,22 @@ export const revalidate = 60;
 
 export default async function ReadingListsPage({
 	params,
+	searchParams,
 }: {
 	params: Promise<{ locale: string }>;
+	searchParams: Promise<{ page?: string }>;
 }) {
 	const { locale } = await params;
 	const appLocale = normalizeLocale(locale);
+	const { page } = await searchParams;
+	const currentPage = Number(page) || 1;
+	const limit = 9;
 	const dictionary = getDictionary(appLocale);
 	const payload = await getPayload({ config: configPromise });
 
-	const { docs: readingLists } = await payload.find({
+	const listPath = `/${appLocale}/reading-lists`;
+
+	const { docs: readingLists, totalPages } = await payload.find({
 		collection: "reading-lists",
 		where: {
 			_status: {
@@ -48,6 +64,8 @@ export default async function ReadingListsPage({
 			},
 		},
 		sort: "-createdAt",
+		limit,
+		page: currentPage,
 		locale: appLocale,
 	});
 
@@ -98,6 +116,110 @@ export default async function ReadingListsPage({
 					title={dictionary.readingListsEmptyTitle}
 					description={dictionary.readingListsEmptyDescription}
 				/>
+			)}
+
+			{totalPages > 1 && (
+				<div className="mt-12">
+					<Pagination label={dictionary.paginationLabel}>
+						<PaginationContent>
+							{currentPage > 1 && (
+								<PaginationItem>
+									<PaginationPrevious
+										label={dictionary.paginationPreviousLabel}
+										text={dictionary.paginationPrevious}
+										href={`${listPath}?page=${currentPage - 1}`}
+									/>
+								</PaginationItem>
+							)}
+
+							{/* First Page */}
+							{currentPage > 3 && (
+								<>
+									<PaginationItem>
+										<PaginationLink href={`${listPath}?page=1`}>
+											1
+										</PaginationLink>
+									</PaginationItem>
+									<PaginationItem>
+										<PaginationEllipsis
+											label={dictionary.paginationMorePages}
+										/>
+									</PaginationItem>
+								</>
+							)}
+
+							{/* Page Numbers */}
+							{(() => {
+								const pages: Array<number | "..."> = [];
+								const showFirst = currentPage > 2;
+								const showLast = currentPage < totalPages - 1;
+
+								if (showFirst) {
+									pages.push(1);
+									if (currentPage > 3) pages.push("...");
+								}
+
+								const start = Math.max(1, currentPage - 1);
+								const end = Math.min(totalPages, currentPage + 1);
+
+								for (let i = start; i <= end; i++) {
+									if (showFirst && i === 1) continue; // already pushed
+									if (showLast && i === totalPages) continue; // will push later
+									pages.push(i);
+								}
+
+								if (showLast) {
+									if (currentPage < totalPages - 2) pages.push("...");
+									pages.push(totalPages);
+								}
+
+								// Simplified approach if total pages is small
+								if (totalPages <= 5) {
+									return Array.from(
+										{ length: totalPages },
+										(_, i) => i + 1,
+									).map((p) => (
+										<PaginationItem key={p}>
+											<PaginationLink
+												isActive={p === currentPage}
+												href={`${listPath}?page=${p}`}
+											>
+												{p}
+											</PaginationLink>
+										</PaginationItem>
+									));
+								}
+
+								return pages.map((p, i) => (
+									<PaginationItem key={i}>
+										{p === "..." ? (
+											<PaginationEllipsis
+												label={dictionary.paginationMorePages}
+											/>
+										) : (
+											<PaginationLink
+												isActive={p === currentPage}
+												href={`${listPath}?page=${p}`}
+											>
+												{p}
+											</PaginationLink>
+										)}
+									</PaginationItem>
+								));
+							})()}
+
+							{currentPage < totalPages && (
+								<PaginationItem>
+									<PaginationNext
+										label={dictionary.paginationNextLabel}
+										text={dictionary.paginationNext}
+										href={`${listPath}?page=${currentPage + 1}`}
+									/>
+								</PaginationItem>
+							)}
+						</PaginationContent>
+					</Pagination>
+				</div>
 			)}
 		</div>
 	);

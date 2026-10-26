@@ -1,0 +1,32 @@
+{
+	"id": "20261027-reading-list-pagination",
+	"title": "Reading-List Pagination Parity",
+	"type": "feature",
+	"status": "complete",
+	"priority": "medium",
+	"depends_on": [],
+	"created_at": "2026-10-26T14:02:39Z",
+	"updated_at": "2026-10-26T14:02:39Z",
+	"spec": "spec.md",
+	"plan": "plan.md",
+	"branch": "feat/20261027-reading-list-pagination",
+	"base_branch": "main",
+	"base_sha": "32b448fbca766fa39c6f604866451084a6b1769c",
+	"progress": {
+		"phases_total": 2,
+		"phases_verified": 2,
+		"tasks_done": 11,
+		"tasks_total": 11
+	},
+	"last_checkpoint": "5df5bc4",
+	"review_verdict": "PASS",
+	"review_rounds": 1,
+	"doc_sync": "none",
+	"pr_url": "https://github.com/mansyar/chasing-chapters-v2/pull/34",
+	"pr_state": "open",
+	"reverted_at": null,
+	"revert_commit": null,
+	"revert_pr_url": null,
+	"archived_at": "2026-10-26T14:50:00Z",
+	"archive_path": "conductor/archive/20261027-reading-list-pagination"
+}
