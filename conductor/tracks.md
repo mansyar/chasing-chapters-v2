@@ -18,4 +18,4 @@
 - [x] **Track: Translation Quota Resilience** — [20261025-translation-quota-resilience](./archive/20261025-translation-quota-resilience/index.md) — bug — high
 - [x] **Track: Access Control Hardening** — [20261026-access-control-hardening](./archive/20261026-access-control-hardening/index.md) — bug — high
 - [x] **Track: Content Typography & Reading Experience** — [20261026-content-typography](./archive/20261026-content-typography/index.md) — feature — high
-- [ ] **Track: Reading-List Pagination Parity** — [20261027-reading-list-pagination](./tracks/20261027-reading-list-pagination/index.md) — feature — medium
+- [~] **Track: Reading-List Pagination Parity** — [20261027-reading-list-pagination](./tracks/20261027-reading-list-pagination/index.md) — feature — medium
