@@ -78,7 +78,7 @@
 - **Covers:** FR-4, AC-6, AC-7
 - **Touches:** `src/collections/ReadingLists.ts`, `src/collections/__tests__/ReadingLists.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P4.T1: Exclude drafts from public reads** - covers: FR-4
   - [ ] **P4.T1.1: Add a `where` constraint for unauthenticated reads that excludes drafts, following the `publishedAndVisibleWhere` pattern Reviews already uses**
