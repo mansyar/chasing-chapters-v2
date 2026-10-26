@@ -294,6 +294,7 @@ No other deviation. `src/components/FeaturedHero.tsx` was edited **only** during
 the before/after runs in section 4 and restored each time; it is not part of any
 commit and is not in the diff against the phase base.
 
+
 ## 7. Notes - what is not proven
 
 - **F5's appearance is not verified.** The pair is right in the source and pinned
@@ -324,3 +325,79 @@ commit and is not in the diff against the phase base.
   contains an element with a `labelTemplate`, not that the element renders the
   right rating. That is the same class of check the review asked to strengthen,
   one level up.
+
+- **F5's appearance is not verified.** The pair is right in the source and pinned
+  by a test, and the contrast figures in section 3 are computed from the tokens'
+  lightness values. Nobody has looked at a rendered `pre` in either theme. The
+  light-mode block also changed - it was dark text on a white slab, it is now dark
+  text on a light-grey slab - which is a visible change the review did not ask
+  for, arrived at because one pair has to serve both modes. If a reviewer wants
+  the light-mode block to stay stark white, the fix is a per-mode override, not a
+  different token.
+- **F2's outcome is not measured.** The tests assert the prop and the two
+  declarations; they do not assert which srcset candidate a browser picks. The
+  under-fetch the review found was a real measurement on a phone; the fix is
+  correct by construction (the `sizes` now matches the grid) but no Lighthouse run
+  or device test confirms the recovery. Physical iPhone testing is a
+  workflow-declared human-only exception and was not performed.
+- **F1's fix is a behaviour change for pre-back-fill rows.** Those reviews now
+  have no neighbours at all, where before they had a wrong one. That is what the
+  doc comment promised, and the review asked for it, but it means a published
+  review with a null `publishDate` shows no prev/next nav. `publishDate` is
+  back-filled on publish, so this only reaches rows that predate the back-fill.
+- **The e2e suite does not cover prev/next navigation.** It has no test for the
+  neighbour links at all, so F1's fix rests on the unit test above. Nothing in
+  this phase added e2e coverage for it - the finding was scoped to the helper.
+- **No React render harness.** F4 remains a source assertion because the repo has
+  no component-render harness; the future-track note in `review.md` still stands.
+- **`StarRating` call-site test is four source files.** It proves each file
+  contains an element with a `labelTemplate`, not that the element renders the
+  right rating. That is the same class of check the review asked to strengthen,
+  one level up.
+
+---
+
+## Primary verification
+
+The subagent's work was re-checked on the squashed checkpoint `0e4a21b` (base
+`b6dda6b`) before acceptance.
+
+| Layer | Command | Exit | Summary |
+| --- | --- | --- | --- |
+| typecheck | `bun run typecheck` | 0 | no type errors in 265 files |
+| lint | `bun run lint` | 0 | 258 files, no fixes |
+| unit | `bun test` | 0 | 813 pass, 0 fail, 58 files |
+| e2e | `bun run test:e2e` | 0 | 112 passed, 0 failed, 0 flaky (1.7m) |
+
+The unit total moved from 809 to 813: one query-shape test was deleted (it
+asserted the shape of a wrong query) and five were added, so nothing was weakened.
+
+**Reproduced independently, not taken on report.**
+
+- **F1** - with `src/lib/review-navigation.ts` checked out from the phase base,
+  `review-navigation.test.ts` fails with `Expected length: 0 / Received length: 2`
+  and 12 pass / 1 fail. Two `find` calls for a review that has no neighbours is
+  the defect itself, not a proxy for it.
+- **F4** - with the `<StarRating>` element removed from `FeaturedHero.tsx` while
+  its import stayed, `StarRating.test.ts` fails on
+  `expect(source).toContain("<StarRating")` and 14 pass / 1 fail. That is the exact
+  shape the old import-only assertion could not see.
+
+Both were restored afterwards and `git diff HEAD` was empty, so nothing from the
+reproduction runs is in the commit.
+
+**Reviewed in the diff.** F1 anchors on `publishDate` only and the `createdAt`
+field carries a comment saying it is deliberately unread - the code now matches the
+doc comment it contradicted. F2 adds an optional `sizes` prop with the home-page
+string as the default, so the home page is untouched and only the index passes its
+own three-breakpoint value. F3 matches the class position with two patterns and
+adds a case proving the patterns fire on three regressions and ignore three
+innocent strings, which is the check that stops the guard being deleted later. F5
+sets one mode-stable pair in both the base and the invert set and asserts the four
+new declarations while rejecting the four old ones.
+
+**Result: verified.** All five findings are fixed at the root cause, each with an
+assertion that fails if the fix is reverted, and no Phase 1-5 behaviour was
+changed: the home page's `sizes`, the four `StarRating` call sites' rendered
+output, the three de-prosed files and the whole typography token map are untouched
+apart from the pre pair.
