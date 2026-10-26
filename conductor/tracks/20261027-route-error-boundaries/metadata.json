@@ -19,8 +19,8 @@
 		"tasks_done": 7,
 		"tasks_total": 7
 	},
-	"review_rounds": 1,
-	"review_verdict": "BLOCK",
+	"review_rounds": 2,
+	"review_verdict": "PASS",
 	"revert_commit": null,
 	"revert_pr_url": null,
 	"reverted_at": null,

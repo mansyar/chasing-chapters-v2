@@ -3,9 +3,9 @@
 - **Track:** `20261027-route-error-boundaries`
 - **Type:** `feature`
 - **Branch:** `feat/20261027-route-error-boundaries`
-- **Range:** `c46f3c1..d56d5f1`
+- **Range:** `c46f3c1..d56d5f1` (round 1) + fix delta `6200d4c..5239241` (round 2)
 - **Date:** `2026-10-27`
-- **Verdict:** `BLOCK` (fix phase R1 appended; Medium F1 must be fixed before completion)
+- **Verdict:** `PASS`
 
 ## Summary
 
@@ -125,10 +125,13 @@ for the FR-5 production gate) — both accepted as the smallest correct change.
 
 ## Doc sync
 
-`pending` — set to `updated`/`none` after the review fixes land.
+`none` — the review fixes needed no doc changes; the pre-review tech-stack
+notes (Sentry boundary reporting, `E2E_TEST_ROUTES` harness flag) remain
+accurate after R1.
 
 ## History
 
 | Round | Verdict | Critical | High | Medium | Low | Fixed |
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | BLOCK | 0 | 0 | 1 | 3 | 0 |
+| 2 | PASS | 0 | 0 | 0 | 0 | 4 (F1–F4 fixed in `5239241`, re-verified by primary: typecheck 275 clean, lint 268 clean, 831 pass) |
