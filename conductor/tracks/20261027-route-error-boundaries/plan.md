@@ -56,7 +56,11 @@ The primary appends after acceptance:
 - **Covers:** F1, F2, F3, F4
 - **Touches:** `src/lib/error-locale.ts`, `src/lib/__tests__/error-locale.test.ts`, `src/app/(public)/[locale]/error.tsx`, `src/app/global-error.tsx`, `src/app/(public)/[locale]/boom/page.tsx`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **R1.T1: Resolve F1 (navigator.languages)** — covers: F1
-- [ ] **R1.T2: Resolve F2–F4 (comment accuracy)** — covers: F2, F3, F4
+**Result:** verified
+**Checkpoint:** 5239241
+**Evidence:** conductor/tracks/20261027-route-error-boundaries/verification/phase-R1.md
+
+- [x] **R1.T1: Resolve F1 (navigator.languages)** — covers: F1
+- [x] **R1.T2: Resolve F2–F4 (comment accuracy)** — covers: F2, F3, F4
