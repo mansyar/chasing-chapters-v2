@@ -39,7 +39,7 @@ The primary appends after acceptance:
 - **Covers:** FR-3, AC-4, AC-5
 - **Touches:** `src/hooks/revalidatePages.ts`, `src/hooks/__tests__/revalidatePages.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P2.T1: Neighbour lookup + revalidation in `revalidateReviewPages`** — covers: FR-3, AC-4
   - [ ] **P2.T1.1: Reuse publishDate neighbour ordering; both locales via `localizedPaths`**
