@@ -16,4 +16,4 @@
 - [x] **Track: Comment Trust & Moderation — shared moderation module, spam-signal persistence, trusted bypass, dashboard moderation widget** *Link: [comment_trust_moderation_20261010/index.md](./archive/comment_trust_moderation_20261010/index.md)*
 - [x] **Track: Docs Truthfulness — sync README, admin guide, and pagespeed opening with the shipped product** *Link: [docs_truthfulness_20261010/index.md](./archive/docs_truthfulness_20261010/index.md)*
 - [x] **Track: Translation Quota Resilience** — [20261025-translation-quota-resilience](./archive/20261025-translation-quota-resilience/index.md) — bug — high
-- [ ] **Track: Access Control Hardening** — [20261026-access-control-hardening](./tracks/20261026-access-control-hardening/index.md) — bug — high
+- [~] **Track: Access Control Hardening** — [20261026-access-control-hardening](./tracks/20261026-access-control-hardening/index.md) — bug — high
