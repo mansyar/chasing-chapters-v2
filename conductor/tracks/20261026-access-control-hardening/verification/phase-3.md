@@ -135,3 +135,21 @@ None. Both changed files are inside `Touches`.
 - **No field-level access on `trusted` or `banned`, deliberately.** The brief forbade it and it remains out of scope. The reasoning is worth writing down because it is the kind of change a later reviewer will reach for: with `create` closed and `update` admin-only, no anonymous path reaches either flag, so a field rule would add nothing but blast radius. If a future change ever opens `update` to writers - which `Comments.ts`'s sibling rule does for comments - this reasoning expires and the field rules become necessary. That dependency is the thing to remember, not the rule.
 - **The `afterChange` trust grant was not touched.** `Comments.afterChange` still sets `trusted: true` at three approved comments. Combined with Phase 2 (only an admin can approve), the flag now moves only on admin decisions or on an admin's own commenter edit - which is the intended consequence, but it does mean the automatic grant is now reachable only through admin action.
 - **Both halves of the chain matter.** Phase 2 closed `POST /api/comments`; this phase closes `POST /api/commenters`. Either alone would have broken the documented exploit, but the spec keeps them separate because closing only the comment endpoint would still leave an attacker able to mint a trusted row and use it the moment any write path reopens. Both are now closed.
+## Primary verification
+
+| Layer | Command | Exit | Summary |
+|---|---|---|---|
+| static | `bun run typecheck` | 0 | No type errors in 254 files (531.37ms) |
+| static | `bun run lint` | 0 | Checked 246 files, no fixes applied |
+| unit | `bun test` | 0 | 703 pass, 0 fail, 1664 expect() calls, 51 files (2.64s) |
+| unit | `bun test src/collections/__tests__/Commenters.test.ts` | 0 | 3 pass, 0 fail, 12 expect() calls |
+
+The primary reproduced the before/after independently against the phase base `0a4994e`: **2 pass, 1 fail**, with `denies an anonymous create` reporting `Expected: false, Received: true`.
+
+This failure is stronger evidence than the equivalent in Phases 1 and 2, and the difference is worth stating precisely. There, the pre-fix failures included cases reporting `Received: undefined` because no field rule existed at all, which proves only that configuration was added. Here the `create` callback existed and returned the permissive value `true`, so the failure demonstrates the defect itself. The evidence file makes that distinction rather than claiming three proofs, and the primary confirms it.
+
+The primary also confirmed `src/collections/Comments.ts` is byte-identical to the phase base (`git diff` empty for that path) - Phase 2's verified work was not disturbed, which matters because this phase's rationale depends on the `trusted` flag being readable by `Comments.beforeChange`.
+
+**Result: verified.**
+
+AC-3 is satisfied by direct test evidence. FR-2 by the code. The new suite also pins `read`, `update` and `delete` so a later edit cannot loosen them unnoticed. AC-4 (guest commenting still succeeds end to end) is correctly left to Phase 5's P5.T4.5, where the whole comment path is exercised after both create rules have closed - the note in section 8 explains why it cannot be proven here.

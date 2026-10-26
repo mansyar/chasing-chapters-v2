@@ -58,15 +58,18 @@
 - **Covers:** FR-2, AC-3
 - **Touches:** `src/collections/Commenters.ts`, `src/collections/__tests__/Commenters.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** in_progress
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** 9a345df
+- **Evidence:** conductor/tracks/20261026-access-control-hardening/verification/phase-3.md
 
-- [ ] **P3.T1: Close anonymous commenter creation** - covers: FR-2
-  - [ ] **P3.T1.1: Change `create` from `() => true` to deny, leaving `read`, `update` and `delete` admin-only as they are**
-  - [ ] **P3.T1.2: Confirm the server action's local-API create path is unaffected, since it does not pass `overrideAccess: false`**
+- [x] **P3.T1: Close anonymous commenter creation** - covers: FR-2
+  - [x] **P3.T1.1: Change `create` from `() => true` to deny, leaving `read`, `update` and `delete` admin-only as they are**
+  - [x] **P3.T1.2: Confirm the server action's local-API create path is unaffected, since it does not pass `overrideAccess: false`**
 
-- [ ] **P3.T2: Cover the rule** - covers: AC-3
-  - [ ] **P3.T2.1: Test that an anonymous create is rejected**
-  - [ ] **P3.T2.2: Demonstrate the test failing on the pre-fix commit**
+- [x] **P3.T2: Cover the rule** - covers: AC-3
+  - [x] **P3.T2.1: Test that an anonymous create is rejected**
+  - [x] **P3.T2.2: Demonstrate the test failing on the pre-fix commit**
 
 ## Phase 4: Reading list visibility
 
