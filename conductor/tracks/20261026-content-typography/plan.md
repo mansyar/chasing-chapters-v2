@@ -100,7 +100,7 @@ The primary appends after acceptance:
 - **Covers:** FR-5, FR-6, FR-9, AC-4, AC-5
 - **Touches:** `src/components/reviews/Breadcrumbs.tsx`, `src/components/reviews/__tests__/Breadcrumbs.test.ts`, `src/lib/review-navigation.ts`, `src/lib/__tests__/review-navigation.test.ts`, `src/app/(public)/[locale]/reviews/[slug]/page.tsx`, `src/app/(public)/[locale]/reading-lists/[slug]/page.tsx`, `src/lib/i18n/dictionary.ts`, `src/lib/i18n/__tests__/dictionary.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P4.T1: Build the Breadcrumbs component** — covers: FR-5
   - [ ] **P4.T1.1: A server component rendering Home / section / title, reusing `breadcrumbHome`, `navReviews` and `navReadingLists`**
