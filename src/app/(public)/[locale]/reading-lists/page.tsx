@@ -32,11 +32,16 @@ export const revalidate = 60;
 
 export default async function ReadingListsPage({
 	params,
+	searchParams,
 }: {
 	params: Promise<{ locale: string }>;
+	searchParams: Promise<{ page?: string }>;
 }) {
 	const { locale } = await params;
 	const appLocale = normalizeLocale(locale);
+	const { page } = await searchParams;
+	const currentPage = Number(page) || 1;
+	const limit = 9;
 	const dictionary = getDictionary(appLocale);
 	const payload = await getPayload({ config: configPromise });
 
@@ -48,6 +53,8 @@ export default async function ReadingListsPage({
 			},
 		},
 		sort: "-createdAt",
+		limit,
+		page: currentPage,
 		locale: appLocale,
 	});
 
