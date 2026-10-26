@@ -40,7 +40,7 @@ The primary appends after acceptance:
 - **Covers:** FR-3, FR-4, NFR-3, NFR-4, AC-1, AC-2, AC-8
 - **Touches:** `src/app/(public)/[locale]/reading-lists/page.tsx`, `e2e/reading-lists-pagination.spec.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e -- reading-lists-pagination`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P2.T1: Render reviews-pattern pager (prev/next + numbers) when `totalPages > 1`** — covers: FR-3, FR-4
   - [ ] **P2.T1.1: Pager links carry locale path and `?page=`**
