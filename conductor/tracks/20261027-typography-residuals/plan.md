@@ -39,11 +39,15 @@ The primary appends after acceptance:
 - **Covers:** FR-3, AC-4, AC-5
 - **Touches:** `src/hooks/revalidatePages.ts`, `src/hooks/__tests__/revalidatePages.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P2.T1: Neighbour lookup + revalidation in `revalidateReviewPages`** — covers: FR-3, AC-4
-  - [ ] **P2.T1.1: Reuse publishDate neighbour ordering; both locales via `localizedPaths`**
-- [ ] **P2.T2: No-neighbour / draft edge cases** — covers: FR-3, AC-5
+**Result:** verified
+**Checkpoint:** 222699d
+**Evidence:** conductor/tracks/20261027-typography-residuals/verification/phase-2.md
+
+- [x] **P2.T1: Neighbour lookup + revalidation in `revalidateReviewPages`** — covers: FR-3, AC-4
+  - [x] **P2.T1.1: Reuse publishDate neighbour ordering; both locales via `localizedPaths`**
+- [x] **P2.T2: No-neighbour / draft edge cases** — covers: FR-3, AC-5
 
 <!--
 The primary appends after acceptance:
