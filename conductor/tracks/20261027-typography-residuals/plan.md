@@ -63,7 +63,11 @@ The primary appends after acceptance:
 - **Covers:** FR-4, FR-5, AC-6, AC-7
 - **Touches:** `src/components/ui/card.tsx`, `src/lib/__tests__/typography-*.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** in_progress
+- **Status:** verified
+
+**Result:** verified
+**Checkpoint:** 3154bb5
+**Evidence:** conductor/tracks/20261027-typography-residuals/verification/phase-3.md
 
 - [ ] **P3.T1: Remove unreachable `has-data-[slot=card-action]` hook** — covers: FR-4, AC-6
 - [ ] **P3.T2: Plugin-derived variable guard test** — covers: FR-5, AC-7
