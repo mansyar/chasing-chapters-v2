@@ -100,30 +100,33 @@
 - **Covers:** FR-5, FR-6, FR-8, FR-11, AC-4, AC-8, AC-9, AC-10, AC-11, AC-13
 - **Touches:** `src/app/actions/comments.ts`, `src/app/actions/__tests__/comments.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** in_progress
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** 5f5af2d
+- **Evidence:** conductor/tracks/20261026-access-control-hardening/verification/phase-5.md
 
-- [ ] **P5.T1: Make reporting an access-checked, field-scoped write** - covers: FR-5, FR-11
-  - [ ] **P5.T1.1: Resolve the comment, verify it is approved and its review is publicly visible, and reject otherwise**
-  - [ ] **P5.T1.2: Update only `status`, with `overrideAccess: false`, so `content`, `relatedReview` and a transition to `approved` are impossible**
-  - [ ] **P5.T1.3: Revalidate the affected review paths after a successful report**
-  - [ ] **P5.T1.4: Make a repeat report idempotent — no error, no double increment of `reportCount`**
+- [x] **P5.T1: Make reporting an access-checked, field-scoped write** - covers: FR-5, FR-11
+  - [x] **P5.T1.1: Resolve the comment, verify it is approved and its review is publicly visible, and reject otherwise**
+  - [x] **P5.T1.2: Update only `status`, with `overrideAccess: false`, so `content`, `relatedReview` and a transition to `approved` are impossible**
+  - [x] **P5.T1.3: Revalidate the affected review paths after a successful report**
+  - [x] **P5.T1.4: Make a repeat report idempotent — no error, no double increment of `reportCount`**
 
-- [ ] **P5.T2: Stop the commenter name takeover** - covers: FR-6
-  - [ ] **P5.T2.1: Remove the update that rewrites an existing commenter's `name` from the submitted value**
-  - [ ] **P5.T2.2: Confirm `Comments.authorName` carries the submitted name so display is unaffected**
+- [x] **P5.T2: Stop the commenter name takeover** - covers: FR-6
+  - [x] **P5.T2.1: Remove the update that rewrites an existing commenter's `name` from the submitted value**
+  - [x] **P5.T2.2: Confirm `Comments.authorName` carries the submitted name so display is unaffected**
 
-- [ ] **P5.T3: Bound comment fetching** - covers: FR-8
-  - [ ] **P5.T3.1: Require a positive integer `reviewId` and reject otherwise**
-  - [ ] **P5.T3.2: Rate-limit per IP using the existing `rateLimit` helper**
-  - [ ] **P5.T3.3: Lower the hard limit from 100 to the page size the UI actually renders**
+- [x] **P5.T3: Bound comment fetching** - covers: FR-8
+  - [x] **P5.T3.1: Require a positive integer `reviewId` and reject otherwise**
+  - [x] **P5.T3.2: Rate-limit per IP using the existing `rateLimit` helper**
+  - [x] **P5.T3.3: Lower the hard limit from 100 to the page size the UI actually renders**
 
-- [ ] **P5.T4: Cover the actions** - covers: AC-4, AC-8, AC-9, AC-10, AC-11, AC-13
-  - [ ] **P5.T4.1: Test that reporting sets `reported` and revalidates**
-  - [ ] **P5.T4.2: Test that a report cannot alter `content`, cannot set `approved`, and cannot change `relatedReview`**
-  - [ ] **P5.T4.3: Test that a known email with a different name leaves the commenter row untouched and the comment shows the submitted name**
-  - [ ] **P5.T4.4: Test that a missing or non-positive `reviewId` is rejected and the rate limit is enforced**
-  - [ ] **P5.T4.5: Test that guest commenting still succeeds end to end now that `create` is closed**
-  - [ ] **P5.T4.6: Demonstrate the bypass tests failing on the pre-fix commit**
+- [x] **P5.T4: Cover the actions** - covers: AC-4, AC-8, AC-9, AC-10, AC-11, AC-13
+  - [x] **P5.T4.1: Test that reporting sets `reported` and revalidates**
+  - [x] **P5.T4.2: Test that a report cannot alter `content`, cannot set `approved`, and cannot change `relatedReview`**
+  - [x] **P5.T4.3: Test that a known email with a different name leaves the commenter row untouched and the comment shows the submitted name**
+  - [x] **P5.T4.4: Test that a missing or non-positive `reviewId` is rejected and the rate limit is enforced**
+  - [x] **P5.T4.5: Test that guest commenting still succeeds end to end now that `create` is closed**
+  - [x] **P5.T4.6: Demonstrate the bypass tests failing on the pre-fix commit**
 
 ## Phase 6: Like visibility and moderation revalidation
 

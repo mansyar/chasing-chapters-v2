@@ -309,3 +309,79 @@ again on the final tree carrying this report. Both exited 0 with
   would invite the UI to render a count it cannot page through. Left alone.
 
 **Result: verified.**
+
+## Primary verification
+
+The primary re-ran every layer on the squashed checkpoint `5f5af2d` and
+reproduced the defects independently.
+
+| Layer | Command | Exit | Summary |
+| --- | --- | --- | --- |
+| static | `bun run typecheck` | 0 | No type errors in 256 files |
+| static | `bun run lint` | 0 | 248 files checked, no fixes applied |
+| unit | `bun test` | 0 | 741 pass, 0 fail, 1818 expect() calls, 53 files |
+
+**Reproduced from the phase base `3b34c71`**, restoring the production file
+with `git checkout <base> -- src/app/actions/comments.ts` and keeping this
+phase's tests: **10 pass, 11 fail**, exit 1. After restoring: **21 pass, 0
+fail, 102 expect() calls**.
+
+**Two of the failures were inspected to confirm they fail for the right reason
+rather than because a mock was absent**, which is the caveat that applied to
+Phases 1 and 2:
+
+- `leaves an existing commenter's name untouched` failed with
+  `expect(received).toHaveLength(0)` → `Received length: 1` on the call
+  filtered to `collection === "commenters"`. The takeover write happened.
+- `counts a report without touching status below the threshold` failed with
+  `expect(received).not.toHaveProperty("status")` → `Received value:
+  "approved"`. A single report wrote `status: "approved"` into the update —
+  the defect in its sharpest form, since it shows a report could not merely
+  hide a comment but write an approval.
+
+**Both plan deviations reviewed and accepted.** The brief predicted them and
+the implementation follows the stated resolution rather than the literal plan
+text:
+
+1. `P5.T1.2`'s "update only `status`, with `overrideAccess: false`" is
+   unimplementable — reporting must increment `reportCount` and append to
+   `reportedBy`, and `overrideAccess: false` would deny every report because
+   `Comments.access.update` returns `false` for a caller with no user. AC-9
+   is satisfied by construction instead: the update is an explicit object
+   literal of `{ reportCount, reportedBy, status? }` with nothing spread from
+   the request, and `status` is typed `"reported"` so no other value is
+   assignable.
+2. `P5.T3.3`'s "the page size the UI actually renders" refers to nothing —
+   `CommentList` maps over every comment with no pagination. The 100-row
+   ceiling is kept and its JSDoc says plainly that it is a defensive bound, not
+   a page size, and that pagination is the change that would make a smaller
+   number correct. Lowering it would have truncated lists with no way to reach
+   the rest, which NFR-3 forbids.
+
+Both are recorded in the evidence file as deviations against the plan's wording,
+not as silent reinterpretations.
+
+**Result: verified.** AC-4, AC-8, AC-9, AC-10, AC-11 and AC-13 are satisfied by
+test evidence; FR-5, FR-6, FR-8 and FR-11 by the code. The five pre-existing
+`submitComment` cases are unmodified and still pass.
+
+Four observations carried to review, none blocking:
+
+- **The rate limit fails open.** `rateLimit` returns success when Redis is
+  unreachable, so with Redis down the new fetch limit does nothing. That is
+  existing helper behaviour and the spec puts it out of scope, but the new limit
+  inherits it.
+- **Concurrent reports can under-count.** Two reports arriving together can both
+  read `reportCount: 1` and both write `2`, so three reports may not flip a
+  comment. The threshold is a moderation signal, not a security boundary, and
+  fixing it needs a database-level increment.
+- **The idempotency check precedes the visibility gate**, so a repeat report from
+  the same address returns success even if the review has since been unpublished.
+  It reveals nothing the reporter did not already know — they reported the
+  comment — but the ordering is deliberate and worth a reviewer's eye.
+- **What is not proven.** The tests assert what the action asked Payload to do;
+  they do not execute Payload's access layer, so "`overrideAccess: false` would
+  deny every report" rests on reading `Comments.ts` at source plus Phase 2's
+  verification. AC-4 proves the action passes no `user`/`overrideAccess`,
+  which is why the closed create rules do not block it, rather than exercising
+  those rules against a live database.
