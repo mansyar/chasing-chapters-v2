@@ -155,7 +155,7 @@
 - **Covers:** F1, F2, F3, F4
 - **Touches:** `src/collections/Commenters.ts`, `src/collections/__tests__/Commenters.test.ts`, `src/app/actions/comments.ts`, `src/app/actions/__tests__/comments.test.ts`, `src/components/comments/CommentSection.tsx`, `src/lib/i18n/dictionary.ts`, `src/lib/publish-visibility.ts`, `src/app/actions/moderation.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **R1.T1: Close the writer-scoped trusted-commenter path** - covers: F1
   - [ ] **R1.T1.1: Add field-level `create` and `update` access on `trusted` and `banned`, admin-only**
