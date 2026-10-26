@@ -20,3 +20,4 @@
 - [x] **Track: Content Typography & Reading Experience** — [20261026-content-typography](./archive/20261026-content-typography/index.md) — feature — high
 - [x] **Track: Reading-List Pagination Parity** — [20261027-reading-list-pagination](./archive/20261027-reading-list-pagination/index.md) — feature — medium
 - [x] **Track: Route error boundaries** — [20261027-route-error-boundaries](./archive/20261027-route-error-boundaries/index.md) — feature — medium
+- [ ] **Track: Typography residuals** — [20261027-typography-residuals](./tracks/20261027-typography-residuals/index.md) — refactor — low
