@@ -73,7 +73,7 @@ The primary appends after acceptance:
 - **Covers:** FR-4, AC-3
 - **Touches:** `src/components/reviews/StarRating.tsx`, `src/components/reviews/__tests__/StarRating.test.ts`, `src/components/FeaturedHero.tsx`, `src/components/ModernBookCarousel.tsx`, `src/components/ReviewCard.tsx`, `src/app/(public)/[locale]/reviews/[slug]/page.tsx`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P3.T1: Build the component** — covers: FR-4
   - [ ] **P3.T1.1: A read-only server component with size variants matching the four current renderings**
