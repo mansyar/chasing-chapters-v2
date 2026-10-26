@@ -44,13 +44,17 @@ The primary appends after acceptance:
 - **Covers:** FR-3, AC-2
 - **Touches:** `src/app/(public)/[locale]/reviews/[slug]/page.tsx`, `src/lib/__tests__/typography-source.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P2.T1: Re-tokenize the three structured sections** — covers: FR-3
   - [ ] **P2.T1.1: Replace the hardcoded green, orange and blue class strings with token-driven classes derived from `globals.css`**
   - [ ] **P2.T1.2: Verify the same classes hold contrast in dark mode, not just light**
 - [ ] **P2.T2: Prove the sections are tokenized** — covers: AC-2
   - [ ] **P2.T2.1: Extend the source test to assert no hardcoded palette colour classes remain in the structured-section blocks**
+
+- [ ] **P2.T3: Make the mood badge colour-safe** - covers: FR-3
+  - [ ] **P2.T3.1: Replace the hex-append alpha trick with color-mix() so the badge renders correctly for any colour format**
+  - [ ] **P2.T3.2: Extend the source test to cover the badge fix or record why the badge is not source-testable**
 
 <!--
 The primary appends after acceptance:
