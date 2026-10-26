@@ -1,0 +1,32 @@
+{
+	"id": "20261026-access-control-hardening",
+	"title": "Access Control Hardening",
+	"type": "bug",
+	"status": "new",
+	"priority": "high",
+	"depends_on": [],
+	"created_at": "2026-10-26T00:47:24Z",
+	"updated_at": "2026-10-26T00:47:24Z",
+	"spec": "spec.md",
+	"plan": "plan.md",
+	"branch": "fix/20261026-access-control-hardening",
+	"base_branch": "main",
+	"base_sha": "a6ee383088b34b3ba327b835099fe6840edcbe60",
+	"progress": {
+		"phases_total": 6,
+		"phases_verified": 0,
+		"tasks_total": 15,
+		"tasks_done": 0
+	},
+	"last_checkpoint": null,
+	"review_verdict": null,
+	"review_rounds": 0,
+	"doc_sync": "pending",
+	"pr_url": null,
+	"pr_state": null,
+	"reverted_at": null,
+	"revert_commit": null,
+	"revert_pr_url": null,
+	"archived_at": null,
+	"archive_path": null
+}
