@@ -6,11 +6,12 @@
 - **Range:** `a6ee383..HEAD`
 - **Date:** `2026-10-26T04:10:00Z`
 - **Verdict:** `PASS WITH FINDINGS`
-- **Gate:** blocked — `review.strict` is `true`, so Phase R1 must land before a PR
+- **Gate:** cleared - Phases R1, R2 and R3 are verified; every finding raised in any round is fixed
 
 > The header records the severity-based verdict: no Critical or High finding
-> remains. The gate is separate — `metadata.review_verdict` records `BLOCK`
-> because strict mode allows no deferrals and four findings are open.
+> remains. The gate is separate - it records whether strict mode's no-deferral
+> rule is satisfied. It was `BLOCK` while findings were open and is cleared now
+> that every one of them has been fixed and verified.
 
 ## Summary
 
@@ -128,6 +129,7 @@ None.
   - **Fix:** Add `access: { create: ({ req: { user } }) => user?.role === "admin", update: ({ req: { user } }) => user?.role === "admin" }` to both `trusted` and `banned`. Neither the server action nor `Comments.afterChange` is affected — both write through the Local API where `overrideAccess` defaults to true, so field rules are not consulted. Add cases asserting a writer is denied both fields and an admin is allowed.
   - **Requirement:** FR-2, FR-9
   - **Test gap:** No test that a writer cannot set `trusted` on a commenter row.
+  - **Resolution:** **fixed** in Phase R1 at `ed87553`. `trusted` and `banned` carry field-level `create` and `update` rules limited to admins. Pinned by `src/collections/__tests__/Commenters.test.ts`, and the two legitimate writers (`Comments.afterChange` promoting a commenter at three approvals, and `submitComment` creating one) are proven unaffected by a test driving the real hook, because both write through the Local API where field rules are not consulted.
 
 - **F2 - The new fetch limit can silently empty a comment section**
   - **File:** `src/app/actions/comments.ts:371-384` (and `src/components/comments/CommentSection.tsx:34-38`)
@@ -136,6 +138,7 @@ None.
   - **Fix:** Key the limit as `comments:${ip}:${reviewId}` following the like action's pattern, with a ceiling generous enough that ordinary browsing on one review cannot reach it; and give `CommentSection` an error branch so a rejected fetch renders a message rather than the empty state.
   - **Requirement:** FR-8, NFR-3
   - **Test gap:** No test that `CommentSection` renders an error state rather than the empty state when the action returns `{ success: false }`.
+  - **Resolution:** **fixed** in Phase R1 at `ed87553` and again in Phase R2 at `6faa182`. The limit is keyed `comments:${ip}:${reviewId}` and the component renders a distinct error branch through a pure `selectCommentsRender` selector rather than the empty state. Round 2 then found the retention half of R1's fix was not real - the module kept the rows but the component rendered the error block instead - and R2 reconciled module, render and test so a failed refresh keeps the rows with a banner above them.
 
 ### Low
 
@@ -146,6 +149,7 @@ None.
   - **Fix:** Reword both comments to say revalidation is required by FR-10/FR-11 as defence in depth for any server-rendered surface, and note that the comment list is client-fetched. Gate `reportComment`'s revalidation on the status actually becoming `reported`.
   - **Requirement:** FR-10, FR-11
   - **Test gap:** None.
+  - **Resolution:** **fixed** in Phase R1 at `ed87553`. Both comments now describe revalidation as defence in depth and note that the comment list is client-fetched; `reportComment` revalidates only once the status actually becomes `reported`.
 
 - **F4 - `canAcceptPublicWrite`'s doc block understates its contract**
   - **File:** `src/lib/publish-visibility.ts:109-116`
@@ -154,7 +158,60 @@ None.
   - **Fix:** Change "a reader's comment" to "a public write (a comment, a report, a like)" and name the three call sites.
   - **Requirement:** FR-5, FR-7
   - **Test gap:** None.
+  - **Resolution:** **fixed** in Phase R1 at `ed87553`. The doc block now names all three call sites (`submitComment`, `reportComment`, `toggleLikeReview`) and says a fourth public write belongs behind the call rather than a hand-rolled `_status` check.
 
+### Round 2 - findings raised by the delta re-review of Phase R1
+
+- **D1 - The fetch rate limit lost its aggregate bound**
+  - **File:** `src/app/actions/comments.ts:391-395`
+  - **What:** The key moved from `comments:${ip}` to `comments:${ip}:${reviewId}`, so each review id got its own bucket and breadth was unbounded again. The old key's stated purpose - making the action useless for enumerating the catalogue - was deleted from the comment with no replacement.
+  - **Why:** Defect 7 in the spec is exactly that unbounded read. Fixing the shared-bucket problem by keying per review removed the other half of the defence.
+  - **Fix:** Keep the per-review bucket, add an aggregate `comments:${ip}` bucket checked first at 600/60s, and state which bound each key provides.
+  - **Requirement:** FR-8
+  - **Test gap:** No test that calls across many distinct review ids trip the aggregate key.
+  - **Resolution:** **fixed** in Phase R2 at `6faa182`. The aggregate bucket is checked first at 1200/60s - ten times the per-review ceiling in force, not the 600 the review suggested, which was ten times the older ceiling of 60 - and the comment states which bound each key provides.
+
+- **D2 - The retention contract was not real**
+  - **File:** `src/app/actions/comments.ts:371-384` and `src/components/comments/CommentSection.tsx:34-38`
+  - **What:** `applyCommentsResult` documented and tested that a failed refresh keeps the comments on screen, but the component rendered `hasError ? <error block> : <CommentList comments={comments} />`, so the retained array was never rendered.
+  - **Why:** A reader who submitted and was then rate-limited lost the list - the exact outcome the module exists to prevent. The test passed while asserting behaviour no consumer rendered, and the evidence contradicted itself.
+  - **Fix:** Render both - the rows plus an inline banner when `hasError` and rows are present, the error block only for the initial load - or drop the retention claim.
+  - **Requirement:** FR-8, NFR-3
+  - **Test gap:** No assertion covers the list-with-error branch passing the retained array.
+  - **Resolution:** **fixed** in Phase R2 at `6faa182` and hardened again in Phase R3 at `352a3cb`. A pure `selectCommentsRender` selector distinguishes a failed initial load (error block) from a failed refresh with rows (rows plus a banner), and the round 3 addition asserts the retained array is what reaches `CommentList`.
+
+- **D3 - The phase state overstated what ran**
+  - **File:** `conductor/tracks/20261026-access-control-hardening/plan.md:158-160`
+  - **What:** Phase R1 was recorded `verified` while `bun run test:e2e`, conditionally required by `workflow.md` for a phase touching user-facing flows, did not run.
+  - **Why:** The evidence was honest about the gap, so nothing was hidden - but the recorded state was inaccurate.
+  - **Fix:** Run e2e and record it, or mark the phase `partial`.
+  - **Requirement:** workflow
+  - **Test gap:** None.
+  - **Resolution:** **fixed** in Phase R2 at `6faa182`. `bun run test:e2e` ran as part of that phase's verification command: 112 passed, 0 failed, 0 flaky. The primary re-ran it independently on the squashed checkpoint and recorded the result in `verification/phase-R2.md`.
+
+### Round 3 - findings raised by the delta re-review of Phase R2
+
+The round 3 reviewer numbered its findings F1 and F2, which collide with round
+1's F1 and F2. They are recorded here as **F5** and **F6** so every finding
+keeps a stable, unique id.
+
+- **F5 - The aggregate ceiling's justification was false as written**
+  - **File:** `src/app/actions/comments.ts:82-86`
+  - **What:** The comment claimed "since one review id can contribute at most 120 of them, it has to have named at least ten distinct review ids to get there". `rateLimit` increments its counter at `src/lib/rate-limit.ts:44` and only then compares it at `:56`, so a refused call still spends the counter - and because the aggregate was checked first, a call the per-review bucket went on to refuse had already spent the address-wide budget.
+  - **Why:** A client sending ~20 requests/second to one review for a minute exhausted the address-wide budget and was then refused comment reads on *every* review, for everyone behind that address - the shared-bucket harm the per-review key exists to remove, reintroduced through the increment-before-compare behaviour. The bound on breadth was unchanged; only the derivation was wrong.
+  - **Fix:** Check the per-review bucket first so a refused call does not also spend the aggregate, or reword to state the true property.
+  - **Requirement:** FR-8
+  - **Test gap:** No test that a call refused by the per-review bucket still increments the aggregate counter.
+  - **Resolution:** **fixed** in Phase R3 at `352a3cb`. The per-review bucket is now checked first, so the address-wide counter advances only for calls a per-review bucket allowed - which makes the "ten distinct review ids" claim true for the first time rather than false as written. The doc block records why the order is load-bearing. Reproduced independently by the primary: reverting the action gives 23 pass, 3 fail, including "does not spend the address-wide budget on a call the per-review bucket refuses".
+
+- **F6 - The source-level render assertions were brittle in both directions**
+  - **File:** `src/components/comments/__tests__/comment-fetch-state.test.ts:192-194`
+  - **What:** The two negative `isLoading?`/`hasError?` assertions scanned the whole component file, so an unrelated ternary anywhere in it would fail the test with no behaviour change. Conversely a source-level assertion cannot see inside a branch: a component passing `comments={[]}` in the `list-with-error` branch would pass every case.
+  - **Why:** The technique is legitimate - this project has no React harness and the repo already uses source assertions in `dictionary-source.test.ts` - but it needs scoping, and the second half of the gap meant the retained array was still not proven to reach the screen.
+  - **Fix:** Scope the negative assertions to the comments-list region, and assert the list-with-error branch passes the retained array.
+  - **Requirement:** FR-8, NFR-3
+  - **Test gap:** No assertion covers the list-with-error branch passing the retained array.
+  - **Resolution:** **fixed** in Phase R3 at `352a3cb`. The primary verified the gap closed by mutation: against a `comments={[]}` mutation the round 2 test file passes 14/14 and the round 3 test file fails 1 of 15, on "passes the retained rows to the list in the list-with-error branch".
 ## Overrides
 
 None.
@@ -212,10 +269,25 @@ fixed in Phase R1 under strict mode rather than deferred.
 
 ## Doc sync
 
-`pending`
+`updated`
+
+The post-review sync recorded what the fix rounds changed in behaviour rather
+than adding new behaviour. `conductor/tech-stack.md` gained an Access Control
+row naming the field-level rules, the closed anonymous creates, the
+`ReadingLists` read shape and `canAcceptPublicWrite` as the single gate for
+public writes, and its Comment Moderation row now records that a status change
+revalidates the review's locale paths. `docs/ADMIN_GUIDE.md` notes that a
+moderation decision takes effect immediately rather than after the cache
+window. `product.md` and `product-guidelines.md` are untouched because nothing
+reader-facing changed. The per-review and aggregate fetch limits, the comment
+refresh banner and the new `commentsLoadError` / `commentsRefreshError` strings
+are recorded in the code and in the phase evidence.
 
 ## History
 
 | Round | Verdict | Critical | High | Medium | Low | Fixed |
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | PASS WITH FINDINGS (gate: BLOCK) | 0 | 0 | 2 | 2 | 0 |
+| 2 | PASS WITH FINDINGS (gate: BLOCK) | 0 | 0 | 2 | 1 | 4 |
+| 3 | PASS WITH FINDINGS (gate: BLOCK) | 0 | 0 | 0 | 0 | 0 |
+| 4 | PASS WITH FINDINGS (gate: cleared) | 0 | 0 | 0 | 0 | 2 |

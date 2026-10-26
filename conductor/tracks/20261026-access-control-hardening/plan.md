@@ -207,16 +207,20 @@
 - **Covers:** F1, F2
 - **Touches:** `src/app/actions/comments.ts`, `src/app/actions/__tests__/comments.test.ts`, `src/components/comments/__tests__/comment-fetch-state.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** in_progress
+- **Status:** verified
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** 352a3cb
+- **Evidence:** conductor/tracks/20261026-access-control-hardening/verification/phase-R3.md
 
-- [ ] **R3.T1: Stop a refused per-review call from spending the address budget** - covers: F1
-  - [ ] **R3.T1.1:** Check the per-review bucket before the aggregate one, so a call the per-review bucket refuses returns without incrementing the address-wide counter.
-  - [ ] **R3.T1.2:** Confirm a sweep across many distinct review ids still fills the aggregate bucket, since a sweep passes each per-review bucket trivially - the sweep bound must survive the reordering.
-  - [ ] **R3.T1.3:** Correct the doc block so the "at least ten distinct review ids" claim states the property the code now actually has.
-  - [ ] **R3.T1.4:** Test that a call refused by the per-review bucket does not increment the aggregate counter, and that the aggregate still fires for a sweep.
-- [ ] **R3.T2: Scope the source assertions and cover the retained array** - covers: F2
-  - [ ] **R3.T2.1:** Scope the two negative `isLoading?`/`hasError?` assertions to the comments-list region of the component, so an unrelated edit elsewhere in the file cannot trip them.
-  - [ ] **R3.T2.2:** Assert the list-with-error branch passes the retained array rather than an empty one.
+- [x] **R3.T1: Stop a refused per-review call from spending the address budget** - covers: F5
+  - [x] **R3.T1.1:** Check the per-review bucket before the aggregate one, so a call the per-review bucket refuses returns without incrementing the address-wide counter.
+  - [x] **R3.T1.2:** Confirm a sweep across many distinct review ids still fills the aggregate bucket, since a sweep passes each per-review bucket trivially - the sweep bound must survive the reordering.
+  - [x] **R3.T1.3:** Correct the doc block so the "at least ten distinct review ids" claim states the property the code now actually has.
+  - [x] **R3.T1.4:** Test that a call refused by the per-review bucket does not increment the aggregate counter, and that the aggregate still fires for a sweep.
+- [x] **R3.T2: Scope the source assertions and cover the retained array** - covers: F6
+  - [x] **R3.T2.1:** Scope the two negative `isLoading?`/`hasError?` assertions to the comments-list region of the component, so an unrelated edit elsewhere in the file cannot trip them.
+  - [x] **R3.T2.2:** Assert the list-with-error branch passes the retained array rather than an empty one.
 
 <!--
 Acceptance block appended by the primary agent after a phase is accepted:

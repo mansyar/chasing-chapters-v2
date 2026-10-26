@@ -389,3 +389,69 @@ there is no e2e coverage to lose here either.
 
 **`plan.md` was not updated.** It is Conductor state owned by the primary
 agent, and the brief forbids editing it.
+---
+
+## Primary verification
+
+The primary re-ran every layer on the squashed checkpoint `352a3cb` and
+reproduced both findings independently.
+
+| Layer | Command | Exit | Summary |
+| --- | --- | --- | --- |
+| static | `bun run typecheck` | 0 | No type errors in 258 files (656.62ms) |
+| static | `bun run lint` | 0 | Checked 250 files, no fixes applied |
+| unit | `bun test` | 0 | 765 pass, 0 fail, 54 files (2.90s) |
+
+**Independent reproduction of F1.** Reverting `src/app/actions/comments.ts` to
+the phase base `ba8ff04` and running the rate-limit cases gives **23 pass, 3
+fail**: "caps one address across many review ids, not only per review",
+"does not spend the address-wide budget on a call the per-review bucket
+refuses", and "checks the per-review bucket before the aggregate one". The
+middle one is the defect itself - it asserts the property the round 2
+justification got wrong. After restoring, 41 pass, 0 fail across the two
+suites.
+
+**Independent reproduction of F2 - the one that matters.** The finding was that
+the round 2 source-level assertions could not see *inside* a branch, so a
+component passing `comments={[]}` in the `list-with-error` branch would pass
+every case. The primary confirmed that claim against the round 2 test file
+before checking the new one:
+
+- Round 2's test file against a `comments={[]}` mutation: **14 pass, 0 fail** -
+  it did not detect the defect, exactly as the finding said.
+- The round 3 test file against the same mutation: **14 pass, 1 fail** - "passes
+  the retained rows to the list in the list-with-error branch" fails. The gap
+  is closed.
+
+The component was restored from the fixed commit afterwards and
+`git diff --numstat HEAD` against it is empty.
+
+**What the primary reviewed directly.** The reordering is correct and the
+doc block now describes the property the code has: `rateLimit` increments at
+`src/lib/rate-limit.ts:44` and compares at `:56`, so a refused call spends the
+counter of whichever bucket was checked first; checking the per-review bucket
+first means the address-wide counter advances only for calls a per-review
+bucket allowed, which is what makes "one review id can contribute at most 120
+of them" true for the first time rather than false as written. A sweep across
+distinct review ids still reaches the aggregate, because a sweep passes each
+per-review bucket trivially - confirmed by the test that fires at the
+aggregate ceiling. The two negative assertions are now scoped to the
+comments-list region rather than the whole file.
+
+**Result: verified.** F1 and F2 are fixed at the root cause, each with a test
+that fails on the defect. No Phase 1-R2 behaviour changed: the per-review
+ceiling is still 120/60s, `MAX_COMMENTS_PER_REVIEW` is still 100, the aggregate
+is still 1200/60s, no collection rule moved, and `canAcceptPublicWrite` and its
+three call sites are untouched.
+
+**Carried to the round 3 re-review.** The aggregate ceiling of 1200 remains a
+judgement rather than a measurement; the bound fails open when Redis is down,
+as every limit in this codebase does; the source-level technique still checks
+source text rather than a rendered tree, so the retained array is proven to be
+*handed to* `CommentList` but not that it is painted - there is no React test
+harness in this project, and adding one is a reasonable future track rather
+than a defect here; the rate limiter is mocked in the unit tests, so the
+increment-before-compare behaviour is modelled rather than exercised against
+Redis; and e2e was not re-run, because it is not part of this phase's
+verification command and exercises neither a server-action call order nor these
+source assertions.
