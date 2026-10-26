@@ -612,18 +612,97 @@ describe("getApprovedComments", () => {
 		await getApprovedComments(1);
 		await getApprovedComments(2);
 
-		expect(rateLimitSpy).toHaveBeenNthCalledWith(
-			1,
+		// Asserted by key rather than by call position: the aggregate bucket is
+		// checked first on every call, so the per-review keys are no longer
+		// calls 1 and 2. The property under test is unchanged - two reviews
+		// from one address get two distinct buckets.
+		expect(rateLimitSpy).toHaveBeenCalledWith(
 			"comments:203.0.113.5:1",
 			120,
 			60,
 		);
-		expect(rateLimitSpy).toHaveBeenNthCalledWith(
-			2,
+		expect(rateLimitSpy).toHaveBeenCalledWith(
 			"comments:203.0.113.5:2",
 			120,
 			60,
 		);
+	});
+
+	it("caps one address across many review ids, not only per review", async () => {
+		// `D1`. Keying on the address *and* the review bounds a burst on one
+		// page but leaves breadth open: without an aggregate bucket an address
+		// can ask for 120 different review ids a minute and never trip
+		// anything. This drives a sweep through a limiter that counts per key
+		// and applies the ceiling the action asked for, so the limit that
+		// fires is the production one rather than a number copied here.
+		mockPayload.find.mockResolvedValue({ docs: [] });
+
+		const AGGREGATE_KEY = "comments:203.0.113.5";
+		const counts = new Map<string, number>();
+		const limits = new Map<string, number>();
+
+		rateLimitSpy.mockImplementation(async (key: string, limit: number) => {
+			limits.set(key === AGGREGATE_KEY ? "aggregate" : "per-review", limit);
+			const next = (counts.get(key) ?? 0) + 1;
+			counts.set(key, next);
+			return {
+				success: next <= limit,
+				remaining: Math.max(0, limit - next),
+				resetInSeconds: 60,
+			};
+		});
+
+		// One call to learn the ceilings the action asked for.
+		await getApprovedComments(1);
+		const aggregateLimit = limits.get("aggregate") ?? 0;
+		const perReviewLimit = limits.get("per-review") ?? 0;
+
+		// The aggregate is ten times the per-review ceiling, so ordinary
+		// browsing on one review cannot reach it.
+		expect(aggregateLimit).toBe(perReviewLimit * 10);
+
+		// Fill the aggregate with calls that each name a different review id.
+		// Every one of them lands in its own per-review bucket, so no single
+		// review's ceiling is anywhere near its limit.
+		for (let reviewId = 2; reviewId <= aggregateLimit; reviewId += 1) {
+			const result = await getApprovedComments(reviewId);
+			expect(result.success).toBe(true);
+		}
+
+		const overTheLine = await getApprovedComments(aggregateLimit + 1);
+
+		expect(overTheLine.success).toBe(false);
+		if (!overTheLine.success) {
+			expect(overTheLine.error).toContain("Too many requests");
+		}
+
+		// The aggregate key is what refused it: the call past the line never
+		// reached its per-review bucket, which would have allowed it. That is
+		// the difference `D1` is about - the sweep is capped by breadth, not
+		// by having exhausted any single review.
+		expect(counts.get(AGGREGATE_KEY)).toBe(aggregateLimit + 1);
+		expect(
+			counts.get(`${AGGREGATE_KEY}:${aggregateLimit + 1}`),
+		).toBeUndefined();
+		expect(mockPayload.find).toHaveBeenCalledTimes(aggregateLimit);
+	});
+
+	it("checks the aggregate bucket before the per-review one", async () => {
+		// Ordering matters: a sweep that has filled only the aggregate must not
+		// spend a per-review slot before it is refused.
+		mockPayload.find.mockResolvedValue({ docs: [] });
+		rateLimitSpy.mockImplementation(async (key: string) => ({
+			success: key !== "comments:203.0.113.5",
+			remaining: 0,
+			resetInSeconds: 30,
+		}));
+
+		const result = await getApprovedComments(7);
+
+		expect(result.success).toBe(false);
+		expect(rateLimitSpy).toHaveBeenCalledTimes(1);
+		expect(rateLimitSpy).toHaveBeenCalledWith("comments:203.0.113.5", 1200, 60);
+		expect(mockPayload.find).not.toHaveBeenCalled();
 	});
 
 	it("returns approved comments under a bounded ceiling", async () => {

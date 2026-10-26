@@ -46,24 +46,61 @@ const REPORT_THANKS_MESSAGE =
 const MAX_COMMENTS_PER_REVIEW = 100;
 
 /**
- * Requests `getApprovedComments` allows per IP per review per window (`FR-8`,
- * `AC-13`).
+ * The two rate limits `getApprovedComments` enforces, and which bound each one
+ * provides (`FR-8`, `AC-13`).
  *
- * The key includes the review id, the same shape the like action uses
- * (`like:${ip}:${reviewId}`). Keying on the address alone made the bucket
- * shared by every reader behind one NAT, proxy or busy egress, so ordinary
- * traffic on a popular review could exhaust it and leave those readers looking
- * at "no comments yet".
+ * Both are checked on every call, because they answer different questions and
+ * neither one alone is sufficient: a per-review bucket stops one popular
+ * review from being exhausted for everyone behind one address, and an
+ * aggregate bucket stops that address from walking the whole catalogue
+ * instead.
+ *
+ * `comments:${ip}:${reviewId}` - the per-review bucket - is the same shape the
+ * like action uses (`like:${ip}:${reviewId}`). Keying on the address alone
+ * made the bucket shared by every reader behind one NAT, proxy or busy egress,
+ * so ordinary traffic on a popular review could exhaust it and leave those
+ * readers looking at "no comments yet". This key bounds how often one review
+ * id can be asked for, which is what stops a refresh storm on a single page.
+ *
+ * `comments:${ip}` - the aggregate bucket - is checked first, and it is what
+ * bounds breadth. Without it the per-review key alone caps an address at 120
+ * requests *per review id*, so the same address could ask for every review in
+ * the catalogue within a minute and no ceiling would ever fire: breadth was
+ * unbounded, which is the defect `FR-8` exists to close. The aggregate key is
+ * the one that makes this action useless for enumerating the catalogue - a
+ * sweep is capped at `COMMENT_FETCH_AGGREGATE_LIMIT` calls per window however
+ * many distinct review ids it names.
  *
  * A reader loads a review's comments on mount and again after posting, so the
- * ceiling only has to clear 2 per page view. 120 leaves room for 60 views of
- * the same review per minute from one address - a refresh storm, several open
- * tabs - while still bounding what a single review id can be asked for. The
- * cost of setting it too low is a reader seeing an empty section, so it is
- * deliberately generous; `MAX_COMMENTS_PER_REVIEW` is what bounds the rows one
- * call returns.
+ * per-review ceiling only has to clear 2 per page view. 120 leaves room for 60
+ * views of the same review per minute from one address - a refresh storm,
+ * several open tabs - while still bounding what a single review id can be
+ * asked for. The cost of setting it too low is a reader seeing an empty
+ * section, so it is deliberately generous; `MAX_COMMENTS_PER_REVIEW` is what
+ * bounds the rows one call returns.
+ *
+ * The aggregate ceiling is ten times that - 1200, i.e. 120 x 10 - and the
+ * ratio is deliberate. Ten times is what keeps the aggregate from being the
+ * binding constraint for ordinary use: an address only reaches it after
+ * spending 1200 calls, and since one review id can contribute at most 120 of
+ * them, it has to have named at least ten distinct review ids to get there.
+ * Ordinary browsing on one review never meets it, and a reader behind a shared
+ * egress is not the caller it fires on first.
+ *
+ * The multiple is measured against the per-review ceiling that is in force
+ * now, 120. A figure of 600 was proposed in review on the strength of the
+ * older per-review ceiling of 60, where it was ten times; at 120 the same ten
+ * times is 1200. 600 would be only five times the per-review ceiling, which an
+ * address reaches by exhausting five reviews rather than ten - that is
+ * browsing, not enumeration, and the aggregate is not the right place to catch
+ * it.
+ *
+ * It is still a hard bound on breadth, and a rate bound rather than an
+ * impossibility: 1200 calls a minute is 1200 review ids a minute at one call
+ * each, so enumerating the catalogue is linear in its size rather than free.
  */
 const COMMENT_FETCH_LIMIT = 120;
+const COMMENT_FETCH_AGGREGATE_LIMIT = 1200;
 const COMMENT_FETCH_WINDOW_SECONDS = 60;
 
 /**
@@ -376,9 +413,10 @@ export async function reportComment(
  * Get approved comments for a review.
  *
  * A server action is a public HTTP endpoint, so the id is validated before it
- * reaches a query and the call is rate-limited per IP per review (`FR-8`,
- * `AC-13`). `reviewId` used to be trusted: `NaN`, `0` and a negative number all
- * ran a query, and nothing bounded how often one address could ask.
+ * reaches a query and the call is rate-limited per IP per review and per IP
+ * across every review (`FR-8`, `AC-13`). `reviewId` used to be trusted: `NaN`,
+ * `0` and a negative number all ran a query, and nothing bounded how often one
+ * address could ask.
  */
 export async function getApprovedComments(reviewId: number) {
 	try {
@@ -388,16 +426,32 @@ export async function getApprovedComments(reviewId: number) {
 
 		const headersList = await headers();
 		const ip = getClientIP(headersList);
-		const rateLimitResult = await rateLimit(
+
+		// The aggregate bucket goes first so a caller sweeping many review ids
+		// cannot step around it by never filling any single per-review bucket.
+		const aggregate = await rateLimit(
+			`comments:${ip}`,
+			COMMENT_FETCH_AGGREGATE_LIMIT,
+			COMMENT_FETCH_WINDOW_SECONDS,
+		);
+
+		if (!aggregate.success) {
+			return {
+				success: false,
+				error: `Too many requests. Please wait ${aggregate.resetInSeconds} seconds.`,
+			};
+		}
+
+		const perReview = await rateLimit(
 			`comments:${ip}:${reviewId}`,
 			COMMENT_FETCH_LIMIT,
 			COMMENT_FETCH_WINDOW_SECONDS,
 		);
 
-		if (!rateLimitResult.success) {
+		if (!perReview.success) {
 			return {
 				success: false,
-				error: `Too many requests. Please wait ${rateLimitResult.resetInSeconds} seconds.`,
+				error: `Too many requests. Please wait ${perReview.resetInSeconds} seconds.`,
 			};
 		}
 
