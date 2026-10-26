@@ -23,6 +23,11 @@ interface NavigationReview {
 	id: number | string;
 	slug?: string | null;
 	publishDate?: string | null;
+	/**
+	 * Present on every document but deliberately not read: the neighbour
+	 * queries compare the `publishDate` column, and a value from a different
+	 * column cannot be compared against it.
+	 */
 	createdAt?: string | null;
 }
 
@@ -65,7 +70,10 @@ export async function getAdjacentReviews(
 	options: GetAdjacentReviewsOptions = {},
 ): Promise<ReviewNavigation> {
 	const slug = review.slug;
-	const anchor = review.publishDate ?? review.createdAt;
+	// The anchor must be the column the queries compare against. `createdAt` is
+	// a different column with a different value, so substituting it here would
+	// silently match unrelated reviews instead of none.
+	const anchor = review.publishDate;
 
 	if (!slug || !anchor) {
 		return { newer: null, older: null };

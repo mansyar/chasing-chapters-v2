@@ -85,6 +85,9 @@ export default async function ReadingListsPage({
 						readingList={list}
 						locale={appLocale}
 						priority={index < 2}
+						// One column below `sm`, two to `lg`, three above: the card
+						// covers the viewport width at the narrowest breakpoint.
+						sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
 					/>
 				))}
 			</div>

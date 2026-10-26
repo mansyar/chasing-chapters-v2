@@ -57,11 +57,45 @@ describe("typography plugin wiring", () => {
 	});
 
 	/**
+	 * A `pre` must not flip its pair between modes. Text-on-background inverted
+	 * into a near-white slab on a dark page; `--muted` behind `--foreground` is
+	 * dark-on-light in light mode and light-on-dark in dark mode, which is the
+	 * same reading direction in both.
+	 */
+	test("code blocks are a mode-stable pair, not an inverted one", () => {
+		expect(globalsCss).toContain("--tw-prose-pre-bg: var(--muted);");
+		expect(globalsCss).toContain("--tw-prose-pre-code: var(--foreground);");
+		expect(globalsCss).toContain("--tw-prose-invert-pre-bg: var(--muted);");
+		expect(globalsCss).toContain(
+			"--tw-prose-invert-pre-code: var(--foreground);",
+		);
+
+		// The old flipping pair is what made the block glare in dark mode.
+		expect(globalsCss).not.toContain("--tw-prose-pre-bg: var(--foreground);");
+		expect(globalsCss).not.toContain("--tw-prose-pre-code: var(--background);");
+		expect(globalsCss).not.toContain(
+			"--tw-prose-invert-pre-bg: var(--foreground);",
+		);
+		expect(globalsCss).not.toContain(
+			"--tw-prose-invert-pre-code: var(--background);",
+		);
+	});
+
+	/**
 	 * The hero excerpt, the carousel excerpt and the loading skeleton carried
 	 * `prose` for a clamped/skeleton look the plugin would break once active.
 	 * They must stay prose-free — a regression here reintroduces prose margins
 	 * and sizing on above-the-fold content (NFR-2).
+	 *
+	 * Match the class position, not the bare substring: a comment, identifier or
+	 * variable name mentioning "prose" is not a class, and failing on one is the
+	 * false positive that gets a guard like this deleted.
 	 */
+	const proseClassPatterns = [
+		/className="[^"]*\bprose\b/,
+		/className=\{`[^`]*\bprose\b/,
+	];
+
 	test("the clamped excerpts and the skeleton stay prose-free", () => {
 		const proseFreeFiles = [
 			"src/components/FeaturedHero.tsx",
@@ -71,7 +105,37 @@ describe("typography plugin wiring", () => {
 
 		for (const file of proseFreeFiles) {
 			const source = readFileSync(join(process.cwd(), file), "utf8");
-			expect(source).not.toContain("prose");
+
+			for (const pattern of proseClassPatterns) {
+				expect(source).not.toMatch(pattern);
+			}
+		}
+	});
+
+	test("the guard matches a re-added prose class and ignores the word elsewhere", () => {
+		// The guard is only worth keeping if it still fires on the regression it
+		// exists for, and only if it stops firing on prose used as a word.
+		const regressions = [
+			'<div className="prose line-clamp-3">',
+			'<div className="max-w-none prose line-clamp-3">',
+			"<div className={`prose ${size}`}>",
+		];
+		const innocent = [
+			"// prose would break this clamped excerpt",
+			"const proseFree = true;",
+			'<div className="max-w-none line-clamp-3">',
+		];
+
+		for (const source of regressions) {
+			expect(proseClassPatterns.some((pattern) => pattern.test(source))).toBe(
+				true,
+			);
+		}
+
+		for (const source of innocent) {
+			expect(proseClassPatterns.some((pattern) => pattern.test(source))).toBe(
+				false,
+			);
 		}
 	});
 });
@@ -145,6 +209,43 @@ describe("mood badge colour safety", () => {
 		);
 		expect(reviewPage).toContain(
 			"color-mix(in srgb, ${mood.color} 25%, transparent)",
+		);
+	});
+});
+
+/**
+ * `NFR-2` (no LCP or CLS regression): a `sizes` attribute has to describe the
+ * grid the image is actually laid out in, because it is what the browser uses to
+ * pick a srcset candidate. `ReadingListCard` is rendered into two different
+ * grids — the home page's 2/4 columns and the reading-lists index's 1/2/3 — so a
+ * single hardcoded value under-declares the index's covers at mobile widths and
+ * they render upscaled and soft.
+ *
+ * This is a source-level guard rather than a measurement: the pixel outcome needs
+ * a real layout, but the two facts that produce it — the card forwards `sizes`
+ * and the index passes its own — are visible in the source.
+ */
+describe("reading-list cover sizes", () => {
+	const cardSource = readFileSync(
+		join(process.cwd(), "src/components/ReadingListCard.tsx"),
+		"utf8",
+	);
+	const indexSource = readFileSync(
+		join(process.cwd(), "src/app/(public)/[locale]/reading-lists/page.tsx"),
+		"utf8",
+	);
+
+	test("the card forwards its `sizes` prop to the image", () => {
+		expect(cardSource).toContain("sizes?: string;");
+		expect(cardSource).toContain("sizes={sizes}");
+		// The home page's grid is the default, so its four-column declaration is
+		// what a caller that does not pass `sizes` gets.
+		expect(cardSource).toContain('sizes = "(max-width: 768px) 50vw, 25vw",');
+	});
+
+	test("the index declares its own single-column mobile width", () => {
+		expect(indexSource).toContain(
+			'sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"',
 		);
 	});
 });

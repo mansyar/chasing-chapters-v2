@@ -165,20 +165,21 @@ describe("getAdjacentReviews", () => {
 		expect(result).toEqual({ newer: null, older: null });
 	});
 
-	test("falls back to createdAt when publishDate has not been back-filled", async () => {
-		const { payload, calls } = makePayload();
+	test("a review with no publishDate has no neighbours at all", async () => {
+		const { payload, calls } = makePayload([{ slug: "any", title: "Any" }]);
 
-		await getAdjacentReviews(payload, {
+		const result = await getAdjacentReviews(payload, {
 			id: 2,
 			slug: "undated",
 			publishDate: null,
+			// `createdAt` is a different column: comparing it against the
+			// `publishDate` column would match unrelated reviews, so it must
+			// not stand in for a missing `publishDate`.
 			createdAt: "2026-02-01T00:00:00.000Z",
 		});
 
-		expect(calls).toHaveLength(2);
-		expect(JSON.stringify(firstCall(calls).where)).toContain(
-			"2026-02-01T00:00:00.000Z",
-		);
+		expect(calls).toHaveLength(0);
+		expect(result).toEqual({ newer: null, older: null });
 	});
 
 	test("queries nothing when the review has neither date", async () => {

@@ -90,8 +90,10 @@ describe("StarRating", () => {
 	describe("call sites", () => {
 		/**
 		 * AC-3: all four former inline renderers use the component. A required
-		 * `labelTemplate` prop makes every other consumer a type error, so the
-		 * source assertion only needs to prove these four import it.
+		 * `labelTemplate` prop makes every other consumer a type error, but the
+		 * import alone proves nothing about the render: a call site that keeps
+		 * the import and stops rendering the component would still pass. So each
+		 * case asserts the element and the accessible label too.
 		 */
 		const callSites = [
 			"src/components/FeaturedHero.tsx",
@@ -101,9 +103,12 @@ describe("StarRating", () => {
 		];
 
 		for (const file of callSites) {
-			test(`${file} imports StarRating`, () => {
+			test(`${file} renders StarRating with a labelTemplate`, () => {
 				const source = readFileSync(join(process.cwd(), file), "utf8");
+
 				expect(source).toContain("reviews/StarRating");
+				expect(source).toContain("<StarRating");
+				expect(source).toContain("labelTemplate=");
 			});
 		}
 

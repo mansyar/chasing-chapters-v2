@@ -219,8 +219,15 @@
 	--tw-prose-kbd: var(--foreground);
 	--tw-prose-kbd-shadows: var(--border);
 	--tw-prose-code: var(--primary);
-	--tw-prose-pre-code: var(--background);
-	--tw-prose-pre-bg: var(--foreground);
+	/*
+	 * A `pre` is one mode-stable pair, not a flipping one: `--muted` is a light
+	 * grey in light mode and a dark grey in dark mode, and `--foreground` is the
+	 * opposite of each, so the block reads dark-on-light in light mode and
+	 * light-on-dark in dark mode. Swapping the pair per mode (background text on
+	 * foreground) turned a `pre` into a near-white slab on a dark page.
+	 */
+	--tw-prose-pre-code: var(--foreground);
+	--tw-prose-pre-bg: var(--muted);
 	--tw-prose-th-borders: var(--border);
 	--tw-prose-td-borders: var(--border);
 	--tw-prose-invert-body: var(--foreground);
@@ -237,8 +244,9 @@
 	--tw-prose-invert-kbd: var(--foreground);
 	--tw-prose-invert-kbd-shadows: var(--border);
 	--tw-prose-invert-code: var(--primary);
-	--tw-prose-invert-pre-code: var(--background);
-	--tw-prose-invert-pre-bg: var(--foreground);
+	/* Same mode-stable pair as the base set, for the same reason. */
+	--tw-prose-invert-pre-code: var(--foreground);
+	--tw-prose-invert-pre-bg: var(--muted);
 	--tw-prose-invert-th-borders: var(--border);
 	--tw-prose-invert-td-borders: var(--border);
 }

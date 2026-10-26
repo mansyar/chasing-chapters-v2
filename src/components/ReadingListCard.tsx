@@ -14,6 +14,12 @@ interface ReadingListCardProps {
 	priority?: boolean;
 	/** The locale segment of the link; defaults to English. */
 	locale?: AppLocale;
+	/**
+	 * The `sizes` attribute for the cover. It has to describe the grid the card
+	 * is rendered into, which differs per surface: the home page lays out four
+	 * columns above `lg`, the index three. The default matches the home page.
+	 */
+	sizes?: string;
 }
 
 export function ReadingListCard({
@@ -21,6 +27,7 @@ export function ReadingListCard({
 	className,
 	priority = false,
 	locale = "en",
+	sizes = "(max-width: 768px) 50vw, 25vw",
 }: ReadingListCardProps) {
 	const coverImage = readingList.coverImage as Media;
 	const dictionary = getDictionary(locale);
@@ -48,7 +55,7 @@ export function ReadingListCard({
 						alt={coverImage.alt || readingList.title || ""}
 						fill
 						className="object-cover transition-transform duration-500 group-hover:scale-105"
-						sizes="(max-width: 768px) 50vw, 25vw"
+						sizes={sizes}
 						priority={priority}
 						loading={priority ? "eager" : "lazy"}
 						placeholder={coverImage.blurDataURL ? "blur" : "empty"}
