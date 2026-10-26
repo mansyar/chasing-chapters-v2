@@ -49,17 +49,14 @@ The primary appends after acceptance:
 - [x] **P2.T1: Test-only forced-error trigger, unreachable in production UI** — covers: FR-5
 - [x] **P2.T2: EN/ID e2e assertions (UI language, reset, home, no stack text)** — covers: AC-1, AC-2, AC-6
 
-<!--
-Review fixes are appended by `conductor-review` as:
-
 ## Phase R1: Review Fixes
 
-- **Goal:** Resolve review findings ...
+- **Goal:** Resolve review findings F1–F4 (navigator.languages support + comment accuracy).
 - **Depends on:** Phase 2
-- **Covers:** review findings
-- **Touches:** ...
-- **Verification:** ...
+- **Covers:** F1, F2, F3, F4
+- **Touches:** `src/lib/error-locale.ts`, `src/lib/__tests__/error-locale.test.ts`, `src/app/(public)/[locale]/error.tsx`, `src/app/global-error.tsx`, `src/app/(public)/[locale]/boom/page.tsx`
+- **Verification:** `bun run typecheck && bun run lint && bun test`
 - **Status:** pending
 
-- [ ] **R1.T1: Resolve <finding ID>** — covers: <finding ID>
--->
+- [ ] **R1.T1: Resolve F1 (navigator.languages)** — covers: F1
+- [ ] **R1.T2: Resolve F2–F4 (comment accuracy)** — covers: F2, F3, F4
