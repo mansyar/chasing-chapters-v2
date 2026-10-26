@@ -329,8 +329,8 @@ export default async function ReviewPage({ params }: PageProps) {
 					{/* Structured Sections */}
 					<div className="grid gap-8 md:grid-cols-2">
 						{review.whatILoved && (
-							<div className="bg-green-50 dark:bg-green-950/20 p-6 rounded-xl border border-green-100 dark:border-green-900">
-								<h3 className="font-serif text-xl font-bold mb-4 flex items-center gap-2 text-green-800 dark:text-green-300">
+							<div className="bg-positive/10 p-6 rounded-xl border border-positive/30">
+								<h3 className="font-serif text-xl font-bold mb-4 flex items-center gap-2 text-positive">
 									{dictionary.reviewWhatILoved}
 								</h3>
 								<div className="prose prose-sm prose-teal dark:prose-invert">
@@ -340,8 +340,8 @@ export default async function ReviewPage({ params }: PageProps) {
 						)}
 
 						{review.whatCouldBeBetter && (
-							<div className="bg-orange-50 dark:bg-orange-950/20 p-6 rounded-xl border border-orange-100 dark:border-orange-900">
-								<h3 className="font-serif text-xl font-bold mb-4 flex items-center gap-2 text-orange-800 dark:text-orange-300">
+							<div className="bg-warning/10 p-6 rounded-xl border border-warning/30">
+								<h3 className="font-serif text-xl font-bold mb-4 flex items-center gap-2 text-warning">
 									{dictionary.reviewWhatCouldBeBetter}
 								</h3>
 								<div className="prose prose-sm prose-teal dark:prose-invert">
@@ -351,8 +351,8 @@ export default async function ReviewPage({ params }: PageProps) {
 						)}
 
 						{review.perfectFor && (
-							<div className="bg-blue-50 dark:bg-blue-950/20 p-6 rounded-xl border border-blue-100 dark:border-blue-900 md:col-span-2">
-								<h3 className="font-serif text-xl font-bold mb-4 flex items-center gap-2 text-blue-800 dark:text-blue-300">
+							<div className="bg-info/10 p-6 rounded-xl border border-info/30 md:col-span-2">
+								<h3 className="font-serif text-xl font-bold mb-4 flex items-center gap-2 text-info">
 									{dictionary.reviewPerfectFor}
 								</h3>
 								<div className="prose prose-sm prose-teal dark:prose-invert">
@@ -423,9 +423,14 @@ export default async function ReviewPage({ params }: PageProps) {
 												key={mood.id}
 												className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
 												style={{
-													backgroundColor: mood.color + "20",
+													// `color-mix` keeps the badge correct for any
+													// colour format the mood colour may arrive in;
+													// the old hex-append trick only worked for
+													// 6-digit hex. Alpha weights match the old
+													// suffixes: 0x20/255 ≈ 12.5%, 0x40/255 ≈ 25%.
+													backgroundColor: `color-mix(in srgb, ${mood.color} 12.5%, transparent)`,
 													color: mood.color,
-													borderColor: mood.color + "40",
+													borderColor: `color-mix(in srgb, ${mood.color} 25%, transparent)`,
 												}}
 											>
 												{mood.icon && <span className="mr-1">{mood.icon}</span>}
