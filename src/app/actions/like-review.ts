@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { getPayload } from "payload";
 import { atomicDecrement, atomicIncrement } from "@/lib/db";
 import { localizedPaths } from "@/lib/i18n/locale";
+import { canAcceptPublicWrite } from "@/lib/publish-visibility";
 import { getClientIP, rateLimit } from "@/lib/rate-limit";
 import { formatZodError, likeReviewSchema } from "@/lib/schemas";
 
@@ -38,6 +39,26 @@ export async function toggleLikeReview(
 		// Convert string ID to number (Payload CMS with PostgreSQL uses numeric IDs)
 		const numericId = parseInt(reviewId, 10);
 
+		// A like is a public, unauthenticated write, so the review it targets
+		// is gated by the same rule every public read uses (`FR-7`). The
+		// review is loaded *before* the counter is touched: incrementing first
+		// and asking afterwards counted a like on a draft, on a scheduled
+		// review, and on an id that was never published. It also made those
+		// two cases answer differently - a nonexistent id errored, an
+		// unpublished one succeeded - which told a client that the review
+		// exists. Both are now the same answer as a missing review.
+		const payload = await getPayload({ config: configPromise });
+		const review = await payload.findByID({
+			collection: "reviews",
+			id: numericId,
+			depth: 0,
+			disableErrors: true,
+		});
+
+		if (!review || !canAcceptPublicWrite(review, new Date())) {
+			return { success: false, error: "Review not found" };
+		}
+
 		// Atomic increment/decrement - no race condition on concurrent requests
 		const newLikes = shouldIncrement
 			? await atomicIncrement(numericId, "likes")
@@ -48,14 +69,7 @@ export async function toggleLikeReview(
 		}
 
 		// Revalidate the page so the static generation or cache is updated
-		const payload = await getPayload({ config: configPromise });
-		const review = await payload.findByID({
-			collection: "reviews",
-			id: numericId,
-			depth: 0,
-		});
-
-		if (review?.slug) {
+		if (review.slug) {
 			for (const path of localizedPaths(`/reviews/${review.slug}`)) {
 				revalidatePath(path);
 			}
