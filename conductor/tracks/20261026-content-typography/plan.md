@@ -14,18 +14,21 @@
 - **Covers:** FR-1, FR-2, AC-1; NFR-2
 - **Touches:** `package.json`, `bun.lock`, `src/app/globals.css`, `src/app/(public)/[locale]/reviews/[slug]/page.tsx`, `src/app/(public)/[locale]/reviews/[slug]/loading.tsx`, `src/app/(public)/[locale]/about/page.tsx`, `src/components/FeaturedHero.tsx`, `src/components/ModernBookCarousel.tsx`, `src/lib/__tests__/typography-source.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
-- **Status:** in_progress
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** 2d61ce9
+- **Evidence:** conductor/tracks/20261026-content-typography/verification/phase-1.md
 
-- [ ] **P1.T1: Install and theme the typography plugin** — covers: FR-1, FR-2
-  - [ ] **P1.T1.1: Add `@tailwindcss/typography` as a build-time dependency**
-  - [ ] **P1.T1.2: Register it via `@plugin` in `globals.css` and map the prose theme variables onto the site's token set (teal oklch palette, serif body)**
-  - [ ] **P1.T1.3: Add the dark-mode overrides so links, blockquotes and code hold contrast with `dark:prose-invert` and token-driven colours**
-- [ ] **P1.T2: Resolve all eight `prose` sites deliberately** — covers: FR-1
-  - [ ] **P1.T2.1: Keep `prose` on the four review-detail usages and the about page, now that it renders**
-  - [ ] **P1.T2.2: Replace `prose` with deliberate clamped non-prose classes on the hero excerpt and the carousel excerpt**
-  - [ ] **P1.T2.3: Replace `prose` on the loading skeleton with the skeleton styling it actually wants**
-- [ ] **P1.T3: Prove the foundation with a source test** — covers: AC-1
-  - [ ] **P1.T3.1: Assert the `@plugin "@tailwindcss/typography"` directive exists in `globals.css` and the dependency is in `package.json`, following the `dictionary-source` test pattern**
+- [x] **P1.T1: Install and theme the typography plugin** — covers: FR-1, FR-2
+  - [x] **P1.T1.1: Add `@tailwindcss/typography` as a build-time dependency**
+  - [x] **P1.T1.2: Register it via `@plugin` in `globals.css` and map the prose theme variables onto the site's token set (teal oklch palette, serif body)**
+  - [x] **P1.T1.3: Add the dark-mode overrides so links, blockquotes and code hold contrast with `dark:prose-invert` and token-driven colours**
+- [x] **P1.T2: Resolve all eight `prose` sites deliberately** — covers: FR-1
+  - [x] **P1.T2.1: Keep `prose` on the four review-detail usages and the about page, now that it renders**
+  - [x] **P1.T2.2: Replace `prose` with deliberate clamped non-prose classes on the hero excerpt and the carousel excerpt**
+  - [x] **P1.T2.3: Replace `prose` on the loading skeleton with the skeleton styling it actually wants**
+- [x] **P1.T3: Prove the foundation with a source test** — covers: AC-1
+  - [x] **P1.T3.1: Assert the `@plugin "@tailwindcss/typography"` directive exists in `globals.css` and the dependency is in `package.json`, following the `dictionary-source` test pattern**
 
 <!--
 The primary appends after acceptance:

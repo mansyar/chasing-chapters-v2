@@ -84,3 +84,23 @@ Read from the installed plugin source (`node_modules/@tailwindcss/typography@0.5
 - `prose-teal` deliberately sets `pre-bg`/`pre-code` from tokens, so code blocks render dark-on-light in light mode and light-on-dark in dark mode (they flip with the theme rather than staying fixed dark). If the design wants code blocks always-dark, that is a one-line follow-up.
 - The `google-gax` "Module not found: package.json" build warnings pre-date this phase (import chain: translate → payload) and are untouched.
 - Phase 2 (structured-section colours) was not started; those containers keep their hardcoded green/orange/blue classes.
+
+## Primary verification
+
+The primary re-ran every layer on the squashed checkpoint 2d61ce9 and reproduced the defect evidence independently.
+
+| Layer | Command | Exit | Summary |
+| --- | --- | --- | --- |
+| static | un run typecheck | 0 | No type errors in 259 files (487.90ms) |
+| static | un run lint | 0 | 252 files checked, no fixes applied |
+| unit | un test | 0 | 769 pass, 0 fail, 3228 expect() calls, 55 files (up from 765 — the 4 new source-test cases, none removed) |
+| e2e | un run test:e2e | 0 | 112 passed, 0 failed, 0 flaky (2.5m), suite finished |
+
+The primary reviewed the full diff directly:
+
+- globals.css: @plugin "@tailwindcss/typography"; directly after the two imports, and an @utility prose-teal block mapping all 18 base variables plus the 18 --tw-prose-invert-* siblings onto :root/.dark tokens. The mechanism was verified against the installed plugin source, not assumed: styles.js defines exactly those variable names, and the invert modifier re-points base variables at their invert siblings — which the theme mirrors onto the same tokens, so dark:prose-invert stays on the class strings while .dark carries the recolour.
+- The three de-prosed sites are minimal one-line class changes: hero and carousel keep line-clamp-3, 	ext-muted-foreground text-lg, the carousel keeps italic; the skeleton keeps max-w-3xl space-y-4. The look is unchanged by construction — prose contributed nothing there (its colour and max-width were both overridden).
+- The five kept sites gained prose-teal (and the about page gained prose-p:text-muted-foreground, a deliberate addition the evidence flags: without it the plugin would paint p elements with --tw-prose-body = --foreground, overriding the div's muted intent).
+- The source test pins four facts — the directive, devDependency-only placement, the token theme, and the three prose-free sites — and fails on revert by construction (it reads the files it asserts about).
+
+**Result: verified.** AC-1, FR-1, FR-2, NFR-2 and NFR-4 are satisfied by direct test evidence; NFR-1 holds (no new "use client" directive anywhere in the diff).
