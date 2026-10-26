@@ -33,20 +33,23 @@
 - **Covers:** FR-3, FR-9, AC-5, AC-14
 - **Touches:** `src/collections/Comments.ts`, `src/collections/__tests__/Comments.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** in_progress
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** f6e8241
+- **Evidence:** conductor/tracks/20261026-access-control-hardening/verification/phase-2.md
 
-- [ ] **P2.T1: Close anonymous comment creation** - covers: FR-3
-  - [ ] **P2.T1.1: Change `create` from `() => true` to deny, leaving `read`, `update` and `delete` untouched**
-  - [ ] **P2.T1.2: Confirm the `beforeChange` status derivation still runs for local-API creates, since the action depends on it**
+- [x] **P2.T1: Close anonymous comment creation** - covers: FR-3
+  - [x] **P2.T1.1: Change `create` from `() => true` to deny, leaving `read`, `update` and `delete` untouched**
+  - [x] **P2.T1.2: Confirm the `beforeChange` status derivation still runs for local-API creates, since the action depends on it**
 
-- [ ] **P2.T2: Make comment status admin-only** - covers: FR-9
-  - [ ] **P2.T2.1: Add field-level `access.update` on `status` limited to admins**
-  - [ ] **P2.T2.2: Confirm writers keep read access to their reviews' comments and can still moderate nothing**
+- [x] **P2.T2: Make comment status admin-only** - covers: FR-9
+  - [x] **P2.T2.1: Add field-level `access.update` on `status` limited to admins**
+  - [x] **P2.T2.2: Confirm writers keep read access to their reviews' comments and can still moderate nothing**
 
-- [ ] **P2.T3: Cover both rules** - covers: AC-5, AC-14
-  - [ ] **P2.T3.1: Test that an anonymous create is rejected**
-  - [ ] **P2.T3.2: Test that a writer cannot set `status` to `approved` while an admin can**
-  - [ ] **P2.T3.3: Demonstrate the tests failing on the pre-fix commit**
+- [x] **P2.T3: Cover both rules** - covers: AC-5, AC-14
+  - [x] **P2.T3.1: Test that an anonymous create is rejected**
+  - [x] **P2.T3.2: Test that a writer cannot set `status` to `approved` while an admin can**
+  - [x] **P2.T3.3: Demonstrate the tests failing on the pre-fix commit**
 
 ## Phase 3: Commenter identity
 

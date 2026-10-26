@@ -158,3 +158,21 @@ None. Both changed files are inside `Touches`.
 - **The `create` rule denies anonymous, not everyone.** The brief offered `() => false` as an alternative and asked for the disagreement to be recorded if chosen. It was not chosen: `Boolean(user)` matches the spec's "denies anonymous" wording and keeps authenticated staff working. No disagreement to record.
 - **Residual noticed, not fixed (out of scope for this phase).** The collection-level `update` rule permits a writer on comments on their own reviews, and now that `status` is withheld, a writer's remaining reachable fields on such a comment are `authorName`, `content` and `reportCount`. That is arguably still more than a moderation role needs - a writer can edit a commenter's displayed name and content - but narrowing it is a product decision about what writer moderation should mean, not an access-control defect, and it is not in this phase's scope. Flagging it for the review phase rather than changing it silently.
 - **The `afterChange` hook was not touched.** It still increments `approvedCommentCount` and sets `trusted` at three approvals. Note that it fires on any update reaching `approved`, and now only an admin's update can produce that transition - which is the intended consequence, but it does mean the count only moves when an admin approves.
+## Primary verification
+
+| Layer | Command | Exit | Summary |
+|---|---|---|---|
+| static | `bun run typecheck` | 0 | No type errors in 253 files (504.26ms) |
+| static | `bun run lint` | 0 | Checked 245 files, no fixes applied |
+| unit | `bun test` | 0 | 700 pass, 0 fail, 1651 expect() calls, 50 files (2.73s) |
+| unit | `bun test src/collections/__tests__/Comments.test.ts` | 0 | 16 pass, 0 fail, 25 expect() calls |
+
+The primary reproduced the before/after record independently, checking out `src/collections/Comments.ts` from the phase base `9300c68` while keeping the new tests: **12 pass, 4 fail**, and the four failures are exactly the ones recorded above - `denies an anonymous create` with `Expected: false, Received: true`, `drops status from a writer's write` with `not.toHaveProperty` failing, and the two reporting `Received: undefined` because no field rule existed. The recorded caveat about which failures prove the vulnerability was accurate, not a hedge.
+
+One correction worth recording: an initial reproduction attempt restored the file with `git checkout --`, which yields the *committed* (already fixed) version and therefore passed 16/16 - proving nothing. It was redone against the phase base. Recorded so the mistake is not repeated by whoever re-runs this.
+
+The primary also confirmed the claim in section 5 at the source: `node_modules/payload/dist/collections/operations/create.js:126` guards the create access check with `if (!overrideAccess)`, so the Local API path the server action uses never consults the rule.
+
+**Result: verified.**
+
+AC-5 and AC-14 are satisfied by direct test evidence. FR-3 and FR-9 by the code. The six pre-existing `beforeChange` derivation tests are untouched and passing. The residual recorded in the notes - that a writer can still edit `authorName` and `content` on comments on their own reviews - stands as a product question, correctly left to review rather than decided here.
