@@ -184,18 +184,21 @@
 - **Covers:** D1, D2, D3
 - **Touches:** `src/app/actions/comments.ts`, `src/app/actions/__tests__/comments.test.ts`, `src/components/comments/CommentSection.tsx`, `src/components/comments/comment-fetch-state.ts`, `src/components/comments/__tests__/comment-fetch-state.test.ts`, `conductor/tracks/20261026-access-control-hardening/plan.md`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
-- **Status:** in_progress
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** 6faa182
+- **Evidence:** conductor/tracks/20261026-access-control-hardening/verification/phase-R2.md
 
-- [ ] **R2.T1: Bound fetch breadth as well as burst** - covers: D1
-  - [ ] **R2.T1.1:** Keep the per-review bucket for fairness and add an aggregate per-address bucket checked first, so one address sweeping many review ids is still capped.
-  - [ ] **R2.T1.2:** State in the comment which bound each key provides, including that the aggregate one is what makes the action useless for enumerating the catalogue.
-  - [ ] **R2.T1.3:** Test that calls across many distinct review ids from one address eventually trip the aggregate key.
-- [ ] **R2.T2: Make the retention contract real, or drop it** - covers: D2
-  - [ ] **R2.T2.1:** Reconcile the module doc, the test and the render so all three describe one behaviour: a failed refresh with comments already on screen keeps them and shows a banner, while an initial-load failure shows the error block.
-  - [ ] **R2.T2.2:** Put the render decision in a pure selector so it is testable without a component harness, and test the `hasError` + non-empty case.
-  - [ ] **R2.T2.3:** Add any new dictionary string to both `en` and `id`.
-- [ ] **R2.T3: Record the phase state honestly** - covers: D3
-  - [ ] **R2.T3.1:** Run `bun run test:e2e` for this phase and record the result, or mark the phase `partial` with the reason.
+- [x] **R2.T1: Bound fetch breadth as well as burst** - covers: D1
+  - [x] **R2.T1.1:** Keep the per-review bucket for fairness and add an aggregate per-address bucket checked first, so one address sweeping many review ids is still capped.
+  - [x] **R2.T1.2:** State in the comment which bound each key provides, including that the aggregate one is what makes the action useless for enumerating the catalogue.
+  - [x] **R2.T1.3:** Test that calls across many distinct review ids from one address eventually trip the aggregate key.
+- [x] **R2.T2: Make the retention contract real, or drop it** - covers: D2
+  - [x] **R2.T2.1:** Reconcile the module doc, the test and the render so all three describe one behaviour: a failed refresh with comments already on screen keeps them and shows a banner, while an initial-load failure shows the error block.
+  - [x] **R2.T2.2:** Put the render decision in a pure selector so it is testable without a component harness, and test the `hasError` + non-empty case.
+  - [x] **R2.T2.3:** Add any new dictionary string to both `en` and `id`.
+- [x] **R2.T3: Record the phase state honestly** - covers: D3
+  - [x] **R2.T3.1:** Run `bun run test:e2e` for this phase and record the result, or mark the phase `partial` with the reason.
 
 <!--
 Acceptance block appended by the primary agent after a phase is accepted:

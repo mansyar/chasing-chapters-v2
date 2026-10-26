@@ -457,3 +457,91 @@ brief says so explicitly.
   untested by this phase.
 - **`plan.md` is not updated by this phase.** The primary records the phase
   state. The e2e result it can record is in §2.
+
+---
+
+## Primary verification
+
+The primary re-ran every layer on the squashed checkpoint `6faa182`, ran the e2e
+layer for the first time in this track's history, and reproduced both defects
+independently from the phase base.
+
+| Layer | Command | Exit | Summary |
+| --- | --- | --- | --- |
+| static | `bun run typecheck` | 0 | no type errors in 258 files (571ms) |
+| static | `bun run lint` | 0 | 250 files checked, no fixes applied |
+| unit | `bun test` | 0 | 763 pass, 0 fail, 3082 expect() calls, 54 files (2.77s) |
+| e2e | `bun run test:e2e` | 0 | 112 passed, 0 failed, 0 flaky (1.6m) |
+
+The e2e count matches the phase's own run (112 passed) and the whole track's
+earlier integrated run, so the component refactor and the extra rate-limit call
+changed nothing observable in a browser - which is the point of D3's fix.
+
+### Independent reproduction
+
+Both defects were reproduced by the primary from the phase base `10b1d8e`, with
+the fixed files backed up, restored, and the index cleaned with
+`git restore --staged`:
+
+- **D1** - `comments.ts` reverted: `Expected: 1200 / Received: 0` on
+  "caps one address across many review ids, not only per review". The received
+  value is 0 because the pre-fix action never touched the aggregate key at all,
+  which is the defect itself rather than a missing mock.
+- **D2** - reverting `comment-fetch-state.ts` alone produced a third failure the
+  evidence attributes differently: with the selector removed the module fails to
+  *import*, which is why my combined revert showed `3 fail` where the evidence
+  records 4 for the component-only revert. The evidence's own D2 section is the
+  more precise reproduction - it reverts `CommentSection.tsx` alone, leaving the
+  new state module in place, which is the finding's exact shape (state correct,
+  component wrong) and yields four failures on source-level assertions. The
+  primary's run does not contradict it; it exercised a different revert.
+
+### What the primary reviewed directly
+
+- **D1.** The aggregate bucket is checked **first**, so a caller sweeping many
+  review ids cannot step around it by never filling a single per-review bucket -
+  that ordering is the fix, not incidental. The 1200 ceiling is derived as ten
+  times the per-review ceiling *now in force* (120), and the code comment records
+  why the review's suggested 600 was not copied: 600 was ten times the older
+  ceiling of 60, and at 120 it would only be five times, reachable by exhausting
+  five reviews, which is browsing rather than enumeration. Deriving the number
+  from the live constant instead of copying the suggested figure is the right
+  call and the reasoning is re-derivable if the per-review ceiling moves.
+- **D2.** `selectCommentsRender` distinguishes `loading` / `error` /
+  `list-with-error` / `list`, and the component renders `<CommentList>` for both
+  list modes, with the amber `role="status"` banner above the rows in
+  `list-with-error`. The module doc, the selector, the render and the tests now
+  describe one behaviour. This is a legend improvement over the finding's minimum:
+  the retention claim is now backed by a render that actually uses the retained
+  array.
+- **Beyond the brief.** T2.2 asked for the render decision in a testable seam,
+  which the selector satisfies. The subagent also added four
+  `CommentSection render branches` cases asserting the *source* of the component -
+  that it takes its mode from the selector and that each guard names the right
+  mode - because a selector test alone would not have caught D2 recurring (the
+  state was already right while the component was wrong). That is the technique
+  `dictionary-source.test.ts` already uses in this repo, it fails on a revert, and
+  the evidence is honest that it checks source text rather than a rendered tree.
+  Accepted as a genuine improvement, not scope creep.
+
+**Result: verified.** D1, D2 and D3 are fixed at the root cause. Independent
+evidence: `Received: 0` on the aggregate counter for D1, and the component-only
+revert failing four assertions while the state tests still pass for D2. No
+Phase 1-R1 behaviour changed - the per-review ceiling, `MAX_COMMENTS_PER_REVIEW`,
+every collection rule and the `canAcceptPublicWrite` call sites are untouched; the
+only new state is one dictionary key per locale and the selector.
+
+### Carried to the round 3 re-review
+
+1. **The 1200 ceiling is a judgement, not a measurement** (evidence section 9).
+   Honestly recorded, with the re-derivation in the code comment. Low-Medium
+   depends on how much weight the bound is expected to carry.
+2. **The aggregate bound fails open with Redis down**, as every limit in this
+   codebase does. Pre-existing, unchanged, and now stated for the new bound as
+   well as the old one. Low.
+3. **The e2e suite does not drive a failed refresh**, so the banner is proven at
+   source level and by the selector, not in a browser. Same class as the gap R1
+   admitted; e2e does at least now prove the refactor did not break the flow. Low.
+4. **The component's rendered output is still asserted only at source level**
+   because the project has no React test harness. Low, and a harness is a
+   reasonable future track rather than a defect here.
