@@ -58,7 +58,7 @@
 - **Covers:** FR-2, AC-3
 - **Touches:** `src/collections/Commenters.ts`, `src/collections/__tests__/Commenters.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P3.T1: Close anonymous commenter creation** - covers: FR-2
   - [ ] **P3.T1.1: Change `create` from `() => true` to deny, leaving `read`, `update` and `delete` admin-only as they are**
