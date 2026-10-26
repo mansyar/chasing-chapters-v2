@@ -159,7 +159,7 @@ The primary appends after acceptance:
 - **Covers:** F1, F2, F3, F4, F5
 - **Touches:** `src/lib/review-navigation.ts`, `src/lib/__tests__/review-navigation.test.ts`, `src/components/ReadingListCard.tsx`, `src/app/(public)/[locale]/reading-lists/page.tsx`, `src/lib/__tests__/typography-source.test.ts`, `src/components/reviews/__tests__/StarRating.test.ts`, `src/app/globals.css`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **R1.T1: Stop inventing neighbours from the wrong column** - covers: F1
   - [ ] **R1.T1.1: Anchor on `publishDate` only so a review without one has no neighbours, as the doc comment already claims**
