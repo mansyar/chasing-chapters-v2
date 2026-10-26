@@ -153,7 +153,6 @@ const en = {
 	readingListsEmptyTitle: "No reading lists yet",
 	readingListsEmptyDescription:
 		"Curated collections of reviews are on the way — check back soon.",
-	readingListsNoImage: "No Image",
 	readingListNoReviews: "No reviews added to this list yet.",
 	readingListShareTitle: "Check out this reading list: {title}",
 	readingListBookSingular: "book",
@@ -351,7 +350,6 @@ const id: Dictionary = {
 	readingListsEmptyTitle: "Belum ada daftar bacaan",
 	readingListsEmptyDescription:
 		"Kumpulan ulasan pilihan sedang disiapkan — kembali lagi sebentar lagi.",
-	readingListsNoImage: "Tanpa Gambar",
 	readingListNoReviews: "Belum ada ulasan yang ditambahkan ke daftar ini.",
 	readingListShareTitle: "Lihat daftar bacaan ini: {title}",
 	readingListBookSingular: "buku",
