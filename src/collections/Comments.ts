@@ -38,8 +38,11 @@ export const Comments: CollectionConfig = {
 				},
 			};
 		},
-		// Anyone can create comments (guest commenting)
-		create: () => true,
+		// Guest commenting does not need an open create rule: the
+		// `submitComment` server action writes through the Local API, where
+		// `overrideAccess` defaults to true and this rule is not consulted.
+		// Leaving it open only exposed `POST /api/comments` to anyone.
+		create: ({ req: { user } }) => Boolean(user),
 		// Admins and review authors can update comments (for moderation)
 		update: async ({ req: { user } }) => {
 			if (!user) return false;
@@ -200,6 +203,18 @@ export const Comments: CollectionConfig = {
 			],
 			defaultValue: "pending",
 			required: true,
+			access: {
+				// The collection rule above lets a writer update comments on
+				// their own reviews, so the privileged transition has to be
+				// withheld here: a writer may still moderate a comment, but
+				// Payload drops `status` from their write rather than
+				// rejecting it. Approving is an admin decision (FR-9).
+				//
+				// Deliberately no `create` rule. On create the derivation hook
+				// below owns this field, and a create-time rule could drop the
+				// value before the hook sets it.
+				update: ({ req: { user } }) => user?.role === "admin",
+			},
 			admin: {
 				position: "sidebar",
 			},

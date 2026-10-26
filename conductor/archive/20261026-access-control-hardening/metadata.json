@@ -1,0 +1,32 @@
+{
+	"id": "20261026-access-control-hardening",
+	"title": "Access Control Hardening",
+	"type": "bug",
+	"status": "complete",
+	"priority": "high",
+	"depends_on": [],
+	"created_at": "2026-10-26T00:47:24Z",
+	"updated_at": "2026-10-26T06:20:37Z",
+	"spec": "spec.md",
+	"plan": "plan.md",
+	"branch": "fix/20261026-access-control-hardening",
+	"base_branch": "main",
+	"base_sha": "a6ee383088b34b3ba327b835099fe6840edcbe60",
+	"progress": {
+		"phases_total": 6,
+		"phases_verified": 6,
+		"tasks_total": 15,
+		"tasks_done": 15
+	},
+	"last_checkpoint": "cfad32c",
+	"review_verdict": "PASS WITH FINDINGS",
+	"review_rounds": 5,
+	"doc_sync": "updated",
+	"pr_url": "https://github.com/mansyar/chasing-chapters-v2/pull/30",
+	"pr_state": "open",
+	"reverted_at": null,
+	"revert_commit": null,
+	"revert_pr_url": null,
+	"archived_at": "2026-10-26T06:20:37Z",
+	"archive_path": "conductor/archive/20261026-access-control-hardening"
+}

@@ -1,4 +1,4 @@
-import type { CollectionConfig } from "payload";
+import type { CollectionConfig, Where } from "payload";
 import formatSlug from "../hooks/formatSlug";
 import { revalidateReadingListPages } from "../hooks/revalidatePages";
 import { requireDefaultLocaleValue } from "./requireDefaultLocaleValue";
@@ -12,7 +12,36 @@ export const ReadingLists: CollectionConfig = {
 		drafts: true,
 	},
 	access: {
-		read: () => true,
+		read: ({ req: { user } }) => {
+			// Admins see every reading list, drafts included. This is the
+			// branch the admin panel reads through, so it is what keeps a
+			// draft editable.
+			if (user?.role === "admin") return true;
+			// Writers see their own lists, the shape `Reviews.read` uses.
+			// Without this branch a writer's admin list would be empty: their
+			// own lists are drafts, and the public branch below hides drafts.
+			if (user?.role === "writer") {
+				return {
+					author: {
+						equals: user.id,
+					},
+				} as Where;
+			}
+			// Public reads see published lists only. `versions.drafts` is on,
+			// so without this constraint `?draft=true` on the REST surface
+			// returned unpublished lists to anyone. Reading lists carry no
+			// `publishAt` schedule, so the constraint is `_status` alone
+			// rather than `publishedAndVisibleWhere` - that fragment names a
+			// field this collection does not have. The public pages filter
+			// `_status` themselves and read through the Local API, where
+			// `overrideAccess` defaults to true, so they never consult this
+			// rule.
+			return {
+				_status: {
+					equals: "published",
+				},
+			} as Where;
+		},
 		create: ({ req: { user } }) => Boolean(user),
 		update: ({ req: { user } }) => {
 			if (!user) return false;

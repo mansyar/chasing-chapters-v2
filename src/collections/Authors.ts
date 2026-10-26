@@ -99,6 +99,14 @@ export const Authors: CollectionConfig = {
 			],
 			defaultValue: "writer",
 			required: true,
+			access: {
+				// A writer may update their own document so they can edit their
+				// name, avatar and bio, which the collection rule above allows.
+				// Only an admin may move an account between roles; for everyone
+				// else Payload drops `role` from the write rather than rejecting
+				// the whole update, so profile editing still succeeds.
+				update: ({ req: { user } }) => user?.role === "admin",
+			},
 		},
 	],
 	hooks: {

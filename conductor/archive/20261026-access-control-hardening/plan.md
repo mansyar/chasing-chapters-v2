@@ -1,0 +1,265 @@
+# Access Control Hardening - Implementation Plan
+
+> **Branch:** fix/20261026-access-control-hardening
+> **Base:** main @ a6ee383
+>
+> Phase states are `pending`, `in_progress`, `verified`, `failed`, `blocked`. Only the primary agent writes this file.
+
+## Phase 1: Author role escalation
+
+- **Goal:** A writer's self-update cannot change `role`; an admin's update can.
+- **Depends on:** none
+- **Covers:** FR-1, AC-1, AC-2
+- **Touches:** `src/collections/Authors.ts`, `src/collections/__tests__/Authors.test.ts`
+- **Verification:** `bun run typecheck && bun run lint && bun test`
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** 6e014e4
+- **Evidence:** conductor/tracks/20261026-access-control-hardening/verification/phase-1.md
+
+- [x] **P1.T1: Restrict the role field to admins** - covers: FR-1
+  - [x] **P1.T1.1: Add field-level `access.update` on `role` that returns true only for an admin**
+  - [x] **P1.T1.2: Confirm the admin path is unaffected and the collection-level `update` rule is left alone**
+
+- [x] **P1.T2: Prove both directions** - covers: AC-1, AC-2
+  - [x] **P1.T2.1: Test that a writer's self-update setting `role: "admin"` leaves the stored role unchanged**
+  - [x] **P1.T2.2: Test that an admin updating another author's role succeeds**
+  - [x] **P1.T2.3: Demonstrate both tests failing on the pre-fix commit and record both runs in the evidence file**
+
+## Phase 2: Comments collection access
+
+- **Goal:** Anonymous `POST /api/comments` is rejected and only an admin can change a comment's status, while the server action still creates comments with a derived status.
+- **Depends on:** none
+- **Covers:** FR-3, FR-9, AC-5, AC-14
+- **Touches:** `src/collections/Comments.ts`, `src/collections/__tests__/Comments.test.ts`
+- **Verification:** `bun run typecheck && bun run lint && bun test`
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** f6e8241
+- **Evidence:** conductor/tracks/20261026-access-control-hardening/verification/phase-2.md
+
+- [x] **P2.T1: Close anonymous comment creation** - covers: FR-3
+  - [x] **P2.T1.1: Change `create` from `() => true` to deny, leaving `read`, `update` and `delete` untouched**
+  - [x] **P2.T1.2: Confirm the `beforeChange` status derivation still runs for local-API creates, since the action depends on it**
+
+- [x] **P2.T2: Make comment status admin-only** - covers: FR-9
+  - [x] **P2.T2.1: Add field-level `access.update` on `status` limited to admins**
+  - [x] **P2.T2.2: Confirm writers keep read access to their reviews' comments and can still moderate nothing**
+
+- [x] **P2.T3: Cover both rules** - covers: AC-5, AC-14
+  - [x] **P2.T3.1: Test that an anonymous create is rejected**
+  - [x] **P2.T3.2: Test that a writer cannot set `status` to `approved` while an admin can**
+  - [x] **P2.T3.3: Demonstrate the tests failing on the pre-fix commit**
+
+## Phase 3: Commenter identity
+
+- **Goal:** No anonymous commenter creation, and the server action's creation path still works.
+- **Depends on:** none
+- **Covers:** FR-2, AC-3
+- **Touches:** `src/collections/Commenters.ts`, `src/collections/__tests__/Commenters.test.ts`
+- **Verification:** `bun run typecheck && bun run lint && bun test`
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** 9a345df
+- **Evidence:** conductor/tracks/20261026-access-control-hardening/verification/phase-3.md
+
+- [x] **P3.T1: Close anonymous commenter creation** - covers: FR-2
+  - [x] **P3.T1.1: Change `create` from `() => true` to deny, leaving `read`, `update` and `delete` admin-only as they are**
+  - [x] **P3.T1.2: Confirm the server action's local-API create path is unaffected, since it does not pass `overrideAccess: false`**
+
+- [x] **P3.T2: Cover the rule** - covers: AC-3
+  - [x] **P3.T2.1: Test that an anonymous create is rejected**
+  - [x] **P3.T2.2: Demonstrate the test failing on the pre-fix commit**
+
+## Phase 4: Reading list visibility
+
+- **Goal:** Draft reading lists are invisible to unauthenticated reads and still visible to an admin.
+- **Depends on:** none
+- **Covers:** FR-4, AC-6, AC-7
+- **Touches:** `src/collections/ReadingLists.ts`, `src/collections/__tests__/ReadingLists.test.ts`
+- **Verification:** `bun run typecheck && bun run lint && bun test`
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** e81aa9c
+- **Evidence:** conductor/tracks/20261026-access-control-hardening/verification/phase-4.md
+
+- [x] **P4.T1: Exclude drafts from public reads** - covers: FR-4
+  - [x] **P4.T1.1: Add a `where` constraint for unauthenticated reads that excludes drafts, following the `publishedAndVisibleWhere` pattern Reviews already uses**
+  - [x] **P4.T1.2: Confirm an authenticated admin read still returns drafts, and record whether the admin preview uses an authenticated request or `?draft=true`**
+  - [x] **P4.T1.3: Check every public reading-list query site (index, detail, sitemap, home) and record what each relies on**
+
+- [x] **P4.T2: Cover both directions** - covers: AC-6, AC-7
+  - [x] **P4.T2.1: Test that an unauthenticated read returns no draft rows**
+  - [x] **P4.T2.2: Test that an authenticated admin read returns the draft**
+  - [x] **P4.T2.3: Demonstrate the unauthenticated test failing on the pre-fix commit**
+
+## Phase 5: Comment server actions
+
+- **Goal:** Reporting cannot write arbitrary fields, a guest cannot rewrite another commenter's name, and comment fetching is bounded.
+- **Depends on:** Phase 2, Phase 3
+- **Covers:** FR-5, FR-6, FR-8, FR-11, AC-4, AC-8, AC-9, AC-10, AC-11, AC-13
+- **Touches:** `src/app/actions/comments.ts`, `src/app/actions/__tests__/comments.test.ts`
+- **Verification:** `bun run typecheck && bun run lint && bun test`
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** 5f5af2d
+- **Evidence:** conductor/tracks/20261026-access-control-hardening/verification/phase-5.md
+
+- [x] **P5.T1: Make reporting an access-checked, field-scoped write** - covers: FR-5, FR-11
+  - [x] **P5.T1.1: Resolve the comment, verify it is approved and its review is publicly visible, and reject otherwise**
+  - [x] **P5.T1.2: Update only `status`, with `overrideAccess: false`, so `content`, `relatedReview` and a transition to `approved` are impossible**
+  - [x] **P5.T1.3: Revalidate the affected review paths after a successful report**
+  - [x] **P5.T1.4: Make a repeat report idempotent — no error, no double increment of `reportCount`**
+
+- [x] **P5.T2: Stop the commenter name takeover** - covers: FR-6
+  - [x] **P5.T2.1: Remove the update that rewrites an existing commenter's `name` from the submitted value**
+  - [x] **P5.T2.2: Confirm `Comments.authorName` carries the submitted name so display is unaffected**
+
+- [x] **P5.T3: Bound comment fetching** - covers: FR-8
+  - [x] **P5.T3.1: Require a positive integer `reviewId` and reject otherwise**
+  - [x] **P5.T3.2: Rate-limit per IP using the existing `rateLimit` helper**
+  - [x] **P5.T3.3: Lower the hard limit from 100 to the page size the UI actually renders**
+
+- [x] **P5.T4: Cover the actions** - covers: AC-4, AC-8, AC-9, AC-10, AC-11, AC-13
+  - [x] **P5.T4.1: Test that reporting sets `reported` and revalidates**
+  - [x] **P5.T4.2: Test that a report cannot alter `content`, cannot set `approved`, and cannot change `relatedReview`**
+  - [x] **P5.T4.3: Test that a known email with a different name leaves the commenter row untouched and the comment shows the submitted name**
+  - [x] **P5.T4.4: Test that a missing or non-positive `reviewId` is rejected and the rate limit is enforced**
+  - [x] **P5.T4.5: Test that guest commenting still succeeds end to end now that `create` is closed**
+  - [x] **P5.T4.6: Demonstrate the bypass tests failing on the pre-fix commit**
+
+## Phase 6: Like visibility and moderation revalidation
+
+- **Goal:** Liking a non-public review is rejected, and approving a comment makes it visible without waiting for ISR.
+- **Depends on:** none
+- **Covers:** FR-7, FR-10, AC-12, AC-15
+- **Touches:** `src/app/actions/like-review.ts`, `src/app/actions/moderation.ts`, `src/app/actions/__tests__/like-review.test.ts`, `src/app/actions/__tests__/moderation.test.ts`
+- **Verification:** `bun run typecheck && bun run lint && bun test`
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** dd6aa0b
+- **Evidence:** conductor/tracks/20261026-access-control-hardening/verification/phase-6.md
+
+- [x] **P6.T1: Reject likes on invisible reviews** - covers: FR-7, AC-12
+  - [x] **P6.T1.1: Check public visibility before incrementing, reusing the shared visibility predicate**
+  - [x] **P6.T1.2: Test that a draft and a scheduled review are both rejected while a published one succeeds**
+
+- [x] **P6.T2: Revalidate after moderation** - covers: FR-10, AC-15
+  - [x] **P6.T2.1: Revalidate the affected review paths after a successful status change**
+  - [x] **P6.T2.2: Test that approving revalidates the review's paths**
+
+## Phase R1: Review Fixes
+
+- **Goal:** Resolve review findings F1, F2, F3 and F4 from `review.md`.
+- **Depends on:** Phase 5
+- **Covers:** F1, F2, F3, F4
+- **Touches:** `src/collections/Commenters.ts`, `src/collections/__tests__/Commenters.test.ts`, `src/app/actions/comments.ts`, `src/app/actions/__tests__/comments.test.ts`, `src/components/comments/CommentSection.tsx`, `src/lib/i18n/dictionary.ts`, `src/lib/publish-visibility.ts`, `src/app/actions/moderation.ts`
+- **Verification:** `bun run typecheck && bun run lint && bun test`
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** ed87553
+- **Evidence:** conductor/tracks/20261026-access-control-hardening/verification/phase-R1.md
+
+- [x] **R1.T1: Close the writer-scoped trusted-commenter path** - covers: F1
+  - [x] **R1.T1.1: Add field-level `create` and `update` access on `trusted` and `banned`, admin-only**
+  - [x] **R1.T1.2: Test that a writer is denied both fields and an admin is allowed**
+  - [x] **R1.T1.3: Confirm `Comments.afterChange` and the server action still set `trusted` through the Local API**
+
+- [x] **R1.T2: Stop the fetch limit from emptying a comment section** - covers: F2
+  - [x] **R1.T2.1: Key the limit as `comments:${ip}:${reviewId}` with a ceiling browsing cannot reach**
+  - [x] **R1.T2.2: Give `CommentSection` an error branch so a rejected fetch does not render the empty state**
+  - [x] **R1.T2.3: Test that a rejected fetch renders the error, not the empty state**
+
+- [x] **R1.T3: Correct the revalidation rationale and scope the report revalidation** - covers: F3
+  - [x] **R1.T3.1: Reword both comments to describe revalidation as defence in depth, noting the comment list is client-fetched**
+  - [x] **R1.T3.2: Gate `reportComment`'s revalidation on the status actually becoming `reported`**
+
+- [x] **R1.T4: Correct the `canAcceptPublicWrite` doc block** - covers: F4
+  - [x] **R1.T4.1: Name all three call sites and generalise "a reader's comment" to a public write**
+
+## Phase R2: Review Fixes (Round 2)
+
+- **Goal:** Resolve the two Medium findings D1 and D2 and the Low finding D3 raised by the round 2 delta re-review, and record the phase state honestly.
+- **Depends on:** Phase R1
+- **Covers:** D1, D2, D3
+- **Touches:** `src/app/actions/comments.ts`, `src/app/actions/__tests__/comments.test.ts`, `src/components/comments/CommentSection.tsx`, `src/components/comments/comment-fetch-state.ts`, `src/components/comments/__tests__/comment-fetch-state.test.ts`, `conductor/tracks/20261026-access-control-hardening/plan.md`
+- **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** 6faa182
+- **Evidence:** conductor/tracks/20261026-access-control-hardening/verification/phase-R2.md
+
+- [x] **R2.T1: Bound fetch breadth as well as burst** - covers: D1
+  - [x] **R2.T1.1:** Keep the per-review bucket for fairness and add an aggregate per-address bucket checked first, so one address sweeping many review ids is still capped.
+  - [x] **R2.T1.2:** State in the comment which bound each key provides, including that the aggregate one is what makes the action useless for enumerating the catalogue.
+  - [x] **R2.T1.3:** Test that calls across many distinct review ids from one address eventually trip the aggregate key.
+- [x] **R2.T2: Make the retention contract real, or drop it** - covers: D2
+  - [x] **R2.T2.1:** Reconcile the module doc, the test and the render so all three describe one behaviour: a failed refresh with comments already on screen keeps them and shows a banner, while an initial-load failure shows the error block.
+  - [x] **R2.T2.2:** Put the render decision in a pure selector so it is testable without a component harness, and test the `hasError` + non-empty case.
+  - [x] **R2.T2.3:** Add any new dictionary string to both `en` and `id`.
+- [x] **R2.T3: Record the phase state honestly** - covers: D3
+  - [x] **R2.T3.1:** Run `bun run test:e2e` for this phase and record the result, or mark the phase `partial` with the reason.
+
+## Phase R3: Review Fixes (Round 3)
+
+- **Goal:** Resolve the two Low findings F1 and F2 raised by the round 3 delta re-review, so that under strict mode no finding is left deferred.
+- **Depends on:** Phase R2
+- **Covers:** F1, F2
+- **Touches:** `src/app/actions/comments.ts`, `src/app/actions/__tests__/comments.test.ts`, `src/components/comments/__tests__/comment-fetch-state.test.ts`
+- **Verification:** `bun run typecheck && bun run lint && bun test`
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** 352a3cb
+- **Evidence:** conductor/tracks/20261026-access-control-hardening/verification/phase-R3.md
+
+- [x] **R3.T1: Stop a refused per-review call from spending the address budget** - covers: F5
+  - [x] **R3.T1.1:** Check the per-review bucket before the aggregate one, so a call the per-review bucket refuses returns without incrementing the address-wide counter.
+  - [x] **R3.T1.2:** Confirm a sweep across many distinct review ids still fills the aggregate bucket, since a sweep passes each per-review bucket trivially - the sweep bound must survive the reordering.
+  - [x] **R3.T1.3:** Correct the doc block so the "at least ten distinct review ids" claim states the property the code now actually has.
+  - [x] **R3.T1.4:** Test that a call refused by the per-review bucket does not increment the aggregate counter, and that the aggregate still fires for a sweep.
+- [x] **R3.T2: Scope the source assertions and cover the retained array** - covers: F6
+  - [x] **R3.T2.1:** Scope the two negative `isLoading?`/`hasError?` assertions to the comments-list region of the component, so an unrelated edit elsewhere in the file cannot trip them.
+  - [x] **R3.T2.2:** Assert the list-with-error branch passes the retained array rather than an empty one.
+
+## Phase R4: Review Fixes (Round 4)
+
+- **Goal:** Resolve the four Low findings N1, N2, N3 and N4 raised by the round 4 delta re-review - documentation precision and assertion strictness - so that under strict mode no finding is left deferred.
+- **Depends on:** Phase R3
+- **Covers:** N1, N2, N3, N4
+- **Touches:** `src/app/actions/comments.ts`, `src/app/actions/__tests__/comments.test.ts`, `src/components/comments/__tests__/comment-fetch-state.test.ts`
+- **Verification:** `bun run typecheck && bun run lint && bun test`
+- **Status:** verified
+- **Result:** verified
+- **Checkpoint:** cfad32c
+- **Evidence:** conductor/tracks/20261026-access-control-hardening/verification/phase-R4.md
+
+- [x] **R4.T1: Make the aggregate ceiling derivation exact** - covers: N1, N2
+  - [x] **R4.T1.1:** State that the id count is approximate, because a per-review window is anchored at its own first call, and give the ordinary-use and deliberately-misaligned figures.
+  - [x] **R4.T1.2:** State the mirror case - a call the aggregate refuses has already spent its per-review bucket - and that it is bounded and does not restore the shared-bucket harm.
+- [x] **R4.T2: Make the retained-array assertion exact** - covers: N3, N4
+  - [x] **R4.T2.1:** Resolve the prop through an alias map instead of literal equality, and reject only a bare empty-array literal.
+  - [x] **R4.T2.2:** Verify by mutation that every behaviour-preserving rewrite passes and the defect still fails.
+  - [x] **R4.T2.3:** Correct the finding id cited in the rate-limit test comment.
+
+<!--
+Acceptance block appended by the primary agent after a phase is accepted:
+
+**Result:** verified
+**Checkpoint:** <short-sha>
+**Evidence:** conductor/tracks/<track-id>/verification/phase-1.md
+-->
+
+<!--
+Review fixes are appended by `conductor-review` as:
+
+## Phase R1: Review Fixes
+
+- **Goal:** Resolve review findings <F1, F2, ...>.
+- **Depends on:** <last verified phase>
+- **Covers:** <finding IDs>
+- **Touches:** <union of files from the findings>
+- **Verification:** <the review checks that must pass>
+- **Status:** pending
+
+- [ ] **R1.T1: Resolve <finding ID>** - covers: <finding ID>
+-->
