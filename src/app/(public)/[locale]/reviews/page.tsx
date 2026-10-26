@@ -283,6 +283,7 @@ export default async function BrowsePage({ params, searchParams }: PageProps) {
 									review={review}
 									locale={appLocale}
 									priority={index < 2}
+									ratingLabel={dictionary.ratingLabel}
 								/>
 							))}
 						</div>

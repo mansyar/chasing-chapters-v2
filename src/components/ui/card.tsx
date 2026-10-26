@@ -1,6 +1,29 @@
+import Link from "next/link";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
+
+/**
+ * The base every content card shares: a whole-card link with the hover lift,
+ * the card surface, and the overflow clipping its cover image needs.
+ *
+ * `ReviewCard` and `ReadingListCard` had this markup duplicated character for
+ * character; it lives here so the two cannot drift into two visual languages,
+ * and so a new card gets the treatment by construction.
+ */
+function CardLink({
+	className,
+	children,
+	...props
+}: React.ComponentProps<typeof Link>) {
+	return (
+		<Link className={cn("group block h-full", className)} {...props}>
+			<Card className="h-full overflow-hidden border-none shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-card">
+				{children}
+			</Card>
+		</Link>
+	);
+}
 
 function Card({ className, ...props }: React.ComponentProps<"div">) {
 	return (
@@ -38,29 +61,6 @@ function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
 	);
 }
 
-function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
-	return (
-		<div
-			data-slot="card-description"
-			className={cn("text-muted-foreground text-sm", className)}
-			{...props}
-		/>
-	);
-}
-
-function CardAction({ className, ...props }: React.ComponentProps<"div">) {
-	return (
-		<div
-			data-slot="card-action"
-			className={cn(
-				"col-start-2 row-span-2 row-start-1 self-start justify-self-end",
-				className,
-			)}
-			{...props}
-		/>
-	);
-}
-
 function CardContent({ className, ...props }: React.ComponentProps<"div">) {
 	return (
 		<div
@@ -81,12 +81,4 @@ function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
 	);
 }
 
-export {
-	Card,
-	CardAction,
-	CardContent,
-	CardDescription,
-	CardFooter,
-	CardHeader,
-	CardTitle,
-};
+export { Card, CardContent, CardFooter, CardHeader, CardLink, CardTitle };

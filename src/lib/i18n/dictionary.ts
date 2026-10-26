@@ -67,6 +67,9 @@ const en = {
 	heroGoToSlide: "Go to slide {slide}",
 	cardByAuthor: "by {author}",
 
+	// Star rating
+	ratingLabel: "Rated {rating} out of 5",
+
 	// Review browse
 	browseSearch: "Search",
 	browseSearchPlaceholder: "Search...",
@@ -150,7 +153,6 @@ const en = {
 	readingListsEmptyTitle: "No reading lists yet",
 	readingListsEmptyDescription:
 		"Curated collections of reviews are on the way — check back soon.",
-	readingListsNoImage: "No Image",
 	readingListNoReviews: "No reviews added to this list yet.",
 	readingListShareTitle: "Check out this reading list: {title}",
 	readingListBookSingular: "book",
@@ -209,6 +211,10 @@ const en = {
 		"Book reviews, reading lists, and literary notes from Chasing Chapters.",
 	browseItemListName: "Book Reviews",
 	breadcrumbHome: "Home",
+	breadcrumbLabel: "Breadcrumb",
+	reviewNavLabel: "Adjacent reviews",
+	reviewNavPrevious: "Previous review",
+	reviewNavNext: "Next review",
 
 	// Draft preview
 	previewLabel: "Preview",
@@ -262,6 +268,8 @@ const id: Dictionary = {
 	heroNextReview: "Ulasan berikutnya",
 	heroGoToSlide: "Buka slide {slide}",
 	cardByAuthor: "oleh {author}",
+
+	ratingLabel: "Dinilai {rating} dari 5",
 
 	browseSearch: "Cari",
 	browseSearchPlaceholder: "Cari...",
@@ -342,7 +350,6 @@ const id: Dictionary = {
 	readingListsEmptyTitle: "Belum ada daftar bacaan",
 	readingListsEmptyDescription:
 		"Kumpulan ulasan pilihan sedang disiapkan — kembali lagi sebentar lagi.",
-	readingListsNoImage: "Tanpa Gambar",
 	readingListNoReviews: "Belum ada ulasan yang ditambahkan ke daftar ini.",
 	readingListShareTitle: "Lihat daftar bacaan ini: {title}",
 	readingListBookSingular: "buku",
@@ -399,6 +406,10 @@ const id: Dictionary = {
 		"Ulasan buku, daftar bacaan, dan catatan sastra dari Chasing Chapters.",
 	browseItemListName: "Ulasan Buku",
 	breadcrumbHome: "Beranda",
+	breadcrumbLabel: "Navigasi remah",
+	reviewNavLabel: "Ulasan di sekitarnya",
+	reviewNavPrevious: "Ulasan sebelumnya",
+	reviewNavNext: "Ulasan berikutnya",
 
 	previewLabel: "Pratinjau",
 	previewDescription:

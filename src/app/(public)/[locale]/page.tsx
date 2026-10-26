@@ -146,6 +146,7 @@ export default async function Homepage({
 								review={review}
 								locale={appLocale}
 								priority={index < 2}
+								ratingLabel={dictionary.ratingLabel}
 							/>
 						))}
 					</div>

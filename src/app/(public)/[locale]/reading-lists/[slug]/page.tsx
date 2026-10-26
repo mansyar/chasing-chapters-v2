@@ -4,6 +4,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getPayload } from "payload";
 import { ReviewCard } from "@/components/ReviewCard";
+import { Breadcrumbs } from "@/components/reviews/Breadcrumbs";
 import { ShareButton } from "@/components/ShareButton";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { formatMessage } from "@/lib/i18n/format";
@@ -127,18 +128,22 @@ export default async function ReadingListDetailPage({ params }: PageProps) {
 		isPubliclyVisible(review, new Date()),
 	);
 
+	// One trail, two renderings — the structured data and the visible crumbs are
+	// built from the same list so they cannot drift apart.
+	const trail = [
+		{ name: dictionary.breadcrumbHome, path: `/${appLocale}` },
+		{
+			name: dictionary.navReadingLists,
+			path: `/${appLocale}/reading-lists`,
+		},
+		{
+			name: list.title ?? "",
+			path: `/${appLocale}/reading-lists/${list.slug}`,
+		},
+	];
+
 	const breadcrumbJsonLd = generateBreadcrumbSchema(
-		[
-			{ name: dictionary.breadcrumbHome, url: `${SITE_URL}/${appLocale}` },
-			{
-				name: dictionary.navReadingLists,
-				url: `${SITE_URL}/${appLocale}/reading-lists`,
-			},
-			{
-				name: list.title ?? "",
-				url: `${SITE_URL}/${appLocale}/reading-lists/${list.slug}`,
-			},
-		],
+		trail.map((item) => ({ name: item.name, url: `${SITE_URL}${item.path}` })),
 		appLocale,
 	);
 
@@ -151,6 +156,14 @@ export default async function ReadingListDetailPage({ params }: PageProps) {
 			{/* Hero Header */}
 			<div className="relative bg-muted/30 py-20 md:py-32 overflow-hidden">
 				<div className="container px-4 md:px-6 relative z-10 text-center max-w-3xl mx-auto">
+					<Breadcrumbs
+						items={trail.map((item, index) => ({
+							label: item.name,
+							href: index < trail.length - 1 ? item.path : undefined,
+						}))}
+						label={dictionary.breadcrumbLabel}
+						className="mb-8 flex justify-center"
+					/>
 					<h1 className="font-serif text-4xl md:text-6xl font-bold tracking-tight mb-6">
 						{list.title}
 					</h1>
@@ -194,6 +207,7 @@ export default async function ReadingListDetailPage({ params }: PageProps) {
 								review={review}
 								locale={appLocale}
 								priority={index < 2}
+								ratingLabel={dictionary.ratingLabel}
 							/>
 						))}
 					</div>

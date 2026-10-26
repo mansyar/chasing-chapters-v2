@@ -1,0 +1,32 @@
+{
+	"id": "20261026-content-typography",
+	"title": "Content Typography & Reading Experience",
+	"type": "feature",
+	"status": "complete",
+	"priority": "high",
+	"depends_on": [],
+	"created_at": "2026-10-26T08:35:44Z",
+	"updated_at": "2026-10-26T11:56:51Z",
+	"spec": "spec.md",
+	"plan": "plan.md",
+	"branch": "feat/20261026-content-typography",
+	"base_branch": "main",
+	"base_sha": "46a9d32f71ce5571567df220c73b9e4e20f706b6",
+	"progress": {
+		"phases_total": 5,
+		"phases_verified": 5,
+		"tasks_total": 13,
+		"tasks_done": 13
+	},
+	"last_checkpoint": "f2acdb7",
+	"review_verdict": "PASS WITH FINDINGS",
+	"review_rounds": 2,
+	"doc_sync": "updated",
+	"pr_url": "https://github.com/mansyar/chasing-chapters-v2/pull/32",
+	"pr_state": "open",
+	"reverted_at": null,
+	"revert_commit": null,
+	"revert_pr_url": null,
+	"archived_at": "2026-10-26T11:56:51Z",
+	"archive_path": "conductor/archive/20261026-content-typography"
+}

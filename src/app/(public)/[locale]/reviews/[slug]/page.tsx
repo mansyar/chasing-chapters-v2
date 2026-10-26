@@ -1,18 +1,21 @@
 import configPromise from "@payload-config";
 import { RichText } from "@payloadcms/richtext-lexical/react";
-import { Calendar, Star, User } from "lucide-react";
+import { Calendar, User } from "lucide-react";
 import type { Metadata } from "next";
 import { draftMode, headers } from "next/headers";
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPayload } from "payload";
 import { ViewTracker } from "@/components/analytics/ViewTracker";
 import { CommentSection } from "@/components/comments/CommentSection";
 import { ReadingProgressBar } from "@/components/ReadingProgressBar";
+import { Breadcrumbs } from "@/components/reviews/Breadcrumbs";
 import { LanguageToggle } from "@/components/reviews/LanguageToggle";
 import { LikeButton } from "@/components/reviews/LikeButton";
 import { PreviewBanner } from "@/components/reviews/PreviewBanner";
 import { RelatedReviews } from "@/components/reviews/RelatedReviews";
+import { StarRating } from "@/components/reviews/StarRating";
 import { ShareButton } from "@/components/ShareButton";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -24,6 +27,7 @@ import { normalizeLocale, SUPPORTED_LOCALES } from "@/lib/i18n/locale";
 import { resolveMediaUrl } from "@/lib/media-url";
 import { buildPreviewMetadata, canRenderDraft } from "@/lib/preview";
 import { publishedAndVisibleWhere } from "@/lib/publish-visibility";
+import { getAdjacentReviews } from "@/lib/review-navigation";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import {
 	generateBreadcrumbSchema,
@@ -193,17 +197,27 @@ export default async function ReviewPage({ params }: PageProps) {
 	const coverImage = review.coverImage as Media;
 	const dictionary = getDictionary(appLocale);
 	const jsonLd = generateReviewSchema(review, appLocale, coverImage);
+	// One trail, two renderings: the structured data a crawler reads and the
+	// breadcrumbs a reader sees are built from the same list, so the two cannot
+	// drift apart.
+	const trail = [
+		{ name: dictionary.breadcrumbHome, path: `/${appLocale}` },
+		{ name: dictionary.navReviews, path: `/${appLocale}/reviews` },
+		{ name: review.title ?? "", path: `/${appLocale}/reviews/${review.slug}` },
+	];
 	const breadcrumbJsonLd = generateBreadcrumbSchema(
-		[
-			{ name: dictionary.breadcrumbHome, url: `${SITE_URL}/${appLocale}` },
-			{ name: dictionary.navReviews, url: `${SITE_URL}/${appLocale}/reviews` },
-			{
-				name: review.title ?? "",
-				url: `${SITE_URL}/${appLocale}/reviews/${review.slug}`,
-			},
-		],
+		trail.map((item) => ({ name: item.name, url: `${SITE_URL}${item.path}` })),
 		appLocale,
 	);
+	// A draft preview has no neighbours and no trail: both describe a published
+	// catalogue this version of the review is not part of yet.
+	const adjacent = preview
+		? { newer: null, older: null }
+		: await getAdjacentReviews(
+				await getPayload({ config: configPromise }),
+				review,
+				{ locale: appLocale },
+			);
 
 	return (
 		<article className="min-h-screen pb-20">
@@ -223,6 +237,18 @@ export default async function ReviewPage({ params }: PageProps) {
 			{/* Hero Header */}
 			<div className="bg-muted/30 py-12 md:py-20">
 				<div className="container mx-auto px-6 md:px-12 lg:px-24 max-w-7xl">
+					{!preview && (
+						<Breadcrumbs
+							items={trail.map((item, index) => ({
+								label: item.name,
+								// The last crumb is the page the reader is on, so it is
+								// text rather than a link back to itself.
+								href: index < trail.length - 1 ? item.path : undefined,
+							}))}
+							label={dictionary.breadcrumbLabel}
+							className="mb-8"
+						/>
+					)}
 					<div className="grid gap-8 lg:grid-cols-[300px_1fr] lg:gap-12 items-start">
 						{/* Book Cover */}
 						<div className="mx-auto lg:mx-0 w-[240px] md:w-[300px] aspect-2/3 relative shadow-2xl rounded-lg rotate-2 hover:rotate-0 transition-transform duration-500 bg-background">
@@ -243,17 +269,12 @@ export default async function ReviewPage({ params }: PageProps) {
 						{/* Header Content */}
 						<div className="space-y-6 text-center lg:text-left">
 							<div className="space-y-2">
-								<div className="flex items-center justify-center lg:justify-start gap-2 text-primary">
-									{Array.from({ length: 5 }).map((_, i) => (
-										<Star
-											key={i}
-											className={`h-5 w-5 ${
-												i < review.rating
-													? "fill-current"
-													: "text-muted-foreground/30"
-											}`}
-										/>
-									))}
+								<div className="flex items-center justify-center lg:justify-start">
+									<StarRating
+										rating={review.rating}
+										labelTemplate={dictionary.ratingLabel}
+										size="lg"
+									/>
 								</div>
 								<h1 className="font-serif text-4xl md:text-5xl font-bold tracking-tight text-foreground">
 									{review.title}
@@ -320,7 +341,7 @@ export default async function ReviewPage({ params }: PageProps) {
 			<div className="container mx-auto px-6 md:px-12 lg:px-24 py-12 grid gap-12 lg:grid-cols-[1fr_300px] max-w-7xl">
 				<div className="space-y-12">
 					{/* Review Content */}
-					<div className="prose prose-lg prose-gray dark:prose-invert max-w-3xl font-serif">
+					<div className="prose prose-lg prose-teal dark:prose-invert max-w-3xl font-serif">
 						{review.reviewContent ? (
 							<RichText data={review.reviewContent} />
 						) : null}
@@ -329,33 +350,33 @@ export default async function ReviewPage({ params }: PageProps) {
 					{/* Structured Sections */}
 					<div className="grid gap-8 md:grid-cols-2">
 						{review.whatILoved && (
-							<div className="bg-green-50 dark:bg-green-950/20 p-6 rounded-xl border border-green-100 dark:border-green-900">
-								<h3 className="font-serif text-xl font-bold mb-4 flex items-center gap-2 text-green-800 dark:text-green-300">
+							<div className="bg-positive/10 p-6 rounded-xl border border-positive/30">
+								<h3 className="font-serif text-xl font-bold mb-4 flex items-center gap-2 text-positive">
 									{dictionary.reviewWhatILoved}
 								</h3>
-								<div className="prose prose-sm dark:prose-invert">
+								<div className="prose prose-sm prose-teal dark:prose-invert">
 									<RichText data={review.whatILoved} />
 								</div>
 							</div>
 						)}
 
 						{review.whatCouldBeBetter && (
-							<div className="bg-orange-50 dark:bg-orange-950/20 p-6 rounded-xl border border-orange-100 dark:border-orange-900">
-								<h3 className="font-serif text-xl font-bold mb-4 flex items-center gap-2 text-orange-800 dark:text-orange-300">
+							<div className="bg-warning/10 p-6 rounded-xl border border-warning/30">
+								<h3 className="font-serif text-xl font-bold mb-4 flex items-center gap-2 text-warning">
 									{dictionary.reviewWhatCouldBeBetter}
 								</h3>
-								<div className="prose prose-sm dark:prose-invert">
+								<div className="prose prose-sm prose-teal dark:prose-invert">
 									<RichText data={review.whatCouldBeBetter} />
 								</div>
 							</div>
 						)}
 
 						{review.perfectFor && (
-							<div className="bg-blue-50 dark:bg-blue-950/20 p-6 rounded-xl border border-blue-100 dark:border-blue-900 md:col-span-2">
-								<h3 className="font-serif text-xl font-bold mb-4 flex items-center gap-2 text-blue-800 dark:text-blue-300">
+							<div className="bg-info/10 p-6 rounded-xl border border-info/30 md:col-span-2">
+								<h3 className="font-serif text-xl font-bold mb-4 flex items-center gap-2 text-info">
 									{dictionary.reviewPerfectFor}
 								</h3>
-								<div className="prose prose-sm dark:prose-invert">
+								<div className="prose prose-sm prose-teal dark:prose-invert">
 									<RichText data={review.perfectFor} />
 								</div>
 							</div>
@@ -423,9 +444,14 @@ export default async function ReviewPage({ params }: PageProps) {
 												key={mood.id}
 												className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
 												style={{
-													backgroundColor: mood.color + "20",
+													// `color-mix` keeps the badge correct for any
+													// colour format the mood colour may arrive in;
+													// the old hex-append trick only worked for
+													// 6-digit hex. Alpha weights match the old
+													// suffixes: 0x20/255 ≈ 12.5%, 0x40/255 ≈ 25%.
+													backgroundColor: `color-mix(in srgb, ${mood.color} 12.5%, transparent)`,
 													color: mood.color,
-													borderColor: mood.color + "40",
+													borderColor: `color-mix(in srgb, ${mood.color} 25%, transparent)`,
 												}}
 											>
 												{mood.icon && <span className="mr-1">{mood.icon}</span>}
@@ -473,6 +499,45 @@ export default async function ReviewPage({ params }: PageProps) {
 					)}
 				</div>
 			</div>
+
+			{/* Adjacent reviews: the same order as the index, no wrap-around. */}
+			{!preview && (adjacent.newer || adjacent.older) && (
+				<nav
+					aria-label={dictionary.reviewNavLabel}
+					className="container mx-auto px-6 md:px-12 lg:px-24 max-w-7xl [content-visibility:auto] [contain-intrinsic-size:auto_120px]"
+				>
+					<div className="grid gap-4 border-t pt-8 pb-12 sm:grid-cols-2">
+						{adjacent.older ? (
+							<Link
+								href={`/${appLocale}/reviews/${adjacent.older.slug}`}
+								className="group rounded-xl border p-4 transition-colors hover:border-primary/40 hover:bg-muted/30"
+							>
+								<span className="mb-1 block text-xs uppercase tracking-wide text-muted-foreground">
+									{dictionary.reviewNavPrevious}
+								</span>
+								<span className="font-serif font-semibold group-hover:text-primary">
+									{adjacent.older.title}
+								</span>
+							</Link>
+						) : (
+							<span aria-hidden="true" />
+						)}
+						{adjacent.newer ? (
+							<Link
+								href={`/${appLocale}/reviews/${adjacent.newer.slug}`}
+								className="group rounded-xl border p-4 text-right transition-colors hover:border-primary/40 hover:bg-muted/30 sm:col-start-2"
+							>
+								<span className="mb-1 block text-xs uppercase tracking-wide text-muted-foreground">
+									{dictionary.reviewNavNext}
+								</span>
+								<span className="font-serif font-semibold group-hover:text-primary">
+									{adjacent.newer.title}
+								</span>
+							</Link>
+						) : null}
+					</div>
+				</nav>
+			)}
 
 			{/* Related Reviews */}
 			<div className="container mx-auto px-6 md:px-12 lg:px-24 pb-12 max-w-7xl [content-visibility:auto] [contain-intrinsic-size:auto_600px]">
