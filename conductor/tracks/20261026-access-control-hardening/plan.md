@@ -148,6 +148,32 @@
   - [x] **P6.T2.1: Revalidate the affected review paths after a successful status change**
   - [x] **P6.T2.2: Test that approving revalidates the review's paths**
 
+## Phase R1: Review Fixes
+
+- **Goal:** Resolve review findings F1, F2, F3 and F4 from `review.md`.
+- **Depends on:** Phase 5
+- **Covers:** F1, F2, F3, F4
+- **Touches:** `src/collections/Commenters.ts`, `src/collections/__tests__/Commenters.test.ts`, `src/app/actions/comments.ts`, `src/app/actions/__tests__/comments.test.ts`, `src/components/comments/CommentSection.tsx`, `src/lib/i18n/dictionary.ts`, `src/lib/publish-visibility.ts`, `src/app/actions/moderation.ts`
+- **Verification:** `bun run typecheck && bun run lint && bun test`
+- **Status:** pending
+
+- [ ] **R1.T1: Close the writer-scoped trusted-commenter path** - covers: F1
+  - [ ] **R1.T1.1: Add field-level `create` and `update` access on `trusted` and `banned`, admin-only**
+  - [ ] **R1.T1.2: Test that a writer is denied both fields and an admin is allowed**
+  - [ ] **R1.T1.3: Confirm `Comments.afterChange` and the server action still set `trusted` through the Local API**
+
+- [ ] **R1.T2: Stop the fetch limit from emptying a comment section** - covers: F2
+  - [ ] **R1.T2.1: Key the limit as `comments:${ip}:${reviewId}` with a ceiling browsing cannot reach**
+  - [ ] **R1.T2.2: Give `CommentSection` an error branch so a rejected fetch does not render the empty state**
+  - [ ] **R1.T2.3: Test that a rejected fetch renders the error, not the empty state**
+
+- [ ] **R1.T3: Correct the revalidation rationale and scope the report revalidation** - covers: F3
+  - [ ] **R1.T3.1: Reword both comments to describe revalidation as defence in depth, noting the comment list is client-fetched**
+  - [ ] **R1.T3.2: Gate `reportComment`'s revalidation on the status actually becoming `reported`**
+
+- [ ] **R1.T4: Correct the `canAcceptPublicWrite` doc block** - covers: F4
+  - [ ] **R1.T4.1: Name all three call sites and generalise "a reader's comment" to a public write**
+
 <!--
 Acceptance block appended by the primary agent after a phase is accepted:
 
