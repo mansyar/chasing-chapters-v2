@@ -14,12 +14,16 @@
 - **Covers:** FR-1, AC-1, AC-2
 - **Touches:** `src/lib/__tests__/helpers/*`, `src/components/__tests__/*`, `src/lib/__tests__/typography-source.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P1.T1: Render harness helper** — covers: FR-1
-  - [ ] **P1.T1.1: Shared `renderToStaticMarkup` helper with server-component boundary documented**
-- [ ] **P1.T2: Card chrome rendered-identity assertions** — covers: FR-1, AC-1
-- [ ] **P1.T3: Convert Breadcrumbs/StarRating source assertions to render assertions** — covers: FR-1, AC-2
+**Result:** verified
+**Checkpoint:** 1c27059
+**Evidence:** conductor/tracks/20261027-typography-residuals/verification/phase-1.md
+
+- [x] **P1.T1: Render harness helper** — covers: FR-1
+  - [x] **P1.T1.1: Shared `renderToStaticMarkup` helper with server-component boundary documented**
+- [x] **P1.T2: Card chrome rendered-identity assertions** — covers: FR-1, AC-1
+- [x] **P1.T3: Convert Breadcrumbs/StarRating source assertions to render assertions** — covers: FR-1, AC-2
 
 <!--
 The primary appends after acceptance:
