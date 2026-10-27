@@ -633,6 +633,7 @@ export default async function ReviewPage({ params }: PageProps) {
 					genres={review.genres}
 					tags={review.tags}
 					moodTags={review.moodTags}
+					relatedReviews={review.relatedReviews}
 					locale={appLocale}
 				/>
 			</div>
