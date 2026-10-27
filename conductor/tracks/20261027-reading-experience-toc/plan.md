@@ -14,7 +14,7 @@
 - **Covers:** FR-2, FR-5, AC-2, AC-5, AC-8 (logic part)
 - **Touches:** `src/lib/toc-extract*`, `src/lib/reading-time*`, `src/lib/__tests__/*`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P1.T1: TOC extraction lib** — covers: FR-2
   - [ ] **P1.T1.1: Slugify + dedupe** — unique stable slugs, emoji/special-char handling, `section-<index>` fallback
