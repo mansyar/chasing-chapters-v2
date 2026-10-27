@@ -292,6 +292,18 @@ A track is complete when:
 6. When a remote exists, the branch is pushed. When `pr.enabled` is true, a PR
    is open or `pr_state: "unavailable"` records that PR creation could not run.
 
+### Track Close-out
+
+Close out on the implementation branch, before merging — no separate
+post-merge archive PR:
+
+1. Move `conductor/tracks/<id>/` to `conductor/archive/<id>/` (`git mv`).
+2. Re-link the tracks.md entry to `./archive/<id>/index.md` (keep `[x]`).
+3. Set `metadata.json`: `status: "complete"`, `pr_url` to the open PR,
+   `pr_state: "merged"` (becomes true at merge; the merge commit lands it).
+4. Commit as `conductor(close): ...`, push, and merge the track PR. Post-merge
+   on `main` nothing further is required.
+
 ## Emergency Procedures
 
 ### Critical Bug in Production
