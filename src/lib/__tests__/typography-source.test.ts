@@ -19,6 +19,10 @@ const REVIEW_PAGE_PATH = join(
 	process.cwd(),
 	"src/app/(public)/[locale]/reviews/[slug]/page.tsx",
 );
+const PLUGIN_STYLES_PATH = join(
+	process.cwd(),
+	"node_modules/@tailwindcss/typography/src/styles.js",
+);
 
 const globalsCss = readFileSync(GLOBALS_CSS_PATH, "utf8");
 const packageJson = JSON.parse(readFileSync(PACKAGE_JSON_PATH, "utf8")) as {
@@ -26,6 +30,7 @@ const packageJson = JSON.parse(readFileSync(PACKAGE_JSON_PATH, "utf8")) as {
 	dependencies?: Record<string, string>;
 };
 const reviewPage = readFileSync(REVIEW_PAGE_PATH, "utf8");
+const pluginStyles = readFileSync(PLUGIN_STYLES_PATH, "utf8");
 
 describe("typography plugin wiring", () => {
 	test("globals.css registers the typography plugin via @plugin", () => {
@@ -256,5 +261,53 @@ describe("reading-list cover sizes", () => {
 		expect(indexSource).toContain(
 			'sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"',
 		);
+	});
+});
+
+/**
+ * `FR-5` (track 20261027-typography-residuals): `prose-teal` maps the
+ * plugin's variables by hand, so a plugin release that adds or renames a
+ * `--tw-prose-*` variable would otherwise render that element unthemed.
+ * This guard enumerates the variables from the installed plugin's own
+ * `src/styles.js` and asserts each one is assigned inside the
+ * `@utility prose-teal` block. It pins coverage of whatever is installed —
+ * not an exact plugin version — so it passes today and names the missing
+ * variable on the upgrade that changes the surface.
+ */
+describe("prose-teal plugin coverage", () => {
+	test("every installed plugin variable is mapped in prose-teal", () => {
+		const pluginVariables = [
+			...new Set(pluginStyles.match(/--tw-prose-[a-z-]+/g) ?? []),
+		].sort();
+
+		// The extraction is the assertion's premise: an empty set means the
+		// plugin moved its variables elsewhere, not that coverage is complete.
+		expect(pluginVariables.length).toBeGreaterThan(0);
+
+		// Slice only the `@utility prose-teal` block so a variable assigned
+		// anywhere else in the stylesheet cannot satisfy the guard.
+		const blockStart = globalsCss.indexOf("@utility prose-teal");
+		expect(blockStart).toBeGreaterThan(-1);
+		const blockOpen = globalsCss.indexOf("{", blockStart);
+		let depth = 0;
+		let blockEnd = -1;
+		for (let i = blockOpen; i < globalsCss.length; i++) {
+			if (globalsCss[i] === "{") {
+				depth++;
+			}
+			if (globalsCss[i] === "}") {
+				depth--;
+				if (depth === 0) {
+					blockEnd = i;
+					break;
+				}
+			}
+		}
+		expect(blockEnd).toBeGreaterThan(blockOpen);
+		const proseTealBlock = globalsCss.slice(blockStart, blockEnd + 1);
+
+		for (const variable of pluginVariables) {
+			expect(proseTealBlock).toContain(`${variable}:`);
+		}
 	});
 });
