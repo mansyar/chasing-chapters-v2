@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { createElement } from "react";
 
 import { renderStatic } from "@/components/__tests__/helpers/render-static";
@@ -76,5 +78,55 @@ describe("TableOfContents", () => {
 		expect(html).toContain("min-h-[44px]");
 		expect(html).toContain("focus-visible:");
 		expect(html).toContain("bg-card");
+	});
+
+	test("click path wires aria-current from activeSlug state", () => {
+		// renderStatic never runs effects or click handlers, so the first
+		// render carries no active slug: no link may claim current yet.
+		const html = renderStatic(
+			createElement(TableOfContents, { entries, title: "On this page" }),
+		);
+		expect(html).not.toContain('aria-current="location"');
+
+		// The click upgrade path is pinned at the source level instead: the
+		// handler sets the slug synchronously and each link reflects it.
+		const source = readFileSync(
+			join(process.cwd(), "src/components/reviews/TableOfContents.tsx"),
+			"utf8",
+		);
+		expect(source).toContain("setActiveSlug(slug)");
+		expect(source).toContain(
+			'aria-current={isActive ? "location" : undefined}',
+		);
+	});
+
+	test("scrollspy follows reading position and yields to recent clicks", () => {
+		// Same constraint as the click-path pin above: renderStatic never
+		// runs effects, so the scroll-position rule is asserted at the
+		// source level without mocking what the harness cannot run.
+		const source = readFileSync(
+			join(process.cwd(), "src/components/reviews/TableOfContents.tsx"),
+			"utf8",
+		);
+
+		// No observer band: a band with any bottom exclusion misses a
+		// heading landed at the viewport bottom edge, so scroll position
+		// owns the active link instead.
+		expect(source).not.toContain("new IntersectionObserver");
+		expect(source).not.toContain("rootMargin");
+
+		// Reading position: the last heading whose top edge has appeared
+		// on screen (at or above the viewport bottom).
+		expect(source).toContain("getBoundingClientRect");
+		expect(source).toContain("innerHeight");
+
+		// Click authority: the scroll handler yields while the click lock
+		// is fresh; the duration lives in one named constant.
+		expect(source).toContain("lastClickAt");
+		expect(source).toMatch(/CLICK_LOCK_MS\s*=\s*800/);
+
+		// Listeners and the scheduled frame clean up on unmount.
+		expect(source).toContain("removeEventListener");
+		expect(source).toContain("cancelAnimationFrame");
 	});
 });

@@ -1,10 +1,17 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import { type MouseEvent, useEffect, useState } from "react";
+import { type MouseEvent, useEffect, useRef, useState } from "react";
 
 import { hasTableOfContents, type TocEntry } from "@/lib/toc-extract";
 import { cn } from "@/lib/utils";
+
+/**
+ * How long a TOC click owns the active link. The programmatic scroll that
+ * follows a click fires scroll events as it settles; the scroll handler
+ * yields for this long so the click-chosen slug survives the race.
+ */
+const CLICK_LOCK_MS = 800;
 
 interface TableOfContentsProps {
 	entries: TocEntry[];
@@ -32,32 +39,62 @@ export function TableOfContents({
 }: TableOfContentsProps) {
 	const [activeSlug, setActiveSlug] = useState<string | null>(null);
 
-	// Scrollspy: the heading nearest the top of the viewport owns the active link.
+	// Click authority: a TOC click sets the slug synchronously, but scroll
+	// events fire again as the programmatic scroll settles and would
+	// clobber it with the reading position mid-flight. The timestamp lock
+	// gives the click `CLICK_LOCK_MS` of authority over the scroll handler
+	// while the jump lands.
+	const lastClickAt = useRef(0);
+
+	// Scrollspy: the active link follows the reading position - the last
+	// heading (document order) whose top edge has appeared on screen, i.e.
+	// at or above the viewport bottom. An IntersectionObserver band could
+	// not satisfy this rule: any bottom exclusion misses a heading landed
+	// at the viewport bottom edge (the last section, with comments and the
+	// footer still below the article), while no bottom exclusion
+	// intersects every heading below the top margin and breaks click
+	// landings. Default: the first entry (top of page, nothing on screen
+	// yet).
 	useEffect(() => {
-		const targets = entries
-			.map((entry) => document.getElementById(entry.slug))
-			.filter((element): element is HTMLElement => element !== null);
+		function computeActive(): void {
+			// The programmatic scroll from a TOC click settles after the
+			// synchronous `setActiveSlug` in `scrollToEntry`; ignore scroll
+			// output while the click lock is fresh so the click-chosen slug
+			// survives the race.
+			if (Date.now() - lastClickAt.current < CLICK_LOCK_MS) {
+				return;
+			}
 
-		if (targets.length === 0) {
-			return;
-		}
-
-		const observer = new IntersectionObserver(
-			(observed) => {
-				for (const item of observed) {
-					if (item.isIntersecting) {
-						setActiveSlug(item.target.id);
-					}
+			let current: string | null = entries[0]?.slug ?? null;
+			for (const entry of entries) {
+				const heading = document.getElementById(entry.slug);
+				if (
+					heading !== null &&
+					heading.getBoundingClientRect().top <= window.innerHeight
+				) {
+					current = entry.slug;
 				}
-			},
-			{ rootMargin: "-6rem 0px -70% 0px", threshold: 0 },
-		);
-
-		for (const heading of targets) {
-			observer.observe(heading);
+			}
+			setActiveSlug(current);
 		}
 
-		return () => observer.disconnect();
+		let frame = 0;
+		function handleScroll(): void {
+			cancelAnimationFrame(frame);
+			frame = requestAnimationFrame(computeActive);
+		}
+
+		// Initial compute so the highlight is correct without waiting for
+		// the first scroll event (e.g. deep-link landings).
+		computeActive();
+		window.addEventListener("scroll", handleScroll, { passive: true });
+		window.addEventListener("resize", handleScroll);
+
+		return () => {
+			cancelAnimationFrame(frame);
+			window.removeEventListener("scroll", handleScroll);
+			window.removeEventListener("resize", handleScroll);
+		};
 	}, [entries]);
 
 	// Direct `#anchor` URLs must land on the heading even when client-side
@@ -99,6 +136,7 @@ export function TableOfContents({
 			block: "start",
 		});
 		window.history.pushState(null, "", `#${slug}`);
+		lastClickAt.current = Date.now();
 		setActiveSlug(slug);
 	}
 
