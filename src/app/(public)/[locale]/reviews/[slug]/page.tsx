@@ -1,6 +1,6 @@
 import configPromise from "@payload-config";
 import { RichText } from "@payloadcms/richtext-lexical/react";
-import { Calendar, User } from "lucide-react";
+import { Calendar, Clock, User } from "lucide-react";
 import type { Metadata } from "next";
 import { draftMode, headers } from "next/headers";
 import Image from "next/image";
@@ -14,8 +14,10 @@ import { Breadcrumbs } from "@/components/reviews/Breadcrumbs";
 import { LanguageToggle } from "@/components/reviews/LanguageToggle";
 import { LikeButton } from "@/components/reviews/LikeButton";
 import { PreviewBanner } from "@/components/reviews/PreviewBanner";
+import { QuoteShareButtons } from "@/components/reviews/QuoteShare";
 import { RelatedReviews } from "@/components/reviews/RelatedReviews";
 import { StarRating } from "@/components/reviews/StarRating";
+import { TableOfContents } from "@/components/reviews/TableOfContents";
 import { ShareButton } from "@/components/ShareButton";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -27,6 +29,7 @@ import { normalizeLocale, SUPPORTED_LOCALES } from "@/lib/i18n/locale";
 import { resolveMediaUrl } from "@/lib/media-url";
 import { buildPreviewMetadata, canRenderDraft } from "@/lib/preview";
 import { publishedAndVisibleWhere } from "@/lib/publish-visibility";
+import { estimateReadingMinutes, formatReadingTime } from "@/lib/reading-time";
 import { getAdjacentReviews } from "@/lib/review-navigation";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import {
@@ -34,7 +37,10 @@ import {
 	generateReviewSchema,
 	SITE_URL,
 } from "@/lib/seo/structured-data";
+import { buildTableOfContents } from "@/lib/toc-extract";
 import type { Media, Review } from "@/payload-types";
+import { ReviewBody } from "./review-body";
+import { SectionHeading } from "./section-heading";
 
 // Enable ISR with 60 second revalidation for better caching
 export const revalidate = 60;
@@ -219,6 +225,40 @@ export default async function ReviewPage({ params }: PageProps) {
 				{ locale: appLocale },
 			);
 
+	// One TOC build feeds both the navigation and the heading ids, so the two
+	// can never disagree on slugs (`FR-2`, `FR-4`).
+	const tocEntries = buildTableOfContents({
+		body: review.reviewContent,
+		whatILoved: review.whatILoved,
+		whatCouldBeBetter: review.whatCouldBeBetter,
+		perfectFor: review.perfectFor,
+		favoriteQuotes: review.favoriteQuotes,
+		labels: {
+			whatILoved: dictionary.reviewWhatILoved,
+			whatCouldBeBetter: dictionary.reviewWhatCouldBeBetter,
+			perfectFor: dictionary.reviewPerfectFor,
+			favoriteQuotes: dictionary.reviewFavoriteQuotes,
+		},
+	});
+	const bodyHeadingSlugs = tocEntries
+		.filter((entry) => entry.source === "body")
+		.map((entry) => entry.slug);
+	const sectionSlugFor = (title: string): string | undefined =>
+		tocEntries.find(
+			(entry) => entry.source === "section" && entry.title === title,
+		)?.slug;
+	// The badge always renders, even when the TOC hides on short reviews (`AC-8`).
+	const readingTimeLabel = formatReadingTime(
+		estimateReadingMinutes({
+			body: review.reviewContent,
+			whatILoved: review.whatILoved,
+			whatCouldBeBetter: review.whatCouldBeBetter,
+			perfectFor: review.perfectFor,
+			favoriteQuotes: review.favoriteQuotes,
+		}),
+		dictionary.reviewReadingTime,
+	);
+
 	return (
 		<article className="min-h-screen pb-20">
 			{preview ? (
@@ -304,6 +344,11 @@ export default async function ReviewPage({ params }: PageProps) {
 										)}
 									</span>
 								</div>
+								<Separator orientation="vertical" className="h-4" />
+								<span className="inline-flex items-center gap-1">
+									<Clock className="h-4 w-4" aria-hidden="true" />
+									<span>{readingTimeLabel}</span>
+								</span>
 							</div>
 
 							<div className="flex flex-wrap justify-center lg:justify-start gap-2">
@@ -340,10 +385,19 @@ export default async function ReviewPage({ params }: PageProps) {
 			{/* Main Content */}
 			<div className="container mx-auto px-6 md:px-12 lg:px-24 py-12 grid gap-12 lg:grid-cols-[1fr_300px] max-w-7xl">
 				<div className="space-y-12">
+					<TableOfContents
+						entries={tocEntries}
+						title={dictionary.reviewOnThisPage}
+						variant="mobile"
+					/>
 					{/* Review Content */}
 					<div className="prose prose-lg prose-teal dark:prose-invert max-w-3xl font-serif">
 						{review.reviewContent ? (
-							<RichText data={review.reviewContent} />
+							<ReviewBody
+								data={review.reviewContent}
+								headingSlugs={bodyHeadingSlugs}
+								dictionary={dictionary}
+							/>
 						) : null}
 					</div>
 
@@ -351,9 +405,13 @@ export default async function ReviewPage({ params }: PageProps) {
 					<div className="grid gap-8 md:grid-cols-2">
 						{review.whatILoved && (
 							<div className="bg-positive/10 p-6 rounded-xl border border-positive/30">
-								<h3 className="font-serif text-xl font-bold mb-4 flex items-center gap-2 text-positive">
+								<SectionHeading
+									slug={sectionSlugFor(dictionary.reviewWhatILoved)}
+									dictionary={dictionary}
+									className="font-serif text-xl font-bold mb-4 gap-2 text-positive"
+								>
 									{dictionary.reviewWhatILoved}
-								</h3>
+								</SectionHeading>
 								<div className="prose prose-sm prose-teal dark:prose-invert">
 									<RichText data={review.whatILoved} />
 								</div>
@@ -362,9 +420,13 @@ export default async function ReviewPage({ params }: PageProps) {
 
 						{review.whatCouldBeBetter && (
 							<div className="bg-warning/10 p-6 rounded-xl border border-warning/30">
-								<h3 className="font-serif text-xl font-bold mb-4 flex items-center gap-2 text-warning">
+								<SectionHeading
+									slug={sectionSlugFor(dictionary.reviewWhatCouldBeBetter)}
+									dictionary={dictionary}
+									className="font-serif text-xl font-bold mb-4 gap-2 text-warning"
+								>
 									{dictionary.reviewWhatCouldBeBetter}
-								</h3>
+								</SectionHeading>
 								<div className="prose prose-sm prose-teal dark:prose-invert">
 									<RichText data={review.whatCouldBeBetter} />
 								</div>
@@ -373,9 +435,13 @@ export default async function ReviewPage({ params }: PageProps) {
 
 						{review.perfectFor && (
 							<div className="bg-info/10 p-6 rounded-xl border border-info/30 md:col-span-2">
-								<h3 className="font-serif text-xl font-bold mb-4 flex items-center gap-2 text-info">
+								<SectionHeading
+									slug={sectionSlugFor(dictionary.reviewPerfectFor)}
+									dictionary={dictionary}
+									className="font-serif text-xl font-bold mb-4 gap-2 text-info"
+								>
 									{dictionary.reviewPerfectFor}
-								</h3>
+								</SectionHeading>
 								<div className="prose prose-sm prose-teal dark:prose-invert">
 									<RichText data={review.perfectFor} />
 								</div>
@@ -386,9 +452,13 @@ export default async function ReviewPage({ params }: PageProps) {
 					{/* Favorite Quotes */}
 					{review.favoriteQuotes && review.favoriteQuotes.length > 0 && (
 						<div className="space-y-6">
-							<h3 className="font-serif text-2xl font-bold border-b pb-2">
+							<SectionHeading
+								slug={sectionSlugFor(dictionary.reviewFavoriteQuotes)}
+								dictionary={dictionary}
+								className="font-serif text-2xl font-bold border-b pb-2"
+							>
 								{dictionary.reviewFavoriteQuotes}
-							</h3>
+							</SectionHeading>
 							<div className="grid gap-6">
 								{review.favoriteQuotes.map((item, i) => (
 									<blockquote
@@ -404,6 +474,13 @@ export default async function ReviewPage({ params }: PageProps) {
 												})}
 											</footer>
 										)}
+										<div className="mt-3 not-italic">
+											<QuoteShareButtons
+												quote={item.quote}
+												bookTitle={review.title ?? ""}
+												dictionary={dictionary}
+											/>
+										</div>
 									</blockquote>
 								))}
 							</div>
@@ -413,6 +490,11 @@ export default async function ReviewPage({ params }: PageProps) {
 
 				{/* Sidebar */}
 				<div className="space-y-8">
+					<TableOfContents
+						entries={tocEntries}
+						title={dictionary.reviewOnThisPage}
+						variant="desktop"
+					/>
 					{/* Tags */}
 					{review.tags &&
 						Array.isArray(review.tags) &&
