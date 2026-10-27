@@ -21,4 +21,4 @@
 - [x] **Track: Reading-List Pagination Parity** — [20261027-reading-list-pagination](./archive/20261027-reading-list-pagination/index.md) — feature — medium
 - [x] **Track: Route error boundaries** — [20261027-route-error-boundaries](./archive/20261027-route-error-boundaries/index.md) — feature — medium
 - [x] **Track: Typography residuals** — [20261027-typography-residuals](./archive/20261027-typography-residuals/index.md) — refactor — low
-- [~] **Track: Review Reading Experience + TOC** — [20261027-reading-experience-toc](./tracks/20261027-reading-experience-toc/index.md) — feature — medium
+- [x] **Track: Review Reading Experience + TOC** — [20261027-reading-experience-toc](./archive/20261027-reading-experience-toc/index.md) — feature — medium
