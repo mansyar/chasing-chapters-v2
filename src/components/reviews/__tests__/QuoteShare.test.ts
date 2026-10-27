@@ -19,4 +19,17 @@ describe("QuoteShareButtons", () => {
 		expect(html).toContain(dictionary.reviewShareQuote);
 		expect(html).not.toContain(dictionary.shareCopied);
 	});
+
+	test("quote buttons meet the touch-target baseline", () => {
+		const dictionary = getDictionary("en");
+		const html = renderStatic(
+			createElement(QuoteShareButtons, {
+				quote: "A memorable line",
+				bookTitle: "Example Book",
+				dictionary,
+			}),
+		);
+
+		expect(html).toContain("min-h-[44px]");
+	});
 });

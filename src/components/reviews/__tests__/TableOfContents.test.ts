@@ -67,4 +67,14 @@ describe("TableOfContents", () => {
 		expect(html).toContain("<details");
 		expect(html).not.toContain("<aside");
 	});
+
+	test("meets touch-target, focus, and token baselines", () => {
+		const html = renderStatic(
+			createElement(TableOfContents, { entries, title: "On this page" }),
+		);
+
+		expect(html).toContain("min-h-[44px]");
+		expect(html).toContain("focus-visible:");
+		expect(html).toContain("bg-card");
+	});
 });

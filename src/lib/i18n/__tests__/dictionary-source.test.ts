@@ -61,6 +61,10 @@ const MOVED_STRINGS = [
 	"Reading Log",
 	"More Like This",
 	"Based on genres, tags, and moods",
+	"On this page",
+	"Copy link",
+	"Copy quote",
+	"Share quote",
 	// Share and like
 	"Link copied to clipboard",
 	"Failed to copy link",
@@ -159,8 +163,10 @@ function visibleStrings(source: string): string[] {
 
 // The admin console keeps its own English interface, and the Open Graph image
 // text is document metadata — both are other phases' surface, not the public
-// chrome this scan guards.
+// chrome this scan guards. Test files are also excluded: they must contain the
+// expected literals to assert rendered output, and they never ship to readers.
 const SKIPPED_DIRECTORIES = ["src/components/admin", "src/components/og"];
+const SKIPPED_SEGMENTS = ["__tests__"];
 
 const SCANNED_ROOTS = ["src/app/(public)", "src/components"];
 
@@ -170,7 +176,7 @@ const SCANNED_FILES = [
 		(file) =>
 			!SKIPPED_DIRECTORIES.some((directory) =>
 				file.includes(join(process.cwd(), directory)),
-			),
+			) && !SKIPPED_SEGMENTS.some((segment) => file.includes(segment)),
 	),
 	join(process.cwd(), "src/app/not-found.tsx"),
 ];

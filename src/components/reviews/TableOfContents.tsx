@@ -66,8 +66,11 @@ export function TableOfContents({
 		if (window.location.hash.length > 1) {
 			const target = document.getElementById(window.location.hash.slice(1));
 
+			// Landing is always instant: it must not animate for
+			// `prefers-reduced-motion` readers, and an animated jump on load
+			// would fight the browser's own fragment scroll (`NFR-3`).
 			if (target) {
-				target.scrollIntoView({ block: "start" });
+				target.scrollIntoView({ behavior: "auto", block: "start" });
 			}
 		}
 	}, []);

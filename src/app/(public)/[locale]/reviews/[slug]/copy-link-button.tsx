@@ -49,7 +49,7 @@ export function CopyLinkButton({
 			aria-label={dictionary.reviewCopyLink}
 			title={dictionary.reviewCopyLink}
 			className={cn(
-				"inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-all hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100",
+				"inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-all hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100",
 				className,
 			)}
 		>
