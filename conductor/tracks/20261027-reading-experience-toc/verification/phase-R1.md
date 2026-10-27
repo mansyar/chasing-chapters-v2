@@ -54,4 +54,10 @@ touched; no generated files or lockfiles modified.
 - The new e2e scrollspy test was not executed here (headless Playwright run
   is primary-owned F2); it follows the existing `tocNav` + `aria-current`
   patterns and the brief-prescribed `scrollIntoViewIfNeeded()` flow.
-- New unit tests add 3 cases (878 → 881 passing); no existing tests modified.
+- New unit tests add 3 cases (878 passing before, 881 after); no existing tests modified.
+
+## Primary verification
+
+- Command: `bun run typecheck && bun run lint && bun test && bun run build`
+- Exit: 0 (typecheck: no errors in 291 files; lint: 286 files clean; test: 881 pass, 0 fail across 66 files; build: production build succeeds)
+- Result: verified — clean tree, all files within `Touches`, evidence present. F2 (live e2e execution) remains primary-owned (see PR/CI step).

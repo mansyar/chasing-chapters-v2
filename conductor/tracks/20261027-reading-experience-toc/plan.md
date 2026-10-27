@@ -76,12 +76,16 @@ The primary appends after acceptance:
 - **Covers:** F1 (AC-3), F2 (AC-9, CI run — primary-owned), F3 (AC-6), F4 (FR-1), F5 (NFR-3)
 - **Touches:** `e2e/*`, `src/components/reviews/*`, `src/app/(public)/[locale]/reviews/[slug]/*`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run build`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **R1.T1: Scroll-driven scrollspy e2e test (F1)** — covers: AC-3
-- [ ] **R1.T2: QuoteShare navigator.share stub unit test (F3)** — covers: AC-6
-- [ ] **R1.T3: Dual-instance comment (F4)** — accept with code comment, no behavior change
-- [ ] **R1.T4: Fixed-section headings h2 (F5)** — keep visual classes, verify tests/build green
+- [x] **R1.T1: Scroll-driven scrollspy e2e test (F1)** — covers: AC-3
+- [x] **R1.T2: QuoteShare navigator.share stub unit test (F3)** — covers: AC-6
+- [x] **R1.T3: Dual-instance comment (F4)** — accept with code comment, no behavior change
+- [x] **R1.T4: Fixed-section headings h2 (F5)** — keep visual classes, verify tests/build green
+
+**Result:** verified
+**Checkpoint:** 31a9715
+**Evidence:** conductor/tracks/20261027-reading-experience-toc/verification/phase-R1.md
 
 <!--
 Review fixes are appended by `conductor-review` as:
