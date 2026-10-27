@@ -64,3 +64,23 @@ The primary appends after acceptance:
 **Checkpoint:** 39587f3
 **Evidence:** conductor/tracks/20261027-related-reviews/verification/phase-3.md
 -->
+
+## Phase R1: Review fixes
+
+- **Goal:** resolve all six Round-1 review findings (F1–F6); no spec behavior change.
+- **Depends on:** Phase 3
+- **Covers:** reviewer F1–F6
+- **Touches:** `src/components/reviews/RelatedReviews.tsx`, `src/components/reviews/RelatedReviewsList.tsx`, `src/lib/related-scoring.ts`, `e2e/related-reviews.spec.ts`, plus their colocated tests if assertions need updating
+- **Verification:** `bun run typecheck && bun run lint && bun test && bun run build` (e2e already green on this area; re-run only if a fix changes rendered output — none do)
+- **Status:** in_progress
+
+- [ ] **R1.T1: F1 + F2** — drop unjustified `as Media` assertion in favor of direct narrowing (RelatedReviewsList.tsx:142); pass `DEFAULT_RELATED_LIMIT` instead of hardcoded `3` (RelatedReviews.tsx:192)
+- [ ] **R1.T2: F3 + F5** — export one shared `idsOf` from `related-scoring.ts`, import in both components; gate the affinity DB read on eligible picks < limit
+- [ ] **R1.T3: F4 + F6** — add `sort: "-publishDate"` to the affinity find with a 20-newest-window comment; mirror the scorer's codepoint slug comparison in the e2e `ELIGIBLE_OTHERS` sort
+
+<!--
+The primary appends after acceptance:
+**Result:** verified
+**Checkpoint:** <short-sha>
+**Evidence:** conductor/tracks/20261027-related-reviews/verification/phase-R1.md
+-->
