@@ -9,8 +9,8 @@
 	"doc_sync": "pending",
 	"id": "20261027-reading-experience-toc",
 	"last_checkpoint": "19c9de1",
-	"pr_state": null,
-	"pr_url": null,
+	"pr_state": "merged",
+	"pr_url": "https://github.com/mansyar/chasing-chapters-v2/pull/40",
 	"priority": "medium",
 	"progress": {
 		"phases_total": 6,
@@ -25,8 +25,8 @@
 	"review_verdict": null,
 	"spec": "spec.md",
 	"plan": "plan.md",
-	"status": "in_progress",
+	"status": "complete",
 	"title": "Review Reading Experience + TOC",
 	"type": "feature",
-	"updated_at": "2026-10-27T14:45:00+11:00"
+	"updated_at": "2026-10-27T16:00:00+11:00"
 }
