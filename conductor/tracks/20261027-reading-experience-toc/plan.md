@@ -87,6 +87,18 @@ The primary appends after acceptance:
 **Checkpoint:** 31a9715
 **Evidence:** conductor/tracks/20261027-reading-experience-toc/verification/phase-R1.md
 
+## Phase R2: CI-Red Fix (IntersectionObserver rootMargin)
+
+- **Goal:** Fix the production-only `IntersectionObserver` crash — `rootMargin: "-6rem ..."` uses `rem`, which the spec restricts to `px`/`%`, so Chrome throws `SyntaxError` during hydration and every review page renders the route error boundary in E2E (26 CI failures). happy-dom never validates the unit, which is why unit tests stayed green.
+- **Depends on:** Phase R1
+- **Covers:** CI E2E red (review-toc 11/11 + 15 pre-existing review-page failures, all error-boundary renders)
+- **Touches:** `src/components/reviews/TableOfContents.tsx`, `src/components/reviews/__tests__/TableOfContents.test.ts`
+- **Verification:** `bun run typecheck && bun run lint && bun test && bun run build` (subagent) + primary-owned local prod re-run of `e2e/review-toc.spec.ts`
+- **Status:** in_progress
+
+- [ ] **R2.T1: px-only rootMargin (root cause)** — replace `-6rem` with `-96px`, keep `-70%`, add a comment stating the px/%-only constraint and why (real browsers throw, jsdom/happy-dom do not validate)
+- [ ] **R2.T2: rootMargin regression unit test** — assert the scrollspy observer options passed to `IntersectionObserver` use only `px`/`%` margin tokens, so a future unit edit fails fast instead of failing only in CI E2E
+
 <!--
 Review fixes are appended by `conductor-review` as:
 
