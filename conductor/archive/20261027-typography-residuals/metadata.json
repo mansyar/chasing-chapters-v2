@@ -23,7 +23,7 @@
 	"review_rounds": 1,
 	"doc_sync": "updated",
 	"pr_url": "https://github.com/mansyar/chasing-chapters-v2/pull/38",
-	"pr_state": "open",
+	"pr_state": "merged",
 	"reverted_at": null,
 	"revert_commit": null,
 	"revert_pr_url": null,
