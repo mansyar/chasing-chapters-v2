@@ -60,7 +60,7 @@ The primary appends after acceptance:
 - **Covers:** FR-7, AC-7, AC-9, AC-10, NFR-1..NFR-5
 - **Touches:** `src/lib/i18n/*`, `e2e/*`, `src/app/(public)/[locale]/reviews/[slug]/*`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run build`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P3.T1: Dictionary + per-locale integration** — covers: FR-7
 - [ ] **P3.T2: E2E + a11y polish** — covers: AC-7, AC-10
