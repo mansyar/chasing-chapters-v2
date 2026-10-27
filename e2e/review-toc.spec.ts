@@ -58,7 +58,7 @@ test.describe("Review TOC — desktop (EN)", () => {
 
 		expect(href.startsWith("#")).toBe(true);
 
-		// Scroll-driven (no click): the observer owns the active link here.
+		// Scroll-driven (no click): the scroll-position handler owns the active link here.
 		await page.locator(`#${href.slice(1)}`).scrollIntoViewIfNeeded();
 		await expect(lastLink).toHaveAttribute("aria-current", "location");
 	});

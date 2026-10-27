@@ -65,3 +65,21 @@ F2 (live e2e execution) is owned by CI before merge.
 
 - `src/lib/i18n/dictionary.ts` (outside Phase 1–2 Touches): review-label keys added — smallest necessary change, permitted by briefs.
 - `dictionary-source.test.ts` scan now excludes `__tests__` segments: test files must contain expected literals to assert rendered output and never ship; public-tree guard unchanged (primary fix, inside Touches).
+
+## Round 3 (final, post-R2/R3) — approve-with-followups
+
+Scope: `31a9715..HEAD` — R2 (observer → scroll-position scrollspy rewrite after the production-only `rootMargin: "-6rem"` SyntaxError crashed all 26 CI review-page renders; plus deterministic-selection and click-lock intermediates), R3 (share-button exact-name e2e scoping), close-out move to `archive/`. CI fully green on the branch (static, Docker, full E2E). Verdict: approve, no blockers; F1/F2 fixed pre-merge, F3–F5 accepted as-is.
+
+## Findings (all Low)
+
+| ID | Severity | File | Disposition |
+| --- | --- | --- | --- |
+| F1 | Low | `spec.md` FR-3/NFR-1 (still named IntersectionObserver) | fixed pre-merge: wording amended to scroll-position rule with R2 rationale, IDs unchanged |
+| F2 | Low | `e2e/review-toc.spec.ts:61` (stale "observer owns" comment) | fixed pre-merge: reworded to scroll-position handler |
+| F3 | Low | `TableOfContents.test.ts` (pins tokens, not the comparison rule) | accepted: renderStatic cannot run effects; e2e `:52` owns the behavior |
+| F4 | Low | `CLICK_LOCK_MS = 800` (short manual-scroll dead zone; long smooth scrolls can outlast it) | accepted: transient highlight lag only, no wrong navigation; revisit only if e2e flakes |
+| F5 | Low | initial highlight favors last entry on fully-visible short articles; dual mobile/desktop listeners (pre-existing) | accepted: awareness only, no leak (cleanup verified), negligible cost |
+
+## Deviations (round 3)
+
+- `e2e/review-detail.spec.ts` (outside R2 Touches): fuzzy `/share/i` assertion scoped to `{ name: "Share", exact: true }` — required by the track's own new "Share quote" buttons; original intent preserved and uniqueness more strictly enforced.

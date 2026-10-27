@@ -48,7 +48,7 @@ Reviews are long structured documents (body + What I Loved / Could Be Better / P
 | --- | --- | --- |
 | FR-1 | TOC renders as sticky aside on desktop and collapsible block on mobile | must |
 | FR-2 | TOC entries combine fixed structured sections present in the review with H2/H3 extracted from Lexical body in document order | must |
-| FR-3 | TOC tracks active section on scroll via IntersectionObserver and smooth-scrolls on click (instant when prefers-reduced-motion) | must |
+| FR-3 | TOC tracks active section on scroll via a scroll-position rule (last heading at or above the viewport bottom; adopted in R2 when no observer band geometry could satisfy both click and scroll landings) and smooth-scrolls on click (instant when prefers-reduced-motion) | must |
 | FR-4 | Every TOC entry has a stable slug anchor; clicking updates the URL hash without reload; pasting a `#anchor` URL scrolls to that heading; copy-link copies the full anchor URL | must |
 | FR-5 | Reading-time badge shows per-locale estimate at ~200wpm over body + structured sections + quotes | must |
 | FR-6 | Each favorite quote offers copy + share: copies `"<quote>" — <book> <url>` to clipboard with toast, invokes `navigator.share` when available | must |
@@ -58,7 +58,7 @@ Reviews are long structured documents (body + What I Loved / Could Be Better / P
 
 | ID | Requirement |
 | --- | --- |
-| NFR-1 | Zero new heavy dependencies; CSS + IntersectionObserver only; server-renders ISR-safe with no `ssr:false` above the fold; LCP cover unaffected |
+| NFR-1 | Zero new heavy dependencies; CSS + scroll-position handler only (no IntersectionObserver: adopted in R2, see FR-3); server-renders ISR-safe with no `ssr:false` above the fold; LCP cover unaffected |
 | NFR-2 | No layout shift from TOC; sticky aside does not overlap content at any breakpoint; mobile toggle meets 44px touch targets |
 | NFR-3 | Accessible: `nav aria-label`, focus-visible states, keyboard-operable toggle and links, `prefers-reduced-motion` disables smooth scroll/spy animation |
 | NFR-4 | Dark-mode correct via existing tokens; prose-teal headings compatible; code inline with `prose-teal` theme |
