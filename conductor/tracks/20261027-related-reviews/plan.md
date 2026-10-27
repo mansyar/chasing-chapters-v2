@@ -14,7 +14,7 @@
 - **Covers:** FR-2, FR-3, FR-5, AC-2, AC-3, AC-4, AC-6
 - **Touches:** `src/lib/related-scoring.ts`, `src/lib/__tests__/related-scoring.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P1.T1: Affinity scoring** — 3/shared genre + 2/shared tag + 1/shared mood; ties break newest `publishDate`, then slug — covers: FR-3
 - [ ] **P1.T2: Merge logic** — eligible picks in stored order first; affinity backfill to 3; dedupe; skip ineligible (unpublished, scheduled-future, self) — covers: FR-2, FR-5
