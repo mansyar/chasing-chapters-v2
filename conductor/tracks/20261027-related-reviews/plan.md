@@ -34,11 +34,17 @@ The primary appends after acceptance:
 - **Covers:** FR-1, FR-2, FR-4, FR-5, FR-6, AC-1, AC-5, AC-7, NFR-1, NFR-2
 - **Touches:** `src/components/reviews/RelatedReviews.tsx`, `src/components/reviews/__tests__/RelatedReviews.test.tsx`, `src/app/(public)/[locale]/reviews/[slug]/page.tsx`, `src/lib/i18n/dictionary*.ts` (only if new strings needed)
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run build`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P2.T1: Data wiring** — populate author picks, run Phase 1 merge over affinity candidates — covers: FR-2, FR-5
-- [ ] **P2.T2: Compact row cards** — cover + locale title + meta (rating + date), links; retire `ReviewCard` grid — covers: FR-4
-- [ ] **P2.T3: Component tests** — order, empty-state null, locale strings, eligibility guards — covers: AC-1, AC-5, AC-7
+- [x] **P2.T1: Data wiring** — populate author picks, run Phase 1 merge over affinity candidates — covers: FR-2, FR-5
+- [x] **P2.T2: Compact row cards** — cover + locale title + meta (rating + date), links; retire `ReviewCard` grid — covers: FR-4
+- [x] **P2.T3: Component tests** — order, empty-state null, locale strings, eligibility guards — covers: AC-1, AC-5, AC-7
+
+<!--
+**Result:** verified
+**Checkpoint:** bcdf72a
+**Evidence:** conductor/tracks/20261027-related-reviews/verification/phase-2.md
+-->
 
 ## Phase 3: e2e + polish
 
