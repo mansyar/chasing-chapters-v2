@@ -26,7 +26,7 @@ export function SectionHeading({
 	children,
 }: SectionHeadingProps) {
 	return (
-		<h3
+		<h2
 			id={slug}
 			className={cn("group flex scroll-mt-28 items-center gap-1", className)}
 		>
@@ -34,6 +34,6 @@ export function SectionHeading({
 			{slug === undefined ? null : (
 				<CopyLinkButton slug={slug} dictionary={dictionary} />
 			)}
-		</h3>
+		</h2>
 	);
 }

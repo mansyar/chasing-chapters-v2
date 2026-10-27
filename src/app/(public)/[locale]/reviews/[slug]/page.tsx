@@ -385,6 +385,11 @@ export default async function ReviewPage({ params }: PageProps) {
 			{/* Main Content */}
 			<div className="container mx-auto px-6 md:px-12 lg:px-24 py-12 grid gap-12 lg:grid-cols-[1fr_300px] max-w-7xl">
 				<div className="space-y-12">
+					{/* Two TOC instances share the slug list but keep independent
+					    active state: the mobile disclosure above and the desktop
+					    aside below are never visible together (one is always
+					    `display:none`), so the active link converges on the next
+					    scroll after a viewport change. */}
 					<TableOfContents
 						entries={tocEntries}
 						title={dictionary.reviewOnThisPage}

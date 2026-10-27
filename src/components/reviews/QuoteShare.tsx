@@ -14,6 +14,43 @@ interface QuoteShareButtonsProps {
 }
 
 /**
+ * Share payload for a favorite quote (`FR-6`).
+ */
+export interface QuoteShareData {
+	title: string;
+	text: string;
+	url: string;
+}
+
+/**
+ * Tries `share` first and falls back to `copy`.
+ *
+ * Resolving shares and `AbortError` dismissals never touch the clipboard;
+ * only a missing `share` or a non-abort failure falls through to `copy`.
+ * Extracted so `bun test` can stub `navigator.share` without a DOM harness.
+ */
+export async function shareQuoteWithFallback(args: {
+	data: QuoteShareData;
+	share?: (data: QuoteShareData) => Promise<void>;
+	copy: () => Promise<void>;
+}): Promise<void> {
+	if (typeof args.share === "function") {
+		try {
+			await args.share(args.data);
+			return;
+		} catch (error) {
+			// Dismissing the share sheet is not a failure; anything else
+			// falls through to the clipboard copy below.
+			if (error instanceof DOMException && error.name === "AbortError") {
+				return;
+			}
+		}
+	}
+
+	await args.copy();
+}
+
+/**
  * Per-quote copy + share buttons (`FR-6`).
  *
  * Copies `"<quote>" — <book> <url>` to the clipboard with sonner feedback,
@@ -45,20 +82,14 @@ export function QuoteShareButtons({
 	async function shareQuote(): Promise<void> {
 		const url = window.location.href;
 
-		if (typeof navigator.share === "function") {
-			try {
-				await navigator.share({ title: bookTitle, text: shareText, url });
-				return;
-			} catch (error) {
-				// Dismissing the share sheet is not a failure; anything else
-				// falls through to the clipboard copy below.
-				if (error instanceof DOMException && error.name === "AbortError") {
-					return;
-				}
-			}
-		}
-
-		await copyQuote();
+		await shareQuoteWithFallback({
+			data: { title: bookTitle, text: shareText, url },
+			share:
+				typeof navigator.share === "function"
+					? (payload) => navigator.share(payload)
+					: undefined,
+			copy: copyQuote,
+		});
 	}
 
 	return (

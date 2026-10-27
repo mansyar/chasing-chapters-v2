@@ -49,6 +49,20 @@ test.describe("Review TOC — desktop (EN)", () => {
 		await expect(page.locator(`#${href.slice(1)}`)).toBeVisible();
 	});
 
+	test("scrolling the article updates the active TOC link", async ({
+		page,
+	}) => {
+		const nav = tocNav(page, "On this page");
+		const lastLink = nav.getByRole("link").last();
+		const href = (await lastLink.getAttribute("href")) ?? "";
+
+		expect(href.startsWith("#")).toBe(true);
+
+		// Scroll-driven (no click): the observer owns the active link here.
+		await page.locator(`#${href.slice(1)}`).scrollIntoViewIfNeeded();
+		await expect(lastLink).toHaveAttribute("aria-current", "location");
+	});
+
 	test("deep-links land on the anchored heading", async ({ page }) => {
 		const nav = tocNav(page, "On this page");
 		const firstLink = nav.getByRole("link").first();
