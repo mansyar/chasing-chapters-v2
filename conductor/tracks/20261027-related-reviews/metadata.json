@@ -8,16 +8,16 @@
 	"depends_on": [],
 	"doc_sync": "pending",
 	"id": "20261027-related-reviews",
-	"last_checkpoint": "39587f3",
+	"last_checkpoint": "3827606",
 	"plan": "plan.md",
 	"pr_state": null,
 	"pr_url": null,
 	"priority": "high",
 	"progress": {
-		"phases_total": 3,
-		"phases_verified": 3,
-		"tasks_done": 8,
-		"tasks_total": 8
+		"phases_total": 4,
+		"phases_verified": 4,
+		"tasks_done": 11,
+		"tasks_total": 11
 	},
 	"revert_commit": null,
 	"revert_pr_url": null,
