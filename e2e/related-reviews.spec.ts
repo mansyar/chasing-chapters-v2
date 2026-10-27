@@ -34,7 +34,11 @@ const ELIGIBLE_OTHERS = E2E_FIXTURE_REVIEWS.filter(
 		? 1
 		: a.publishDate > b.publishDate
 			? -1
-			: a.slug.localeCompare(b.slug),
+			: a.slug < b.slug
+				? -1
+				: a.slug > b.slug
+					? 1
+					: 0,
 );
 
 /** The rail section, scoped by its translated heading. */

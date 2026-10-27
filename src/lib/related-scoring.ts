@@ -50,6 +50,26 @@ export interface ScoredAffinityCandidate {
 }
 
 /**
+ * The ids of a relationship field that holds populated docs, raw ids, or a
+ * mix of both. Non-numeric entries contribute nothing, so a corrupt row can
+ * neither match nor crash the overlap count.
+ */
+export function idsOf(
+	values: Array<number | { id: number } | null> | null | undefined,
+): number[] {
+	const ids: number[] = [];
+
+	for (const value of values ?? []) {
+		const id = typeof value === "number" ? value : value?.id;
+		if (typeof id === "number" && Number.isFinite(id)) {
+			ids.push(id);
+		}
+	}
+
+	return ids;
+}
+
+/**
  * Parses an ISO timestamp for tiebreak comparison. Missing or unparsable
  * values sort as the oldest, so undated candidates lose every recency tie.
  */

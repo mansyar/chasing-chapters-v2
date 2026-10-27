@@ -2,8 +2,12 @@ import configPromise from "@payload-config";
 import { getPayload, Where } from "payload";
 import type { AppLocale } from "@/lib/date-format";
 import { publishedAndVisibleWhere } from "@/lib/publish-visibility";
-import type { AffinityCandidate } from "@/lib/related-scoring";
-import { mergeRelatedReviews, RelatedPick } from "@/lib/related-scoring";
+import type { AffinityCandidate, RelatedPick } from "@/lib/related-scoring";
+import {
+	DEFAULT_RELATED_LIMIT,
+	idsOf,
+	mergeRelatedReviews,
+} from "@/lib/related-scoring";
 import { Genre, MoodTag, Review, Tag } from "@/payload-types";
 import {
 	RelatedReviewsList,
@@ -27,21 +31,6 @@ interface RelatedReviewsProps {
 
 /** One bounded affinity read: enough candidates to rank the top 3 from. */
 export const AFFINITY_QUERY_LIMIT = 20;
-
-function idsOf(
-	values: Array<number | { id: number } | null> | null | undefined,
-): number[] {
-	const ids: number[] = [];
-
-	for (const value of values ?? []) {
-		const id = typeof value === "number" ? value : value?.id;
-		if (typeof id === "number" && Number.isFinite(id)) {
-			ids.push(id);
-		}
-	}
-
-	return ids;
-}
 
 export async function RelatedReviews({
 	currentReviewId,
@@ -145,7 +134,12 @@ export async function RelatedReviews({
 	let affinityDocs: Review[] = [];
 	let candidates: AffinityCandidate[] = [];
 
-	if (orConditions.length > 0) {
+	// Skip the read when eligible picks already fill the rail; the merge
+	// below short-circuits the same way, so this only saves the query.
+	const eligiblePickCount = picks.filter((pick) => pick.eligible).length;
+	const affinityNeeded = eligiblePickCount < DEFAULT_RELATED_LIMIT;
+
+	if (orConditions.length > 0 && affinityNeeded) {
 		const { docs } = await payload.find({
 			collection: "reviews",
 			where: {
@@ -165,6 +159,9 @@ export async function RelatedReviews({
 				],
 			},
 			limit: AFFINITY_QUERY_LIMIT,
+			// Newest-first so the bounded 20-newest window aligns with the
+			// recency tiebreak in `rankAffinityCandidates`.
+			sort: "-publishDate",
 			depth: 1,
 			// The cards print the review title in the locale the page is
 			// rendering. Without it every related review comes back in the
@@ -189,7 +186,7 @@ export async function RelatedReviews({
 
 	// Eligible picks lead in stored order; affinity backfills to 3, never
 	// re-adds a pick, and drops everything past the limit.
-	const slugs = mergeRelatedReviews(picks, candidates, 3);
+	const slugs = mergeRelatedReviews(picks, candidates, DEFAULT_RELATED_LIMIT);
 
 	if (slugs.length === 0) {
 		return null;

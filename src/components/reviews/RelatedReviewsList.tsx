@@ -6,28 +6,9 @@ import { getDictionary } from "@/lib/i18n/dictionary";
 import { resolveMediaUrl } from "@/lib/media-url";
 import { isPubliclyVisible } from "@/lib/publish-visibility";
 import type { AffinityCandidate, RelatedPick } from "@/lib/related-scoring";
-import type { Media, Review } from "@/payload-types";
+import { idsOf } from "@/lib/related-scoring";
+import type { Review } from "@/payload-types";
 import { StarRating } from "./StarRating";
-
-/**
- * The ids of a relationship field that holds populated docs, raw ids, or a
- * mix of both. Non-numeric entries contribute nothing, so a corrupt row can
- * neither match nor crash the overlap count.
- */
-function idsOf(
-	values: Array<number | { id: number } | null> | null | undefined,
-): number[] {
-	const ids: number[] = [];
-
-	for (const value of values ?? []) {
-		const id = typeof value === "number" ? value : value?.id;
-		if (typeof id === "number" && Number.isFinite(id)) {
-			ids.push(id);
-		}
-	}
-
-	return ids;
-}
 
 function sharedCount(docIds: number[], currentIds: number[]): number {
 	if (docIds.length === 0 || currentIds.length === 0) {
@@ -139,11 +120,12 @@ export function RelatedReviewsList({
 
 			<ul className="grid gap-4">
 				{reviews.map((review) => {
-					const coverImage = review.coverImage as Media;
-					const coverUrl =
+					const coverImage = review.coverImage;
+					const cover =
 						typeof coverImage === "object" && coverImage !== null
-							? resolveMediaUrl(coverImage.url)
+							? coverImage
 							: null;
+					const coverUrl = cover ? resolveMediaUrl(cover.url) : null;
 
 					return (
 						<li key={review.id}>
@@ -155,13 +137,13 @@ export function RelatedReviewsList({
 									{coverUrl ? (
 										<Image
 											src={coverUrl}
-											alt={coverImage.alt || review.title || ""}
+											alt={cover?.alt || review.title || ""}
 											fill
 											className="object-cover"
 											sizes="64px"
 											loading="lazy"
-											placeholder={coverImage.blurDataURL ? "blur" : "empty"}
-											blurDataURL={coverImage.blurDataURL || undefined}
+											placeholder={cover?.blurDataURL ? "blur" : "empty"}
+											blurDataURL={cover?.blurDataURL || undefined}
 										/>
 									) : null}
 								</div>
