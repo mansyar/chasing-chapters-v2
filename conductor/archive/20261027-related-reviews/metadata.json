@@ -10,8 +10,8 @@
 	"id": "20261027-related-reviews",
 	"last_checkpoint": "3827606",
 	"plan": "plan.md",
-	"pr_state": null,
-	"pr_url": null,
+	"pr_state": "open",
+	"pr_url": "https://github.com/mansyar/chasing-chapters-v2/pull/43",
 	"priority": "high",
 	"progress": {
 		"phases_total": 4,
@@ -25,7 +25,7 @@
 	"review_rounds": 0,
 	"review_verdict": null,
 	"spec": "spec.md",
-	"status": "in_progress",
+	"status": "complete",
 	"title": "Related Reviews Upgrade",
 	"type": "feature",
 	"updated_at": "2026-10-27T14:20:00+11:00"
