@@ -60,10 +60,14 @@ The primary appends after acceptance:
 - **Covers:** FR-7, AC-7, AC-9, AC-10, NFR-1..NFR-5
 - **Touches:** `src/lib/i18n/*`, `e2e/*`, `src/app/(public)/[locale]/reviews/[slug]/*`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run build`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P3.T1: Dictionary + per-locale integration** — covers: FR-7
-- [ ] **P3.T2: E2E + a11y polish** — covers: AC-7, AC-10
+- [x] **P3.T1: Dictionary + per-locale integration** — covers: FR-7
+- [x] **P3.T2: E2E + a11y polish** — covers: AC-7, AC-10
+
+**Result:** verified
+**Checkpoint:** 668848c
+**Evidence:** conductor/tracks/20261027-reading-experience-toc/verification/phase-3.md
 
 <!--
 Review fixes are appended by `conductor-review` as:
