@@ -102,6 +102,19 @@ The primary appends after acceptance:
 - [x] **R2.T3: Deterministic scrollspy in real browsers** — official `test:e2e review-toc` re-run is 9/11: the crash is gone, but `scrolling updates active link` (:52) and `reduced-motion click` (:95) fail because (a) last-one-wins observer selection is nondeterministic after programmatic scrolls, (b) a heading landed at the viewport top/bottom sits inside the rootMargin exclusions so nothing intersects, (c) the observer can clobber the click-set active slug. Fix: nearest-to-viewport-top deterministic selection, click-lock suppressing observer updates briefly after a TOC click, near-bottom-of-page activates the last entry
 - [x] **R2.T4: Replace observer band with scroll-position rule** — follow-up e2e is 10/11: only :52 still fails. `scrollIntoViewIfNeeded` lands the last heading at the viewport bottom edge (inside the `-70%` exclusion) while the page is NOT at document bottom (comments/footer follow), so no bottom-detection fires and any band geometry misses it. Any bottom exclusion fails :52 as written; any bottomless band breaks click landings. Replace the `IntersectionObserver` with an rAF-throttled scroll/resize listener whose rule is "last entry whose heading top is at or above the viewport bottom" (last heading that has appeared on screen), keep the click-lock for click authority, drop the now-obsolete rootMargin regression test and cover the new logic per harness ability
 
+## Phase R3: CI-Red Fix (share-button strict-mode collision)
+
+- **Goal:** Fix the last CI E2E failure — `review-detail.spec.ts` "should display share button" uses a fuzzy `/share/i` role match that now resolves to 2 elements: the pre-existing page-level "Share" button and the track's new per-quote "Share quote" buttons. Scope the assertion to the exact page-level name.
+- **Depends on:** Phase R2
+- **Covers:** CI E2E red (1 failure: review-detail share-button strict-mode violation)
+- **Touches:** `e2e/review-detail.spec.ts`
+- **Verification:** `bun run lint` on the spec + primary-owned local prod re-run of `e2e/review-detail.spec.ts`
+- **Status:** in_progress
+- **Checkpoint:** null
+
+- [x] **R3.T1: exact-name share-button assertion** — match `{ name: "Share", exact: true }` with a comment explaining the "Share quote" collision, preserving the original intent (page-level share control visible)
+
+
 <!--
 Review fixes are appended by `conductor-review` as:
 

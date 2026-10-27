@@ -13,10 +13,10 @@
 	"pr_url": null,
 	"priority": "medium",
 	"progress": {
-		"phases_total": 5,
+		"phases_total": 6,
 		"phases_verified": 5,
 		"tasks_done": 21,
-		"tasks_total": 21
+		"tasks_total": 22
 	},
 	"revert_commit": null,
 	"revert_pr_url": null,
