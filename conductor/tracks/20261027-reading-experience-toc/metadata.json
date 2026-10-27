@@ -8,14 +8,14 @@
 	"depends_on": [],
 	"doc_sync": "pending",
 	"id": "20261027-reading-experience-toc",
-	"last_checkpoint": "31a9715",
+	"last_checkpoint": "c407e34",
 	"pr_state": null,
 	"pr_url": null,
 	"priority": "medium",
 	"progress": {
 		"phases_total": 5,
-		"phases_verified": 4,
-		"tasks_done": 17,
+		"phases_verified": 5,
+		"tasks_done": 21,
 		"tasks_total": 21
 	},
 	"revert_commit": null,
@@ -28,5 +28,5 @@
 	"status": "in_progress",
 	"title": "Review Reading Experience + TOC",
 	"type": "feature",
-	"updated_at": "2026-10-27T12:33:32+11:00"
+	"updated_at": "2026-10-27T14:00:00+11:00"
 }
