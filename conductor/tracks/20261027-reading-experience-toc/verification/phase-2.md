@@ -50,3 +50,10 @@ Two fix rounds were needed, both within allowance: (1) typecheck — the `review
 - Pure UI components carry behavior tests only where cheap (TOC markup/variants, quote labels, slug→id wiring); scrollspy/smooth-scroll/deep-link landing are client behaviors reserved for Phase 3 e2e, per brief.
 - TOC links and heading ids share the single `buildTableOfContents` call, so they cannot disagree on slugs; non-H2/H3 body headings render unlinked but never consume a slug.
 - Evidence file committed separately after the implementation commit; both SHAs are reported in the phase report JSON.
+
+## Primary verification
+
+- Command: `bun run typecheck && bun run lint && bun test && bun run build`
+- Exit: 0 (typecheck: no errors in 290 files; lint: 285 files clean; test: 875 pass, 0 fail across 66 files; build: production build succeeds)
+- Result: verified — clean tree, files match Touches plus the permitted dictionary deviation, evidence present.
+- Accepted deviation: `src/lib/i18n/dictionary.ts` 4 new EN+ID keys — smallest necessary change, expressly permitted.

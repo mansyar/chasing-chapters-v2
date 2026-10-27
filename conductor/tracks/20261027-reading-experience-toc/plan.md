@@ -41,20 +41,17 @@ The primary appends after acceptance:
 - **Covers:** FR-1, FR-3, FR-4, FR-6, AC-1, AC-3, AC-4, AC-6
 - **Touches:** `src/components/reviews/TableOfContents*`, `src/components/reviews/QuoteShare*`, `src/app/(public)/[locale]/reviews/[slug]/*`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run build`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P2.T1: TableOfContents component** — covers: FR-1
-  - [ ] **P2.T1.1: Markup + responsive** — sticky aside lg+, collapsible mobile, hide when <2 entries, 44px targets
-  - [ ] **P2.T1.2: Scrollspy** — IntersectionObserver active link, smooth scroll (instant on reduced-motion), focus-visible
-- [ ] **P2.T2: Anchor IDs + deep-link + copy-link** — covers: FR-4
-- [ ] **P2.T3: Quote share buttons** — covers: FR-6
+- [x] **P2.T1: TableOfContents component** — covers: FR-1
+  - [x] **P2.T1.1: Markup + responsive** — sticky aside lg+, collapsible mobile, hide when <2 entries, 44px targets
+  - [x] **P2.T1.2: Scrollspy** — IntersectionObserver active link, smooth scroll (instant on reduced-motion), focus-visible
+- [x] **P2.T2: Anchor IDs + deep-link + copy-link** — covers: FR-4
+- [x] **P2.T3: Quote share buttons** — covers: FR-6
 
-<!--
-The primary appends after acceptance:
 **Result:** verified
-**Checkpoint:** <short-sha>
+**Checkpoint:** 9618847
 **Evidence:** conductor/tracks/20261027-reading-experience-toc/verification/phase-2.md
--->
 
 ## Phase 3: i18n parity + e2e + polish
 
