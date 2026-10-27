@@ -103,6 +103,7 @@ const en = {
 	reviewPerfectFor: "Perfect For",
 	reviewFavoriteQuotes: "Favorite Quotes",
 	reviewPage: "Page {page}",
+	reviewReadingTime: "{minutes} min read",
 	reviewTags: "Tags",
 	reviewMood: "Mood",
 	reviewReadingLog: "Reading Log",
@@ -111,6 +112,10 @@ const en = {
 	reviewShareTitle: "Read this review of {title}",
 	relatedMoreLikeThis: "More Like This",
 	relatedDescription: "Based on genres, tags, and moods you might enjoy.",
+	reviewOnThisPage: "On this page",
+	reviewCopyLink: "Copy link",
+	reviewCopyQuote: "Copy quote",
+	reviewShareQuote: "Share quote",
 
 	// Share and like
 	shareShare: "Share",
@@ -309,6 +314,7 @@ const id: Dictionary = {
 	reviewPerfectFor: "Cocok Untuk",
 	reviewFavoriteQuotes: "Kutipan Favorit",
 	reviewPage: "Halaman {page}",
+	reviewReadingTime: "{minutes} mnt baca",
 	reviewTags: "Tag",
 	reviewMood: "Suasana",
 	reviewReadingLog: "Catatan Bacaan",
@@ -318,6 +324,10 @@ const id: Dictionary = {
 	relatedMoreLikeThis: "Mirip Seperti Ini",
 	relatedDescription:
 		"Berdasarkan genre, tag, dan suasana yang mungkin Anda nikmati.",
+	reviewOnThisPage: "Di halaman ini",
+	reviewCopyLink: "Salin tautan",
+	reviewCopyQuote: "Salin kutipan",
+	reviewShareQuote: "Bagikan kutipan",
 
 	shareShare: "Bagikan",
 	shareCopied: "Tersalin",

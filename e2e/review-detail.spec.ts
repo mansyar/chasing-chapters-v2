@@ -73,8 +73,13 @@ test.describe("Review Detail Page", () => {
 	});
 
 	test("should display share button", async ({ page }) => {
-		// Share button should be visible
-		const shareButton = page.getByRole("button", { name: /share/i });
+		// The page-level share button should be visible. The name matches
+		// exactly: the review's quote cards render their own "Share quote"
+		// buttons, so a fuzzy /share/i match would hit two controls.
+		const shareButton = page.getByRole("button", {
+			name: "Share",
+			exact: true,
+		});
 		await expect(shareButton).toBeVisible();
 	});
 

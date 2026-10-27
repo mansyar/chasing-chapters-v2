@@ -6,6 +6,7 @@ import {
 } from "@/lib/i18n/dictionary";
 import { formatMessage } from "@/lib/i18n/format";
 import { SUPPORTED_LOCALES } from "@/lib/i18n/locale";
+import { formatReadingTime } from "@/lib/reading-time";
 
 describe("dictionary parity", () => {
 	test("both locales expose an identical key set", () => {
@@ -29,6 +30,33 @@ describe("dictionary parity", () => {
 		).filter(([, value]) => value.trim() === "");
 
 		expect(blanks).toEqual([]);
+	});
+
+	test("the TOC, quote, and reading-time strings exist in both locales", () => {
+		const english = getDictionary("en");
+		const indonesian = getDictionary("id");
+		const keys: DictionaryKey[] = [
+			"reviewOnThisPage",
+			"reviewCopyLink",
+			"reviewCopyQuote",
+			"reviewShareQuote",
+			"reviewReadingTime",
+			"shareCopied",
+			"shareLinkCopied",
+			"shareCopyFailed",
+		];
+
+		for (const key of keys) {
+			expect(english[key].trim()).not.toBe("");
+			expect(indonesian[key].trim()).not.toBe("");
+			expect(indonesian[key]).not.toBe(english[key]);
+		}
+
+		const englishLabel = formatReadingTime(5, english.reviewReadingTime);
+		const indonesianLabel = formatReadingTime(5, indonesian.reviewReadingTime);
+
+		expect(englishLabel).toBe("5 min read");
+		expect(indonesianLabel).toBe("5 mnt baca");
 	});
 
 	test("the two locales actually differ where the copy is ours", () => {
