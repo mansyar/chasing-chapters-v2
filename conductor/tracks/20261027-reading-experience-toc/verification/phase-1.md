@@ -58,6 +58,13 @@ TOC suite; 200/201-word ceiling and quote inclusion in the reading-time suite.
 
 - TDD followed: failing tests committed first (`260afc0`), implementation
   after (`b76a9f0`).
+
+## Primary verification
+
+- Command: `bunx biome check --write conductor/tracks/20261027-reading-experience-toc/metadata.json` then `bun run typecheck && bun run lint && bun test`
+- Exit: 0 (typecheck: no errors in 282 files; lint: 277 files clean; test: 866 pass, 0 fail across 63 files)
+- Result: verified — the sole subagent failure was pre-existing `metadata.json` single-line formatting, fixed by the primary via biome (state file, not phase code). No phase code changes were needed.
+- Accepted deviation: `src/lib/i18n/dictionary.ts` adds one `reviewReadingTime` key per locale — smallest necessary change, client-safe formatter.
 - `bun run lint` cannot exit 0 on this branch until the primary reformats
   `conductor/tracks/20261027-reading-experience-toc/metadata.json`
   (single-line JSON written by track tooling; Biome wants it pretty-printed).

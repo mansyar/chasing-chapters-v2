@@ -14,14 +14,18 @@
 - **Covers:** FR-2, FR-5, AC-2, AC-5, AC-8 (logic part)
 - **Touches:** `src/lib/toc-extract*`, `src/lib/reading-time*`, `src/lib/__tests__/*`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P1.T1: TOC extraction lib** — covers: FR-2
-  - [ ] **P1.T1.1: Slugify + dedupe** — unique stable slugs, emoji/special-char handling, `section-<index>` fallback
-  - [ ] **P1.T1.2: Lexical H2/H3 walk + fixed-sections merge** — document order, missing sections omitted, <2 entries flag
-- [ ] **P1.T2: Reading-time lib** — covers: FR-5
-  - [ ] **P1.T2.1: Word count across Lexical nodes** — body + whatILoved/couldBeBetter/perfectFor + quotes, per locale
-  - [ ] **P1.T2.2: Formatter + dictionary keys** — 200wpm ceiling, EN/ID strings
+- [x] **P1.T1: TOC extraction lib** — covers: FR-2
+  - [x] **P1.T1.1: Slugify + dedupe** — unique stable slugs, emoji/special-char handling, `section-<index>` fallback
+  - [x] **P1.T1.2: Lexical H2/H3 walk + fixed-sections merge** — document order, missing sections omitted, <2 entries flag
+- [x] **P1.T2: Reading-time lib** — covers: FR-5
+  - [x] **P1.T2.1: Word count across Lexical nodes** — body + whatILoved/couldBeBetter/perfectFor + quotes, per locale
+  - [x] **P1.T2.2: Formatter + dictionary keys** — 200wpm ceiling, EN/ID strings
+
+**Result:** verified
+**Checkpoint:** f2f94f4
+**Evidence:** conductor/tracks/20261027-reading-experience-toc/verification/phase-1.md
 
 <!--
 The primary appends after acceptance:
