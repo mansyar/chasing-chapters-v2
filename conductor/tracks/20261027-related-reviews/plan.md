@@ -14,16 +14,16 @@
 - **Covers:** FR-2, FR-3, FR-5, AC-2, AC-3, AC-4, AC-6
 - **Touches:** `src/lib/related-scoring.ts`, `src/lib/__tests__/related-scoring.test.ts`
 - **Verification:** `bun run typecheck && bun run lint && bun test`
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P1.T1: Affinity scoring** — 3/shared genre + 2/shared tag + 1/shared mood; ties break newest `publishDate`, then slug — covers: FR-3
-- [ ] **P1.T2: Merge logic** — eligible picks in stored order first; affinity backfill to 3; dedupe; skip ineligible (unpublished, scheduled-future, self) — covers: FR-2, FR-5
-- [ ] **P1.T3: Unit tests** — weight ordering, tiebreaks, pick priority, skip-and-backfill, empty → none — covers: AC-2, AC-3, AC-4, AC-6
+- [x] **P1.T1: Affinity scoring** — 3/shared genre + 2/shared tag + 1/shared mood; ties break newest `publishDate`, then slug — covers: FR-3
+- [x] **P1.T2: Merge logic** — eligible picks in stored order first; affinity backfill to 3; dedupe; skip ineligible (unpublished, scheduled-future, self) — covers: FR-2, FR-5
+- [x] **P1.T3: Unit tests** — weight ordering, tiebreaks, pick priority, skip-and-backfill, empty → none — covers: AC-2, AC-3, AC-4, AC-6
 
 <!--
 The primary appends after acceptance:
 **Result:** verified
-**Checkpoint:** <short-sha>
+**Checkpoint:** c399bf7
 **Evidence:** conductor/tracks/20261027-related-reviews/verification/phase-1.md
 -->
 
