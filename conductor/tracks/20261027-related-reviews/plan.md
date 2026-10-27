@@ -53,7 +53,7 @@ The primary appends after acceptance:
 - **Covers:** AC-1, AC-2 (seed permitting, else unit-only per spec), AC-5, AC-7, AC-8, AC-9
 - **Touches:** `e2e/related-reviews.spec.ts`, e2e seed if `relatedReviews` fixtures needed
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run build`, plus the primary-owned official e2e run
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P3.T1: e2e spec** — render/count/order, click-through, ID locale, zero-match hidden — covers: AC-1, AC-5, AC-7, AC-9
 - [ ] **P3.T2: a11y + mobile** — keyboard traversal, 44px targets, axe clean, small-viewport layout — covers: AC-8
