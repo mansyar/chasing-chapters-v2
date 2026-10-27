@@ -53,7 +53,14 @@ The primary appends after acceptance:
 - **Covers:** AC-1, AC-2 (seed permitting, else unit-only per spec), AC-5, AC-7, AC-8, AC-9
 - **Touches:** `e2e/related-reviews.spec.ts`, e2e seed if `relatedReviews` fixtures needed
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run build`, plus the primary-owned official e2e run
-- **Status:** in_progress
+- **Status:** verified
 
-- [ ] **P3.T1: e2e spec** — render/count/order, click-through, ID locale, zero-match hidden — covers: AC-1, AC-5, AC-7, AC-9
-- [ ] **P3.T2: a11y + mobile** — keyboard traversal, 44px targets, axe clean, small-viewport layout — covers: AC-8
+- [x] **P3.T1: e2e spec** — render/count/order, click-through, ID locale, zero-match hidden — covers: AC-1, AC-5, AC-7, AC-9
+- [x] **P3.T2: a11y + mobile** — keyboard traversal, 44px targets, axe clean, small-viewport layout — covers: AC-8
+
+<!--
+The primary appends after acceptance:
+**Result:** verified
+**Checkpoint:** 39587f3
+**Evidence:** conductor/tracks/20261027-related-reviews/verification/phase-3.md
+-->
