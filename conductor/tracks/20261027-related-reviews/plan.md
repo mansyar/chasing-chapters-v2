@@ -34,7 +34,7 @@ The primary appends after acceptance:
 - **Covers:** FR-1, FR-2, FR-4, FR-5, FR-6, AC-1, AC-5, AC-7, NFR-1, NFR-2
 - **Touches:** `src/components/reviews/RelatedReviews.tsx`, `src/components/reviews/__tests__/RelatedReviews.test.tsx`, `src/app/(public)/[locale]/reviews/[slug]/page.tsx`, `src/lib/i18n/dictionary*.ts` (only if new strings needed)
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run build`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P2.T1: Data wiring** — populate author picks, run Phase 1 merge over affinity candidates — covers: FR-2, FR-5
 - [ ] **P2.T2: Compact row cards** — cover + locale title + meta (rating + date), links; retire `ReviewCard` grid — covers: FR-4
