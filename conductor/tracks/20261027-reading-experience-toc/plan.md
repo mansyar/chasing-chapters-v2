@@ -109,10 +109,10 @@ The primary appends after acceptance:
 - **Covers:** CI E2E red (1 failure: review-detail share-button strict-mode violation)
 - **Touches:** `e2e/review-detail.spec.ts`
 - **Verification:** `bun run lint` on the spec + primary-owned local prod re-run of `e2e/review-detail.spec.ts`
-- **Status:** in_progress
-- **Checkpoint:** null
+- **Status:** verified
+- **Checkpoint:** 19c9de1
 
-- [x] **R3.T1: exact-name share-button assertion** — match `{ name: "Share", exact: true }` with a comment explaining the "Share quote" collision, preserving the original intent (page-level share control visible)
+- [x] **R3.T1: exact-name share-button assertion** — match `{ name: "Share", exact: true }` with a comment explaining the "Share quote" collision, preserving the original intent (page-level share control visible) — match `{ name: "Share", exact: true }` with a comment explaining the "Share quote" collision, preserving the original intent (page-level share control visible)
 
 
 <!--
