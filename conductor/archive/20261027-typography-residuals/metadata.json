@@ -2,7 +2,7 @@
 	"id": "20261027-typography-residuals",
 	"title": "Typography residuals",
 	"type": "refactor",
-	"status": "in_progress",
+	"status": "complete",
 	"priority": "low",
 	"depends_on": ["20261026-content-typography"],
 	"created_at": "2026-10-27T09:00:57+11:00",
@@ -21,12 +21,12 @@
 	"last_checkpoint": "d75accd",
 	"review_verdict": "PASS",
 	"review_rounds": 1,
-	"doc_sync": "pending",
-	"pr_url": null,
-	"pr_state": null,
+	"doc_sync": "updated",
+	"pr_url": "https://github.com/mansyar/chasing-chapters-v2/pull/38",
+	"pr_state": "open",
 	"reverted_at": null,
 	"revert_commit": null,
 	"revert_pr_url": null,
-	"archived_at": null,
-	"archive_path": null
+	"archived_at": "2026-10-27T09:45:00+11:00",
+	"archive_path": "conductor/archive/20261027-typography-residuals"
 }
