@@ -41,7 +41,7 @@ The primary appends after acceptance:
 - **Covers:** FR-1, FR-3, FR-4, FR-6, AC-1, AC-3, AC-4, AC-6
 - **Touches:** `src/components/reviews/TableOfContents*`, `src/components/reviews/QuoteShare*`, `src/app/(public)/[locale]/reviews/[slug]/*`
 - **Verification:** `bun run typecheck && bun run lint && bun test && bun run build`
-- **Status:** pending
+- **Status:** in_progress
 
 - [ ] **P2.T1: TableOfContents component** — covers: FR-1
   - [ ] **P2.T1.1: Markup + responsive** — sticky aside lg+, collapsible mobile, hide when <2 entries, 44px targets
