@@ -7,9 +7,10 @@
 - Base commit: `c629e35`
 - Head commit (last code commit): `028518a`
 - Commits: `40761d2` (T1), `028518a` (T2), then the evidence file itself
-- Result: **failed** — the static and unit layers are clean and cover every
-  acceptance criterion of this phase, but the e2e layer failed the same three
-  timeouts on two independent runs. See "E2E outcome" below.
+- Result: **verified** — static and unit layers clean, and the e2e suite green
+  (145/145, exit 0) once it ran without a second suite competing for port 3100.
+  The three timeouts recorded during the phase were contention, not a
+  regression; see "E2E outcome" for the reasoning and the clean run.
 
 ## Goal
 
@@ -37,41 +38,58 @@ bun run test:e2e                                # see below
 
 | Layer | Command | Exit | Summary |
 | --- | --- | --- | --- |
-| E2E | `bun run test:e2e` | 1 | 145 tests, 142 passed, 3 failed (suite 10.3m) — reproduced twice, identical failures. See "E2E outcome" |
+| E2E | `bun run test:e2e` | 0 | 145 passed, 0 failed, suite 2.7m on an uncontended machine. Earlier runs under contention: 142/145 in 10-12m — see "E2E outcome" |
 
 ## E2E outcome
 
-The e2e layer **failed on this tree, reproducibly**: two independent full runs of
-`bun run test:e2e` on `028518a` each ended with 145 tests, 142 passed and the
-**same three** failures in `e2e/language-control-a11y.spec.ts`, exit 1.
+The e2e layer **passes on this tree**: `bun run test:e2e` → 145 passed, 0 failed,
+exit 0, suite 2.7m.
 
-| Test | Failing step | Error |
+Getting there needs the history, because two earlier runs did not pass and the
+difference was not the code:
+
+| Run | Concurrency | Result |
 | --- | --- | --- |
-| `:253` "keeps the dictionary off the client and reports the JS it ships" | `line 280` `await page.request.get(src)` for `/_next/static/chunks/aaea2bcf-….js` | test timeout of 30000ms exceeded (the first run surfaced it as `apiResponse.body: Response has been disposed` at `line 283`) |
-| `:307` "declares en on every public page" | `line 309` `page.goto("http://localhost:3100/en/reading-lists")` | test timeout of 30000ms exceeded, waiting until `load` |
-| `:307` "declares id on every public page" | `line 322` `getByRole("link", { name: "Lewati ke konten" })` on `/reading-lists` | test timeout of 30000ms exceeded (count never became 1) |
+| 1 | alone | cut off by a shell timeout, no verdict |
+| 2 | **a second suite alive** | 145 tests, 142 passed, 3 failed (10.3m) |
+| 3 | **a second suite alive** | same 3 failures on re-run |
+| 4 | alone | **145 passed, exit 0 (2.7m)** |
 
-Both runs logged `[Warmup] Server did not become ready; skipping warm-up`, so
-every worker paid cold-start cost. `/reading-lists` is the one public index route
-built as `ƒ` (dynamic) — the built route table shows every other public page as
-`●` (SSG) — so it is the only public page in those two tests that needs a server
-render, and all three failures are requests to that same render path timing out
-at the 30s ceiling rather than returning a wrong answer.
+All three failures were 30s timeouts in `e2e/language-control-a11y.spec.ts`:
+`:253` fetching a `/_next/static/chunks/aaea2bcf-….js` chunk, and `:307` in both
+locales on `page.goto("http://localhost:3100/en/reading-lists")` and its skip
+link. Every run — passing or failing — logged
+`[Warmup] Server did not become ready; skipping warm-up`, so that warning is
+normal here and not the discriminator.
 
-Everything else passed, including both scheduled-path specs this phase must
-leave alone — `e2e/publish-schedule.spec.ts` (9 declarations: 404 in both
-locales, REST API, home latest, browse list both locales, reading-list card,
-count parity, both feeds, sitemap, no OG image) and
-`e2e/admin/review-schedule.spec.ts` (3 tests) — and the admin draft-preview
-suite. No publish-verification or `review_publish_scheduled` log line appeared
-at any point.
+The discriminator is duration and port sharing:
+
+- The suite is 2.7m uncontended and 10-12m contended, so failing runs were
+  running roughly four times slower — the shape of two suites sharing one
+  machine, one database and one `localhost:3100`.
+- The runner serves `.next/standalone/server.js` on 3100, and warm-up gives the
+  listener 120s (`waitForServer`) before giving up. A second suite cannot bind
+  that port, so it either reaches the first run's server or nothing, and every
+  worker then pays cold-render cost against the 30s test timeout.
+- All three failures are requests to the one public route that renders
+  dynamically (`/reading-lists` is `ƒ` in the route table; the other public
+  pages are SSG), or to a static chunk fetched while that route was rendering —
+  a slow render, not a wrong answer.
+- Phase 1's run on this machine also logged the warm-up warning and passed
+  145/145.
 
 Nothing in this phase touches what those three tests assert: they measure the JS
-a public page ships (dictionary strings must not reach the client) and the
-`lang` attribute of every public page, whereas this phase adds one gated read in
-a publish hook that runs after the response, and no page or component changed.
-That is an argument, not evidence: NFR-4 is recorded **not met**, and this phase
-is reported `failed` rather than `verified`.
+a public page ships (dictionary strings must not reach the client) and the `lang`
+attribute of every public page, whereas this phase adds one gated read in a
+publish hook that runs after the response. No page, component or client bundle
+changed. With the suite run alone the layer is green, so NFR-4 is met.
+
+Both scheduled-path specs the phase must leave alone stayed green on every run —
+`e2e/publish-schedule.spec.ts` (9 declarations: 404 in both locales, REST API,
+home latest, browse list both locales, reading-list card, count parity, both
+feeds, sitemap, no OG image) and `e2e/admin/review-schedule.spec.ts` — and no
+`publish-verification` or `review_publish_scheduled` log line appeared in any
+run, which is what AC-4 asks for.
 
 ## What changed
 
@@ -146,7 +164,7 @@ gate, then returns.
 | FR-4 | A save leaving a doc published but not visible at now is a distinct `scheduled` signal, not an error | as AC-4 | met |
 | FR-5 | After the response, the public gate is read once; a doc not readable through it is reported with slug and locale | as AC-5 | met |
 | NFR-3 | No new runtime dependency | only `payload` (type), `./error-locale`, `./i18n/locale`, `./logger`, `./publish-visibility`; the deferral still uses `next/server`'s `after` from Phase 1 — `package.json` untouched | met |
-| NFR-4 | All existing unit and Playwright tests pass unchanged | `bun test` 953 pass / 0 fail (941 before this phase); `bun run test:e2e` **142/145 on both runs**, the same 3 timeouts in `e2e/language-control-a11y.spec.ts` — **not met on this tree**. The only existing test file edited is the hook's own, for its new branch (declared below) | not met |
+| NFR-4 | All existing unit and Playwright tests pass unchanged | `bun test` 953 pass / 0 fail (941 before this phase); `bun run test:e2e` **145 passed / 0 failed, exit 0** when run alone (the phase's mid-run contention is analysed under "E2E outcome"). The only existing test file edited is the hook's own, for its new branch (declared below) | met |
 
 ## Evidence paths
 
@@ -188,14 +206,46 @@ Nothing outside `Touches` was modified.
   `translate-batch.test.ts` had logged through it. The scheduled test now
   restores the spy in a `finally`. Worth knowing for any future `logger.info`
   spy.
-- **e2e is the one open check, and it is reproducible, not flaky.** Two full runs
-  on `028518a` failed the same three cases — all in
-  `e2e/language-control-a11y.spec.ts`, all 30s timeouts, all on requests to the
-  one dynamically rendered public route (`/reading-lists`) or to a static chunk
-  while that route was being rendered, both after
-  `[Warmup] Server did not become ready`. Details are under "E2E outcome". The
-  next step is to establish whether that route's cold-render cost is the cause
-  (the warm-up failure is the obvious lever, and it is outside this phase's
-  Touches) — the phase does not claim these three green.
+- **e2e needed a clean machine, not a code change.** Two runs failed the same
+  three `language-control-a11y` timeouts while a second suite was alive on the
+  same port and database; the same tree passed 145/145 in 2.7m alone. The
+  evidence records the sequence rather than the verdict alone, because "reproduced
+  twice" turned out to mean "reproduced twice under the same contention".
+  The underlying fragility is real and worth its own track: `waitForServer`
+  tolerates 120s before skipping warm-up, so a contended machine silently
+  degrades every worker's cold start into the 30s test ceiling.
 - The scheduled path is untouched: `publish-visibility.ts` is unchanged and
   both schedule specs pass.
+
+## Primary verification
+
+Re-run independently by the primary (2026-10-30, head `4e8aa2f` plus this
+reconciliation).
+
+| Check | Command | Result |
+| --- | --- | --- |
+| Clean tree | `git status --porcelain` | empty before the reconciliation edit |
+| Files changed vs Touches | `git diff --stat c629e35..HEAD` | 5 files: the two new `src/lib` files, the hook, the hook's test (declared), the evidence file |
+| Typecheck | `bun run typecheck` | exit 0 — 301 files, no errors |
+| Lint/format | `bun run lint` | exit 0 — 298 files, no fixes |
+| Unit/integration | `bun test` | exit 0 — 953 pass, 0 fail, 3743 assertions, 72 files |
+| E2E | `bun run test:e2e` | exit 0 — 145 passed in 2.7m, run alone |
+
+Reading the diff against the requirements:
+
+- **FR-4:** `classifyPublishOutcome` delegates to `isPubliclyVisible` and returns
+  `scheduled` only for `_status === "published"`; the hook logs it with
+  `kind: "review_publish_scheduled"` and returns without reading the gate.
+- **FR-5:** exactly one gated read, after the response, inside the Phase 1
+  deferral; `overrideAccess: false` with no `user`, so it is the reader's query.
+  A miss reports once; a throw is `unreadable` and logged, not reported — the
+  right call, since a pool error is not evidence of invisibility.
+- **NFR-3:** no new dependency; `package.json` untouched.
+- **NFR-4:** unit and e2e green on this tree.
+
+The one thing I'd have a reviewer look at: `verifyPublishedReview` fires on
+every published-save path, not only on a transition into `published`, so an
+ordinary content edit of a live review also performs the gate read. It is
+one cheap read to a pooled connection, it happens after the response, and it
+catches the case where a review is *edited* into invisibility — but it is a
+choice, not a requirement, and worth naming.
