@@ -69,7 +69,7 @@ is configuration with defaults rather than constants in code.
 **Covers:** FR-3, FR-6, NFR-5, AC-3, AC-6
 **Touches:** `src/payload.config.ts`, `src/lib/env.ts`, `src/lib/__tests__/env.test.ts`, `src/app/(public)/[locale]/reviews/[slug]/page.tsx`, `src/app/(public)/[locale]/reviews/[slug]/opengraph-image.tsx`, `src/app/(payload)/api/preview/route.ts`, `.env.example`
 **Verification:** `bun run typecheck && bun run lint && bun test`
-**Status:** Pending
+**Status:** in_progress
 
 - [ ] **P2.T1: Stop counting when looking up one document by slug** — covers: FR-3
 	- [ ] Add `pagination: false` to the three slug lookups and leave access,
