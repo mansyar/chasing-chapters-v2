@@ -8,9 +8,8 @@
 - Head commit (last code commit): `028518a`
 - Commits: `40761d2` (T1), `028518a` (T2), then the evidence file itself
 - Result: **failed** — the static and unit layers are clean and cover every
-  acceptance criterion of this phase, but the e2e layer failed on its recorded
-  run and the confirmation re-run never reached Playwright. See
-  "E2E outcome" below.
+  acceptance criterion of this phase, but the e2e layer failed the same three
+  timeouts on two independent runs. See "E2E outcome" below.
 
 ## Goal
 
@@ -38,45 +37,41 @@ bun run test:e2e                                # see below
 
 | Layer | Command | Exit | Summary |
 | --- | --- | --- | --- |
-| E2E | `bun run test:e2e` | 1 | 145 tests, 142 passed, 3 failed in 12.6m — see "E2E outcome" |
+| E2E | `bun run test:e2e` | 1 | 145 tests, 142 passed, 3 failed (suite 10.3m) — reproduced twice, identical failures. See "E2E outcome" |
 
 ## E2E outcome
 
-The e2e layer did **not** pass on this tree, and a re-run to establish whether
-the failures are environmental produced no verdict.
+The e2e layer **failed on this tree, reproducibly**: two independent full runs of
+`bun run test:e2e` on `028518a` each ended with 145 tests, 142 passed and the
+**same three** failures in `e2e/language-control-a11y.spec.ts`, exit 1.
 
-Recorded run (`bun run test:e2e`, exit 1, 145 tests, 12.6m):
-
-| Test | Location | Failure |
+| Test | Failing step | Error |
 | --- | --- | --- |
-| keeps the dictionary off the client and reports the JS it ships | `e2e/language-control-a11y.spec.ts:253` | 30s timeout; `Error: apiResponse.body: Response has been disposed` at `line 283` (`await chunk.body()`) |
-| declares en on every public page | `e2e/language-control-a11y.spec.ts:307` | 30s timeout |
-| declares id on every public page | `e2e/language-control-a11y.spec.ts:307` | 30s timeout |
+| `:253` "keeps the dictionary off the client and reports the JS it ships" | `line 280` `await page.request.get(src)` for `/_next/static/chunks/aaea2bcf-….js` | test timeout of 30000ms exceeded (the first run surfaced it as `apiResponse.body: Response has been disposed` at `line 283`) |
+| `:307` "declares en on every public page" | `line 309` `page.goto("http://localhost:3100/en/reading-lists")` | test timeout of 30000ms exceeded, waiting until `load` |
+| `:307` "declares id on every public page" | `line 322` `getByRole("link", { name: "Lewati ke konten" })` on `/reading-lists` | test timeout of 30000ms exceeded (count never became 1) |
 
-The run logged `[Warmup] Server did not become ready; skipping warm-up`, so the
-first requests of each worker paid cold-start cost. Everything else passed,
-including both scheduled-path specs this phase must leave alone:
-`e2e/publish-schedule.spec.ts` (9 declarations — 404 in both locales, REST API,
-home latest, browse list both locales, reading-list card, count parity, both
-feeds, sitemap, no OG image) and `e2e/admin/review-schedule.spec.ts` (3 tests).
-No publish-verification log line appeared at any point.
+Both runs logged `[Warmup] Server did not become ready; skipping warm-up`, so
+every worker paid cold-start cost. `/reading-lists` is the one public index route
+built as `ƒ` (dynamic) — the built route table shows every other public page as
+`●` (SSG) — so it is the only public page in those two tests that needs a server
+render, and all three failures are requests to that same render path timing out
+at the 30s ceiling rather than returning a wrong answer.
 
-Confirmation re-run (background, no timeout): reached `payload migrate`, the
-fixture seed (with the expected `after` was called outside a request scope
-warnings from the Phase 1 deferral) and `next build` (~3min compile, static
-generation 29/29 in 2.3min), then stopped advancing at
-`Collecting build traces ...` and never started Playwright. Three reads of its
-output over several minutes returned the same final line while the runner
-process stayed alive; nothing could be killed or polled with the tools
-available to this phase. It therefore produced no verdict, and the recorded
-run above is the phase's e2e evidence.
+Everything else passed, including both scheduled-path specs this phase must
+leave alone — `e2e/publish-schedule.spec.ts` (9 declarations: 404 in both
+locales, REST API, home latest, browse list both locales, reading-list card,
+count parity, both feeds, sitemap, no OG image) and
+`e2e/admin/review-schedule.spec.ts` (3 tests) — and the admin draft-preview
+suite. No publish-verification or `review_publish_scheduled` log line appeared
+at any point.
 
-Nothing in this phase touches what those three tests assert: they measure the
-JS a public page ships (dictionary strings must not reach the client) and the
-`lang` attribute of every public page, whereas this phase adds one gated read
-in a publish hook that runs after the response. That is an argument, not
-evidence — the honest reading is that e2e is unconfirmed on this tree, which is
-why this phase is reported `failed` rather than `verified`.
+Nothing in this phase touches what those three tests assert: they measure the JS
+a public page ships (dictionary strings must not reach the client) and the
+`lang` attribute of every public page, whereas this phase adds one gated read in
+a publish hook that runs after the response, and no page or component changed.
+That is an argument, not evidence: NFR-4 is recorded **not met**, and this phase
+is reported `failed` rather than `verified`.
 
 ## What changed
 
@@ -151,7 +146,7 @@ gate, then returns.
 | FR-4 | A save leaving a doc published but not visible at now is a distinct `scheduled` signal, not an error | as AC-4 | met |
 | FR-5 | After the response, the public gate is read once; a doc not readable through it is reported with slug and locale | as AC-5 | met |
 | NFR-3 | No new runtime dependency | only `payload` (type), `./error-locale`, `./i18n/locale`, `./logger`, `./publish-visibility`; the deferral still uses `next/server`'s `after` from Phase 1 — `package.json` untouched | met |
-| NFR-4 | All existing unit and Playwright tests pass unchanged | `bun test` 953 pass / 0 fail (941 before this phase); `bun run test:e2e` **142/145** with 3 timeouts in `e2e/language-control-a11y.spec.ts` and no verdict from the re-run — **not met on this tree**. The only existing test file edited is the hook's own, for its new branch (declared below) | not met |
+| NFR-4 | All existing unit and Playwright tests pass unchanged | `bun test` 953 pass / 0 fail (941 before this phase); `bun run test:e2e` **142/145 on both runs**, the same 3 timeouts in `e2e/language-control-a11y.spec.ts` — **not met on this tree**. The only existing test file edited is the hook's own, for its new branch (declared below) | not met |
 
 ## Evidence paths
 
@@ -193,12 +188,14 @@ Nothing outside `Touches` was modified.
   `translate-batch.test.ts` had logged through it. The scheduled test now
   restores the spy in a `finally`. Worth knowing for any future `logger.info`
   spy.
-- **e2e is the one open check.** The recorded run failed three timeouts in
-  `e2e/language-control-a11y.spec.ts` after a failed warm-up, and the
-  confirmation re-run hung at build-trace collection without reaching
-  Playwright. Both are recorded under "E2E outcome"; neither the phase nor the
-  PRODUCT code changed anything those three tests assert, but the phase does not
-  claim them green. Clearing the stalled runner and re-running
-  `bun run test:e2e` on `028518a` is the outstanding step.
+- **e2e is the one open check, and it is reproducible, not flaky.** Two full runs
+  on `028518a` failed the same three cases — all in
+  `e2e/language-control-a11y.spec.ts`, all 30s timeouts, all on requests to the
+  one dynamically rendered public route (`/reading-lists`) or to a static chunk
+  while that route was being rendered, both after
+  `[Warmup] Server did not become ready`. Details are under "E2E outcome". The
+  next step is to establish whether that route's cold-render cost is the cause
+  (the warm-up failure is the obvious lever, and it is outside this phase's
+  Touches) — the phase does not claim these three green.
 - The scheduled path is untouched: `publish-visibility.ts` is unchanged and
   both schedule specs pass.
