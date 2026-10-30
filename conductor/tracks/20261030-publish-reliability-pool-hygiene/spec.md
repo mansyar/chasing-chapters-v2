@@ -150,7 +150,7 @@ and the failure mode is silent by construction.
 | AC-4 | Publishing with a future `publishAt` emits the `scheduled` signal and no failure signal. | FR-4 |
 | AC-5 | A publish whose post-response public read returns nothing reports to Sentry exactly once, with slug and locale. | FR-5 |
 | AC-6 | `DB_POOL_MAX`/`DB_POOL_MIN`/`DB_POOL_CONNECT_TIMEOUT_MS` are honoured; invalid values fall back to defaults with one warning; a slow acquisition logs the wait. | FR-6 |
-| AC-7 | With the pool constrained to 2 connections, the publish regression test passes and the document is publicly readable. | FR-7 |
+| AC-7 | With the pool constrained to 2 connections, the publish regression test passes and the document is publicly readable. **Amended during review:** the constraint is a 3-connection pool with one connection held by the test and one kept by the adapter's own probe, which leaves the publish the same single slot. A 2-connection pool starves the publish's own `beginTransaction` before the bug under test can be reached, so the smaller number proves nothing; the premise is now asserted in the test rather than assumed. | FR-7 |
 
 ## Edge Cases
 

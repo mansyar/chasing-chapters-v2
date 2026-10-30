@@ -172,6 +172,7 @@ export interface Media {
    * Auto-generated blur placeholder for image loading
    */
   blurDataURL?: string | null;
+  _objectKey?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -580,6 +581,7 @@ export interface AuthorsSelect<T extends boolean = true> {
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
   blurDataURL?: T;
+  _objectKey?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;

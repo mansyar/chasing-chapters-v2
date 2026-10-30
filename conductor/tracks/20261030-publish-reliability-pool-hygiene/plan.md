@@ -144,6 +144,35 @@ were contention and are documented as such.
 **Checkpoint:** `26d2b28`
 **Evidence:** `conductor/tracks/20261030-publish-reliability-pool-hygiene/verification/phase-3.md`
 
+## Phase R1: Review Fixes
+
+Findings from the read-only review of `db27f79..HEAD`, dispositions and the
+verification that followed are recorded in `review.md`.
+
+- [x] **R1.T1: Keep the visibility report when revalidation throws** — covers: FR-5
+	- [x] Run the two deferred jobs independently, logging each failure as
+	      `revalidation_deferred_failed` instead of letting the first throw take
+	      the second with it.
+	- [x] Pin it with a hook case that makes `revalidatePath` throw and asserts the
+	      gate read still happens.
+- [x] **R1.T2: Cover the edges the review named** — covers: FR-6, AC-5
+	- [x] Carry `elapsedMs`/`thresholdMs` on `neighbour_lookup_failed`, so a read
+	      that dies waiting for a connection still reports the wait.
+	- [x] Assert the report through the hook with an injected empty gate read.
+	- [x] Document and pin the post-response re-entry contract.
+- [x] **R1.T3: Fix the test hygiene the review found** — covers: AC-7
+	- [x] Assert the starvation premise inside the regression test (and inside the
+	      `finally`, so a wrong premise cannot leak a connection).
+	- [x] Restore the leaked `logger.warn` spy; guard the source scan against a
+	      missing marker; justify the adapter cast; reword the `env.ts` comment.
+	- [x] Amend AC-7 in the spec to the 3-connection constraint the adapter forces.
+
+**Result:** the deferred half is two independent jobs, each failure contained and
+logged; a starved read reports its elapsed time whether it finishes or gives up;
+and the regression test asserts the premise it depends on rather than assuming
+it. 955 unit tests pass, typecheck and lint are clean.
+**Checkpoint:** see the review-fix commits `81421e6`, `c18b7b6`.
+
 ## Phase R1: Review Fixes (conditional)
 
 Appended by `conductor-review` if fixes are required. Not part of the plan.
