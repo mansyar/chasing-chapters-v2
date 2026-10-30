@@ -114,23 +114,35 @@ is invisible after the response is captured in Sentry with enough context to act
 **Covers:** FR-4, FR-5, NFR-3, NFR-4, AC-4, AC-5
 **Touches:** `src/lib/publish-verification.ts` (new), `src/lib/__tests__/publish-verification.test.ts` (new), `src/hooks/revalidatePages.ts`
 **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
-**Status:** in_progress
+**Status:** Done
 
-- [ ] **P3.T1: Classify the outcome of a published save** — covers: FR-4
-	- [ ] Add a pure classifier over the saved document: `visible`, `scheduled`
+- [x] **P3.T1: Classify the outcome of a published save** — covers: FR-4
+	- [x] Add a pure classifier over the saved document: `visible`, `scheduled`
 	      (published with a future `publishAt`) or `not-published`, reusing
 	      `isPubliclyVisible` rather than restating the rule.
-	- [ ] Emit the `scheduled` signal as information, not as an error, and only
+	- [x] Emit the `scheduled` signal as information, not as an error, and only
 	      for documents that are actually `published`.
-	- [ ] Unit-test the three outcomes including the unparsable-`publishAt` case.
-- [ ] **P3.T2: Verify through the public gate after the response** — covers: FR-5
-	- [ ] In the deferred path (from Phase 1), read the document once with
+	- [x] Unit-test the three outcomes including the unparsable-`publishAt` case.
+- [x] **P3.T2: Verify through the public gate after the response** — covers: FR-5
+	- [x] In the deferred path (from Phase 1), read the document once with
 	      `overrideAccess: false` and no user; when it is absent, report to the
 	      error reporter once with slug, locale and document id.
-	- [ ] Keep the read out of the request's critical path and make it a no-op for
+	- [x] Keep the read out of the request's critical path and make it a no-op for
 	      `scheduled`, draft and deleted documents.
-	- [ ] Assert exactly-one report on mismatch and zero on success with an
+	- [x] Assert exactly-one report on mismatch and zero on success with an
 	      injected reader (no database needed).
+
+**Result:** `classifyPublishOutcome` names a saved review's outcome (`visible`,
+`scheduled`, `not-published`) by delegating to `isPubliclyVisible`; the hook logs
+the scheduled case as `review_publish_scheduled` and returns. Otherwise
+`verifyPublicVisibility` performs exactly one post-response read through the
+public gate (`overrideAccess: false`, no user, `pagination: false`) and reports a
+miss to Sentry once with the slug, the default-locale route and the id; a read
+that throws is logged, not reported. The e2e suite is green (145/145) once run
+without a second suite on the same port; the three timeouts recorded mid-phase
+were contention and are documented as such.
+**Checkpoint:** `26d2b28`
+**Evidence:** `conductor/tracks/20261030-publish-reliability-pool-hygiene/verification/phase-3.md`
 
 ## Phase R1: Review Fixes (conditional)
 
