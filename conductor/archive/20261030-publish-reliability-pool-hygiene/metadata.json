@@ -8,9 +8,9 @@
 	"depends_on": [],
 	"doc_sync": "done",
 	"id": "20261030-publish-reliability-pool-hygiene",
-	"last_checkpoint": "859e5af",
+	"last_checkpoint": "147c31a",
 	"plan": "plan.md",
-	"pr_state": "open",
+	"pr_state": "merged",
 	"pr_url": "https://github.com/mansyar/chasing-chapters-v2/pull/44",
 	"priority": "high",
 	"progress": {
@@ -28,5 +28,5 @@
 	"status": "completed",
 	"title": "Publish Reliability & Pool Hygiene",
 	"type": "bug",
-	"updated_at": "2026-10-30T20:52:00+11:00"
+	"updated_at": "2026-10-30T21:20:00+11:00"
 }
