@@ -19,7 +19,7 @@ publicly readable; a failing neighbour lookup cannot undo the write.
 **Covers:** FR-1, FR-2, FR-7, NFR-1, NFR-2, NFR-4, AC-1, AC-2, AC-7
 **Touches:** `src/hooks/revalidatePages.ts`, `src/hooks/__tests__/revalidatePages.test.ts`, `src/lib/__tests__/publish-reliability.test.ts` (new)
 **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
-**Status:** Pending
+**Status:** in_progress
 
 - [ ] **P1.T1: Reproduce the rollback in a database-backed test** — covers: FR-7
 	- [ ] Add `src/lib/__tests__/publish-reliability.test.ts`: boot Payload with
