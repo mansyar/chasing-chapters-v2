@@ -19,33 +19,43 @@ publicly readable; a failing neighbour lookup cannot undo the write.
 **Covers:** FR-1, FR-2, FR-7, NFR-1, NFR-2, NFR-4, AC-1, AC-2, AC-7
 **Touches:** `src/hooks/revalidatePages.ts`, `src/hooks/__tests__/revalidatePages.test.ts`, `src/lib/__tests__/publish-reliability.test.ts` (new)
 **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
-**Status:** in_progress
+**Status:** Done
 
-- [ ] **P1.T1: Reproduce the rollback in a database-backed test** — covers: FR-7
-	- [ ] Add `src/lib/__tests__/publish-reliability.test.ts`: boot Payload with
-	      `DB_POOL_MAX=2`, create a draft, publish it, and assert the re-read
-	      document is `_status: "published"` and matches the public gate.
-	- [ ] Gate on `DATABASE_URI` (skip with a printed reason when absent) so
+- [x] **P1.T1: Reproduce the rollback in a database-backed test** — covers: FR-7
+	- [x] Add `src/lib/__tests__/publish-reliability.test.ts`: boot Payload with
+	      a constrained pool (3 connections, one held — see the deviation below),
+	      create a draft, publish it, and assert the re-read document is
+	      `_status: "published"` and matches the public gate.
+	- [x] Gate on `DATABASE_URI` (skip with a printed reason when absent) so
 	      `bun test` stays runnable without a database locally.
-	- [ ] Confirm on the pre-fix code that the test fails with
+	- [x] Confirm on the pre-fix code that the test fails with
 	      `timeout exceeded when trying to connect`; record the failing output as
 	      evidence before changing `src/hooks/revalidatePages.ts`.
-- [ ] **P1.T2: Defer revalidation and neighbour lookup past commit** — covers: FR-1, FR-2
-	- [ ] Wrap the revalidation tail in `next/server`'s `after()` so it runs after
+- [x] **P1.T2: Defer revalidation and neighbour lookup past commit** — covers: FR-1, FR-2
+	- [x] Wrap the revalidation tail in `next/server`'s `after()` so it runs after
 	      the response, and keep the existing static-generation-store tolerance
 	      for calls with no request scope (seed scripts, local API).
-	- [ ] Make the neighbour lookup best-effort: classify a failure
+	- [x] Make the neighbour lookup best-effort: classify a failure
 	      (`neighbour_lookup_failed`) with slug and error digest, log it, and
 	      return without throwing.
-	- [ ] Assert in `revalidatePages.test.ts` that no `revalidatePath` and no
+	- [x] Assert in `revalidatePages.test.ts` that no `revalidatePath` and no
 	      neighbour query runs while the hook body is executing, and that a
 	      throwing neighbour lookup still resolves.
-- [ ] **P1.T3: Confirm freshness did not regress** — covers: FR-1
-	- [ ] Run `bun run test:e2e` and confirm `publish-schedule` and
+- [x] **P1.T3: Confirm freshness did not regress** — covers: FR-1
+	- [x] Run `bun run test:e2e` and confirm `publish-schedule` and
 	      `review-schedule` still pass: a publish still revalidates the review,
 	      the index, the homepage, the feed and both neighbours.
-	- [ ] Capture the phase evidence file with the test names and the failing-then-
+	- [x] Capture the phase evidence file with the test names and the failing-then-
 	      passing regression output.
+
+**Result:** The revalidation tail (both path revalidation and the neighbour
+lookup) now runs through `next/server`'s `after()`, so the write commits first;
+the neighbour lookup is best effort and a failure is logged as
+`neighbour_lookup_failed` instead of thrown. The starved-pool regression test
+fails on the pre-fix code with the incident's query and message, and passes
+after the change.
+**Checkpoint:** `7127f71`
+**Evidence:** `conductor/tracks/20261030-publish-reliability-pool-hygiene/verification/phase-1.md`
 
 ## Phase 2: The pool is a configured resource, and slug lookups stop counting
 

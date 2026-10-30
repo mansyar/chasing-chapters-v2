@@ -8,15 +8,15 @@
 	"depends_on": [],
 	"doc_sync": "pending",
 	"id": "20261030-publish-reliability-pool-hygiene",
-	"last_checkpoint": null,
+	"last_checkpoint": "7127f71",
 	"plan": "plan.md",
 	"pr_state": null,
 	"pr_url": null,
 	"priority": "high",
 	"progress": {
 		"phases_total": 3,
-		"phases_verified": 0,
-		"tasks_done": 0,
+		"phases_verified": 1,
+		"tasks_done": 3,
 		"tasks_total": 8
 	},
 	"revert_commit": null,

@@ -144,3 +144,48 @@ render the same content" is observable at the reader's end.
   assertion that the same path set is handed to `revalidatePath`. Worth a
   follow-up e2e when a publish-through-the-admin spec exists.
 - Pool constants in `src/payload.config.ts` are untouched, as Phase 2 owns them.
+
+## Primary verification
+
+Re-run independently by the primary after the phase reported done
+(2026-10-30, branch `fix/20261030-publish-reliability-pool-hygiene`, head
+`7127f71`).
+
+| Check | Command | Result |
+| --- | --- | --- |
+| Clean tree at start | `git status --porcelain` | empty |
+| Files changed within Touches | `git diff --stat ca38ee8..HEAD` | 4 files: `src/hooks/revalidatePages.ts`, `src/hooks/__tests__/revalidatePages.test.ts`, `src/lib/__tests__/publish-reliability.test.ts`, this evidence file — all inside Touches or the evidence path |
+| Typecheck | `bun run typecheck` | exit 0 — no type errors in 297 files |
+| Lint/format | `bun run lint` | exit 0 — 294 files checked, no fixes applied |
+| Unit/integration suite | `bun test` | exit 0 — 928 pass, 0 fail, 3662 assertions |
+| Regression test alone (not skipped) | `bun test src/lib/__tests__/publish-reliability.test.ts` | exit 0 — 1 pass, 4 assertions, runs against `DATABASE_URI` |
+| E2E | `bun run test:e2e` | exit 0 — 145 passed in 3.1m |
+
+Acceptance criteria:
+
+- **AC-1/AC-2 (deferred, best-effort tail):** confirmed by reading
+  `src/hooks/revalidatePages.ts` — the hook awaits no I/O, the whole tail is
+  handed to `after()` through `deferPastResponse`, and
+  `revalidateNeighbourPages` classifies and logs
+  `neighbour_lookup_failed` before returning. The unit assertions in
+  `revalidatePages.test.ts` cover both, and `bun test` passes.
+- **AC-7 (regression):** the test runs against the real pool and passes.
+  Verified it is not skipped: its own run reports `1 pass`.
+- **Evidence:** this file carries commands with exit codes and the red/green
+  output; the raw capture is in `.conductor/evidence/phase-1-publish-reliability-red-green.txt`.
+
+Two observations, neither blocking:
+
+1. **The regression test passes post-fix partly because the tail is skipped.**
+   A Local API write has no request scope, so `after()` throws and
+   `deferPastResponse` logs instead of running the tail: the starved pool is
+   never asked for a connection. On `main` the same test failed for the right
+   reason (the tail ran inline and starved), so it is a genuine red-to-green
+   guard against *restoring* inline execution — and against removing the
+   neighbour catch, if the deferral ever falls back inline. It does not, by
+   itself, prove the in-request path.
+2. **The in-request path is unproven end to end** (the evidence file says the
+   same). It rests on `after()`'s documented contract plus the unit assertion
+   that the same path set reaches `revalidatePath`. Phase 3 will add a
+   post-response public-gate read, which is where a real publish first becomes
+   observable end to end; an admin-driven publish e2e is still the honest gap.
