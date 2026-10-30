@@ -5,8 +5,9 @@
 - Date: 2026-10-30
 - Branch: `fix/20261030-publish-reliability-pool-hygiene`
 - Base commit: `b5f31a2`
-- Head commit: `d12bc40`
-- Commits: `17bbda7` (T1), `ea64d78` (T2), `d12bc40` (T3)
+- Head commit (last code commit): `d12bc40`
+- Commits: `17bbda7` (T1), `ea64d78` (T2), `d12bc40` (T3), then the evidence
+  file itself in `5cbdb11` and `ee445ff`
 - Result: **verified**
 
 ## Goal
