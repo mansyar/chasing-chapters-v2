@@ -21,7 +21,7 @@ NFR-5, AC-3, AC-6.
 | --- | --- | --- | --- |
 | Static | `bun run typecheck` (`bun check`) | 0 | No type errors in 299 files |
 | Static | `bun run lint` (`biome check .`) | 0 | 296 files checked, no fixes applied |
-| Unit | `bun test` | 0 | 938 pass, 0 fail, 3704 `expect()` calls, 71 files |
+| Unit | `bun test` | 0 | 938 pass, 0 fail, 71 files (run twice on this tree) |
 
 Run as one command, exactly as the brief specifies:
 `bun run typecheck && bun run lint && bun test` — exit 0.
