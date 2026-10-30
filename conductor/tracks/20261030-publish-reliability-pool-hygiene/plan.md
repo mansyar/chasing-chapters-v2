@@ -69,27 +69,38 @@ is configuration with defaults rather than constants in code.
 **Covers:** FR-3, FR-6, NFR-5, AC-3, AC-6
 **Touches:** `src/payload.config.ts`, `src/lib/env.ts`, `src/lib/__tests__/env.test.ts`, `src/app/(public)/[locale]/reviews/[slug]/page.tsx`, `src/app/(public)/[locale]/reviews/[slug]/opengraph-image.tsx`, `src/app/(payload)/api/preview/route.ts`, `.env.example`
 **Verification:** `bun run typecheck && bun run lint && bun test`
-**Status:** in_progress
+**Status:** Done
 
-- [ ] **P2.T1: Stop counting when looking up one document by slug** — covers: FR-3
-	- [ ] Add `pagination: false` to the three slug lookups and leave access,
+- [x] **P2.T1: Stop counting when looking up one document by slug** — covers: FR-3
+	- [x] Add `pagination: false` to the three slug lookups and leave access,
 	      `draft` handling and the visibility `where` untouched.
-	- [ ] Extend the existing page/route tests to assert the option is passed, so a
+	- [x] Extend the existing page/route tests to assert the option is passed, so a
 	      future refactor cannot quietly reintroduce the `count(*)`.
-- [ ] **P2.T2: Make pool sizing configuration** — covers: FR-6
-	- [ ] Add `DB_POOL_MAX` (default 10), `DB_POOL_MIN` (default 2) and
+- [x] **P2.T2: Make pool sizing configuration** — covers: FR-6
+	- [x] Add `DB_POOL_MAX` (default 10), `DB_POOL_MIN` (default 2) and
 	      `DB_POOL_CONNECT_TIMEOUT_MS` (default 10000) to `src/lib/env.ts` with
 	      numeric parsing and fallback-to-default on invalid input, logged once.
-	- [ ] Wire them into `postgresAdapter`; document all three in `.env.example`
+	- [x] Wire them into `postgresAdapter`; document all three in `.env.example`
 	      with the deployment note that the value must stay below the database's
 	      connection ceiling.
-	- [ ] Cover defaults, overrides and invalid values in `env.test.ts`.
-- [ ] **P2.T3: Log slow connection acquisition** — covers: FR-6
-	- [ ] Measure acquisition at the point the adapter exposes a pool; if it
+	- [x] Cover defaults, overrides and invalid values in `env.test.ts`.
+- [x] **P2.T3: Log slow connection acquisition** — covers: FR-6
+	- [x] Measure acquisition at the point the adapter exposes a pool; if it
 	      exposes none, time the deferred verification read and log the deviation
 	      in the phase notes instead of inventing an internal hook.
-	- [ ] Emit one structured warning per slow acquisition (threshold
+	- [x] Emit one structured warning per slow acquisition (threshold
 	      configurable, default 1000 ms) with elapsed ms — no per-query noise.
+
+**Result:** Single-document slug lookups on the review page, its OG image and the
+preview route now pass `pagination: false`, so the redundant `select count(*)`
+is gone. Pool size, floor and acquire timeout come from `DB_POOL_MAX`,
+`DB_POOL_MIN` and `DB_POOL_CONNECT_TIMEOUT_MS` with the previous constants as
+defaults and a warn-once fallback for bad values; a deferred pooled read that
+exceeds `DB_POOL_SLOW_ACQUIRE_MS` logs a structured `db_pool_slow_acquire`
+warning (the adapter exposes no acquisition seam, so the read is the proxy —
+recorded as a deviation).
+**Checkpoint:** `0bd2b80`
+**Evidence:** `conductor/tracks/20261030-publish-reliability-pool-hygiene/verification/phase-2.md`
 
 ## Phase 3: A publish that did not become visible says so
 

@@ -139,3 +139,39 @@ No large artifacts; nothing written under `.conductor/evidence/`.
   scope skips the deferred tail and logs it.
 - Visibility rule, poll/isolation level and the Phase 1 deferral are unchanged;
   no new runtime dependency was added.
+
+## Primary verification
+
+Re-run independently by the primary (2026-10-30, head `0bd2b80`).
+
+| Check | Command | Result |
+| --- | --- | --- |
+| Clean tree | `git status --porcelain` | empty |
+| Files changed vs Touches | `git diff --stat b5f31a2..HEAD` | 12 files; the four declared deviations (`revalidatePages.ts`, its test, and the two new `__tests__` files) are recorded above and the rest are inside Touches |
+| Typecheck | `bun run typecheck` | exit 0 — 299 files, no errors |
+| Lint/format | `bun run lint` | exit 0 — 296 files, no fixes |
+| Unit/integration | `bun test` | exit 0 — 938 pass, 0 fail, 3705 assertions (up from 928) |
+
+Reading the diff against the requirements:
+
+- **FR-3:** `pagination: false` is on all three single-document lookups and on
+  the draft branch of `loadReview`; `generateStaticParams` and the list queries
+  keep their totals, which is correct — they read the count.
+- **FR-6:** the three sizes come from `env`, defaults equal to the previous
+  constants (10 / 2 / 10000), invalid values fall back and warn once per setting
+  per process, and nothing throws. `keepAlive` and `idleTimeoutMillis` unchanged.
+- **NFR-5** (boot survives bad configuration): the fallback path is the default,
+  so a mistyped pool variable cannot take the process down.
+
+Two judgement calls worth a reviewer's attention, neither blocking:
+
+1. **The slug-lookup guard scans source text** rather than calling the page.
+   The reason is real and verified (Bun's process-wide module registry binds
+   `next/headers` to whichever file imports it first, so importing `page.tsx`
+   breaks the 71-file run), and the OG lookup is exercised for real to keep the
+   scan honest. It still means a formatting-heavy refactor could break the guard
+   without breaking behaviour.
+2. **P2.T3 measures a read, not an acquisition.** Payload exposes the pool only
+   after `getPayload`, so the deferred neighbour read stands in as the starved-pool
+   signal. That is the honest reading of it: a slow read is evidence of
+   contention, not proof of the wait itself.
