@@ -58,6 +58,9 @@ export async function GET(request: Request): Promise<Response> {
 		draft: true,
 		overrideAccess: false,
 		user,
+		// One document by slug: the total is never read, and asking for it costs
+		// a second query (`select count(*)`) before the redirect is sent.
+		pagination: false,
 	});
 
 	if (docs.length === 0) {
