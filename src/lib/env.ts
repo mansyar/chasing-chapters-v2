@@ -1,6 +1,48 @@
 import { z } from "zod";
 
 /**
+ * Pool variables already reported as invalid in this process.
+ *
+ * The schema is parsed once per process by `validateEnv`, but it is also parsed
+ * directly by tests; keying the warning keeps an operator from hearing the same
+ * complaint on every render of a settings page.
+ */
+const reportedInvalidPoolSetting = new Set<string>();
+
+/**
+ * A whole-number pool setting that falls back to its default instead of failing
+ * the boot (`NFR-5`).
+ *
+ * The pool is a tuning knob on a resource that works without it, so a value the
+ * operator mistyped must not take the process down — `TRANSLATION_CHAR_BUDGET`
+ * below explains why an empty string is treated as unset, and this goes one step
+ * further: a non-numeric or out-of-range value is reported once and replaced by
+ * the documented default.
+ */
+function poolSetting(name: string, fallback: number, minimum: number) {
+	return z.preprocess((value) => {
+		if (value === undefined || value === "") {
+			return fallback;
+		}
+
+		const parsed = Number(value);
+
+		if (Number.isInteger(parsed) && parsed >= minimum) {
+			return parsed;
+		}
+
+		if (!reportedInvalidPoolSetting.has(name)) {
+			reportedInvalidPoolSetting.add(name);
+			console.warn(
+				`⚠️  ${name}="${String(value)}" is not a whole number of at least ${minimum}; using ${fallback}.`,
+			);
+		}
+
+		return fallback;
+	}, z.number().int().min(minimum).default(fallback));
+}
+
+/**
  * Environment variable validation schema.
  * Validates required variables at startup and provides typed access.
  *
@@ -13,6 +55,25 @@ const envSchema = z.object({
 	PAYLOAD_SECRET: z
 		.string()
 		.min(32, "PAYLOAD_SECRET must be at least 32 characters for security"),
+
+	// Postgres connection pool (optional - defaults are the values the pool was
+	// hard-coded with before they became configurable).
+	//
+	// Every app instance opens its own pool, so the ceiling that matters is
+	// `DB_POOL_MAX` multiplied by the number of containers: keep the product
+	// below the database's own `max_connections` (~100 by default), or writes
+	// start waiting on connections the server will not hand out.
+	DB_POOL_MAX: poolSetting("DB_POOL_MAX", 10, 1),
+	DB_POOL_MIN: poolSetting("DB_POOL_MIN", 2, 0),
+	DB_POOL_CONNECT_TIMEOUT_MS: poolSetting(
+		"DB_POOL_CONNECT_TIMEOUT_MS",
+		10000,
+		1,
+	),
+	// How long a pooled read may wait before it is worth a warning. The
+	// revalidation tail no longer reads inside the write's transaction, so a read
+	// that takes this long is the first visible symptom of a starved pool.
+	DB_POOL_SLOW_ACQUIRE_MS: poolSetting("DB_POOL_SLOW_ACQUIRE_MS", 1000, 1),
 
 	// R2 Storage (required for media uploads)
 	R2_BUCKET: z.string().min(1, "R2_BUCKET is required"),

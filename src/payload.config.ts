@@ -74,10 +74,12 @@ export default buildConfig({
 			// Close idle connections after 20 seconds (helps with serverless DB idle timeouts)
 			idleTimeoutMillis: 20000,
 			// Timeout for acquiring new connections
-			connectionTimeoutMillis: 10000,
-			// Limit pool size for serverless environments
-			max: 10,
-			min: 2,
+			connectionTimeoutMillis: env.DB_POOL_CONNECT_TIMEOUT_MS,
+			// Limit pool size for serverless environments. Configured rather than
+			// hard-coded: every instance opens its own pool, so the useful ceiling
+			// depends on how many of them run against one database.
+			max: env.DB_POOL_MAX,
+			min: env.DB_POOL_MIN,
 		},
 	}),
 	sharp,

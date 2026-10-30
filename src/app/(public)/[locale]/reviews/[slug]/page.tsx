@@ -109,6 +109,9 @@ async function loadReview(
 			draft: true,
 			overrideAccess: false,
 			user,
+			// One document by slug: the total is never read, and asking for it
+			// costs a second query (`select count(*)`) on every page view.
+			pagination: false,
 		});
 
 		return { review: docs[0], preview: true };
@@ -129,6 +132,9 @@ async function loadReview(
 		},
 		limit: 1,
 		depth,
+		// One document by slug: the total is never read, and asking for it costs
+		// a second query (`select count(*)`) on every page view.
+		pagination: false,
 	});
 
 	return { review: reviews[0], preview: false };

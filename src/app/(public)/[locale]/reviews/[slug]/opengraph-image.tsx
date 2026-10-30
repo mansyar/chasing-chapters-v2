@@ -35,6 +35,9 @@ export default async function Image({
 		limit: 1,
 		depth: 0,
 		locale: appLocale,
+		// One document by slug: the total is never read, and asking for it costs
+		// a second query (`select count(*)`) for every image generated.
+		pagination: false,
 	});
 
 	const review = docs[0];
