@@ -25,8 +25,8 @@
 	"review_rounds": 0,
 	"review_verdict": null,
 	"spec": "spec.md",
-	"status": "new",
+	"status": "in_progress",
 	"title": "Publish Reliability & Pool Hygiene",
 	"type": "bug",
-	"updated_at": "2026-10-30T17:20:00+11:00"
+	"updated_at": "2026-10-30T17:32:00+11:00"
 }

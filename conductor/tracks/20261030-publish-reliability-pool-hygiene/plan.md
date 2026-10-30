@@ -16,7 +16,7 @@ a save. Prove it with a test that reproduces the incident, written first.
 publicly readable; a failing neighbour lookup cannot undo the write.
 
 **Depends on:** none
-**Covers:** FR-1, FR-2, FR-7, AC-1, AC-2, AC-7
+**Covers:** FR-1, FR-2, FR-7, NFR-1, NFR-2, NFR-4, AC-1, AC-2, AC-7
 **Touches:** `src/hooks/revalidatePages.ts`, `src/hooks/__tests__/revalidatePages.test.ts`, `src/lib/__tests__/publish-reliability.test.ts` (new)
 **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
 **Status:** Pending
@@ -56,7 +56,7 @@ explicit, bounded and observable.
 is configuration with defaults rather than constants in code.
 
 **Depends on:** Phase 1
-**Covers:** FR-3, FR-6, AC-3, AC-6
+**Covers:** FR-3, FR-6, NFR-5, AC-3, AC-6
 **Touches:** `src/payload.config.ts`, `src/lib/env.ts`, `src/lib/__tests__/env.test.ts`, `src/app/(public)/[locale]/reviews/[slug]/page.tsx`, `src/app/(public)/[locale]/reviews/[slug]/opengraph-image.tsx`, `src/app/(payload)/api/preview/route.ts`, `.env.example`
 **Verification:** `bun run typecheck && bun run lint && bun test`
 **Status:** Pending
@@ -90,7 +90,7 @@ and report the last one.
 is invisible after the response is captured in Sentry with enough context to act.
 
 **Depends on:** Phase 1
-**Covers:** FR-4, FR-5, AC-4, AC-5
+**Covers:** FR-4, FR-5, NFR-3, NFR-4, AC-4, AC-5
 **Touches:** `src/lib/publish-verification.ts` (new), `src/lib/__tests__/publish-verification.test.ts` (new), `src/hooks/revalidatePages.ts`
 **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
 **Status:** Pending

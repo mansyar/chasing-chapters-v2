@@ -1,6 +1,6 @@
 # Tracks Registry
 
-- [ ] **Track: Publish Reliability & Pool Hygiene** — [20261030-publish-reliability-pool-hygiene](./tracks/20261030-publish-reliability-pool-hygiene/index.md) — bug — high
+- [~] **Track: Publish Reliability & Pool Hygiene** — [20261030-publish-reliability-pool-hygiene](./tracks/20261030-publish-reliability-pool-hygiene/index.md) — bug — high
 - [x] **Track: Deploy Safety** - [20261024-deploy-safety](./archive/20261024-deploy-safety/index.md) - chore - high
 - [x] **Track: Draft Preview & Scheduled Publishing** - [20261024-draft-preview-scheduling](./archive/20261024-draft-preview-scheduling/index.md) - feature - high
 - [x] **Track: Bilingual Site Experience** - [20261023-bilingual-site-experience](./archive/20261023-bilingual-site-experience/index.md) - feature - high
