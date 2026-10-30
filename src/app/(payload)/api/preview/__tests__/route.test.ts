@@ -21,6 +21,13 @@ const ROUTE_SOURCE = readFileSync(
 function findCallBlock(source: string): string {
 	const marker = "payload.find({";
 	const start = source.indexOf(marker) + marker.length - 1;
+
+	if (start < marker.length - 1) {
+		// Without this, a renamed call would brace-match something else near the
+		// top of the file and fail as a confusing assertion instead of this.
+		throw new Error("The preview route has no payload.find call to check");
+	}
+
 	let depth = 0;
 
 	for (let cursor = start; cursor < source.length; cursor++) {

@@ -257,17 +257,28 @@ describeWithDatabase("publish reliability under a starved pool", () => {
 		reviewId = draft.id;
 
 		// `payload.db` is typed as the generic adapter, but this config built a
-		// Postgres one, and its pool is what this test fills.
+		// Postgres one. The cast is unavoidable: Payload's public type names no
+		// pool, and the pool is the only way to fill it deliberately rather than
+		// hope a query happens to contend.
 		const pool = (client.db as unknown as PostgresAdapter).pool;
 
 		// One connection held, the way the translation pipeline's own write or a
-		// public page render holds one. Payload keeps another for its reconnect
-		// probe, so what is left for the publish is exactly one connection: the
-		// one its transaction runs on, and no more.
+		// public page render holds one. The adapter keeps its own probe
+		// connection, so the publish's transaction takes the pool's last slot and
+		// any query it tries to run alongside it has nowhere to go.
 		const held = await pool.connect();
 
 		let published: Awaited<ReturnType<typeof client.update>>;
 		try {
+			// Assert the premise rather than trusting it: if the adapter's
+			// connection behaviour changes, this test would otherwise keep passing
+			// on code that reintroduces the starvation it exists to catch.
+			expect({
+				idle: pool.idleCount,
+				total: pool.totalCount,
+				waiting: pool.waitingCount,
+			}).toEqual({ idle: 0, total: POOL_SIZE - 1, waiting: 0 });
+
 			published = await client.update({
 				collection: "reviews",
 				id: draft.id,

@@ -36,6 +36,18 @@ const slowAcquireEnv = { ...envModule.env, DB_POOL_SLOW_ACQUIRE_MS: 60_000 };
 
 mock.module("../../lib/env", () => ({ ...envModule, env: slowAcquireEnv }));
 
+/**
+ * The reporter the deferred verification reaches for, stubbed before the hook
+ * is imported. `error-locale` calls `Sentry.captureException`, so replacing the
+ * module is what makes "reported exactly once" observable from here rather than
+ * only from the module that raises it.
+ */
+const captureException = mock(
+	(_error: unknown, _options?: unknown) => undefined,
+);
+
+mock.module("@sentry/nextjs", () => ({ captureException }));
+
 const { revalidateReadingListPages, revalidateReviewPages } = await import(
 	"../revalidatePages"
 );
@@ -95,6 +107,7 @@ describe("revalidateReviewPages", () => {
 	beforeEach(() => {
 		revalidatePath.mockClear();
 		after.mockClear();
+		captureException.mockClear();
 		deferred.splice(0, deferred.length);
 		slowAcquireEnv.DB_POOL_SLOW_ACQUIRE_MS = 60_000;
 	});
@@ -178,18 +191,15 @@ describe("revalidateReviewPages", () => {
 		]);
 	});
 
-	it("rethrows a failure that is not the out-of-scope invariant", async () => {
+	it("logs a revalidation failure instead of losing the verification", async () => {
 		const warn = spyOn(logger, "warn").mockImplementation(() => {});
-		const warnCallsBefore = warn.mock.calls.length;
+		const find = reviewFinder({});
 
 		revalidatePath.mockImplementation(() => {
 			throw new Error("Something else went wrong");
 		});
 
 		try {
-			// The write is already committed by the time this runs, so the hook
-			// itself still resolves; the failure belongs to the deferred work
-			// and is visible there rather than swallowed.
 			await revalidateReviewPages({
 				doc: {
 					id: 3,
@@ -200,16 +210,27 @@ describe("revalidateReviewPages", () => {
 				previousDoc: null as never,
 				operation: "update",
 				data: {} as never,
-				req: { payload: { find: mock() } } as never,
+				req: { payload: { find } } as never,
 				collection: {} as never,
 				context: {},
 			});
 
-			await expect(flushDeferred()).rejects.toThrow(
-				"Something else went wrong",
-			);
+			// The write is committed and the two deferred jobs are independent:
+			// a revalidation failure is recorded, and it does not take the
+			// visibility check down with it.
+			await expect(flushDeferred()).resolves.toBeUndefined();
 
-			expect(warn.mock.calls.length).toBe(warnCallsBefore);
+			expect(
+				warn.mock.calls.some(
+					([, details]) =>
+						(details as { kind?: string } | undefined)?.kind ===
+						"revalidation_deferred_failed",
+				),
+			).toBe(true);
+
+			expect(
+				find.mock.calls.filter(([args]) => args.sort === undefined),
+			).toHaveLength(1);
 		} finally {
 			revalidatePath.mockImplementation(() => {
 				throw new Error(
@@ -505,6 +526,82 @@ describe("revalidateReviewPages", () => {
 		});
 		// No user, so the collection's public read access is the gate.
 		expect(query).not.toHaveProperty("user");
+	});
+
+	// `AC-5`: the report has to come out of the deferred wiring, not only out of
+	// the module that raises it - a regression that keeps the read and drops the
+	// report would otherwise pass every test.
+	it("reports a publish the public gate cannot see, once, with the slug", async () => {
+		spyOn(logger, "warn").mockImplementation(() => {});
+
+		const find = reviewFinder({ verified: null });
+
+		await revalidateReviewPages({
+			doc: {
+				id: 13,
+				title: "Invisible Review",
+				slug: "invisible-review",
+				_status: "published",
+			} as never,
+			previousDoc: { id: 13, _status: "draft" } as never,
+			operation: "update",
+			data: {} as never,
+			req: { payload: { find } } as never,
+			collection: {} as never,
+			context: {},
+		});
+
+		await flushDeferred();
+
+		expect(captureException).toHaveBeenCalledTimes(1);
+
+		const [reported, options] = captureException.mock.calls[0] ?? [];
+		expect(String(reported)).toContain("invisible-review");
+		expect(String(reported)).toContain("13");
+		expect(options).toMatchObject({
+			extra: { route: "/en/reviews/invisible-review", locale: "en" },
+		});
+	});
+
+	// The translation pipeline writes again after the response, which re-enters
+	// this hook. That is intended: the same pages are invalidated once per write,
+	// not twice for one write, and nothing here throws.
+	it("defers once per write when a post-response write re-enters the hook", async () => {
+		spyOn(logger, "warn").mockImplementation(() => {});
+
+		const doc = {
+			id: 14,
+			title: "Translated Review",
+			slug: "translated-review",
+			_status: "published",
+		};
+
+		// The pipeline's own update: published to published, translation skipped.
+		await revalidateReviewPages({
+			doc: doc as never,
+			previousDoc: doc as never,
+			operation: "update",
+			data: {} as never,
+			req: { payload: { find: reviewFinder({}) } } as never,
+			collection: {} as never,
+			context: { skipTranslation: true },
+		});
+
+		expect(after).toHaveBeenCalledTimes(1);
+
+		await flushDeferred();
+
+		// One invalidation per path for that write, not a second pass.
+		expect(revalidatedPaths()).toEqual([
+			"/en/reviews",
+			"/id/reviews",
+			"/en/reviews/translated-review",
+			"/id/reviews/translated-review",
+			"/en",
+			"/id",
+			"/en/feed.xml",
+			"/id/feed.xml",
+		]);
 	});
 
 	// `AC-4`: a scheduled publish is intentionally invisible, so it is recorded

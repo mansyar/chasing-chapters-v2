@@ -196,24 +196,29 @@ describe("verifyPublicVisibility", () => {
 	// A read that fails is not evidence that the review is invisible, so it is
 	// logged rather than reported; the write is already committed either way.
 	test("logs a failed read instead of reporting the review missing", async () => {
+		// Bun's module registry is process-wide, so an unrestored spy here would
+		// silence `logger.warn` for every file that runs afterwards.
 		const warn = spyOn(logger, "warn").mockImplementation(() => {});
-		warn.mockClear();
 
-		const read = mock(async (_query: PublicGateRead) => {
-			throw new Error("timeout exceeded when trying to connect");
-		});
+		try {
+			const read = mock(async (_query: PublicGateRead) => {
+				throw new Error("timeout exceeded when trying to connect");
+			});
 
-		await expect(
-			verifyPublicVisibility({ doc: PUBLISHED, now: NOW, read }),
-		).resolves.toBe("unreadable");
+			await expect(
+				verifyPublicVisibility({ doc: PUBLISHED, now: NOW, read }),
+			).resolves.toBe("unreadable");
 
-		expect(captureException).not.toHaveBeenCalled();
-		expect(
-			warn.mock.calls.some(
-				([, details]) =>
-					(details as { kind?: string } | undefined)?.kind ===
-					"publish_verification_failed",
-			),
-		).toBe(true);
+			expect(captureException).not.toHaveBeenCalled();
+			expect(
+				warn.mock.calls.some(
+					([, details]) =>
+						(details as { kind?: string } | undefined)?.kind ===
+						"publish_verification_failed",
+				),
+			).toBe(true);
+		} finally {
+			warn.mockRestore();
+		}
 	});
 });
