@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
-import type { CollectionAfterChangeHook } from "payload";
+import { after } from "next/server";
+import type { CollectionAfterChangeHook, Payload } from "payload";
 import { localizedPaths } from "../lib/i18n/locale";
 import { logger } from "../lib/logger";
 import { getAdjacentReviews } from "../lib/review-navigation";
@@ -9,6 +10,15 @@ import { getAdjacentReviews } from "../lib/review-navigation";
  * scope. It is the one failure the guard tolerates.
  */
 const OUT_OF_SCOPE_INVARIANT = "Invariant: static generation store missing";
+
+/** The fields the revalidation tail reads off a saved document. */
+interface RevalidatedDocument {
+	id: number | string;
+	slug?: string | null;
+	title?: string | null;
+	publishDate?: string | null;
+	createdAt?: string | null;
+}
 
 /**
  * Revalidates a path, tolerating a missing request scope.
@@ -50,8 +60,122 @@ function revalidatePublicPath(path: string): void {
 }
 
 /**
+ * Schedules `work` to run after the response that produced the write.
+ *
+ * An `afterChange` hook runs *inside* the write's transaction, so anything it
+ * awaits is part of that transaction: it holds the transaction's connection,
+ * competes for a second one for every query of its own, and a failure rolls the
+ * write back. Cache invalidation and the neighbour lookup are both of that
+ * shape, and neither is the write. Deferring them past the response is what
+ * keeps a publish from failing over work whose own failure means nothing.
+ *
+ * Not every caller has a request scope - a seed script, a script's Local API
+ * write, a unit test - and there `after()` throws. Running the work inline
+ * instead would put it straight back inside the transaction this function
+ * exists to get it out of, so the omission is logged and the write left to
+ * stand: a stale page is recoverable, a rolled-back publish is the incident.
+ */
+function deferPastResponse(work: () => Promise<void>, subject: string): void {
+	try {
+		after(work);
+	} catch (error) {
+		logger.warn(
+			`[Revalidation] Could not defer revalidation for ${subject}: ${String(error)}`,
+		);
+	}
+}
+
+/**
+ * Revalidates the pages of the reviews either side of `doc`.
+ *
+ * The neighbours' prev/next links point at this review (or stop pointing at it
+ * after an unpublish), and they are cached under their own paths, so they lag
+ * one ISR window without this. The lookup reuses the order the review pages use
+ * (publishDate descending, slug tiebreak, visibility-gated) and costs two
+ * bounded `limit: 1` queries. No neighbours is a safe no-op: a list end, a
+ * missing slug, or a missing date yields nulls.
+ *
+ * The lookup is best effort. It is a cache warm-up of two neighbouring pages,
+ * so a lookup that fails - the database unreachable, the pool exhausted - must
+ * not undo a publish that has already been committed. The failure is classified
+ * and logged; the paths that do not depend on it are still revalidated.
+ */
+async function revalidateNeighbourPages(
+	payload: Payload | undefined,
+	doc: RevalidatedDocument,
+): Promise<void> {
+	if (!payload) {
+		return;
+	}
+
+	let adjacent: Awaited<ReturnType<typeof getAdjacentReviews>>;
+	try {
+		adjacent = await getAdjacentReviews(payload, doc);
+	} catch (error) {
+		logger.warn("[Revalidation] Neighbour lookup failed; the write stands.", {
+			kind: "neighbour_lookup_failed",
+			slug: doc.slug ?? null,
+			digest: failureDigest(error),
+		});
+		return;
+	}
+
+	for (const neighbour of [adjacent.newer, adjacent.older]) {
+		if (neighbour) {
+			revalidatePublicPath(`/reviews/${neighbour.slug}`);
+		}
+	}
+}
+
+/**
+ * A short, log-safe identifier for a failure: Next.js's `digest` when the error
+ * carries one, the message otherwise.
+ */
+function failureDigest(error: unknown): string {
+	const digest = (error as { digest?: unknown } | null)?.digest;
+
+	return typeof digest === "string" ? digest : String(error);
+}
+
+/**
+ * Revalidates every cached page a published Review appears on.
+ *
+ * Runs after the response, so it must read nothing from the closed transaction:
+ * the document it was handed is a plain object, and the neighbour lookup goes
+ * through the Local API on its own connection.
+ */
+async function revalidateReviewPagesAfterWrite(
+	doc: RevalidatedDocument,
+	payload: Payload | undefined,
+): Promise<void> {
+	// Revalidate the browse page
+	revalidatePublicPath("/reviews");
+
+	// Revalidate the individual review page
+	if (doc.slug) {
+		revalidatePublicPath(`/reviews/${doc.slug}`);
+	}
+
+	// Revalidate homepage (featured reviews, latest reviews)
+	revalidatePublicPath("/");
+
+	// Revalidate the RSS feeds (latest reviews), which exist once per locale.
+	revalidatePublicPath("/feed.xml");
+
+	// Revalidate the neighbours' pages, last and best effort: their links are
+	// the only thing here that needs a query, and the pages above do not.
+	await revalidateNeighbourPages(payload, doc);
+
+	// If featured status changed, homepage needs update (already covered above)
+	// Reading lists that include this review will be revalidated by their own ISR
+}
+
+/**
  * Revalidates cached pages when a Review is published or updated.
  * This ensures that ISR-cached pages show new content immediately.
+ *
+ * The hook itself returns the document untouched and awaits no I/O: the write
+ * commits first, and the cached pages catch up afterwards.
  */
 export const revalidateReviewPages: CollectionAfterChangeHook = async ({
 	doc,
@@ -78,42 +202,34 @@ export const revalidateReviewPages: CollectionAfterChangeHook = async ({
 			`[Revalidation] Review "${doc.title}" changed, revalidating pages...`,
 		);
 
-		// Revalidate the browse page
-		revalidatePublicPath("/reviews");
+		const payload = req?.payload;
 
-		// Revalidate the individual review page
-		if (doc.slug) {
-			revalidatePublicPath(`/reviews/${doc.slug}`);
-		}
-
-		// Revalidate homepage (featured reviews, latest reviews)
-		revalidatePublicPath("/");
-
-		// Revalidate the RSS feeds (latest reviews), which exist once per locale.
-		revalidatePublicPath("/feed.xml");
-
-		// Revalidate the neighbours' pages. Their prev/next links point at
-		// this review (or stop pointing at it after an unpublish), and they
-		// are cached under their own paths, so they lag one ISR window
-		// without this. The lookup reuses the order the review pages use
-		// (publishDate descending, slug tiebreak, visibility-gated) and
-		// costs two bounded `limit: 1` queries. No neighbours is a safe
-		// no-op: a list end, a missing slug, or a missing date yields nulls.
-		if (req?.payload) {
-			const adjacent = await getAdjacentReviews(req.payload, doc);
-			for (const neighbour of [adjacent.newer, adjacent.older]) {
-				if (neighbour) {
-					revalidatePublicPath(`/reviews/${neighbour.slug}`);
-				}
-			}
-		}
-
-		// If featured status changed, homepage needs update (already covered above)
-		// Reading lists that include this review will be revalidated by their own ISR
+		deferPastResponse(
+			() => revalidateReviewPagesAfterWrite(doc, payload),
+			`review "${doc.slug ?? doc.id}"`,
+		);
 	}
 
 	return doc;
 };
+
+/**
+ * Revalidates every cached page a published Reading List appears on.
+ */
+async function revalidateReadingListPagesAfterWrite(
+	doc: RevalidatedDocument,
+): Promise<void> {
+	// Revalidate the reading lists index page
+	revalidatePublicPath("/reading-lists");
+
+	// Revalidate the individual reading list page
+	if (doc.slug) {
+		revalidatePublicPath(`/reading-lists/${doc.slug}`);
+	}
+
+	// Revalidate homepage (featured reading lists)
+	revalidatePublicPath("/");
+}
 
 /**
  * Revalidates cached pages when a Reading List is published or updated.
@@ -139,16 +255,10 @@ export const revalidateReadingListPages: CollectionAfterChangeHook = async ({
 			`[Revalidation] Reading List "${doc.title}" changed, revalidating pages...`,
 		);
 
-		// Revalidate the reading lists index page
-		revalidatePublicPath("/reading-lists");
-
-		// Revalidate the individual reading list page
-		if (doc.slug) {
-			revalidatePublicPath(`/reading-lists/${doc.slug}`);
-		}
-
-		// Revalidate homepage (featured reading lists)
-		revalidatePublicPath("/");
+		deferPastResponse(
+			() => revalidateReadingListPagesAfterWrite(doc),
+			`reading list "${doc.slug ?? doc.id}"`,
+		);
 	}
 
 	return doc;
