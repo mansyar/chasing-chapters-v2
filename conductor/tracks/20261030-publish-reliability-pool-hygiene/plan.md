@@ -114,7 +114,7 @@ is invisible after the response is captured in Sentry with enough context to act
 **Covers:** FR-4, FR-5, NFR-3, NFR-4, AC-4, AC-5
 **Touches:** `src/lib/publish-verification.ts` (new), `src/lib/__tests__/publish-verification.test.ts` (new), `src/hooks/revalidatePages.ts`
 **Verification:** `bun run typecheck && bun run lint && bun test && bun run test:e2e`
-**Status:** Pending
+**Status:** in_progress
 
 - [ ] **P3.T1: Classify the outcome of a published save** — covers: FR-4
 	- [ ] Add a pure classifier over the saved document: `visible`, `scheduled`
