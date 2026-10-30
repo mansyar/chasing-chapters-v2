@@ -1,0 +1,32 @@
+{
+	"archive_path": null,
+	"archived_at": null,
+	"base_branch": "main",
+	"base_sha": "db27f79bfdbd4c290b54bb825403743c77f31793",
+	"branch": "fix/20261030-publish-reliability-pool-hygiene",
+	"created_at": "2026-10-30T17:20:00+11:00",
+	"depends_on": [],
+	"doc_sync": "pending",
+	"id": "20261030-publish-reliability-pool-hygiene",
+	"last_checkpoint": null,
+	"plan": "plan.md",
+	"pr_state": null,
+	"pr_url": null,
+	"priority": "high",
+	"progress": {
+		"phases_total": 3,
+		"phases_verified": 0,
+		"tasks_done": 0,
+		"tasks_total": 8
+	},
+	"revert_commit": null,
+	"revert_pr_url": null,
+	"reverted_at": null,
+	"review_rounds": 0,
+	"review_verdict": null,
+	"spec": "spec.md",
+	"status": "new",
+	"title": "Publish Reliability & Pool Hygiene",
+	"type": "bug",
+	"updated_at": "2026-10-30T17:20:00+11:00"
+}
