@@ -70,9 +70,9 @@ const envSchema = z.object({
 		10000,
 		1,
 	),
-	// How long a pooled read may wait before it is worth a warning. The write
-	// path never waits on the pool any more (Phase 1), so a read that takes this
-	// long is the first visible symptom of a starved pool.
+	// How long a pooled read may wait before it is worth a warning. The
+	// revalidation tail no longer reads inside the write's transaction, so a read
+	// that takes this long is the first visible symptom of a starved pool.
 	DB_POOL_SLOW_ACQUIRE_MS: poolSetting("DB_POOL_SLOW_ACQUIRE_MS", 1000, 1),
 
 	// R2 Storage (required for media uploads)

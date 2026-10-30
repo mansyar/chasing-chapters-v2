@@ -124,6 +124,11 @@ async function revalidateNeighbourPages(
 			kind: "neighbour_lookup_failed",
 			slug: doc.slug ?? null,
 			digest: failureDigest(error),
+			// A lookup that gave up waiting for a connection is the shape the
+			// incident took, and the time it spent failing is the evidence - the
+			// slow-read warning below never runs on this path.
+			elapsedMs: Math.round(performance.now() - startedAt),
+			thresholdMs: env.DB_POOL_SLOW_ACQUIRE_MS,
 		});
 		return;
 	}
@@ -156,7 +161,9 @@ function failureDigest(error: unknown): string {
  * neighbour read is the read this phase owns, and it is the first thing to come
  * back slow when the pool is starved, so its elapsed time stands in for the
  * wait: past the threshold it is logged as one structured warning naming the
- * milliseconds spent, which is the signal the incident lacked.
+ * milliseconds spent, which is the signal the incident lacked. A read that
+ * fails instead of finishing is covered by `neighbour_lookup_failed`, which
+ * carries the same milliseconds.
  */
 function warnOnSlowPooledRead(startedAt: number, subject: string): void {
 	const elapsedMs = Math.round(performance.now() - startedAt);
@@ -207,6 +214,44 @@ async function revalidateReviewPagesAfterWrite(
 
 	// If featured status changed, homepage needs update (already covered above)
 	// Reading lists that include this review will be revalidated by their own ISR
+}
+
+/**
+ * The deferred half of a review write: two independent jobs, neither of which
+ * may cost the other.
+ *
+ * `revalidatePath` still throws on a genuine framework error (only the
+ * out-of-scope invariant is tolerated), and the visibility check is the one
+ * thing that reports a publish which did not land. Running them strictly in
+ * sequence would let the first throw away the second, which would remove the
+ * incident signal exactly when something else is already going wrong. Each
+ * failure is logged and the other still runs; the write is committed, so
+ * nothing here is allowed to escalate.
+ *
+ * A write made *after* the response - the translation pipeline's own updates -
+ * re-enters the hook and defers again. That is harmless and intended: the same
+ * paths are revalidated, and a review that is still invisible is reported
+ * again, which is a repeat signal rather than a second defect.
+ */
+async function runReviewAfterWrite(
+	doc: RevalidatedDocument,
+	payload: Payload | undefined,
+): Promise<void> {
+	const steps = [
+		["revalidation", () => revalidateReviewPagesAfterWrite(doc, payload)],
+		["publish_verification", () => verifyPublishedReview(doc, payload)],
+	] as const;
+
+	for (const [step, run] of steps) {
+		try {
+			await run();
+		} catch (error) {
+			logger.warn(
+				`[Revalidation] Deferred ${step} for review "${doc.slug ?? doc.id}" failed: ${String(error)}`,
+				{ kind: "revalidation_deferred_failed", step, slug: doc.slug ?? null },
+			);
+		}
+	}
 }
 
 /**
@@ -286,10 +331,7 @@ export const revalidateReviewPages: CollectionAfterChangeHook = async ({
 		const payload = req?.payload;
 
 		deferPastResponse(
-			async () => {
-				await revalidateReviewPagesAfterWrite(doc, payload);
-				await verifyPublishedReview(doc, payload);
-			},
+			() => runReviewAfterWrite(doc, payload),
 			`review "${doc.slug ?? doc.id}"`,
 		);
 	}
