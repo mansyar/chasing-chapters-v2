@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import type { CollectionAfterChangeHook, Payload } from "payload";
+import { env } from "../lib/env";
 import { localizedPaths } from "../lib/i18n/locale";
 import { logger } from "../lib/logger";
 import { getAdjacentReviews } from "../lib/review-navigation";
@@ -109,6 +110,7 @@ async function revalidateNeighbourPages(
 	}
 
 	let adjacent: Awaited<ReturnType<typeof getAdjacentReviews>>;
+	const startedAt = performance.now();
 	try {
 		adjacent = await getAdjacentReviews(payload, doc);
 	} catch (error) {
@@ -119,6 +121,8 @@ async function revalidateNeighbourPages(
 		});
 		return;
 	}
+
+	warnOnSlowPooledRead(startedAt, `review "${doc.slug ?? doc.id}"`);
 
 	for (const neighbour of [adjacent.newer, adjacent.older]) {
 		if (neighbour) {
@@ -135,6 +139,35 @@ function failureDigest(error: unknown): string {
 	const digest = (error as { digest?: unknown } | null)?.digest;
 
 	return typeof digest === "string" ? digest : String(error);
+}
+
+/**
+ * Reports a pooled read that waited longer than `DB_POOL_SLOW_ACQUIRE_MS`.
+ *
+ * Payload's Postgres adapter builds its pool inside `postgresAdapter()` and only
+ * exposes it as `payload.db.pool` once the instance is initialised, so there is
+ * no supported seam to time a connection *acquisition* itself. The deferred
+ * neighbour read is the read this phase owns, and it is the first thing to come
+ * back slow when the pool is starved, so its elapsed time stands in for the
+ * wait: past the threshold it is logged as one structured warning naming the
+ * milliseconds spent, which is the signal the incident lacked.
+ */
+function warnOnSlowPooledRead(startedAt: number, subject: string): void {
+	const elapsedMs = Math.round(performance.now() - startedAt);
+
+	if (elapsedMs < env.DB_POOL_SLOW_ACQUIRE_MS) {
+		return;
+	}
+
+	logger.warn(
+		`[Database] Pooled read for ${subject} waited ${elapsedMs}ms; the pool may be starved.`,
+		{
+			kind: "db_pool_slow_acquire",
+			subject,
+			elapsedMs,
+			thresholdMs: env.DB_POOL_SLOW_ACQUIRE_MS,
+		},
+	);
 }
 
 /**

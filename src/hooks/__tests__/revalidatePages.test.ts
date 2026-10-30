@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import * as envModule from "../../lib/env";
 import { logger } from "../../lib/logger";
 
 const revalidatePath = mock((_path: string) => {
@@ -22,6 +23,18 @@ const after = mock((task: () => Promise<void> | void) => {
 });
 
 mock.module("next/server", () => ({ after }));
+
+/**
+ * The slow-read threshold, overridable per test. The hook reads it at call time,
+ * so mutating this object is enough to put it on either side of a real wait.
+ *
+ * The mock re-exports the real module: `mock.module` here replaces the module for
+ * every file in the test process, and the schema is validated on its own
+ * elsewhere.
+ */
+const slowAcquireEnv = { ...envModule.env, DB_POOL_SLOW_ACQUIRE_MS: 60_000 };
+
+mock.module("../../lib/env", () => ({ ...envModule, env: slowAcquireEnv }));
 
 const { revalidateReadingListPages, revalidateReviewPages } = await import(
 	"../revalidatePages"
@@ -68,6 +81,7 @@ describe("revalidateReviewPages", () => {
 		revalidatePath.mockClear();
 		after.mockClear();
 		deferred.splice(0, deferred.length);
+		slowAcquireEnv.DB_POOL_SLOW_ACQUIRE_MS = 60_000;
 	});
 
 	it("defers the revalidation of a review page in both locales", async () => {
@@ -434,5 +448,95 @@ describe("revalidateReviewPages", () => {
 		expect(after).not.toHaveBeenCalled();
 		expect(find.mock.calls.length).toBe(0);
 		expect(revalidatePath).not.toHaveBeenCalled();
+	});
+
+	// `NFR-5`: the acquisition time the incident never reported. Payload's adapter
+	// exposes its pool only after init, so the deferred read stands in for the
+	// wait; past the threshold it names the milliseconds.
+	it("logs a structured warning when the deferred read waits past the threshold", async () => {
+		slowAcquireEnv.DB_POOL_SLOW_ACQUIRE_MS = 5;
+
+		const warn = spyOn(logger, "warn").mockImplementation(() => {});
+		// `spyOn` returns this process's one spy on the logger, so calls recorded
+		// by earlier cases are still on it.
+		warn.mockClear();
+
+		const find = mock(async () => {
+			await Bun.sleep(40);
+			return { docs: [] };
+		});
+
+		await revalidateReviewPages({
+			doc: {
+				id: 10,
+				title: "Slow Review",
+				slug: "slow-review",
+				_status: "published",
+				publishDate: "2026-10-24T00:00:00.000Z",
+			} as never,
+			previousDoc: { id: 10, _status: "draft" } as never,
+			operation: "update",
+			data: {} as never,
+			req: { payload: { find } } as never,
+			collection: {} as never,
+			context: {},
+		});
+
+		await flushDeferred();
+
+		const slowLog = warn.mock.calls.find(
+			([, details]) =>
+				(details as { kind?: string } | undefined)?.kind ===
+				"db_pool_slow_acquire",
+		);
+
+		expect(slowLog).toBeDefined();
+
+		const [message, details] = slowLog ?? [];
+		expect(message).toContain("waited");
+		expect(details).toMatchObject({
+			kind: "db_pool_slow_acquire",
+			subject: 'review "slow-review"',
+			thresholdMs: 5,
+		});
+		expect((details as { elapsedMs: number }).elapsedMs).toBeGreaterThanOrEqual(
+			5,
+		);
+	});
+
+	it("stays quiet when the deferred read is quick", async () => {
+		const warn = spyOn(logger, "warn").mockImplementation(() => {});
+		warn.mockClear();
+
+		const find = neighbourFinder({
+			newer: [{ slug: "newer-quiet", title: "Newer Quiet" }],
+		});
+
+		await revalidateReviewPages({
+			doc: {
+				id: 11,
+				title: "Quick Review",
+				slug: "quick-review",
+				_status: "published",
+				publishDate: "2026-10-25T00:00:00.000Z",
+			} as never,
+			previousDoc: { id: 11, _status: "draft" } as never,
+			operation: "update",
+			data: {} as never,
+			req: { payload: { find } } as never,
+			collection: {} as never,
+			context: {},
+		});
+
+		await flushDeferred();
+
+		expect(find.mock.calls.length).toBe(2);
+		expect(
+			warn.mock.calls.some(
+				([, details]) =>
+					(details as { kind?: string } | undefined)?.kind ===
+					"db_pool_slow_acquire",
+			),
+		).toBe(false);
 	});
 });
