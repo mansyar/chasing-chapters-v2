@@ -4,6 +4,10 @@ import type { CollectionAfterChangeHook, Payload } from "payload";
 import { env } from "../lib/env";
 import { localizedPaths } from "../lib/i18n/locale";
 import { logger } from "../lib/logger";
+import {
+	classifyPublishOutcome,
+	verifyPublicVisibility,
+} from "../lib/publish-verification";
 import { getAdjacentReviews } from "../lib/review-navigation";
 
 /**
@@ -19,6 +23,8 @@ interface RevalidatedDocument {
 	title?: string | null;
 	publishDate?: string | null;
 	createdAt?: string | null;
+	_status?: string | null;
+	publishAt?: string | null;
 }
 
 /**
@@ -204,6 +210,48 @@ async function revalidateReviewPagesAfterWrite(
 }
 
 /**
+ * Records what a published save left behind, and checks the public gate agrees.
+ *
+ * A save can commit and still leave a review a reader cannot open: a schedule
+ * that has not arrived, or a publish that only looked successful. The first is
+ * intentional, so it is recorded as one line of information - the `scheduled`
+ * signal - rather than an error; the second is the incident this track exists
+ * to report, once, with the slug, the locale and the id.
+ *
+ * Runs after the response like the revalidation above, and never throws: the
+ * write is already committed, so this is a signal rather than a gate.
+ */
+async function verifyPublishedReview(
+	doc: RevalidatedDocument,
+	payload: Payload | undefined,
+): Promise<void> {
+	if (!payload || !doc.slug) {
+		return;
+	}
+
+	const now = new Date();
+
+	if (classifyPublishOutcome(doc, now) === "scheduled") {
+		logger.info(
+			`[Publish] Review "${doc.slug}" is published, scheduled for ${doc.publishAt}, and not public yet.`,
+			{
+				kind: "review_publish_scheduled",
+				slug: doc.slug,
+				publishAt: doc.publishAt ?? null,
+			},
+		);
+
+		return;
+	}
+
+	await verifyPublicVisibility({
+		doc,
+		now,
+		read: (query) => payload.find(query),
+	});
+}
+
+/**
  * Revalidates cached pages when a Review is published or updated.
  * This ensures that ISR-cached pages show new content immediately.
  *
@@ -238,7 +286,10 @@ export const revalidateReviewPages: CollectionAfterChangeHook = async ({
 		const payload = req?.payload;
 
 		deferPastResponse(
-			() => revalidateReviewPagesAfterWrite(doc, payload),
+			async () => {
+				await revalidateReviewPagesAfterWrite(doc, payload);
+				await verifyPublishedReview(doc, payload);
+			},
 			`review "${doc.slug ?? doc.id}"`,
 		);
 	}

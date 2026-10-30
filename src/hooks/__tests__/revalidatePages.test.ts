@@ -54,15 +54,19 @@ function revalidatedPaths(): string[] {
 }
 
 /**
- * A `payload.find` stand-in whose two neighbour queries answer with the slugs
- * they are given, dispatching on the sort each side uses.
+ * A `payload.find` stand-in for the two kinds of read the hook makes: the
+ * neighbour lookups, which sort, and the post-response public-gate read, which
+ * does not. The gate read answers with `verified` - the slug a public reader
+ * would find - or with nothing, as a review that never became visible would.
  */
-function neighbourFinder({
+function reviewFinder({
 	newer,
 	older,
+	verified = "verified-review",
 }: {
 	newer?: Array<{ slug: string; title?: string }>;
 	older?: Array<{ slug: string; title?: string }>;
+	verified?: string | null;
 }) {
 	return mock(
 		async (args: {
@@ -70,10 +74,21 @@ function neighbourFinder({
 			limit?: number;
 		}): Promise<{
 			docs: unknown[];
-		}> => ({
-			docs: args.sort?.[1] === "-slug" ? (newer ?? []) : (older ?? []),
-		}),
+		}> => {
+			if (args.sort === undefined) {
+				return { docs: verified ? [{ slug: verified }] : [] };
+			}
+
+			return {
+				docs: args.sort[1] === "-slug" ? (newer ?? []) : (older ?? []),
+			};
+		},
 	);
+}
+
+/** The neighbour lookups only: the public-gate read is the one without a sort. */
+function neighbourLookups(find: ReturnType<typeof reviewFinder>): number {
+	return find.mock.calls.filter(([args]) => args.sort !== undefined).length;
 }
 
 describe("revalidateReviewPages", () => {
@@ -99,7 +114,7 @@ describe("revalidateReviewPages", () => {
 			previousDoc: null as never,
 			operation: "create",
 			data: {} as never,
-			req: { payload: { find: mock() } } as never,
+			req: { payload: { find: reviewFinder({}) } } as never,
 			collection: {} as never,
 			context: {},
 		});
@@ -207,7 +222,7 @@ describe("revalidateReviewPages", () => {
 	it("revalidates neighbour pages in both locales on publish", async () => {
 		spyOn(logger, "warn").mockImplementation(() => {});
 
-		const find = neighbourFinder({
+		const find = reviewFinder({
 			newer: [{ slug: "newer-review", title: "Newer Review" }],
 			older: [{ slug: "older-review", title: "Older Review" }],
 		});
@@ -238,7 +253,7 @@ describe("revalidateReviewPages", () => {
 
 		// Two bounded queries, one per side, so the neighbours' own prev/next
 		// links stop pointing at stale content.
-		expect(find.mock.calls.length).toBe(2);
+		expect(neighbourLookups(find)).toBe(2);
 		for (const [args] of find.mock.calls) {
 			expect(args.limit).toBe(1);
 		}
@@ -262,7 +277,7 @@ describe("revalidateReviewPages", () => {
 	it("revalidates neighbours on unpublish, when their links disappear", async () => {
 		spyOn(logger, "warn").mockImplementation(() => {});
 
-		const find = neighbourFinder({
+		const find = reviewFinder({
 			newer: [{ slug: "newer-kept", title: "Newer Kept" }],
 			older: [{ slug: "older-kept", title: "Older Kept" }],
 		});
@@ -306,7 +321,7 @@ describe("revalidateReviewPages", () => {
 	it("revalidates nothing extra when there are no neighbours", async () => {
 		spyOn(logger, "warn").mockImplementation(() => {});
 
-		const find = neighbourFinder({});
+		const find = reviewFinder({});
 
 		await revalidateReviewPages({
 			doc: {
@@ -326,7 +341,7 @@ describe("revalidateReviewPages", () => {
 
 		await flushDeferred();
 
-		expect(find.mock.calls.length).toBe(2);
+		expect(neighbourLookups(find)).toBe(2);
 		expect(revalidatedPaths()).toEqual([
 			"/en/reviews",
 			"/id/reviews",
@@ -450,6 +465,100 @@ describe("revalidateReviewPages", () => {
 		expect(revalidatePath).not.toHaveBeenCalled();
 	});
 
+	// `FR-5`: the publish response has been sent by the time this read runs, and
+	// it goes through the same gate an anonymous reader's request goes through.
+	it("verifies a published review through the public gate after the response", async () => {
+		spyOn(logger, "warn").mockImplementation(() => {});
+
+		const find = reviewFinder({});
+
+		await revalidateReviewPages({
+			doc: {
+				id: 12,
+				title: "Verified Review",
+				slug: "verified-review",
+				_status: "published",
+			} as never,
+			previousDoc: { id: 12, _status: "draft" } as never,
+			operation: "update",
+			data: {} as never,
+			req: { payload: { find } } as never,
+			collection: {} as never,
+			context: {},
+		});
+
+		// Nothing is read while the write's transaction is still open.
+		expect(find).not.toHaveBeenCalled();
+
+		await flushDeferred();
+
+		const gateRead = find.mock.calls.find(([args]) => args.sort === undefined);
+		expect(gateRead).toBeDefined();
+
+		const [query] = gateRead ?? [];
+		expect(query).toMatchObject({
+			collection: "reviews",
+			overrideAccess: false,
+			limit: 1,
+			depth: 0,
+			pagination: false,
+		});
+		// No user, so the collection's public read access is the gate.
+		expect(query).not.toHaveProperty("user");
+	});
+
+	// `AC-4`: a scheduled publish is intentionally invisible, so it is recorded
+	// as information and the gate is never read for it.
+	it("records a scheduled publish as information instead of reading the gate", async () => {
+		spyOn(logger, "warn").mockImplementation(() => {});
+
+		// `spyOn` hands back this process's one spy on the method, so a spy left
+		// installed would keep recording every later file's info lines. This one
+		// is restored before the case ends.
+		const info = spyOn(logger, "info").mockImplementation(() => {});
+		info.mockClear();
+
+		try {
+			const find = reviewFinder({});
+
+			await revalidateReviewPages({
+				doc: {
+					id: 13,
+					title: "Scheduled Review",
+					slug: "scheduled-review",
+					_status: "published",
+					publishAt: "2999-01-01T00:00:00.000Z",
+				} as never,
+				previousDoc: { id: 13, _status: "draft" } as never,
+				operation: "update",
+				data: {} as never,
+				req: { payload: { find } } as never,
+				collection: {} as never,
+				context: {},
+			});
+
+			await flushDeferred();
+
+			const scheduledLog = info.mock.calls.find(
+				([, details]) =>
+					(details as { kind?: string } | undefined)?.kind ===
+					"review_publish_scheduled",
+			);
+
+			expect(scheduledLog).toBeDefined();
+			expect(scheduledLog?.[1]).toMatchObject({
+				kind: "review_publish_scheduled",
+				slug: "scheduled-review",
+				publishAt: "2999-01-01T00:00:00.000Z",
+			});
+			expect(find.mock.calls.some(([args]) => args.sort === undefined)).toBe(
+				false,
+			);
+		} finally {
+			info.mockRestore();
+		}
+	});
+
 	// `NFR-5`: the acquisition time the incident never reported. Payload's adapter
 	// exposes its pool only after init, so the deferred read stands in for the
 	// wait; past the threshold it names the milliseconds.
@@ -461,9 +570,9 @@ describe("revalidateReviewPages", () => {
 		// by earlier cases are still on it.
 		warn.mockClear();
 
-		const find = mock(async () => {
+		const find = mock(async (args: { sort?: string[] }) => {
 			await Bun.sleep(40);
-			return { docs: [] };
+			return { docs: args.sort ? [] : [{ slug: "slow-review" }] };
 		});
 
 		await revalidateReviewPages({
@@ -508,7 +617,7 @@ describe("revalidateReviewPages", () => {
 		const warn = spyOn(logger, "warn").mockImplementation(() => {});
 		warn.mockClear();
 
-		const find = neighbourFinder({
+		const find = reviewFinder({
 			newer: [{ slug: "newer-quiet", title: "Newer Quiet" }],
 		});
 
@@ -530,7 +639,7 @@ describe("revalidateReviewPages", () => {
 
 		await flushDeferred();
 
-		expect(find.mock.calls.length).toBe(2);
+		expect(neighbourLookups(find)).toBe(2);
 		expect(
 			warn.mock.calls.some(
 				([, details]) =>
